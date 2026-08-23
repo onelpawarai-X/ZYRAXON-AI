@@ -1,0 +1,384 @@
+import { sentryVitePlugin } from "@sentry/vite-plugin"
+import { defineConfig } from "electron-vite"
+import appPlugin from "@zyraxon-ai/app/vite"
+import * as fs from "node:fs/promises"
+import * as path from "node:path"
+
+if (!process.env.NODE_OPTIONS?.includes("max-old-space-size")) {
+  const current = process.env.NODE_OPTIONS ?? ""
+  process.env.NODE_OPTIONS = `${current} --max-old-space-size=8192`.trim()
+}
+
+const ZYRAXON_SERVER_DIST = "../zyraxon/dist/node"
+
+const channel = (() => {
+  const raw = process.env.ZYRAXON_CHANNEL
+  if (raw === "dev" || raw === "beta" || raw === "prod") return raw
+  if (process.env.ZYRAXON_CHANNEL === "latest") return "prod"
+  return "dev"
+})()
+
+const nodePtyPkg = `@lydell/node-pty-${process.platform}-${process.arch}`
+
+const sentry =
+  process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT
+    ? sentryVitePlugin({
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+        org: process.env.SENTRY_ORG,
+        project: process.env.SENTRY_PROJECT,
+        telemetry: false,
+        release: {
+          name: process.env.SENTRY_RELEASE ?? process.env.VITE_SENTRY_RELEASE,
+        },
+        sourcemaps: {
+          assets: "./out/renderer/**",
+          filesToDeleteAfterUpload: "./out/renderer/**/*.map",
+        },
+      })
+    : false
+
+export default defineConfig({
+  main: {
+    define: {
+      "import.meta.env.ZYRAXON_CHANNEL": JSON.stringify(channel),
+    },
+    build: {
+      rollupOptions: {
+        external: ["node-fetch", "zyraxon-web-ui.gen.ts"],
+        input: { index: "src/main/index.ts", sidecar: "src/main/sidecar.ts" },
+        // Keep this identical to electron-vite's Node 20.11+ shim. Its regex insertion can
+        // corrupt bundled TypeScript, while a Rollup banner places the shim safely.
+        output: {
+          banner: `
+// -- CommonJS Shims --
+import __cjs_mod__ from 'node:module';
+const __filename = import.meta.filename;
+const __dirname = import.meta.dirname;
+const require = __cjs_mod__.createRequire(import.meta.url);
+if (!import.meta.require) { import.meta.require = require; }
+`,
+        },
+      },
+      externalizeDeps: { include: [nodePtyPkg] },
+    },
+    plugins: [
+      {
+        name: "zyraxon:bun-protocol-shim",
+        enforce: "pre",
+        resolveId(id) {
+          if (id === "bun:sqlite") return "\0bun:sqlite-shim.ts"
+          if (id === "bun:ffi") return "\0bun:ffi-shim.ts"
+        },
+        load(id) {
+          if (id === "\0bun:sqlite-shim.ts") {
+            return `
+import initSqlJs from "sql.js";
+import fs from "node:fs";
+import { dirname } from "node:path";
+const SQL = await initSqlJs();
+function saveToFile(db, filename) {
+  if (!filename || filename === ":memory:") return;
+  try { const dir = dirname(filename); if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true }); const data = db.export(); fs.writeFileSync(filename, Buffer.from(data)); } catch (e) { console.error("[bun-sqlite-shim] save failed:", e?.message ?? e); }
+}
+const _instances = new Set();
+class Statement {
+  constructor(stmt, db) { this._stmt = stmt; this._db = db; }
+  all(...params) { this._stmt.bind(params.length ? params : undefined); const rows = []; while (this._stmt.step()) { rows.push(this._stmt.getAsObject()); } this._stmt.reset(); return rows; }
+  values(...params) { this._stmt.bind(params.length ? params : undefined); const rows = []; while (this._stmt.step()) { rows.push(this._stmt.get()); } this._stmt.reset(); return rows; }
+  run(...params) { this._stmt.bind(params.length ? params : undefined); this._stmt.step(); this._stmt.reset(); return { changes: this._db.getRowsModified() }; }
+  safeIntegers() { return this; }
+}
+export class Database {
+  constructor(filename, options) {
+    this._filename = filename;
+    this._readonly = options?.readonly ?? false;
+    this._dirty = false;
+    this._saveTimer = null;
+    if (!filename || filename === ":memory:") { this._db = new SQL.Database(); }
+    else { let data; try { if (fs.existsSync(filename)) { data = new Uint8Array(fs.readFileSync(filename)); } } catch {} this._db = data ? new SQL.Database(data) : new SQL.Database(); }
+    if (!this._readonly) { try { this._db.run("PRAGMA journal_mode = WAL"); } catch {} }
+    if (filename && filename !== ":memory:") { _instances.add(this); }
+  }
+  query(sql) { this._dirty = true; if (!this._saveTimer) { this._saveTimer = setTimeout(() => { this._saveTimer = null; if (this._dirty) { this._dirty = false; saveToFile(this._db, this._filename); } }, 500); } return new Statement(this._db.prepare(sql), this._db); }
+  run(sql) { this._db.run(sql); this._dirty = true; if (!this._saveTimer) { this._saveTimer = setTimeout(() => { this._saveTimer = null; if (this._dirty) { this._dirty = false; saveToFile(this._db, this._filename); } }, 500); } return this; }
+  close() { if (this._saveTimer) { clearTimeout(this._saveTimer); this._saveTimer = null; } saveToFile(this._db, this._filename); _instances.delete(this); this._db.close(); }
+  serialize() { if (this._filename && this._filename !== ":memory:") { try { if (fs.existsSync(this._filename)) { return new Uint8Array(fs.readFileSync(this._filename)); } } catch {} } return new Uint8Array(0); }
+  loadExtension() {}
+}
+if (typeof process !== "undefined") { const _saveAll = () => { for (const db of _instances) { try { db._dirty = false; saveToFile(db._db, db._filename); } catch {} } }; process.on("exit", _saveAll); process.on("beforeExit", _saveAll); setInterval(_saveAll, 3000); }
+`
+          }
+          if (id === "\0bun:ffi-shim.ts") {
+            return `
+export function dlopen() { return { symbols: {} }; }
+export function ptr() { return 0; }
+export function read() { return null; }
+export class CString { toString() { return ""; } }
+export const FFIType = { void:0, i8:1, u8:2, i16:3, u16:4, i32:5, u32:6, i64:7, u64:8, f32:9, f64:10, bool:11, ptr:12, cstring:13 };
+`
+          }
+        },
+      },
+      {
+        name: "zyraxon:node-pty-narrower",
+        enforce: "pre",
+        resolveId(s) {
+          if (s === "@lydell/node-pty") return nodePtyPkg
+        },
+      },
+      {
+        name: "zyraxon:virtual-server-module",
+        enforce: "pre",
+        resolveId(id) {
+          if (id === "virtual:zyraxon-server") {
+            // Sidecar now loads server directly via import("./chunks/zyraxon-server.js")
+            // This plugin is kept as a no-op for any remaining references
+            return { id: "zyraxon-server-bundle", external: true }
+          }
+        },
+      },
+      {
+        name: "zyraxon:copy-server-assets",
+        async buildStart() {
+          // Copy server bundle BEFORE build so the sidecar import resolves
+          const chunksDir = "./out/main/chunks"
+          await fs.mkdir(chunksDir, { recursive: true })
+          const serverSource = path.join(ZYRAXON_SERVER_DIST, "node.js")
+          const serverDest = path.join(chunksDir, "zyraxon-server.js")
+          await fs.copyFile(serverSource, serverDest)
+          console.log(`[zyraxon] Pre-copied server bundle to ${serverDest} (${(await fs.stat(serverDest)).size} bytes)`)
+        },
+        async writeBundle() {
+          const chunksDir = "./out/main/chunks"
+          for (const l of await fs.readdir(ZYRAXON_SERVER_DIST)) {
+            if (l.endsWith(".wasm")) {
+              await fs.writeFile(`${chunksDir}/${l}`, await fs.readFile(`${ZYRAXON_SERVER_DIST}/${l}`))
+            }
+          }
+          const serverSource = path.join(ZYRAXON_SERVER_DIST, "node.js")
+          const serverDest = path.join(chunksDir, "zyraxon-server.js")
+          await fs.copyFile(serverSource, serverDest)
+
+          // Patch bun:sqlite and bun:ffi imports → local shim files
+          let serverCode = await fs.readFile(serverDest, "utf-8")
+          serverCode = serverCode.replace(/from "bun:sqlite"/g, 'from "./bun-sqlite-shim.mjs"')
+          serverCode = serverCode.replace(/from "bun:ffi"/g, 'from "./bun-ffi-shim.mjs"')
+          serverCode = serverCode.replace(/import\("bun:sqlite"\)/g, 'import("./bun-sqlite-shim.mjs")')
+
+          // Strip "with { type: "jsx" }" import attributes that Bun's SolidJS transform adds.
+          // Node.js (Electron utility process) does not support type: "jsx" import attributes.
+          const jsxAttrCount = (serverCode.match(/ with \{ type: "jsx" \}/g) ?? []).length
+          if (jsxAttrCount > 0) {
+            serverCode = serverCode.replace(/ with \{ type: "jsx" \}/g, "")
+            console.log(`[zyraxon] Stripped ${jsxAttrCount} "type: jsx" import attributes from server bundle`)
+          }
+
+          // Bun's bundler emits `var __require = import.meta.require;` for CJS interop.
+          // Node.js (Electron utility process) does not have import.meta.require.
+          // Replace with a createRequire shim so the server bundle can load CJS deps.
+          const requireCount = (serverCode.match(/import\.meta\.require/g) ?? []).length
+          if (requireCount > 0) {
+            serverCode = serverCode.replace(
+              /var __require = import\.meta\.require;/g,
+              'var __require = (globalThis.__createRequire ??= (await import("node:module")).createRequire(import.meta.url));',
+            )
+            console.log(`[zyraxon] Patched ${requireCount} import.meta.require → createRequire in server bundle`)
+          }
+
+          // --- jsonc-parser patch: replace broken UMD with pre-bundled CJS ---
+          if (serverCode.includes("../../node_modules/.bun/jsonc-parser@")) {
+            const nodeModulesBase = path.resolve(__dirname, "../../node_modules/.bun")
+            // Find the version that matches what's in the server bundle
+            const serverVersionMatch = serverCode.match(/jsonc-parser@([\d.]+)/)
+            const targetVersion = serverVersionMatch ? serverVersionMatch[1] : null
+            const jsoncDirs = await fs.readdir(nodeModulesBase).catch(() => [] as string[])
+            const jsoncDir = jsoncDirs.find((d) => targetVersion ? d === `jsonc-parser@${targetVersion}` : d.startsWith("jsonc-parser@"))
+            if (jsoncDir) {
+              const bundledPath = path.join(nodeModulesBase, jsoncDir, "node_modules/jsonc-parser/lib/esm/main.js.bundled")
+              const stringInternPath = path.join(nodeModulesBase, jsoncDir, "node_modules/jsonc-parser/lib/esm/impl/string-intern.js")
+              if (await fs.access(bundledPath).then(() => true).catch(() => false)) {
+                let bundled = await fs.readFile(bundledPath, "utf-8")
+
+                // Inline string-intern
+                if (await fs.access(stringInternPath).then(() => true).catch(() => false)) {
+                  const stringInternContent = (await fs.readFile(stringInternPath, "utf-8"))
+                    .replace(/^\uFEFF/, "")
+                    .replace(/^'use strict';\n/m, "")
+                    .replace(/^export /gm, "")
+                  bundled = bundled.replace(/^import \{[^}]+\} from '\.\/string-intern';\n/m, "")
+                  bundled = bundled.replace(
+                    /^(import \{ createScanner \} from '\.\/scanner';\n)/m,
+                    `${stringInternContent}\n$1`,
+                  )
+                }
+
+                // Remove ALL import statements
+                bundled = bundled.replace(/^import \{[^}]+\} from '[^']+';\n/gm, "")
+                bundled = bundled.replace(/^import \* as \w+ from '[^']+';\n/gm, "")
+
+                // Remove main.js re-export lines
+                bundled = bundled.replace(/^export const \w+ = scanner\.\w+;\n/gm, "")
+                bundled = bundled.replace(/^export const \w+ = parser\.\w+;\n/gm, "")
+                bundled = bundled.replace(/^export const \w+ = formatter\.\w+;\n/gm, "")
+                bundled = bundled.replace(/^export const \w+ = edit\.\w+;\n/gm, "")
+                bundled = bundled.replace(/^exports\.\w+ = scanner\.\w+;\n/gm, "")
+                bundled = bundled.replace(/^exports\.\w+ = parser\.\w+;\n/gm, "")
+                bundled = bundled.replace(/^exports\.\w+ = formatter\.\w+;\n/gm, "")
+                bundled = bundled.replace(/^exports\.\w+ = edit\.\w+;\n/gm, "")
+
+                // Remove trailing main.js section
+                const lastCopyrightIdx = bundled.lastIndexOf("/*------")
+                if (lastCopyrightIdx !== -1) {
+                  const afterCopyright = bundled.substring(lastCopyrightIdx)
+                  const useStrictIdx = afterCopyright.indexOf("'use strict';")
+                  if (useStrictIdx !== -1) {
+                    const sectionContent = afterCopyright.substring(useStrictIdx + 13)
+                    if (!sectionContent.includes("function isDigit") && !sectionContent.includes("function repeat")) {
+                      bundled = bundled.substring(0, lastCopyrightIdx).trimEnd() + "\n"
+                    }
+                  }
+                }
+
+                // Clean up
+                bundled = bundled.replace(/^\uFEFF/, "")
+                bundled = bundled.replace(/^'use strict';\n/m, "")
+                bundled = bundled.replace(/^\/\/ Pre-bundled.*?\n/m, "")
+                bundled = bundled.replace(/^\/\/ Source:.*?\n/m, "")
+
+                // Collect export var names (enum IIFEs)
+                const exportVarNames: string[] = []
+                for (const m of bundled.matchAll(/^export var (\w+);$/gm)) {
+                  exportVarNames.push(m[1])
+                }
+
+                // Convert ESM exports to CommonJS
+                bundled = bundled
+                  .replace(/^export function (\w+)/gm, "exports.$1 = function $1")
+                  .replace(/^export const (\w+)/gm, "exports.$1")
+                  .replace(/^export class (\w+)/gm, "exports.$1 = class $1")
+                  .replace(/^export var (\w+);$/gm, "var $1;")
+
+                // For each enum var, find IIFE and add exports inline
+                for (const name of exportVarNames) {
+                  const iifeEnd = new RegExp(`\\}\\)\\(${name} \\|\\| \\(${name} = \\{\\}\\)\\);`)
+                  bundled = bundled.replace(iifeEnd, `})(exports.${name} = ${name} || (${name} = {}));`)
+                }
+
+                // Find and replace the broken UMD block
+                // Use simple string search instead of regex to avoid \r\n issues
+                const startMarker = "// ../../node_modules/.bun/jsonc-parser@"
+                const startIdx = serverCode.indexOf(startMarker)
+
+                if (startIdx !== -1) {
+                  // Find the beginning of the line containing the start marker
+                  let lineStart = startIdx
+                  while (lineStart > 0 && serverCode[lineStart - 1] !== "\n") lineStart--
+                  // Find where var require_main = __commonJS(...) ends by bracket counting
+                  const cjsStart = serverCode.indexOf("var require_main = __commonJS((exports, module2) => {", startIdx)
+                  if (cjsStart !== -1) {
+                    let depth = 0
+                    let endPos = cjsStart
+                    let foundFirst = false
+                    for (let i = cjsStart; i < serverCode.length - 1; i++) {
+                      if (serverCode[i] === "{" ) { depth++; foundFirst = true }
+                      if (serverCode[i] === "}") { depth-- }
+                      if (foundFirst && depth === 0) { endPos = i + 1; break }
+                    }
+                    // Find end of line after the closing });
+                    let lineEnd = endPos
+                    while (lineEnd < serverCode.length && serverCode[lineEnd] !== "\n") lineEnd++
+                    if (lineEnd < serverCode.length) lineEnd++ // include the newline
+
+                    const replacement = [
+                      "// jsonc-parser (pre-bundled, no asar path issues)",
+                      "var require_main = __commonJS((exports, module2) => {",
+                      bundled,
+                      "});",
+                      "",
+                    ].join("\n")
+                    serverCode = serverCode.substring(0, lineStart) + replacement + serverCode.substring(lineEnd)
+                    console.log("[zyraxon] Patched jsonc-parser: replaced broken UMD with pre-bundled CJS")
+                  }
+                }
+              }
+            }
+          }
+
+          await fs.writeFile(serverDest, serverCode)
+          console.log(`[zyraxon] Patched server bundle: replaced bun:sqlite/bun:ffi with local shims`)
+
+          // Copy bun: protocol shim files
+          const shimDir = path.resolve(__dirname, "src/main/shims")
+          for (const shim of ["bun-sqlite-shim.mjs", "bun-ffi-shim.mjs"]) {
+            const src = path.join(shimDir, shim)
+            try {
+              await fs.access(src)
+              await fs.copyFile(src, path.join(chunksDir, shim))
+            } catch {
+              console.warn(`[zyraxon] Warning: shim ${shim} not found at ${src}`)
+            }
+          }
+
+          // Copy sql-wasm.wasm for sql.js (bun:sqlite shim dependency)
+          const wasmSource = path.resolve(__dirname, "node_modules/sql.js/dist/sql-wasm.wasm")
+          try {
+            await fs.access(wasmSource)
+            await fs.copyFile(wasmSource, path.join(chunksDir, "sql-wasm.wasm"))
+            console.log(`[zyraxon] Copied sql-wasm.wasm to ${chunksDir}`)
+          } catch {
+            console.warn(`[zyraxon] Warning: sql-wasm.wasm not found at ${wasmSource}`)
+          }
+          console.log(`[zyraxon] Copied bun: protocol shims to ${chunksDir}`)
+
+          const webUiSource = path.join(ZYRAXON_SERVER_DIST, "zyraxon-web-ui.gen.ts")
+          const webUiDest = "./out/main/zyraxon-web-ui.gen.ts"
+          try {
+            await fs.access(webUiSource)
+            await fs.copyFile(webUiSource, webUiDest)
+          } catch { /* file doesn't exist, skip */ }
+
+          // Copy @playwright/mcp to resources/jarvis-browser/node_modules/ for JarvIS browser MCP
+          const playwrightMcpSrc = path.resolve(__dirname, "node_modules/@playwright/mcp")
+          const playwrightMcpDst = path.resolve(__dirname, "resources/jarvis-browser/node_modules/@playwright/mcp")
+          try {
+            const realSrc = await fs.realpath(playwrightMcpSrc).catch(() => playwrightMcpSrc)
+            const realDst = await fs.realpath(playwrightMcpDst).catch(() => playwrightMcpDst)
+            if (realSrc !== realDst) {
+              await fs.access(playwrightMcpSrc)
+              await fs.rm(playwrightMcpDst, { recursive: true, force: true })
+              await fs.mkdir(path.dirname(playwrightMcpDst), { recursive: true })
+              await fs.cp(realSrc, playwrightMcpDst, { recursive: true })
+            }
+            console.log(`[zyraxon] Copied @playwright/mcp to resources/jarvis-browser/node_modules/`)
+          } catch (e: any) {
+            console.warn(`[zyraxon] Warning: @playwright/mcp not found at ${playwrightMcpSrc}: ${e?.message}`)
+          }
+        },
+      },
+    ],
+  },
+  preload: {
+    build: {
+      rollupOptions: {
+        input: { index: "src/preload/index.ts" },
+        output: {
+          format: "cjs",
+          entryFileNames: "[name].js",
+        },
+      },
+    },
+  },
+  renderer: {
+    plugins: [appPlugin, sentry],
+    publicDir: "../../../app/public",
+    root: "src/renderer",
+    build: {
+      sourcemap: true,
+      rollupOptions: {
+        input: {
+          main: "src/renderer/index.html",
+        },
+      },
+    },
+  },
+})

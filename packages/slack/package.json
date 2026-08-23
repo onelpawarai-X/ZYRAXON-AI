@@ -1,0 +1,19 @@
+{
+  "name": "@zyraxon-ai/slack",
+  "version": "19.0.0",
+  "type": "module",
+  "license": "BSL-1.1",
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@zyraxon-ai/sdk": "workspace:*",
+    "@slack/bolt": "^3.17.1"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "@typescript/native-preview": "catalog:"
+  }
+}
