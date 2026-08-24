@@ -14,24 +14,24 @@
 
 <p align="center">
   <a href="https://zyraxonai.lovable.app"><img alt="Website" src="https://img.shields.io/badge/Website-zyraxonai.lovable.app-00f5ff?style=for-the-badge&logo=googlechrome&logoColor=white" /></a>
-  <a href="https://github.com/onelpawarai/ZYRAXON-AI/releases"><img alt="Version" src="https://img.shields.io/github/v/release/onelpawarai/ZYRAXON-AI?style=for-the-badge&color=blue" /></a>
-  <a href="https://github.com/onelpawarai/ZYRAXON-AI/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/onelpawarai/ZYRAXON-AI?style=for-the-badge&color=yellow" /></a>
-  <a href="https://github.com/onelpawarai/ZYRAXON-AI/issues"><img alt="Issues" src="https://img.shields.io/github/issues/onelpawarai/ZYRAXON-AI?style=for-the-badge&color=red" /></a>
-  <a href="https://github.com/onelpawarai/ZYRAXON-AI/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-BSL%201.1-green?style=for-the-badge" /></a>
-  <a href="https://github.com/onelpawarai/ZYRAXON-AI/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/onelpawarai/ZYRAXON-AI/total?style=for-the-badge&color=purple" /></a>
-  <a href="https://github.com/onelpawarai/ZYRAXON-AI/network/members"><img alt="Forks" src="https://img.shields.io/github/forks/onelpawarai/ZYRAXON-AI?style=for-the-badge&color=cyan" /></a>
+  <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><img alt="Version" src="https://img.shields.io/github/v/release/onelpawarai-X/ZYRAXON-AI?style=for-the-badge&color=blue" /></a>
+  <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/onelpawarai-X/ZYRAXON-AI?style=for-the-badge&color=yellow" /></a>
+  <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/issues"><img alt="Issues" src="https://img.shields.io/github/issues/onelpawarai-X/ZYRAXON-AI?style=for-the-badge&color=red" /></a>
+  <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-BSL%201.1-green?style=for-the-badge" /></a>
+  <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/onelpawarai-X/ZYRAXON-AI/total?style=for-the-badge&color=purple" /></a>
+  <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/network/members"><img alt="Forks" src="https://img.shields.io/github/forks/onelpawarai-X/ZYRAXON-AI?style=for-the-badge&color=cyan" /></a>
 </p>
 
 <p align="center">
   <a href="https://zyraxonai.lovable.app"><strong>Visit our Website</strong></a> &nbsp;|&nbsp;
-  <a href="https://github.com/onelpawarai/ZYRAXON-AI/releases"><strong>Download</strong></a> &nbsp;|&nbsp;
+  <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><strong>Download</strong></a> &nbsp;|&nbsp;
   <a href="https://youtube.com/@zyraxon-aix"><strong>YouTube</strong></a>
 </p>
 
 <p align="center">
   <strong>Desktop AI agent that actually does things. Not a chatbot - an action-bot.</strong><br>
   Reads your files. Writes your code. Runs your commands. Builds your projects. Deploys your apps.<br>
-  It has <strong>9 Agent Modes</strong>, <strong>224+ Tools</strong>, <strong>Eternal Memory</strong>, <strong>Self-Healing</strong>, and it <strong>evolves itself</strong>.
+  It has <strong>9 Agent Modes</strong>, <strong>357+ Tools</strong>, <strong>Eternal Memory</strong>, <strong>Self-Healing</strong>, <strong>Code Guardian</strong>, <strong>Monaco AI Assistant</strong>, and it <strong>evolves itself</strong>.
 </p>
 
 ---
@@ -44,13 +44,15 @@ ZYRAXON-AI is an open-source desktop AI agent built on Electron + SolidJS + Bun.
 
 - **Self-Healing** - If a tool is missing, ZYRAXON installs it automatically. Never fails due to missing capabilities.
 - **9 Agent Modes** - Build, Plan, Beast, PRO, APEX PREDATOR, DARK EMPEROR, Vision, Pro Builder, General
-- **224+ Tools** - 180+ control system classes + 10 algorithm tools + 34 core system classes
+- **357+ Tools** - 313+ X Tools across 30 categories + 37 Ultra X Tools + 4 Code Guardian Tools
 - **Eternal Memory** - Remembers everything forever. 50,000+ memories with compression.
 - **Self-Evolution** - Installs its own MCP servers and tools at runtime
 - **Auto Screen Vision** - Automatically captures your screen before every response
 - **Vision Mode** - AI's Eyes: real-time screen streaming, frame memory, scene analysis, activity tracking
 - **YouTube Live Streaming** - Stream directly to YouTube (4K/1080p/720p, APP or full screen capture)
 - **Voice Input** - ~~Click the mic, speak naturally, it transcribes via Whisper~~ **(Temporarily disabled)** - We had to disable the chat box microphone due to a critical bug that caused system-level conflicts. We are working on a fix and will bring it back soon.
+- **Code Guardian** - Real-time error detection in Monaco Editor. AI scans your code in background, finds issues, and shows fix suggestions automatically.
+- **Monaco AI Assistant** - Write a comment instruction (e.g. `// create login form`), click the ⚡ button, and AI generates complete code with live streaming.
 - **25+ AI Providers** - OpenAI, Anthropic, Google, Azure, Bedrock, xAI, Mistral, and more
 - **Zero Refusal** - DARK EMPEROR mode never says "I can't"
 
@@ -105,7 +107,7 @@ Website genesis intelligence — creates complete, production-ready websites fro
 
 ## Download
 
-Download the latest release from our **[Releases page](https://github.com/onelpawarai/ZYRAXON-AI/releases)**:
+Download the latest release from our **[Releases page](https://github.com/onelpawarai-X/ZYRAXON-AI/releases)**:
 
 | Platform | File | Architecture |
 |----------|------|:------------:|
@@ -148,7 +150,7 @@ Each command below does EVERYTHING: installs deps, compiles, and packages the ap
 
 **Windows (x64):**
 ```bash
-git clone https://github.com/onelpawarai/ZYRAXON-AI.git
+git clone https://github.com/onelpawarai-X/ZYRAXON-AI.git
 cd ZYRAXON-AI
 bun install
 bun run zyraxon:full:win
@@ -156,7 +158,7 @@ bun run zyraxon:full:win
 
 **Linux (x64):**
 ```bash
-git clone https://github.com/onelpawarai/ZYRAXON-AI.git
+git clone https://github.com/onelpawarai-X/ZYRAXON-AI.git
 cd ZYRAXON-AI
 bun install
 bun run zyraxon:full:linux
@@ -164,7 +166,7 @@ bun run zyraxon:full:linux
 
 **macOS (Apple Silicon):**
 ```bash
-git clone https://github.com/onelpawarai/ZYRAXON-AI.git
+git clone https://github.com/onelpawarai-X/ZYRAXON-AI.git
 cd ZYRAXON-AI
 bun install
 bun run zyraxon:full:mac
@@ -315,37 +317,60 @@ ZYRAXON Code (VS Code fork)
 ```
 
 This is the same editor engine the world's most-used IDE runs on — now fused with
-ZYRAXON's 9 agent modes, 224+ tools, eternal memory, and self-healing system. Your AI
+ZYRAXON's 9 agent modes, 357+ tools, eternal memory, and self-healing system. Your AI
 doesn't *tell* you the code — it *opens the file and edits it in a real editor*.
 
 ---
 
-## 224+ Tools
+## 357+ Tools — 30 Categories
 
-### Control System Tools (180+) - 29 Files
-- **aircraft-fcs.ts** (17) — Full aircraft subsystem control
-- **flight-control.ts** (13) — Autopilot PID, attitude, navigation
-- **aircraft-autonomy.ts** (7) — FDR, GCAS, fuel, autoland, engine health
-- **car-ecu.ts** (9) — Engine, transmission, ABS, ESC, ADAS
-- **car-autonomy.ts** (9) — Sensor fusion, path planner, AEB, lane, parking
-- **drone-fc.ts** (7) — Motor mixing, quaternion, PID, failsafe
-- **drone-autonomy.ts** (8) — Formation, payload, visual landing, RTH, tracker
-- **boat-mcs.ts** (8) — Dynamic positioning, thruster allocation
-- **boat-autonomy.ts** (7) — Radar, AIS, voyage, COLREGS, GMDSS
-- **rocket-gnc.ts** (6) — Trajectory, attitude, staging, abort
-- **rocket-autonomy.ts** (5) — Mission planner, orbit, propulsion, launch
-- **robot-controller.ts** (5) — IK, mobile base, SLAM, sensor fusion
-- **robot-autonomy.ts** (5) — Motion planner, force control, task scheduler
+### X Tool Categories (313+ tools across 30 domains)
 
-### Algorithm Tools (10)
-- **tools-extra.ts** — PID, Kalman, A*, FFT, encryption, graph, LRU, bloom, matrix
+| Category | Tools | Description |
+|----------|-------|-------------|
+| **ultra-x** | 37 | Ultra Ultimate tools — beyond conventional AI |
+| **aviation** | 25 | Aircraft flight control, autonomy, GNC |
+| **space** | 22 | Satellite, rocket, mission control |
+| **drone** | 21 | UAV systems, payloads, landing |
+| **ground** | 18 | Ground vehicle ECU, autonomy, sensors |
+| **helicopter** | 19 | Rotorcraft systems, flight dynamics |
+| **agriculture** | 15 | Crop monitoring, irrigation, yield |
+| **construction** | 15 | Building, structural, site management |
+| **industrial** | 15 | Manufacturing, factory automation |
+| **infrastructure** | 15 | Roads, bridges, utilities |
+| **marine** | 15 | Ship systems, navigation, COLREGS |
+| **security** | 15 | Bug bounty, pen testing, vulnerability |
+| **survey** | 14 | Mapping, terrain, measurement |
+| **medical** | 9 | Healthcare, diagnostics, monitoring |
+| **sensor** | 8 | Multi-sensor fusion, calibration |
+| **physical** | 8 | WiFi, BLE, GPIO, IoT protocols |
+| **safety** | 7 | Emergency, fire, hazmat response |
+| **sdr** | 7 | Software-defined radio, signals |
+| **auth** | 6 | Authentication, access control |
+| **common-sense** | 6 | Reasoning, logic, decision support |
+| **decision** | 6 | Decision trees, optimization |
+| **ml** | 6 | Machine learning, model training |
+| **predictive** | 6 | Forecasting, trend analysis |
+| **remote** | 6 | Remote control, telemetry |
+| **alert** | 4 | Notification, monitoring systems |
+| **code-guardian** | 4 | Real-time code error detection |
+| **creativity** | 5 | Content generation, design |
+| **dashboard** | 5 | Monitoring, visualization |
+| **data-logger** | 5 | Logging, data collection |
+| **digital-twin** | 5 | Simulation, virtual replicas |
+| **ethics** | 5 | Compliance, fairness, audit |
 
-### Core System Tools (34)
-- **behavior.ts** (8) — State machine, decision tree, geofence, scheduler
-- **physical.ts** (10) — WiFi, BLE, serial, GPIO, I2C, GPS, camera
-- **iot.ts** (6) — MQTT, HTTP, WebSocket, Modbus, Home Assistant
-- **vehicles.ts** (6) — Drone, car, boat, rocket, satellite controllers
-- **Core systems** — Voice, memory, predict, learn, heal, evolve, graph, quantum
+### Code Guardian (4 Tools) — Real-Time Error Detection
+- **error-scanner** — Scans Monaco Editor for real-time errors
+- **monaco-bridge** — Bridges error signals to AI feedback system
+- **ai-feedback** — Generates fix suggestions from error signals
+- **scan-animator** — Visual scanning animation in editor
+
+### Monaco AI Assistant — Instruction-Based Code Generation
+- Write a comment instruction (e.g. `// create login form`)
+- Click the floating ⚡ button
+- AI generates complete code with live streaming
+- Supports 8 languages: English, Bengali, Arabic, Japanese, Chinese, Russian, Korean, Hindi
 
 ---
 
@@ -383,7 +408,7 @@ a streamer, and a memory-keeping brain — in a single native desktop app.
 | **Full Security Toolkit** (bug bounty scanner) | ✅ 20+ tools | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Real-Time Screen Vision** | ✅ | ❌ | ❌ | ❌ | ⚠️ Screenshots | ❌ | ❌ |
 | **YouTube Live Streaming** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **224+ Tools Included** | ✅ | ⚠️ MCP only | ⚠️ MCP only | ⚠️ MCP only | ⚠️ Few | ⚠️ Few | ⚠️ MCP only |
+| **357+ Tools Included** | ✅ | ⚠️ MCP only | ⚠️ MCP only | ⚠️ MCP only | ⚠️ Few | ⚠️ Few | ⚠️ MCP only |
 | **25+ AI Provider Routing** | ✅ Auto | ⚠️ Sub only | ⚠️ Sub only | ⚠️ Sub only | ⚠️ Internal | ⚠️ BYO key | ⚠️ BYO key |
 | **Free & Open Source** | ✅ BSL 1.1 | ❌ Paid | ❌ Paid | ❌ Paid | ❌ Paid | ✅ | ✅ |
 | **Works Offline, Fully Local** | ✅ | ⚠️ | ❌ | ⚠️ | ❌ Cloud-only | ❌ Cloud-only | ⚠️ |
@@ -454,7 +479,7 @@ We love contributions! ZYRAXON-AI is open-source and we welcome everyone.
 
 ### How to Contribute
 1. **Fork** the repository
-2. **Clone** your fork: `git clone https://github.com/onelpawarai/ZYRAXON-AI.git
+2. **Clone** your fork: `git clone https://github.com/onelpawarai-X/ZYRAXON-AI.git
 3. **Install**: `bun install`
 4. **Build**: `cd packages/zyraxon && bun run build`
 5. **Create branch**: `git checkout -b feat/my-feature`
@@ -464,13 +489,13 @@ We love contributions! ZYRAXON-AI is open-source and we welcome everyone.
 
 ### Ways to Get Involved
 - **Code Contributors** - Fix bugs, add features, improve performance
-- **Bug Reporters** - Found an issue? Open a [GitHub Issue](https://github.com/onelpawarai/ZYRAXON-AI/issues)
+- **Bug Reporters** - Found an issue? Open a [GitHub Issue](https://github.com/onelpawarai-X/ZYRAXON-AI/issues)
 - **Documentation** - Help improve docs, tutorials, guides
 - **Testing** - Try ZYRAXON on different systems and report feedback
 - **Feature Requests** - Suggest new ideas and improvements
 
 ### Contact Us
-- **GitHub Issues** - [Open an issue](https://github.com/onelpawarai/ZYRAXON-AI/issues) for bugs or feature requests
+- **GitHub Issues** - [Open an issue](https://github.com/onelpawarai-X/ZYRAXON-AI/issues) for bugs or feature requests
 - **YouTube** - [@zyraxon-aix](https://youtube.com/@zyraxon-aix)
 - **Website** - [zyraxonai.lovable.app](https://zyraxonai.lovable.app)
 
@@ -499,7 +524,7 @@ We love contributions! ZYRAXON-AI is open-source and we welcome everyone.
 - [ ] Team collaboration features
 - [ ] Cloud sync (optional)
 
-See [open issues](https://github.com/onelpawarai/ZYRAXON-AI/issues) for planned features and known issues.
+See [open issues](https://github.com/onelpawarai-X/ZYRAXON-AI/issues) for planned features and known issues.
 
 ---
 
@@ -510,7 +535,7 @@ See [open issues](https://github.com/onelpawarai/ZYRAXON-AI/issues) for planned 
 
 <p align="center">
   <strong>Built with obsession. Powered by AI.</strong><br><br>
-  <a href="https://github.com/onelpawarai/ZYRAXON-AI">
+  <a href="https://github.com/onelpawarai-X/ZYRAXON-AI">
     <img alt="ZYRAXON" src="https://img.shields.io/badge/ZYRAXON-All_in_one._Anything._Nothing_is_impossible-blue?style=for-the-badge&logo=github" />
   </a>
 </p>
