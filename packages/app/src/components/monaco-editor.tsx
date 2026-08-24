@@ -1,6 +1,7 @@
 import { createEffect, createSignal, onCleanup, onMount, Show } from "solid-js"
 import type * as Monaco from "monaco-editor"
-import { CodeGuardianScanner, CodeGuardianAIFeedback, type CodeIssue } from "zyraxon/x/code-guardian"
+import { useTheme } from "@zyraxon-ai/ui/theme/context"
+import { CodeGuardianScanner, CodeGuardianAIFeedback, type CodeIssue } from "./code-guardian"
 import {
   MonacoAIAssistant,
   ScanningAnimator,
@@ -63,6 +64,7 @@ export interface MonacoEditorProps {
 }
 
 export function MonacoEditor(props: MonacoEditorProps) {
+  const theme = useTheme()
   let containerRef: HTMLDivElement | undefined
   let editor: Monaco.editor.IStandaloneCodeEditor | undefined
   let monaco: typeof import("monaco-editor") | undefined
@@ -70,6 +72,7 @@ export function MonacoEditor(props: MonacoEditorProps) {
   let lastSyncedValue: string | undefined
   let userHasEdited = false
   let scanDebounce: ReturnType<typeof setTimeout> | null = null
+  let userEditDebounce: ReturnType<typeof setTimeout> | null = null
 
   // AI State
   const [aiGenerating, setAiGenerating] = createSignal(false)
@@ -85,13 +88,7 @@ export function MonacoEditor(props: MonacoEditorProps) {
 
   const getTheme = () => {
     if (props.theme) return props.theme
-    if (typeof document !== "undefined") {
-      const bg = getComputedStyle(document.documentElement).getPropertyValue("--v2-surface-base").trim()
-      if (bg && (bg.includes("0.1") || bg.includes("0.2") || bg.includes("0.3") || bg.includes("#1") || bg.includes("#2") || bg.includes("#0"))) {
-        return "vs-dark"
-      }
-    }
-    return "vs"
+    return theme.mode() === "dark" ? "zyraxon-dark" : "zyraxon-light"
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -227,11 +224,11 @@ export function MonacoEditor(props: MonacoEditorProps) {
         setAiGenerating(false)
         setActiveInstruction(null)
 
-        // Re-scan for any remaining instructions
         setTimeout(() => updateFloatingWidgets(), 100)
 
         if (fullCode) {
           runGuardianScan(fullCode)
+          props.onSave?.(fullCode)
         }
       },
 
@@ -292,6 +289,70 @@ export function MonacoEditor(props: MonacoEditorProps) {
     injectAIAssistantStyles()
     const monacoModule = await import("monaco-editor")
     monaco = monacoModule
+
+    monaco.editor.defineTheme("zyraxon-dark", {
+      base: "vs-dark",
+      inherit: true,
+      rules: [
+        { token: "comment", foreground: "6A9955", fontStyle: "italic" },
+        { token: "keyword", foreground: "569CD6" },
+        { token: "string", foreground: "CE9178" },
+        { token: "number", foreground: "B5CEA8" },
+        { token: "type", foreground: "4EC9B0" },
+        { token: "function", foreground: "DCDCAA" },
+        { token: "variable", foreground: "9CDCFE" },
+        { token: "operator", foreground: "D4D4D4" },
+      ],
+      colors: {
+        "editor.background": "#0d1117",
+        "editor.foreground": "#c9d1d9",
+        "editor.lineHighlightBackground": "#161b2280",
+        "editor.selectionBackground": "#264f7860",
+        "editorCursor.foreground": "#58a6ff",
+        "editorLineNumber.foreground": "#484f58",
+        "editorLineNumber.activeForeground": "#c9d1d9",
+        "editor.selectionHighlightBackground": "#264f7840",
+        "editorIndentGuide.background": "#21262d",
+        "editorIndentGuide.activeBackground": "#30363d",
+        "editorGutter.background": "#0d1117",
+        "minimap.background": "#0d1117",
+        "scrollbarSlider.background": "#484f5833",
+        "scrollbarSlider.hoverBackground": "#484f5844",
+        "scrollbarSlider.activeBackground": "#484f5888",
+      },
+    })
+
+    monaco.editor.defineTheme("zyraxon-light", {
+      base: "vs",
+      inherit: true,
+      rules: [
+        { token: "comment", foreground: "008000", fontStyle: "italic" },
+        { token: "keyword", foreground: "0000FF" },
+        { token: "string", foreground: "A31515" },
+        { token: "number", foreground: "098658" },
+        { token: "type", foreground: "267F99" },
+        { token: "function", foreground: "795E26" },
+        { token: "variable", foreground: "001080" },
+        { token: "operator", foreground: "000000" },
+      ],
+      colors: {
+        "editor.background": "#ffffff",
+        "editor.foreground": "#000000",
+        "editor.lineHighlightBackground": "#f5f5f5",
+        "editor.selectionBackground": "#add6ff",
+        "editorCursor.foreground": "#000000",
+        "editorLineNumber.foreground": "#237893",
+        "editorLineNumber.activeForeground": "#000000",
+        "editor.selectionHighlightBackground": "#add6ff40",
+        "editorIndentGuide.background": "#d3d3d3",
+        "editorIndentGuide.activeBackground": "#939393",
+        "editorGutter.background": "#ffffff",
+        "minimap.background": "#ffffff",
+        "scrollbarSlider.background": "#00000022",
+        "scrollbarSlider.hoverBackground": "#00000033",
+        "scrollbarSlider.activeBackground": "#00000044",
+      },
+    })
 
     containerRef.addEventListener("keydown", (e) => {
       const isEditorShortcut = (e.ctrlKey || e.metaKey) && ["z", "y", "x", "v", "c", "a"].includes(e.key.toLowerCase())
@@ -378,8 +439,9 @@ export function MonacoEditor(props: MonacoEditorProps) {
       const value = editor?.getValue() || ""
       props.onChange?.(value)
       debouncedScan(value)
-      // Re-scan for floating instructions
       updateFloatingWidgets()
+      if (userEditDebounce) clearTimeout(userEditDebounce)
+      userEditDebounce = setTimeout(() => { userHasEdited = false }, 1000)
     })
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
@@ -445,6 +507,13 @@ export function MonacoEditor(props: MonacoEditorProps) {
     updateFloatingWidgets()
   })
 
+  createEffect(() => {
+    if (!editor || !monaco) return
+    const mode = theme.mode()
+    const newTheme = mode === "dark" ? "zyraxon-dark" : "zyraxon-light"
+    monaco.editor.setTheme(newTheme)
+  })
+
   const handleClick = () => {
     editor?.focus()
   }
@@ -460,10 +529,7 @@ export function MonacoEditor(props: MonacoEditorProps) {
   createEffect(() => {
     if (!editor) return
     const newValue = props.value
-    if (userHasEdited) {
-      if (newValue === lastSyncedValue) return
-      userHasEdited = false
-    }
+    if (userHasEdited) return
     const currentValue = editor.getValue()
     if (newValue !== currentValue) {
       isSyncing = true
@@ -475,6 +541,7 @@ export function MonacoEditor(props: MonacoEditorProps) {
 
   onCleanup(() => {
     if (scanDebounce) clearTimeout(scanDebounce)
+    if (userEditDebounce) clearTimeout(userEditDebounce)
     if (streamingDebounce) clearTimeout(streamingDebounce)
     scanner.stop()
     widgetDisposable?.clear()

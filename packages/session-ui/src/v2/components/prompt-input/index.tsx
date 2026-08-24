@@ -236,9 +236,20 @@ export function PromptInputV2(props: PromptInputV2Props) {
           </div>
           <PromptInputV2MicButton
             onTranscript={(text, lang) => {
-              if (!editor) return
-              editor.focus()
+              const el = editor
+              if (!el) return
+              el.focus()
+              const sel = window.getSelection()
+              if (!sel) return
+              if (sel.rangeCount === 0) {
+                const range = document.createRange()
+                range.selectNodeContents(el)
+                range.collapse(false)
+                sel.removeAllRanges()
+                sel.addRange(range)
+              }
               document.execCommand("insertText", false, text)
+              el.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: text }))
             }}
             onError={(err) => console.error("[Mic]", err)}
             disabled={state.mode === "shell"}

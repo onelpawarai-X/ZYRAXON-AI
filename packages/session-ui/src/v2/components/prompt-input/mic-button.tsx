@@ -57,6 +57,8 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
   const [selectedLang, setSelectedLang] = createSignal("auto")
   const [interim, setInterim] = createSignal("")
   let recognition: any = null
+  let shouldListen = false
+  let restartTimer: ReturnType<typeof setTimeout> | null = null
 
   const ensureRecognition = () => {
     if (recognition) return
@@ -68,6 +70,7 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     recognition = new SpeechRecognition()
     recognition.continuous = true
     recognition.interimResults = true
+    recognition.maxAlternatives = 1
     recognition.onresult = (event: any) => {
       let finalText = ""
       let interimText = ""
@@ -88,42 +91,82 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
       }
     }
     recognition.onend = () => {
-      if (state() === "listening") {
+      if (shouldListen && state() === "listening") {
+        if (restartTimer) clearTimeout(restartTimer)
+        restartTimer = setTimeout(() => {
+          if (shouldListen && state() === "listening") {
+            try {
+              const lang = selectedLang()
+              recognition.lang = lang === "auto" ? "" : lang
+              recognition.start()
+            } catch {
+              setState("idle")
+              shouldListen = false
+            }
+          }
+        }, 150)
+      } else {
         setState("idle")
       }
     }
     recognition.onerror = (event: any) => {
-      if (event.error !== "aborted") {
-        props.onError?.(event.error)
+      if (event.error === "aborted") return
+      if (event.error === "no-speech" || event.error === "network") {
+        if (shouldListen && state() === "listening") return
       }
+      props.onError?.(event.error)
       setState("idle")
+      shouldListen = false
     }
+  }
+
+  const startListening = () => {
+    ensureRecognition()
+    if (!recognition) return
+    shouldListen = true
+    try {
+      const lang = selectedLang()
+      recognition.lang = lang === "auto" ? "" : lang
+      recognition.start()
+      setState("listening")
+    } catch {
+      recognition.stop()
+      setTimeout(() => {
+        if (shouldListen) {
+          try {
+            const lang = selectedLang()
+            recognition.lang = lang === "auto" ? "" : lang
+            recognition.start()
+            setState("listening")
+          } catch {
+            setState("idle")
+            shouldListen = false
+          }
+        }
+      }, 200)
+    }
+  }
+
+  const stopListening = () => {
+    shouldListen = false
+    if (restartTimer) {
+      clearTimeout(restartTimer)
+      restartTimer = null
+    }
+    if (recognition) {
+      try { recognition.stop() } catch {}
+    }
+    setState("idle")
+    setInterim("")
   }
 
   const toggleMic = (e: MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    ensureRecognition()
-    if (!recognition) return
     if (state() === "listening") {
-      recognition.stop()
-      setState("idle")
-      setInterim("")
+      stopListening()
     } else {
-      try {
-        const lang = selectedLang()
-        recognition.lang = lang === "auto" ? "" : lang
-        recognition.start()
-        setState("listening")
-      } catch {
-        recognition.stop()
-        setTimeout(() => {
-          const lang = selectedLang()
-          recognition.lang = lang === "auto" ? "" : lang
-          recognition.start()
-          setState("listening")
-        }, 100)
-      }
+      startListening()
     }
   }
 
@@ -132,13 +175,17 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     if (recognition && state() === "listening") {
       recognition.stop()
       setTimeout(() => {
-        recognition.lang = code === "auto" ? "" : code
-        recognition.start()
+        if (shouldListen) {
+          recognition.lang = code === "auto" ? "" : code
+          try { recognition.start() } catch {}
+        }
       }, 100)
     }
   }
 
   onCleanup(() => {
+    shouldListen = false
+    if (restartTimer) clearTimeout(restartTimer)
     if (recognition) {
       try { recognition.stop() } catch {}
     }

@@ -79,7 +79,17 @@ const ModelList: Component<{
       items={models}
       current={model.current()}
       filterKeys={["provider.name", "name", "id"]}
-      sortBy={(a, b) => a.name.localeCompare(b.name)}
+      sortBy={(a, b) => {
+        const aFree = isFree(a.provider.id, a.cost)
+        const bFree = isFree(b.provider.id, b.cost)
+        if (aFree && !bFree) return -1
+        if (!aFree && bFree) return 1
+        const aLocal = a.provider.id === "local"
+        const bLocal = b.provider.id === "local"
+        if (aLocal && !bLocal) return -1
+        if (!aLocal && bLocal) return 1
+        return a.name.localeCompare(b.name)
+      }}
       groupBy={(x) => x.provider.name}
       sortGroupsBy={(a, b) => {
         const aProvider = a.items[0].provider.id
@@ -110,10 +120,15 @@ const ModelList: Component<{
         <div class="w-full flex items-center gap-x-2 text-13-regular">
           <span class="truncate">{i.name}</span>
           <Show when={isFree(i.provider.id, i.cost)}>
-            <Tag>{language.t("model.tag.free")}</Tag>
+            <Tag>Free</Tag>
           </Show>
           <Show when={i.latest}>
             <Tag>{language.t("model.tag.latest")}</Tag>
+          </Show>
+          <Show when={i.provider.id === "local"}>
+            <span class="ml-auto text-[10px] text-v2-icon-icon-muted shrink-0" title="Local model">
+              {i.status === "active" ? "\u2713" : "\u2B07"}
+            </span>
           </Show>
         </div>
       )}

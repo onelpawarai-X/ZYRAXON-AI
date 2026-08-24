@@ -61,6 +61,8 @@ export const { use: useModels, provider: ModelsProvider } = createSimpleContext(
       if (!all) return []
       const connectedIds = new Set(connectedList.map((p: any) => p.id))
       const entries = all instanceof Map ? [...all.entries()] : (Array.isArray(all) ? all : [])
+
+      // Connected providers → all their models
       const connectedModels = entries
         .filter(([id]: any) => connectedIds.has(id))
         .flatMap(([, p]: any) =>
@@ -69,11 +71,21 @@ export const { use: useModels, provider: ModelsProvider } = createSimpleContext(
             provider: p,
           })),
         )
+
+      // Opencode provider → free models ONLY (even if not connected)
+      const opencodeEntry = entries.find(([id]: any) => id === "opencode")
+      const opencodeFreeModels = opencodeEntry
+        ? Object.values(opencodeEntry[1]?.models ?? {})
+            .filter((m: any) => !m.cost || m.cost.input === 0)
+            .map((m: any) => ({ ...m, provider: opencodeEntry[1] }))
+        : []
+
       const localModels = Object.values(LOCAL_PROVIDER.models).map((m) => ({
         ...m,
         provider: LOCAL_PROVIDER,
       }))
-      return [...localModels, ...connectedModels]
+
+      return [...localModels, ...opencodeFreeModels, ...connectedModels]
     })
 
     const release = createMemo(
@@ -147,10 +159,9 @@ export const { use: useModels, provider: ModelsProvider } = createSimpleContext(
       const state = visibility().get(key)
       if (state === "hide") return false
       if (state === "show") return true
-      if (latestSet().has(key)) return true
-      const date = release().get(key)
-      if (!date?.isValid) return true
-      return false
+      if (model.providerID === "local") return true
+      if (model.providerID === "opencode") return true
+      return true
     }
 
     const setVisibility = (model: ModelKey, state: boolean) => {

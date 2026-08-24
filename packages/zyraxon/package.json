@@ -19,7 +19,8 @@
     "zyraxon": "./bin/zyraxon"
   },
   "exports": {
-    "./*": "./src/*.ts"
+    "./*": "./src/*.ts",
+    "./x/code-guardian": "./src/x/code-guardian/index.ts"
   },
   "imports": {
     "#db": {

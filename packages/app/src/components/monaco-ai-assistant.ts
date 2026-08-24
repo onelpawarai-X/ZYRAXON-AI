@@ -439,16 +439,16 @@ export interface DetectedInstruction {
 const INSTRUCTION_KEYWORDS: Record<string, Array<{ pattern: RegExp; type: DetectedInstruction["type"] }>> = {
   // English keywords
   en: [
-    { pattern: /\bfix\s+(this|the|all|these|it|bug|error|issue|problem)\b/i, type: "fix" },
-    { pattern: /\bcreate\s+(a|an|the|this|new)\b/i, type: "generate" },
-    { pattern: /\bgenerate\s+(a|an|the|this|new|code|function|class|component)\b/i, type: "generate" },
-    { pattern: /\bwrite\s+(a|an|the|this|new|code|function|class|component)\b/i, type: "generate" },
-    { pattern: /\bmake\s+(a|an|the|this|new|it|better|work|functioning)\b/i, type: "improve" },
-    { pattern: /\bimprove\s+(this|the|code|performance|readability)\b/i, type: "improve" },
-    { pattern: /\boptimize\s+(this|the|code|for|performance)\b/i, type: "improve" },
-    { pattern: /\bexplain\s+(this|the|code|how|what)\b/i, type: "explain" },
+    { pattern: /\bfix\b/i, type: "fix" },
+    { pattern: /\bcreate\b/i, type: "generate" },
+    { pattern: /\bgenerate\b/i, type: "generate" },
+    { pattern: /\bwrite\b/i, type: "generate" },
+    { pattern: /\bmake\b/i, type: "improve" },
+    { pattern: /\bimprove\b/i, type: "improve" },
+    { pattern: /\boptimize\b/i, type: "improve" },
+    { pattern: /\bexplain\b/i, type: "explain" },
     { pattern: /\badd\s+(error\s+)?handling\b/i, type: "improve" },
-    { pattern: /\brefactor\s+(this|the|code)\b/i, type: "improve" },
+    { pattern: /\brefactor\b/i, type: "improve" },
   ],
   // Bengali keywords
   bn: [
@@ -462,6 +462,7 @@ const INSTRUCTION_KEYWORDS: Record<string, Array<{ pattern: RegExp; type: Detect
     { pattern: /উন্নত\s+কর[োও]/i, type: "improve" },
     { pattern: /অপ্টিমাইজ\s+কর[োও]/i, type: "improve" },
     { pattern: /ব্যাখ্যা\s+কর[োও]/i, type: "explain" },
+    { pattern: /কর[োও]/i, type: "generate" },
   ],
   // Arabic keywords
   ar: [
