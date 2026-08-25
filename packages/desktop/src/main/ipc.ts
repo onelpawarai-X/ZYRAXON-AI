@@ -356,6 +356,47 @@ export function registerIpcHandlers(deps: Deps) {
 
     return (await res.text()).trim()
   })
+
+  // Voice Bridge — Chrome speech recognition controls
+  ipcMain.handle("voice-start-listening", () => {
+    const { sendToVoiceBridge } = require("./voice-bridge")
+    sendToVoiceBridge({ type: "start-listening" })
+    return true
+  })
+  ipcMain.handle("voice-stop-listening", () => {
+    const { sendToVoiceBridge } = require("./voice-bridge")
+    sendToVoiceBridge({ type: "stop-listening" })
+    return true
+  })
+  ipcMain.handle("voice-set-language", (_event: IpcMainInvokeEvent, lang: string) => {
+    const { setVoiceLanguage } = require("./voice-bridge")
+    setVoiceLanguage(lang)
+    return true
+  })
+  ipcMain.handle("voice-send-text", (_event: IpcMainInvokeEvent, text: string) => {
+    const { sendToVoiceBridge } = require("./voice-bridge")
+    sendToVoiceBridge({ type: "send-to-chat", text })
+    return true
+  })
+
+  ipcMain.handle("voice-tts-speak", (_event: IpcMainInvokeEvent, text: string) => {
+    const { sendToVoiceBridge } = require("./voice-bridge")
+    sendToVoiceBridge({ type: "tts-speak", text })
+    return true
+  })
+
+  ipcMain.handle("voice-tts-stop", () => {
+    const { sendToVoiceBridge } = require("./voice-bridge")
+    sendToVoiceBridge({ type: "tts-stop" })
+    return true
+  })
+
+  ipcMain.handle("voice-set-gender", (_event: IpcMainInvokeEvent, gender: string) => {
+    const { setVoiceGender } = require("./voice-bridge")
+    setVoiceGender(gender)
+    return true
+  })
+
   // YouTube Live Streaming
   ipcMain.handle("youtube-stream-start", (event: IpcMainInvokeEvent, config: { streamKey: string; streamUrl?: string; youtubeApiKey?: string; quality?: "4k" | "1440p" | "1080p" | "720p"; captureMode?: "fullscreen" | "app"; audioMode?: "none" | "microphone" | "system" }) => {
     // Remove old listeners before adding new ones (prevent leak on repeated start/stop)

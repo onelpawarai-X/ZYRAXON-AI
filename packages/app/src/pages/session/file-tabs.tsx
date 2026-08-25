@@ -535,7 +535,6 @@ function SessionFileViewV1(props: { tab: string }) {
           } else {
             lastSavedValue = value
             setSaveStatus("saved")
-            file.load(filePath, { force: true }).catch(() => {})
           }
         } else {
           setSaveStatus("idle")
@@ -982,7 +981,6 @@ function SessionFileViewV2(props: { tab: string }) {
           } else {
             lastSavedValueV2 = value
             setSaveStatusV2("saved")
-            file.load(filePath, { force: true }).catch(() => {})
           }
         } else {
           setSaveStatusV2("idle")

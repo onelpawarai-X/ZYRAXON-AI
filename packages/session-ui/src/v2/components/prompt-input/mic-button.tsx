@@ -1,4 +1,4 @@
-import { createSignal, onCleanup, For } from "solid-js"
+import { createEffect, createSignal, onCleanup, For } from "solid-js"
 import { IconButton } from "@zyraxon-ai/ui/icon-button"
 import { MenuV2 } from "@zyraxon-ai/ui/v2/menu-v2"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
@@ -50,15 +50,31 @@ export type MicButtonProps = {
   onTranscript: (text: string, lang: string) => void
   onError?: (error: string) => void
   disabled?: boolean
+  language?: string
+  onLanguageChange?: (lang: string) => void
 }
 
 export function PromptInputV2MicButton(props: MicButtonProps) {
   const [state, setState] = createSignal<VoiceState>("idle")
-  const [selectedLang, setSelectedLang] = createSignal("auto")
+  const [selectedLang, setSelectedLang] = createSignal(props.language || "auto")
   const [interim, setInterim] = createSignal("")
   let recognition: any = null
   let shouldListen = false
   let restartTimer: ReturnType<typeof setTimeout> | null = null
+
+  createEffect(() => {
+    const lang = props.language
+    if (lang && lang !== selectedLang()) {
+      setSelectedLang(lang)
+    }
+  })
+
+  createEffect(() => {
+    const lang = props.language
+    if (lang && lang !== selectedLang()) {
+      setSelectedLang(lang)
+    }
+  })
 
   const ensureRecognition = () => {
     if (recognition) return
@@ -121,6 +137,21 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
   }
 
   const startListening = () => {
+    const api = (window as any).api
+    if (api?.voiceStartListening) {
+      setState("listening")
+      api.voiceStartListening()
+      api.voiceSetLanguage(selectedLang())
+      const unsub = api.onVoiceEvent?.((ev: any) => {
+        if (ev.type === "voice-transcript" && ev.isFinal && ev.text) {
+          props.onTranscript(ev.text, ev.lang || selectedLang())
+          setInterim("")
+        } else if (ev.type === "voice-transcript" && !ev.isFinal) {
+          setInterim(ev.text || "")
+        }
+      })
+      return
+    }
     ensureRecognition()
     if (!recognition) return
     shouldListen = true
@@ -148,6 +179,13 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
   }
 
   const stopListening = () => {
+    const api = (window as any).api
+    if (api?.voiceStopListening) {
+      api.voiceStopListening()
+      setState("idle")
+      setInterim("")
+      return
+    }
     shouldListen = false
     if (restartTimer) {
       clearTimeout(restartTimer)
@@ -172,6 +210,12 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
 
   const selectLang = (code: string) => {
     setSelectedLang(code)
+    props.onLanguageChange?.(code)
+    const api = (window as any).api
+    if (api?.voiceSetLanguage) {
+      api.voiceSetLanguage(code)
+      return
+    }
     if (recognition && state() === "listening") {
       recognition.stop()
       setTimeout(() => {

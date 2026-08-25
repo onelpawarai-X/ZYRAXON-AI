@@ -354,8 +354,8 @@ export class SwarmIntelligence {
 export class PackageDeliveryChain {
   private _shipments: Map<string, Shipment> = new Map();
 
-  createShipment(id: string, from: string, to: string, package: any): R {
-    const shipment: Shipment = { id, from, to, package, droneId: null, status: "created", route: [], chainOfCustody: [{ actor: "system", action: "created", timestamp: Date.now() }] };
+  createShipment(id: string, from: string, to: string, pkg: any): R {
+    const shipment: Shipment = { id, from, to, package: pkg, droneId: null, status: "created", route: [], chainOfCustody: [{ actor: "system", action: "created", timestamp: Date.now() }] };
     this._shipments.set(id, shipment);
     return { ok: true, data: { shipmentId: id } };
   }

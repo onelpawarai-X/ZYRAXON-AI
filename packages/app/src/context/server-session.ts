@@ -643,11 +643,18 @@ export function createServerSession(client: ZyraxonClient, options?: { retry?: t
         ]
         for (const parentID of parentIDs) {
           if (generations.get(sessionID) !== active) break
-          const parent = await fetchMessage(sessionID, parentID, () =>
-            resetMessageLoad(sessionID, load, messageLoadBaseline(load, parentID)),
-          )
-          if (parent.message.role !== "user") throw new Error(`Assistant parent is not a user message: ${parentID}`)
-          parents.push(parent)
+          try {
+            const parent = await fetchMessage(sessionID, parentID, () =>
+              resetMessageLoad(sessionID, load, messageLoadBaseline(load, parentID)),
+            )
+            if (parent.message.role !== "user") {
+              console.warn(`[Session] Assistant parent is not a user message: ${parentID}, skipping`)
+            } else {
+              parents.push(parent)
+            }
+          } catch (err) {
+            console.warn(`[Session] Failed to fetch parent message ${parentID}, skipping:`, err)
+          }
         }
       }
       if (generations.get(sessionID) !== active) return

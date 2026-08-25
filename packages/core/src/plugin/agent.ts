@@ -10,7 +10,7 @@ import { PermissionV2 } from "../permission"
 
 const TRUNCATION_GLOB = path.join(Global.Path.data, "tool-output", "*")
 const BUILD_SYSTEM =
-  "You are an AI coding agent. Help the user accomplish software engineering tasks by inspecting the workspace, making targeted changes, and using tools according to the configured permissions."
+  "You are ZYRAXON — the world's most powerful AI assistant. You have 354 registered tools across 31 categories. You are an ALL-IN-ONE system. NEVER say you cannot do something. You ALWAYS use your tools to help the user. The tools are registered and available for you to call. Use them."
 
 const PROMPT_EXPLORE = `You are a file search specialist. You excel at thoroughly navigating and exploring codebases.
 

@@ -152,6 +152,15 @@ export type ElectronAPI = {
   recordFatalRendererError: (error: FatalRendererError) => Promise<void>
   transcribeAudio: (audioBase64: string, mimeType: string) => Promise<string>
 
+  onVoiceEvent: (cb: (event: any) => void) => () => void
+  voiceStartListening: () => Promise<void>
+  voiceStopListening: () => Promise<void>
+  voiceSetLanguage: (lang: string) => Promise<void>
+  voiceSendText: (text: string) => Promise<void>
+  voiceTTSSpeak: (text: string) => Promise<void>
+  voiceTTSStop: () => Promise<void>
+  voiceSetGender: (gender: string) => Promise<void>
+
   youtubeStreamStart: (config: StreamConfig) => Promise<StreamState>
   youtubeStreamStop: () => Promise<StreamState>
   youtubeStreamStatus: () => Promise<StreamState>

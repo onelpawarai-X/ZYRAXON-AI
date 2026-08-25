@@ -330,4 +330,3 @@ export class VerticalTakeoffLanding {
   }
 }
 
-export { RotorController, HoverController, ExternalLoadController, AutorotationSystem, HelicopterWeatherCompensation, VerticalTakeoffLanding };

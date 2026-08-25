@@ -6,7 +6,7 @@ import { Icon } from "@zyraxon-ai/ui/v2/icon"
 import { KeybindV2 } from "@zyraxon-ai/ui/v2/keybind-v2"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
 import type { Prompt, ReferenceInfo } from "@zyraxon-ai/sdk/v2/client"
-import { createEffect, createMemo, on, Show } from "solid-js"
+import { createEffect, createMemo, on, onCleanup, Show } from "solid-js"
 import { ModelSelectorPopoverV2 } from "@/components/dialog-select-model"
 import { DialogSelectModelUnpaidV2 } from "@/components/dialog-select-model-unpaid-v2"
 import type { PromptInputProps } from "@/components/prompt-input/contracts"
@@ -23,6 +23,7 @@ import { usePermission } from "@/context/permission"
 import { type ImageAttachmentPart, usePrompt } from "@/context/prompt"
 import { usePlatform } from "@/context/platform"
 import { useSDK } from "@/context/sdk"
+import { useSettings } from "@/context/settings"
 import { useSync } from "@/context/sync"
 import { createSessionTabs } from "@/pages/session/helpers"
 import { showToast } from "@/utils/toast"
@@ -49,15 +50,30 @@ export function PromptInputV2Composer(props: PromptInputV2ComposerProps) {
   const dialog = useDialog()
   const command = useCommand()
   const language = useLanguage()
+  const settings = useSettings()
 
   useCommands(props)
   useEditHandler(props)
+
+  // Listen for voice bridge language changes and sync to settings
+  createEffect(() => {
+    const api = (window as any).api
+    if (!api?.onVoiceEvent) return
+    const unsub = api.onVoiceEvent((ev: any) => {
+      if (ev.type === "voice-language" && ev.lang) {
+        settings.general.setVoiceLanguage(ev.lang)
+      }
+    })
+    onCleanup(unsub)
+  })
 
   return (
     <div class="flex flex-col gap-3">
       <PromptInputV2
         controller={props.controller}
         class={props.class}
+        language={settings.general.voiceLanguage()}
+        onLanguageChange={(lang) => settings.general.setVoiceLanguage(lang)}
         modelControl={
           <PromptInputV2ModelControl
             loading={props.controller.model.loading}

@@ -68,6 +68,7 @@ import { ModelV2 } from "@zyraxon-ai/core/model"
 import { MCP } from "@/mcp"
 import { PermissionV1 } from "@zyraxon-ai/core/v1/permission"
 import { McpCatalog } from "@/mcp/catalog"
+import { xToolRegistry, type XToolDef } from "@/x/x-tool-registry"
 
 export function webSearchEnabled(providerID: ProviderV2.ID, flags = { exa: false, parallel: false }) {
   return providerID === ProviderV2.ID.zyraxon || flags.exa || flags.parallel
@@ -224,6 +225,47 @@ const layer = Layer.effect(
           for (const [id, def] of Object.entries(p.tool ?? {})) {
             custom.push(fromPlugin(id, def))
           }
+        }
+
+        // Register all 354 X tools from x-tool-registry
+        // Convert each X tool's parameters to Zod schema so fromPlugin can
+        // generate proper JSON Schema for the LLM tool definitions.
+        for (const xTool of xToolRegistry) {
+          const paramEntries = Object.entries(xTool.parameters) as [string, { type?: string; description?: string; required?: boolean }][]
+          const zodShape: Record<string, z.ZodTypeAny> = {}
+          for (const [key, param] of paramEntries) {
+            let field: z.ZodTypeAny
+            switch (param.type) {
+              case "number":
+                field = z.number()
+                break
+              case "boolean":
+                field = z.boolean()
+                break
+              case "object":
+              case "array":
+                field = z.any()
+                break
+              default:
+                field = z.string()
+            }
+            if (param.description) field = field.describe(param.description)
+            if (!param.required) field = field.optional()
+            zodShape[key] = field
+          }
+          const pluginDef: ToolDefinition = {
+            description: xTool.description,
+            args: Object.keys(zodShape).length > 0 ? zodShape : {},
+            execute: async (args: any) => {
+              try {
+                const result = await xTool.execute(args ?? {})
+                return { output: typeof result === "string" ? result : JSON.stringify(result), metadata: {} }
+              } catch (e: any) {
+                return { output: `Error: ${e?.message ?? String(e)}`, metadata: {} }
+              }
+            },
+          }
+          custom.push(fromPlugin(xTool.id, pluginDef))
         }
 
         yield* config.get()

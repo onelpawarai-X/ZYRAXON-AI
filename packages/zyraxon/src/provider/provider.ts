@@ -1771,6 +1771,26 @@ const layer = Layer.effect(
           mergeProvider(providerID, partial)
         }
 
+        // ── Opencode free provider: always available without API key ──
+        // The opencode provider from models.dev should be available as a free
+        // "public" provider even when no OPENCODE_API_KEY is set. This matches
+        // the upstream opencode behavior where OpencodePlugin sets apiKey="public".
+        const opencodeID = ProviderV2.ID.make("opencode")
+        if (!providers[opencodeID] && database[opencodeID] && isProviderAllowed(opencodeID)) {
+          mergeProvider(opencodeID, {
+            source: "env",
+            options: { apiKey: "public" },
+          })
+          // Disable paid models on the opencode provider (cost > 0)
+          if (providers[opencodeID]) {
+            for (const [modelID, model] of Object.entries(providers[opencodeID].models)) {
+              if (Array.isArray(model.cost) && model.cost.some((c: any) => (c.input ?? 0) > 0)) {
+                model.status = "disabled"
+              }
+            }
+          }
+        }
+
         const gitlab = ProviderV2.ID.make("gitlab")
         if (discoveryLoaders[gitlab] && providers[gitlab] && isProviderAllowed(gitlab)) {
           yield* Effect.promise(async () => {
@@ -2002,7 +2022,16 @@ const layer = Layer.effect(
         return yield* new ModelNotFoundError({ providerID, modelID, suggestions })
       }
 
-      const info = provider.models[modelID]
+      let info = provider.models[modelID]
+      // Fallback: if model not in provider.models, check catalog (V2 catalog may have it from plugins)
+      if (!info) {
+        const catalogProvider = s.catalog[providerID]
+        if (catalogProvider?.models?.[modelID]) {
+          info = catalogProvider.models[modelID]
+          // Also add to provider.models so future lookups are fast
+          provider.models[modelID] = info
+        }
+      }
       if (!info) {
         const current = modelSuggestions(provider, modelID, runtimeFlags.enableExperimentalModels)
         const suggestions = current.length

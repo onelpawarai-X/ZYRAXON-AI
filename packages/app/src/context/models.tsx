@@ -6,13 +6,46 @@ import { createSimpleContext } from "@zyraxon-ai/ui/context"
 import { useProviders } from "@/hooks/use-providers"
 import { Persist, persisted } from "@/utils/persist"
 
-const LOCAL_PINNED = [
-  { id: "pinned-dolphin-8b", name: "Dolphin 2.9 Llama3 8B (5.7GB)", family: "chat", contextLength: 8192, release_date: "2024-01-01", attachment: false, reasoning: true, temperature: true, tool_call: true, cost: undefined, limit: { context: 8192, input: 8192, output: 4096 }, status: "active" as const },
-  { id: "pinned-dolphin-70b", name: "Dolphin 2.9 Llama3 70B (40GB)", family: "chat-large", contextLength: 8192, release_date: "2024-01-01", attachment: false, reasoning: true, temperature: true, tool_call: true, cost: undefined, limit: { context: 8192, input: 8192, output: 4096 }, status: "active" as const },
-  { id: "pinned-flux-dev", name: "FLUX.1 Dev (4GB)", family: "image", contextLength: 0, release_date: "2024-01-01", attachment: false, reasoning: false, temperature: true, tool_call: false, cost: undefined, limit: { context: 0, input: 0, output: 0 }, status: "active" as const },
-  { id: "pinned-wan-video", name: "Wan2.1 T2V 1.3B (3.2GB)", family: "video", contextLength: 0, release_date: "2024-01-01", attachment: false, reasoning: false, temperature: true, tool_call: false, cost: undefined, limit: { context: 0, input: 0, output: 0 }, status: "active" as const },
-  { id: "pinned-musicgen", name: "MusicGen Medium (3GB)", family: "audio", contextLength: 0, release_date: "2024-01-01", attachment: false, reasoning: false, temperature: true, tool_call: false, cost: undefined, limit: { context: 0, input: 0, output: 0 }, status: "active" as const },
-  { id: "pinned-bark", name: "Bark Small TTS (2GB)", family: "tts", contextLength: 0, release_date: "2024-01-01", attachment: false, reasoning: false, temperature: true, tool_call: false, cost: undefined, limit: { context: 0, input: 0, output: 0 }, status: "active" as const },
+export type LocalPinnedModel = {
+  id: string; name: string; family: string; contextLength: number;
+  release_date: string; attachment: boolean; reasoning: boolean; temperature: boolean;
+  tool_call: boolean; cost: undefined;
+  limit: { context: number; input: number; output: number };
+  status: "active";
+  hfUrl: string; hfSizeGB: number; ggufPattern: string;
+}
+
+const DOWNLOADED_MODELS_KEY = "zyraxon-downloaded-models"
+
+function getDownloadedModels(): Set<string> {
+  try {
+    const raw = localStorage.getItem(DOWNLOADED_MODELS_KEY)
+    return raw ? new Set(JSON.parse(raw)) : new Set()
+  } catch { return new Set() }
+}
+
+function markModelDownloaded(modelId: string) {
+  const set = getDownloadedModels()
+  set.add(modelId)
+  localStorage.setItem(DOWNLOADED_MODELS_KEY, JSON.stringify([...set]))
+}
+
+function isModelDownloaded(modelId: string): boolean {
+  return getDownloadedModels().has(modelId)
+}
+
+export const LOCAL_PINNED: LocalPinnedModel[] = [
+  { id: "pinned-dolphin-8b", name: "Dolphin 2.9 Llama3 8B (5.7GB)", family: "chat", contextLength: 8192, release_date: "2024-01-01", attachment: false, reasoning: true, temperature: true, tool_call: true, cost: undefined, limit: { context: 8192, input: 8192, output: 4096 }, status: "active", hfUrl: "https://huggingface.co/cognitivecomputations/dolphin-2.9.3-llama3.1-8B-GGUF", hfSizeGB: 5.7, ggufPattern: "*q4_k_m*" },
+  { id: "pinned-dolphin-70b", name: "Dolphin 2.9 Llama3 70B (40GB)", family: "chat-large", contextLength: 8192, release_date: "2024-01-01", attachment: false, reasoning: true, temperature: true, tool_call: true, cost: undefined, limit: { context: 8192, input: 8192, output: 4096 }, status: "active", hfUrl: "https://huggingface.co/cognitivecomputations/dolphin-2.9.3-llama3.1-70B-GGUF", hfSizeGB: 40, ggufPattern: "*q4_k_m*" },
+  { id: "pinned-deepseek-r1", name: "DeepSeek R1 Distill 70B (42GB)", family: "chat-large", contextLength: 128000, release_date: "2025-01-01", attachment: false, reasoning: true, temperature: true, tool_call: true, cost: undefined, limit: { context: 128000, input: 128000, output: 4096 }, status: "active", hfUrl: "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B-GGUF", hfSizeGB: 42, ggufPattern: "*q4_k_m*" },
+  { id: "pinned-qwen-72b", name: "Qwen2.5 Coder 72B (45GB)", family: "chat-large", contextLength: 128000, release_date: "2024-12-01", attachment: false, reasoning: true, temperature: true, tool_call: true, cost: undefined, limit: { context: 128000, input: 128000, output: 4096 }, status: "active", hfUrl: "https://huggingface.co/Qwen/Qwen2.5-Coder-72B-Instruct-GGUF", hfSizeGB: 45, ggufPattern: "*q4_k_m*" },
+  { id: "pinned-flux-dev", name: "FLUX.1 Dev (6.8GB)", family: "image", contextLength: 0, release_date: "2024-08-01", attachment: false, reasoning: false, temperature: true, tool_call: false, cost: undefined, limit: { context: 0, input: 0, output: 0 }, status: "active", hfUrl: "https://huggingface.co/black-forest-labs/FLUX.1-dev", hfSizeGB: 6.8, ggufPattern: "*.safetensors" },
+  { id: "pinned-flux-schnell", name: "FLUX.1 Schnell (6.8GB)", family: "image", contextLength: 0, release_date: "2024-08-01", attachment: false, reasoning: false, temperature: true, tool_call: false, cost: undefined, limit: { context: 0, input: 0, output: 0 }, status: "active", hfUrl: "https://huggingface.co/black-forest-labs/FLUX.1-schnell", hfSizeGB: 6.8, ggufPattern: "*.safetensors" },
+  { id: "pinned-wan-video", name: "Wan2.1 T2V 14B (30GB)", family: "video", contextLength: 0, release_date: "2025-03-01", attachment: false, reasoning: false, temperature: true, tool_call: false, cost: undefined, limit: { context: 0, input: 0, output: 0 }, status: "active", hfUrl: "https://huggingface.co/Wan-AI/Wan2.1-T2V-14B", hfSizeGB: 30, ggufPattern: "*.safetensors" },
+  { id: "pinned-wan-video-small", name: "Wan2.1 T2V 1.3B (3.2GB)", family: "video", contextLength: 0, release_date: "2025-03-01", attachment: false, reasoning: false, temperature: true, tool_call: false, cost: undefined, limit: { context: 0, input: 0, output: 0 }, status: "active", hfUrl: "https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B", hfSizeGB: 3.2, ggufPattern: "*.safetensors" },
+  { id: "pinned-musicgen", name: "MusicGen Large (5GB)", family: "audio", contextLength: 0, release_date: "2024-06-01", attachment: false, reasoning: false, temperature: true, tool_call: false, cost: undefined, limit: { context: 0, input: 0, output: 0 }, status: "active", hfUrl: "https://huggingface.co/facebook/musicgen-large", hfSizeGB: 5, ggufPattern: "*.safetensors" },
+  { id: "pinned-bark", name: "Bark TTS (5GB)", family: "tts", contextLength: 0, release_date: "2024-06-01", attachment: false, reasoning: false, temperature: true, tool_call: false, cost: undefined, limit: { context: 0, input: 0, output: 0 }, status: "active", hfUrl: "https://huggingface.co/suno/bark", hfSizeGB: 5, ggufPattern: "*.safetensors" },
+  { id: "pinned-xtts", name: "XTTS v2 TTS (5GB)", family: "tts", contextLength: 0, release_date: "2024-08-01", attachment: false, reasoning: false, temperature: true, tool_call: false, cost: undefined, limit: { context: 0, input: 0, output: 0 }, status: "active", hfUrl: "https://huggingface.co/coqui/XTTS-v2", hfSizeGB: 5, ggufPattern: "*.safetensors" },
 ]
 
 const LOCAL_PROVIDER = {
@@ -58,11 +91,10 @@ export const { use: useModels, provider: ModelsProvider } = createSimpleContext(
     const available = createMemo(() => {
       const all = providers.all()
       const connectedList = providers.connected()
-      if (!all) return []
-      const connectedIds = new Set(connectedList.map((p: any) => p.id))
       const entries = all instanceof Map ? [...all.entries()] : (Array.isArray(all) ? all : [])
 
       // Connected providers → all their models
+      const connectedIds = new Set(connectedList.map((p: any) => p.id))
       const connectedModels = entries
         .filter(([id]: any) => connectedIds.has(id))
         .flatMap(([, p]: any) =>
@@ -85,7 +117,15 @@ export const { use: useModels, provider: ModelsProvider } = createSimpleContext(
         provider: LOCAL_PROVIDER,
       }))
 
-      return [...localModels, ...opencodeFreeModels, ...connectedModels]
+      // Merge: local first, then opencode free, then connected
+      // Deduplicate by id+provider
+      const seen = new Set<string>()
+      const result: any[] = []
+      for (const m of [...localModels, ...opencodeFreeModels, ...connectedModels]) {
+        const key = `${m.provider.id}:${m.id}`
+        if (!seen.has(key)) { seen.add(key); result.push(m) }
+      }
+      return result
     })
 
     const release = createMemo(
@@ -209,6 +249,9 @@ export const { use: useModels, provider: ModelsProvider } = createSimpleContext(
         get: getVariant,
         set: setVariant,
       },
+      localPinned: LOCAL_PINNED,
+      isDownloaded: isModelDownloaded,
+      markDownloaded: markModelDownloaded,
     }
   },
 })

@@ -322,6 +322,24 @@ const main = Effect.gen(function* () {
     }
   })
 
+  // ─── Voice Bridge ──────────────────────────────────────────────────────────
+  // Chrome-based speech recognition bridge for reliable voice-to-text
+  yield* Effect.promise(async () => {
+    try {
+      const { startVoiceBridge, setRendererCallback } = await import("./voice-bridge")
+      setRendererCallback((data) => {
+        const win = getLastFocusedWindow()
+        if (win && !win.isDestroyed()) {
+          win.webContents.send("voice-event", data)
+        }
+      })
+      startVoiceBridge()
+      logger.info("Voice bridge started on port 14580")
+    } catch (error) {
+      logger.warn("failed to start voice bridge", error)
+    }
+  })
+
   // ─── MCP Config Auto-Create ──────────────────────────────────────────────
   // Ensure zyraxon.jsonc exists with jarvis-browser MCP config on first launch
   yield* Effect.promise(async () => {

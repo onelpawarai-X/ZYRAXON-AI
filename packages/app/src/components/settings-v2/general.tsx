@@ -284,11 +284,12 @@ export const SettingsGeneralV2: Component<{
               { id: "allow", value: "allow", label: "Allow — ask once per action" },
               { id: "always", value: "always", label: "Always — never ask again" },
             ]}
-            current={
-              accepting()
-                ? { id: "always", value: "always", label: "Always — never ask again" }
-                : { id: "allow", value: "allow", label: "Allow — ask once per action" }
-            }
+            current={(() => {
+              const mode = permission.getPermissionMode(props.sessionID ?? "", dir()!)
+              if (mode === "always") return { id: "always", value: "always", label: "Always — never ask again" }
+              if (mode === "deny") return { id: "deny", value: "deny", label: "Deny — always ask permission" }
+              return { id: "allow", value: "allow", label: "Allow — ask once per action" }
+            })()}
             value={(o) => o.value}
             label={(o) => o.label}
             onSelect={(option) => {
@@ -296,9 +297,9 @@ export const SettingsGeneralV2: Component<{
               if (option.value === "always") {
                 permission.enableAutoAccept(props.sessionID, dir()!)
               } else if (option.value === "deny") {
-                permission.disableAutoAccept(props.sessionID, dir()!)
+                permission.setPermissionMode(props.sessionID, dir()!, "deny")
               } else {
-                permission.disableAutoAccept(props.sessionID, dir()!)
+                permission.setPermissionMode(props.sessionID, dir()!, "allow")
               }
             }}
             placement="bottom-end"
@@ -685,13 +686,77 @@ export const SettingsGeneralV2: Component<{
             appearance="inline"
             data-action="settings-voice-language"
             options={[
+              { id: "auto", value: "auto", label: "Auto-detect" },
               { id: "bn", value: "bn-BD", label: "Bengali" },
               { id: "en", value: "en-US", label: "English" },
               { id: "hi", value: "hi-IN", label: "Hindi" },
-              { id: "auto", value: "auto", label: "Auto-detect" },
+              { id: "ar", value: "ar-SA", label: "Arabic" },
+              { id: "ru", value: "ru-RU", label: "Russian" },
+              { id: "ja", value: "ja-JP", label: "Japanese" },
+              { id: "zh", value: "zh-CN", label: "Chinese" },
+              { id: "ko", value: "ko-KR", label: "Korean" },
+              { id: "pt", value: "pt-BR", label: "Portuguese" },
+              { id: "es", value: "es-ES", label: "Spanish" },
+              { id: "fr", value: "fr-FR", label: "French" },
+              { id: "de", value: "de-DE", label: "German" },
+              { id: "it", value: "it-IT", label: "Italian" },
+              { id: "tr", value: "tr-TR", label: "Turkish" },
+              { id: "th", value: "th-TH", label: "Thai" },
+              { id: "vi", value: "vi-VN", label: "Vietnamese" },
+              { id: "id", value: "id-ID", label: "Indonesian" },
+              { id: "ms", value: "ms-MY", label: "Malay" },
+              { id: "uk", value: "uk-UA", label: "Ukrainian" },
+              { id: "pl", value: "pl-PL", label: "Polish" },
+              { id: "nl", value: "nl-NL", label: "Dutch" },
+              { id: "sv", value: "sv-SE", label: "Swedish" },
+              { id: "da", value: "da-DK", label: "Danish" },
+              { id: "fi", value: "fi-FI", label: "Finnish" },
+              { id: "no", value: "nb-NO", label: "Norwegian" },
+              { id: "cs", value: "cs-CZ", label: "Czech" },
+              { id: "ro", value: "ro-RO", label: "Romanian" },
+              { id: "el", value: "el-GR", label: "Greek" },
+              { id: "he", value: "he-IL", label: "Hebrew" },
+              { id: "ur", value: "ur-PK", label: "Urdu" },
+              { id: "fa", value: "fa-IR", label: "Persian" },
+              { id: "sw", value: "sw-KE", label: "Swahili" },
             ]}
             current={
-              { id: "bn", value: "bn-BD", label: "Bengali" }
+              settings.general.voiceLanguage() === "auto"
+                ? { id: "auto", value: "auto", label: "Auto-detect" }
+                : [
+                    { id: "bn", value: "bn-BD", label: "Bengali" },
+                    { id: "en", value: "en-US", label: "English" },
+                    { id: "hi", value: "hi-IN", label: "Hindi" },
+                    { id: "ar", value: "ar-SA", label: "Arabic" },
+                    { id: "ru", value: "ru-RU", label: "Russian" },
+                    { id: "ja", value: "ja-JP", label: "Japanese" },
+                    { id: "zh", value: "zh-CN", label: "Chinese" },
+                    { id: "ko", value: "ko-KR", label: "Korean" },
+                    { id: "pt", value: "pt-BR", label: "Portuguese" },
+                    { id: "es", value: "es-ES", label: "Spanish" },
+                    { id: "fr", value: "fr-FR", label: "French" },
+                    { id: "de", value: "de-DE", label: "German" },
+                    { id: "it", value: "it-IT", label: "Italian" },
+                    { id: "tr", value: "tr-TR", label: "Turkish" },
+                    { id: "th", value: "th-TH", label: "Thai" },
+                    { id: "vi", value: "vi-VN", label: "Vietnamese" },
+                    { id: "id", value: "id-ID", label: "Indonesian" },
+                    { id: "ms", value: "ms-MY", label: "Malay" },
+                    { id: "uk", value: "uk-UA", label: "Ukrainian" },
+                    { id: "pl", value: "pl-PL", label: "Polish" },
+                    { id: "nl", value: "nl-NL", label: "Dutch" },
+                    { id: "sv", value: "sv-SE", label: "Swedish" },
+                    { id: "da", value: "da-DK", label: "Danish" },
+                    { id: "fi", value: "fi-FI", label: "Finnish" },
+                    { id: "no", value: "nb-NO", label: "Norwegian" },
+                    { id: "cs", value: "cs-CZ", label: "Czech" },
+                    { id: "ro", value: "ro-RO", label: "Romanian" },
+                    { id: "el", value: "el-GR", label: "Greek" },
+                    { id: "he", value: "he-IL", label: "Hebrew" },
+                    { id: "ur", value: "ur-PK", label: "Urdu" },
+                    { id: "fa", value: "fa-IR", label: "Persian" },
+                    { id: "sw", value: "sw-KE", label: "Swahili" },
+                  ].find((o) => o.value === settings.general.voiceLanguage()) || { id: "auto", value: "auto", label: "Auto-detect" }
             }
             value={(o) => o.value}
             label={(o) => o.label}

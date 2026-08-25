@@ -439,16 +439,16 @@ export interface DetectedInstruction {
 const INSTRUCTION_KEYWORDS: Record<string, Array<{ pattern: RegExp; type: DetectedInstruction["type"] }>> = {
   // English keywords
   en: [
-    { pattern: /\bfix\b/i, type: "fix" },
-    { pattern: /\bcreate\b/i, type: "generate" },
-    { pattern: /\bgenerate\b/i, type: "generate" },
-    { pattern: /\bwrite\b/i, type: "generate" },
-    { pattern: /\bmake\b/i, type: "improve" },
-    { pattern: /\bimprove\b/i, type: "improve" },
-    { pattern: /\boptimize\b/i, type: "improve" },
-    { pattern: /\bexplain\b/i, type: "explain" },
-    { pattern: /\badd\s+(error\s+)?handling\b/i, type: "improve" },
-    { pattern: /\brefactor\b/i, type: "improve" },
+    { pattern: /\bfix\s+(this|the|all|bug|error|issue|problem|it)\b/i, type: "fix" },
+    { pattern: /\bcreate\s+(a|an|the|this|new|function|class|component|file)\b/i, type: "generate" },
+    { pattern: /\bgenerate\s+(code|function|class|component|file)\b/i, type: "generate" },
+    { pattern: /\bwrite\s+(a|an|the|this|new|function|class|code)\b/i, type: "generate" },
+    { pattern: /\badd\s+(error\s+handling|validation|support)\b/i, type: "improve" },
+    { pattern: /\bimprove\s+(this|the|code|performance|readability)\b/i, type: "improve" },
+    { pattern: /\boptimize\s+(this|the|code|for|performance)\b/i, type: "improve" },
+    { pattern: /\bexplain\s+(this|the|code|how|what)\b/i, type: "explain" },
+    { pattern: /\brefactor\s+(this|the|code|function)\b/i, type: "improve" },
+    { pattern: /\bmake\s+(this|it|better|work|functioning)\b/i, type: "improve" },
   ],
   // Bengali keywords
   bn: [
@@ -462,7 +462,6 @@ const INSTRUCTION_KEYWORDS: Record<string, Array<{ pattern: RegExp; type: Detect
     { pattern: /উন্নত\s+কর[োও]/i, type: "improve" },
     { pattern: /অপ্টিমাইজ\s+কর[োও]/i, type: "improve" },
     { pattern: /ব্যাখ্যা\s+কর[োও]/i, type: "explain" },
-    { pattern: /কর[োও]/i, type: "generate" },
   ],
   // Arabic keywords
   ar: [
@@ -533,31 +532,24 @@ export function detectInstructions(code: string): DetectedInstruction[] {
     const line = lines[i]
     const trimmed = line.trim()
 
-    // Skip empty lines
     if (!trimmed) continue
 
     const isComment = isCommentLine(line)
-
-    // For comment lines, check if they contain instruction keywords
-    // For non-comment lines, only check if the ENTIRE line is an instruction
-    const textToCheck = isComment ? trimmed : trimmed
+    if (!isComment) continue
 
     for (const [, keywords] of Object.entries(INSTRUCTION_KEYWORDS)) {
       for (const { pattern, type } of keywords) {
-        if (pattern.test(textToCheck)) {
-          // Extract the instruction text
-          const instruction = isComment
-            ? trimmed.replace(/^(\s*\/\s*\/\s*|\s*#\s*|\s*--\s*)/, "").trim()
-            : trimmed
+        if (pattern.test(trimmed)) {
+          const instruction = trimmed.replace(/^(\s*\/\s*\/\s*|\s*#\s*|\s*--\s*)/, "").trim()
 
           instructions.push({
-            line: i + 1, // 1-indexed
+            line: i + 1,
             instruction,
             type,
             isComment,
             rawText: line,
           })
-          break // One instruction per line
+          break
         }
       }
     }

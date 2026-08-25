@@ -80,6 +80,10 @@ const getBase = (appId: string): Configuration => ({
       to: "jarvis-browser-mcp.cjs",
     },
     {
+      from: "resources/voice-bridge.html",
+      to: "voice-bridge.html",
+    },
+    {
       from: "resources/default-mcp-config.json",
       to: "default-mcp-config.json",
     },

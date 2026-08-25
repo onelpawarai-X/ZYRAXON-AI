@@ -167,6 +167,20 @@ const api: ElectronAPI = {
     return () => ipcRenderer.removeListener("site-preview-update", handler)
   },
 
+  // Voice Bridge - Chrome speech → chat box
+  onVoiceEvent: (cb) => {
+    const handler = (_: unknown, data: any) => cb(data)
+    ipcRenderer.on("voice-event", handler)
+    return () => ipcRenderer.removeListener("voice-event", handler)
+  },
+  voiceStartListening: () => ipcRenderer.invoke("voice-start-listening"),
+  voiceStopListening: () => ipcRenderer.invoke("voice-stop-listening"),
+  voiceSetLanguage: (lang: string) => ipcRenderer.invoke("voice-set-language", lang),
+  voiceSendText: (text: string) => ipcRenderer.invoke("voice-send-text", text),
+  voiceTTSSpeak: (text: string) => ipcRenderer.invoke("voice-tts-speak", text),
+  voiceTTSStop: () => ipcRenderer.invoke("voice-tts-stop"),
+  voiceSetGender: (gender: string) => ipcRenderer.invoke("voice-set-gender", gender),
+
   // Jarvis Browser - Real Chrome automation
   jarvisBrowser: {
     init: (config?: any) => ipcRenderer.invoke("jarvis-browser:init", config),

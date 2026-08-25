@@ -429,7 +429,7 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         dismissTabsToast() {
           setStore("general", "shouldDisplayTabsToast", false)
         },
-        voiceAutoSpeak: withFallback(() => store.general?.voiceAutoSpeak, false),
+        voiceAutoSpeak: withFallback(() => store.general?.voiceAutoSpeak, true),
         setVoiceAutoSpeak(value: boolean) {
           setStore("general", "voiceAutoSpeak", value)
         },

@@ -88,7 +88,10 @@ export function MonacoEditor(props: MonacoEditorProps) {
 
   const getTheme = () => {
     if (props.theme) return props.theme
-    return theme.mode() === "dark" ? "zyraxon-dark" : "zyraxon-light"
+    if (typeof document !== "undefined") {
+      return document.documentElement.dataset.colorScheme === "dark" ? "zyraxon-dark" : "zyraxon-light"
+    }
+    return "zyraxon-dark"
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -433,20 +436,24 @@ export function MonacoEditor(props: MonacoEditorProps) {
       }
     })
 
+    let instructionDebounce: ReturnType<typeof setTimeout> | null = null
     editor.onDidChangeModelContent(() => {
       if (isSyncing) return
       userHasEdited = true
       const value = editor?.getValue() || ""
       props.onChange?.(value)
-      debouncedScan(value)
-      updateFloatingWidgets()
       if (userEditDebounce) clearTimeout(userEditDebounce)
       userEditDebounce = setTimeout(() => { userHasEdited = false }, 1000)
+      if (instructionDebounce) clearTimeout(instructionDebounce)
+      instructionDebounce = setTimeout(() => { updateFloatingWidgets() }, 800)
     })
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       const value = editor?.getValue() || ""
       props.onSave?.(value)
+      // Scan on save only — no loading flash during typing
+      runGuardianScan(value)
+      updateFloatingWidgets()
     })
 
     editor.focus()
@@ -512,6 +519,9 @@ export function MonacoEditor(props: MonacoEditorProps) {
     const mode = theme.mode()
     const newTheme = mode === "dark" ? "zyraxon-dark" : "zyraxon-light"
     monaco.editor.setTheme(newTheme)
+    editor.updateOptions({
+      theme: newTheme,
+    })
   })
 
   const handleClick = () => {

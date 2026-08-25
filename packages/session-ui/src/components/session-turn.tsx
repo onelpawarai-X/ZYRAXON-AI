@@ -160,6 +160,7 @@ export function SessionTurn(
     editToolDefaultOpen?: boolean
     active?: boolean
     status?: SessionStatus
+    voiceAutoSpeak?: boolean
     onUserInteracted?: () => void
     classes?: {
       root?: string
@@ -415,6 +416,7 @@ export function SessionTurn(
                     showReasoningSummaries={showReasoningSummaries()}
                     shellToolDefaultOpen={props.shellToolDefaultOpen}
                     editToolDefaultOpen={props.editToolDefaultOpen}
+                    voiceAutoSpeak={props.voiceAutoSpeak}
                   />
                 </div>
               </Show>

@@ -39,6 +39,8 @@ export type PromptInputV2Props = {
   readOnly?: boolean
   class?: string
   modelControl?: JSX.Element
+  language?: string
+  onLanguageChange?: (lang: string) => void
 }
 
 export function PromptInputV2(props: PromptInputV2Props) {
@@ -236,23 +238,13 @@ export function PromptInputV2(props: PromptInputV2Props) {
           </div>
           <PromptInputV2MicButton
             onTranscript={(text, lang) => {
-              const el = editor
-              if (!el) return
-              el.focus()
-              const sel = window.getSelection()
-              if (!sel) return
-              if (sel.rangeCount === 0) {
-                const range = document.createRange()
-                range.selectNodeContents(el)
-                range.collapse(false)
-                sel.removeAllRanges()
-                sel.addRange(range)
-              }
-              document.execCommand("insertText", false, text)
-              el.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: text }))
+              props.controller.addPart({ type: "text", content: text, start: 0, end: text.length })
+              requestAnimationFrame(() => editor?.focus())
             }}
             onError={(err) => console.error("[Mic]", err)}
             disabled={state.mode === "shell"}
+            language={props.language}
+            onLanguageChange={props.onLanguageChange}
           />
           <PromptInputV2SubmitButton
             mode={state.mode}

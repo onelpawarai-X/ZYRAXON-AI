@@ -747,6 +747,7 @@ export function AssistantParts(props: {
   showReasoningSummaries?: boolean
   shellToolDefaultOpen?: boolean
   editToolDefaultOpen?: boolean
+  voiceAutoSpeak?: boolean
 }) {
   const data = useData()
   const emptyParts: PartType[] = []
@@ -776,6 +777,88 @@ export function AssistantParts(props: {
   )
 
   const last = createMemo(() => grouped().at(-1)?.key)
+
+  const lastSpokenMessageID = { value: "" }
+
+  const detectLanguage = (text: string): string => {
+    const bengali = /[\u0980-\u09FF]/
+    const arabic = /[\u0600-\u06FF]/
+    const cyrillic = /[\u0400-\u04FF]/
+    const cjk = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/
+    const devanagari = /[\u0900-\u097F]/
+    if (bengali.test(text)) return "bn"
+    if (arabic.test(text)) return "ar"
+    if (cyrillic.test(text)) return "ru"
+    if (cjk.test(text)) return "ja"
+    if (devanagari.test(text)) return "hi"
+    return "en"
+  }
+
+  const findBestVoice = (synth: SpeechSynthesis, lang: string): SpeechSynthesisVoice | null => {
+    const voices = synth.getVoices()
+    if (!voices.length) return null
+
+    const langMap: Record<string, string[]> = {
+      en: ["en-US", "en-GB", "en"],
+      bn: ["bn-BD", "bn-IN", "bn"],
+      ar: ["ar-SA", "ar-XA", "ar"],
+      ru: ["ru-RU", "ru"],
+      ja: ["ja-JP", "ja"],
+      zh: ["zh-CN", "zh-TW", "zh"],
+      hi: ["hi-IN", "hi"],
+      ko: ["ko-KR", "ko"],
+      pt: ["pt-BR", "pt-PT", "pt"],
+      es: ["es-ES", "es-MX", "es"],
+      fr: ["fr-FR", "fr"],
+      de: ["de-DE", "de"],
+      it: ["it-IT", "it"],
+      tr: ["tr-TR", "tr"],
+    }
+
+    const preferred = langMap[lang] || [lang]
+    for (const code of preferred) {
+      const found = voices.find((v) => v.lang.startsWith(code))
+      if (found) return found
+    }
+
+    return voices.find((v) => v.lang.startsWith("en")) || voices[0] || null
+  }
+
+  createEffect(() => {
+    if (props.working) return
+    if (props.voiceAutoSpeak === false) return
+    const msgs_list = props.messages
+    if (!msgs_list.length) return
+    const lastMsg = msgs_list[msgs_list.length - 1]
+    if (typeof lastMsg.time.completed !== "number") return
+    if (lastSpokenMessageID.value === lastMsg.id) return
+    lastSpokenMessageID.value = lastMsg.id
+    const partsList = list(data.store.part?.[lastMsg.id], emptyParts)
+    const textParts = partsList.filter((p: any) => p.type === "text" && p.text)
+    if (!textParts.length) return
+    const text = textParts.map((p: any) => p.text).join(" ").slice(0, 3000)
+    if (!text) return
+    try {
+      // Try Electron voice bridge first (Chrome SpeechSynthesis in separate window)
+      if (typeof window !== "undefined" && (window as any).api?.voiceTTSSpeak) {
+        ;(window as any).api.voiceTTSSpeak(text)
+        return
+      }
+      // Fallback: use renderer's SpeechSynthesis
+      const synth = window.speechSynthesis
+      if (!synth) return
+      synth.cancel()
+      const utter = new SpeechSynthesisUtterance(text)
+      const lang = detectLanguage(text)
+      utter.lang = lang === "bn" ? "bn-BD" : lang === "ar" ? "ar-SA" : lang === "ru" ? "ru-RU" : lang === "ja" ? "ja-JP" : lang === "hi" ? "hi-IN" : lang === "zh" ? "zh-CN" : lang === "ko" ? "ko-KR" : "en-US"
+      utter.rate = 1.0
+      utter.pitch = 1.0
+      utter.volume = 1.0
+      const voice = findBestVoice(synth, lang)
+      if (voice) utter.voice = voice
+      synth.speak(utter)
+    } catch {}
+  })
 
   return (
     <Index each={grouped()}>

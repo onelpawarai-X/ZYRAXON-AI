@@ -31,6 +31,7 @@ import { decode64 } from "@/utils/base64"
 import { handleDocumentSearchKeydown } from "@/utils/search-keydown"
 import { createEventListener } from "@solid-primitives/event-listener"
 import { matchesModelSearch } from "./dialog-select-model-search"
+import { useModels, type LocalPinnedModel } from "@/context/models"
 
 const isFree = (provider: string, cost: { input: number } | undefined) =>
   provider === "opencode" && (!cost || cost.input === 0)
@@ -62,6 +63,7 @@ const ModelList: Component<{
 }> = (props) => {
   const model = props.model ?? useLocal().model
   const language = useLanguage()
+  const modelsCtx = useModels()
 
   const models = createMemo(() =>
     model
@@ -126,9 +128,7 @@ const ModelList: Component<{
             <Tag>{language.t("model.tag.latest")}</Tag>
           </Show>
           <Show when={i.provider.id === "local"}>
-            <span class="ml-auto text-[10px] text-v2-icon-icon-muted shrink-0" title="Local model">
-              {i.status === "active" ? "\u2713" : "\u2B07"}
-            </span>
+            <LocalModelActions model={i} modelsCtx={modelsCtx} />
           </Show>
         </div>
       )}
@@ -138,6 +138,33 @@ const ModelList: Component<{
 
 type ModelSelectorTriggerProps = Omit<ComponentProps<typeof Kobalte.Trigger>, "as" | "ref">
 type Dismiss = "escape" | "outside" | "select" | "manage" | "provider"
+
+function LocalModelActions(props: { model: ModelItem; modelsCtx: ReturnType<typeof useModels> }) {
+  const isDownloaded = () => props.modelsCtx.isDownloaded(props.model.id)
+  const pinned = () => props.modelsCtx.localPinned.find((m) => m.id === props.model.id)
+
+  return (
+    <span
+      class="ml-auto shrink-0 text-[10px] cursor-pointer"
+      title={isDownloaded() ? "Model downloaded locally" : pinned() ? `Download ${pinned()!.hfSizeGB}GB from HuggingFace` : "Download"}
+      onClick={(e) => {
+        e.stopPropagation()
+        e.preventDefault()
+        if (isDownloaded()) {
+          props.modelsCtx.markDownloaded(props.model.id)
+        } else if (pinned()) {
+          window.open(pinned()!.hfUrl, "_blank")
+          props.modelsCtx.markDownloaded(props.model.id)
+        }
+      }}
+    >
+      {isDownloaded()
+        ? <span class="text-green-400">✓</span>
+        : <span class="text-blue-400 hover:text-blue-300">⬇</span>
+      }
+    </span>
+  )
+}
 
 export function ModelSelectorPopover(props: {
   provider?: string
@@ -260,6 +287,7 @@ export function ModelSelectorPopoverV2(props: {
   const model = props.model ?? useLocal().model
   const language = useLanguage()
   const dialog = useDialog()
+  const modelsCtx = useModels()
   const [store, setStore] = createStore({ open: false, search: "", active: "" })
   let searchRef: HTMLInputElement | undefined
   let contentRef: HTMLDivElement | undefined
@@ -495,6 +523,9 @@ export function ModelSelectorPopoverV2(props: {
                                 </Show>
                                 <Show when={item.latest}>
                                   <TagV2 class="shrink-0">{language.t("model.tag.latest")}</TagV2>
+                                </Show>
+                                <Show when={item.provider.id === "local"}>
+                                  <LocalModelActions model={item} modelsCtx={modelsCtx} />
                                 </Show>
                               </MenuV2.RadioItem>
                             </TooltipV2>
