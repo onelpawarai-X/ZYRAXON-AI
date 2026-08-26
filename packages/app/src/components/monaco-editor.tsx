@@ -4,10 +4,7 @@ import { useTheme } from "@zyraxon-ai/ui/theme/context"
 import { CodeGuardianScanner, CodeGuardianAIFeedback, type CodeIssue } from "./code-guardian"
 import {
   MonacoAIAssistant,
-  ScanningAnimator,
   injectAIAssistantStyles,
-  detectInstructions,
-  type DetectedInstruction,
   type GenerateOptions,
 } from "./monaco-ai-assistant"
 
@@ -74,17 +71,17 @@ export function MonacoEditor(props: MonacoEditorProps) {
   let scanDebounce: ReturnType<typeof setTimeout> | null = null
   let userEditDebounce: ReturnType<typeof setTimeout> | null = null
 
-  // AI State
   const [aiGenerating, setAiGenerating] = createSignal(false)
-  const [activeInstruction, setActiveInstruction] = createSignal<DetectedInstruction | null>(null)
+  const [activePrompt, setActivePrompt] = createSignal<string | null>(null)
 
   const aiAssistant = new MonacoAIAssistant({ model: "opencode/deepseek-v4-flash-free" })
-  const scanner = new ScanningAnimator()
   const guardian = new CodeGuardianScanner()
   const feedback = new CodeGuardianAIFeedback()
   let tokenBuffer = ""
   let streamingDebounce: ReturnType<typeof setTimeout> | null = null
   let widgetDisposable: Monaco.editor.IEditorDecorationsCollection | null = null
+  let inlineChatWidget: Monaco.editor.IContentWidget | null = null
+  let inlineChatLine: number | null = null
 
   const getTheme = () => {
     if (props.theme) return props.theme
@@ -95,111 +92,105 @@ export function MonacoEditor(props: MonacoEditorProps) {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // DETECT INSTRUCTIONS → SHOW FLOATING BUTTON
+  // INLINE AI CHAT BOX — click line number → type → AI generates
   // ═══════════════════════════════════════════════════════════════
-  const updateFloatingWidgets = () => {
+  const showInlineChat = (lineNumber: number) => {
     if (!editor || !monaco) return
-    const model = editor.getModel()
-    if (!model) return
+    if (aiGenerating()) return
+    removeInlineChat()
 
-    const code = model.getValue()
-    const instructions = detectInstructions(code)
+    inlineChatLine = lineNumber
+    const domNode = document.createElement("div")
+    domNode.style.cssText = `
+      width: 340px; padding: 8px 10px;
+      background: #1a1a2e; border: 1px solid rgba(0,255,136,0.3);
+      border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      z-index: 20; display: flex; flex-direction: column; gap: 6px;
+    `
+    domNode.innerHTML = `
+      <div style="display:flex;align-items:center;gap:6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00ff88" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+        </svg>
+        <span style="color:#00ff88;font-size:11px;font-weight:600;letter-spacing:0.5px;">AI ASSISTANT</span>
+      </div>
+      <input type="text" placeholder="Tell AI what to do with this code..."
+        style="width:100%;padding:7px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#e4e4ed;font-size:12px;outline:none;font-family:inherit;"
+        class="ai-chat-input" />
+      <div style="display:flex;gap:6px;justify-content:flex-end;">
+        <button class="ai-chat-cancel" style="padding:4px 12px;border-radius:5px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:rgba(255,255,255,0.45);font-size:11px;cursor:pointer;">Esc</button>
+        <button class="ai-chat-send" style="padding:4px 12px;border-radius:5px;border:none;background:linear-gradient(135deg,#00ff88,#00ccff);color:#000;font-size:11px;font-weight:600;cursor:pointer;">Generate</button>
+      </div>
+    `
 
-    // Clear old widgets
-    if (widgetDisposable) {
-      widgetDisposable.clear()
+    const input = domNode.querySelector(".ai-chat-input") as HTMLInputElement
+    const cancelBtn = domNode.querySelector(".ai-chat-cancel") as HTMLButtonElement
+    const sendBtn = domNode.querySelector(".ai-chat-send") as HTMLButtonElement
+
+    input.addEventListener("keydown", (e) => {
+      e.stopPropagation()
+      if (e.key === "Enter" && input.value.trim()) {
+        executeInlineChat(lineNumber, input.value.trim())
+      }
+      if (e.key === "Escape") {
+        removeInlineChat()
+        editor!.focus()
+      }
+    })
+    input.addEventListener("mousedown", (e) => e.stopPropagation())
+    cancelBtn.addEventListener("click", () => { removeInlineChat(); editor!.focus() })
+    sendBtn.addEventListener("click", () => {
+      if (input.value.trim()) executeInlineChat(lineNumber, input.value.trim())
+    })
+
+    inlineChatWidget = {
+      getId: () => `ai-inline-chat-${lineNumber}`,
+      getDomNode: () => domNode,
+      getPosition: () => ({
+        position: { lineNumber: lineNumber + 1, column: 1 },
+        preference: [monaco!.editor.ContentWidgetPositionPreference.BELOW],
+      }),
     }
-
-    if (instructions.length === 0) return
-
-    // Create decorations (floating ⚡ buttons) next to instruction lines
-    const decorations: Monaco.editor.IModelDeltaDecoration[] = instructions.map((inst) => ({
-      range: new monaco!.Range(inst.line, 1, inst.line, 1),
-      options: {
-        isWholeLine: true,
-        glyphMarginClassName: "monaco-ai-instruction-line",
-        glyphMarginHoverMessage: {
-          value: `**⚡ AI Assistant**\n\nInstruction detected: "${inst.instruction}"\n\nClick the ⚡ icon to execute.`,
-        },
-        // Inline decoration — highlighted instruction text
-        inlineClassName: inst.isComment ? "monaco-ai-instruction-comment" : "monaco-ai-instruction-inline",
-        overviewRuler: {
-          color: "#00ff88",
-          position: monaco!.editor.OverviewRulerLane.Right,
-        },
-      },
-    }))
-
-    widgetDisposable = editor.createDecorationsCollection(decorations)
-
-    // Store instructions for click handling
-    floatingInstructions = instructions
+    editor.addContentWidget(inlineChatWidget)
+    setTimeout(() => input.focus(), 50)
   }
 
-  let floatingInstructions: DetectedInstruction[] = []
-
-  // ═══════════════════════════════════════════════════════════════
-  // HANDLE GLYPH MARGIN CLICK (⚡ button)
-  // ═══════════════════════════════════════════════════════════════
-  const handleGlyphMarginClick = (e: any) => {
-    if (!editor || !monaco) return
-    const lineNumber = e.target?.position?.lineNumber
-    if (!lineNumber) return
-
-    const instruction = floatingInstructions.find((inst) => inst.line === lineNumber)
-    if (!instruction) return
-
-    executeInstruction(instruction)
+  const removeInlineChat = () => {
+    if (editor && inlineChatWidget) {
+      editor.removeContentWidget(inlineChatWidget)
+      inlineChatWidget = null
+      inlineChatLine = null
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // EXECUTE INSTRUCTION — Stream full code rewrite
+  // EXECUTE INLINE CHAT — Stream code rewrite
   // ═══════════════════════════════════════════════════════════════
-  const executeInstruction = async (instruction: DetectedInstruction) => {
-    if (aiGenerating()) {
-      aiAssistant.cancel()
-      scanner.stop()
-      setAiGenerating(false)
-      return
-    }
+  const executeInlineChat = async (lineNumber: number, prompt: string) => {
+    removeInlineChat()
+    if (aiGenerating()) return
 
     const currentCode = editor?.getValue() || ""
     const language = props.language || "typescript"
-    const model = editor?.getModel()
 
     setAiGenerating(true)
-    setActiveInstruction(instruction)
-
-    // Start scanning animation on the instruction line
-    if (model) {
-      scanner.start(editor!, instruction.line, model.getLineCount())
-    }
+    setActivePrompt(prompt)
 
     const options: GenerateOptions = {
-      prompt: instruction.instruction,
+      prompt,
       language,
       existingCode: currentCode,
       fileName: props.path,
-      instruction: instruction.type,
+      instruction: "generate",
     }
 
     tokenBuffer = ""
 
     await aiAssistant.generateCode(options, {
-      onStart: () => {
-        if (!editor) return
-        // Clear the instruction line (remove the comment)
-        isSyncing = true
-        const lines = currentCode.split("\n")
-        lines.splice(instruction.line - 1, 1)
-        editor.setValue(lines.join("\n"))
-        isSyncing = false
-      },
-
-      onToken: (token, fullCode) => {
+      onStart: () => {},
+      onToken: (_token, fullCode) => {
         if (!editor) return
         tokenBuffer = fullCode
-
         if (streamingDebounce) clearTimeout(streamingDebounce)
         streamingDebounce = setTimeout(() => {
           if (!editor) return
@@ -207,40 +198,28 @@ export function MonacoEditor(props: MonacoEditorProps) {
           editor.setValue(tokenBuffer)
           isSyncing = false
           props.onChange?.(tokenBuffer)
-
           const lineCount = editor.getModel()?.getLineCount() || 0
           editor.revealLine(lineCount)
         }, 30)
       },
-
       onComplete: (fullCode) => {
         if (!editor) return
-        scanner.stop()
-
         if (streamingDebounce) clearTimeout(streamingDebounce)
-
         isSyncing = true
         editor.setValue(fullCode || currentCode)
         isSyncing = false
         props.onChange?.(fullCode || currentCode)
-
         setAiGenerating(false)
-        setActiveInstruction(null)
-
-        setTimeout(() => updateFloatingWidgets(), 100)
-
+        setActivePrompt(null)
         if (fullCode) {
           runGuardianScan(fullCode)
           props.onSave?.(fullCode)
         }
       },
-
-      onError: (error) => {
-        scanner.stop()
+      onError: (_error) => {
         if (streamingDebounce) clearTimeout(streamingDebounce)
         setAiGenerating(false)
-        setActiveInstruction(null)
-        // Restore original code on error
+        setActivePrompt(null)
         isSyncing = true
         editor?.setValue(currentCode)
         isSyncing = false
@@ -274,11 +253,6 @@ export function MonacoEditor(props: MonacoEditorProps) {
         feedback.signalError(issue, filePath, code)
       }
     }
-  }
-
-  const debouncedScan = (code: string) => {
-    if (scanDebounce) clearTimeout(scanDebounce)
-    scanDebounce = setTimeout(() => runGuardianScan(code), 200)
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -391,7 +365,6 @@ export function MonacoEditor(props: MonacoEditorProps) {
       copyWithSyntaxHighlighting: true,
       multiCursorModifier: "ctrlCmd",
       wordBasedSuggestions: "allDocuments",
-      glyphMargin: true,
       suggest: {
         showMethods: true,
         showFunctions: true,
@@ -421,22 +394,6 @@ export function MonacoEditor(props: MonacoEditorProps) {
       },
     })
 
-    // Listen for glyph margin clicks (⚡ buttons)
-    editor.onMouseDown((e) => {
-      if (e.target.type === monaco!.editor.MouseTargetType.GUTTER_GLYPH_MARGIN) {
-        const lineNumber = e.target.position?.lineNumber
-        if (lineNumber) {
-          const instruction = floatingInstructions.find((inst) => inst.line === lineNumber)
-          if (instruction) {
-            e.event.preventDefault()
-            e.event.stopPropagation()
-            executeInstruction(instruction)
-          }
-        }
-      }
-    })
-
-    let instructionDebounce: ReturnType<typeof setTimeout> | null = null
     editor.onDidChangeModelContent(() => {
       if (isSyncing) return
       userHasEdited = true
@@ -444,16 +401,12 @@ export function MonacoEditor(props: MonacoEditorProps) {
       props.onChange?.(value)
       if (userEditDebounce) clearTimeout(userEditDebounce)
       userEditDebounce = setTimeout(() => { userHasEdited = false }, 1000)
-      if (instructionDebounce) clearTimeout(instructionDebounce)
-      instructionDebounce = setTimeout(() => { updateFloatingWidgets() }, 800)
     })
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       const value = editor?.getValue() || ""
       props.onSave?.(value)
-      // Scan on save only — no loading flash during typing
       runGuardianScan(value)
-      updateFloatingWidgets()
     })
 
     editor.focus()
@@ -509,9 +462,6 @@ export function MonacoEditor(props: MonacoEditorProps) {
         return { actions, dispose: () => {} }
       },
     })
-
-    // Initial scan for instructions
-    updateFloatingWidgets()
   })
 
   createEffect(() => {
@@ -553,22 +503,46 @@ export function MonacoEditor(props: MonacoEditorProps) {
     if (scanDebounce) clearTimeout(scanDebounce)
     if (userEditDebounce) clearTimeout(userEditDebounce)
     if (streamingDebounce) clearTimeout(streamingDebounce)
-    scanner.stop()
     widgetDisposable?.clear()
     editor?.dispose()
   })
 
   return (
     <div class="relative flex flex-col w-full h-full" style={{ "min-height": "300px" }}>
-      {/* ═══ EDITOR ═══ */}
+      {/* EDITOR — double-click line to open AI chat */}
       <div
         ref={containerRef}
         class="flex-1 min-h-0"
         style={{ width: "100%" }}
-        onClick={handleClick}
+        onDblClick={(e: MouseEvent) => {
+          if (aiGenerating()) return
+          const target = e.target as HTMLElement
+          const lineEl = target.closest("[data-line-number]")
+          if (lineEl) {
+            const lineNum = parseInt(lineEl.getAttribute("data-line-number") || "")
+            if (lineNum && lineNum > 0) {
+              e.preventDefault()
+              e.stopPropagation()
+              showInlineChat(lineNum)
+            }
+          }
+        }}
+        onClick={(e: MouseEvent) => {
+          const target = e.target as HTMLElement
+          if (target.classList?.contains("margin") || target.closest(".margin-view-overlays")) {
+            const lineEl = target.closest("[data-line-number]") || target
+            const lineNum = parseInt(lineEl.getAttribute?.("data-line-number") || (lineEl as any)?.innerText)
+            if (lineNum && lineNum > 0) {
+              e.preventDefault()
+              e.stopPropagation()
+              showInlineChat(lineNum)
+            }
+          }
+          handleClick()
+        }}
       />
 
-      {/* ═══ AI GENERATING STATUS BAR ═══ */}
+      {/* AI GENERATING STATUS */}
       <Show when={aiGenerating()}>
         <div
           class="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-3 px-4 py-2"
@@ -576,39 +550,24 @@ export function MonacoEditor(props: MonacoEditorProps) {
             "background": "linear-gradient(135deg, rgba(0,255,136,0.15) 0%, rgba(0,204,255,0.15) 100%)",
             "backdrop-filter": "blur(10px)",
             "border-top": "1px solid rgba(0,255,136,0.3)",
-            "animation": "monaco-ai-status-slide-up 0.3s ease-out",
           }}
         >
           <div class="w-2 h-2 rounded-full bg-[#00ff88] animate-pulse" />
-          <span class="text-xs font-medium text-[#00ff88]">
-            AI is rewriting code...
-          </span>
-          <Show when={activeInstruction()}>
-            <span class="text-xs text-[#aaa]">"{activeInstruction()!.instruction}"</span>
+          <span class="text-xs font-medium text-[#00ff88]">AI is generating...</span>
+          <Show when={activePrompt()}>
+            <span class="text-xs text-[#aaa]">"{activePrompt()!.slice(0, 50)}"</span>
           </Show>
           <button
             class="px-2 py-0.5 text-[10px] font-medium rounded bg-[rgba(255,255,255,0.1)] text-[#ff6b6b] hover:bg-[rgba(255,255,255,0.2)] transition-colors"
             onClick={() => {
               aiAssistant.cancel()
-              scanner.stop()
               setAiGenerating(false)
-              setActiveInstruction(null)
+              setActivePrompt(null)
             }}
           >
             Stop
           </button>
         </div>
-      </Show>
-
-      {/* ═══ SCANNING OVERLAY ═══ */}
-      <Show when={aiGenerating()}>
-        <div
-          class="absolute inset-0 pointer-events-none"
-          style={{
-            "background": "linear-gradient(180deg, rgba(0,255,136,0.02) 0%, transparent 20%, transparent 80%, rgba(0,204,255,0.02) 100%)",
-            "animation": "monaco-ai-overlay-pulse 2s ease-in-out infinite",
-          }}
-        />
       </Show>
     </div>
   )

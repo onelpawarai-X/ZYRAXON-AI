@@ -334,7 +334,7 @@ const main = Effect.gen(function* () {
         }
       })
       startVoiceBridge()
-      logger.info("Voice bridge started on port 14580")
+      logger.info("Voice bridge started on port 14600")
     } catch (error) {
       logger.warn("failed to start voice bridge", error)
     }

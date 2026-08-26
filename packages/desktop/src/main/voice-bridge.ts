@@ -12,6 +12,7 @@ let chromeProcess: ReturnType<typeof spawn> | null = null
 let rendererCallback: ((data: any) => void) | null = null
 let currentLanguage: string = "auto"
 let currentVoiceGender: string = "male"
+let pendingListening: boolean = false
 
 export function setRendererCallback(cb: (data: any) => void) {
   rendererCallback = cb
@@ -116,6 +117,10 @@ function startServer(htmlPath: string) {
     if (currentVoiceGender) {
       ws.send(JSON.stringify({ type: "set-voice", gender: currentVoiceGender }))
     }
+    // Send pending listening state to newly connected client
+    if (pendingListening) {
+      ws.send(JSON.stringify({ type: "start-listening" }))
+    }
     ws.on("message", (raw) => {
       try {
         const data = JSON.parse(raw.toString())
@@ -172,9 +177,7 @@ function launchChrome() {
   chromeProcess = spawn(chrome, [
     `--user-data-dir=${profileDir}`,
     `--app=${url}`,
-    "--window-size=400,100",
-    "--window-position=-32000,-32000",
-    "--window-minimized",
+    "--window-size=420,700",
     "--no-first-run",
     "--disable-extensions",
     "--disable-popup-blocking",
@@ -207,6 +210,9 @@ export function stopVoiceBridge() {
 }
 
 export function sendToVoiceBridge(data: any) {
+  // Track pending listening state
+  if (data.type === "start-listening") pendingListening = true
+  if (data.type === "stop-listening") pendingListening = false
   if (!wss) return
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) client.send(JSON.stringify(data))

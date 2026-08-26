@@ -839,12 +839,7 @@ export function AssistantParts(props: {
     const text = textParts.map((p: any) => p.text).join(" ").slice(0, 3000)
     if (!text) return
     try {
-      // Try Electron voice bridge first (Chrome SpeechSynthesis in separate window)
-      if (typeof window !== "undefined" && (window as any).api?.voiceTTSSpeak) {
-        ;(window as any).api.voiceTTSSpeak(text)
-        return
-      }
-      // Fallback: use renderer's SpeechSynthesis
+      // Use renderer's SpeechSynthesis directly — works reliably in Electron
       const synth = window.speechSynthesis
       if (!synth) return
       synth.cancel()

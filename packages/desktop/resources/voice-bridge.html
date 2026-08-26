@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZYRAXON Voice</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#06060c;--glass:rgba(18,18,30,0.7);--glass2:rgba(25,25,45,0.5);--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.12);--accent:#00e87b;--accent2:#3b82f6;--female:#f472b6;--male:#60a5fa;--text:#e4e4ed;--text2:rgba(255,255,255,0.45);--blur:20px;--radius:14px}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 20%,rgba(0,232,123,0.06) 0%,transparent 50%),radial-gradient(circle at 70% 80%,rgba(59,130,246,0.05) 0%,transparent 50%);pointer-events:none;z-index:0}
+.topbar{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--glass);backdrop-filter:blur(var(--blur));border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:13px;letter-spacing:1.5px;text-transform:uppercase}
+.logo svg{width:22px;height:22px}
+.conn{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)}
+.conn-dot{width:6px;height:6px;border-radius:50%;background:#ef4444;transition:all .3s}
+.conn-dot.ok{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.conn-dot.rec{background:var(--accent);box-shadow:0 0 12px var(--accent);animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.content{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:10px;overflow-y:auto}
+.voice-row{display:flex;gap:8px;align-items:center}
+.voice-btn{padding:6px 16px;border-radius:20px;font-size:11px;font-weight:600;border:1.5px solid var(--border);background:var(--glass2);color:var(--text2);cursor:pointer;transition:all .25s;letter-spacing:0.5px}
+.voice-btn:hover{border-color:rgba(255,255,255,0.2);color:var(--text)}
+.voice-btn.female.on{background:var(--female);color:#000;border-color:var(--female);box-shadow:0 0 16px rgba(244,114,182,0.3)}
+.voice-btn.male.on{background:var(--male);color:#000;border-color:var(--male);box-shadow:0 0 16px rgba(96,165,250,0.3)}
+.langs{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;max-width:580px}
+.lang{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;border:1px solid var(--border);background:var(--glass2);color:var(--text2);cursor:pointer;transition:all .25s;white-space:nowrap}
+.lang:hover{border-color:rgba(255,255,255,0.2);color:var(--text)}
+.lang.on{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600;box-shadow:0 0 16px rgba(0,232,123,0.25)}
+.meter{width:200px;height:4px;background:var(--glass2);border-radius:2px;overflow:hidden}
+.meter-bar{height:100%;width:0%;background:var(--accent);border-radius:2px;transition:width 0.05s}
+.meter-label{font-size:9px;color:var(--text2);text-align:center}
+.mic-wrap{position:relative;width:110px;height:110px;display:flex;align-items:center;justify-content:center}
+.mic-ring{position:absolute;inset:0;border-radius:50%;border:1.5px solid var(--border2);transition:all .4s}
+.mic-ring.on{border-color:var(--accent);box-shadow:0 0 24px rgba(0,232,123,0.2);animation:ring 2s ease-out infinite}
+@keyframes ring{0%{transform:scale(1);opacity:1}100%{transform:scale(1.6);opacity:0}}
+.mic-ring2{position:absolute;inset:8px;border-radius:50%;border:1px solid var(--border);transition:all .4s}
+.mic-ring2.on{border-color:rgba(0,232,123,0.3)}
+.mic{width:64px;height:64px;border-radius:50%;border:none;background:var(--glass2);color:var(--text);cursor:pointer;transition:all .3s;position:relative;z-index:2;display:flex;align-items:center;justify-content:center}
+.mic:hover{background:rgba(255,255,255,0.1)}
+.mic.on{background:var(--accent);color:#000;box-shadow:0 0 32px rgba(0,232,123,0.35)}
+.mic svg{width:24px;height:24px;fill:currentColor}
+.transcript{width:90%;max-width:540px;min-height:52px;max-height:120px;overflow-y:auto;background:var(--glass);backdrop-filter:blur(var(--blur));border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;font-size:14px;line-height:1.7}
+.ft{color:var(--accent)}.it{color:var(--accent2);opacity:.7}
+.ph{color:var(--text2);font-size:13px}
+.err{color:#ef4444;font-size:12px}
+.tts-label{font-size:9px;color:var(--text2);text-align:center;margin-top:-4px}
+.tts-output{width:90%;max-width:540px;min-height:40px;max-height:80px;overflow-y:auto;background:rgba(0,232,123,0.05);border:1px solid rgba(0,232,123,0.15);border-radius:var(--radius);padding:10px 14px;font-size:12px;line-height:1.6;color:var(--accent);opacity:0.8}
+.bar{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;background:var(--glass);backdrop-filter:blur(var(--blur));border-top:1px solid var(--border)}
+.btn{padding:7px 18px;border-radius:8px;border:none;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px}
+.btn svg{width:14px;height:14px;fill:currentColor}
+.btn-p{background:var(--accent2);color:#fff}.btn-p:disabled{background:rgba(255,255,255,0.08);color:var(--text2);cursor:not-allowed}
+.btn-g{background:transparent;color:var(--text2);border:1px solid var(--border)}.btn-g:hover{border-color:var(--accent);color:var(--text)}
+.btn-tts{background:var(--accent);color:#000;font-weight:600}.btn-tts:hover{box-shadow:0 0 16px rgba(0,232,123,0.3)}
+.btn-tts.off{background:rgba(255,255,255,0.08);color:var(--text2)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>VOICE</div>
+  <div class="conn"><div class="conn-dot" id="dot"></div><span id="ctxt">Connecting</span></div>
+</div>
+<div class="content">
+  <div class="voice-row">
+    <button class="voice-btn female on" id="vf">&#9792; Female</button>
+    <button class="voice-btn male" id="vm">&#9794; Male</button>
+  </div>
+  <div class="langs" id="langs"></div>
+  <div class="meter"><div class="meter-bar" id="mbar"></div></div>
+  <div class="meter-label" id="mlabel">Mic level</div>
+  <div class="mic-wrap">
+    <div class="mic-ring" id="ring1"></div>
+    <div class="mic-ring2" id="ring2"></div>
+    <button class="mic" id="mic"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></button>
+  </div>
+  <div class="transcript" id="tr"><span class="ph">Press mic to start</span></div>
+  <div class="tts-label">AI Voice Output</div>
+  <div class="tts-output" id="ttsOut"><span class="ph">AI responses will speak here</span></div>
+</div>
+<div class="bar">
+  <button class="btn btn-tts" id="ttsToggle">&#9654; TTS ON</button>
+  <button class="btn btn-g" id="clr"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>Clear</button>
+  <button class="btn btn-p" id="send" disabled><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>Send</button>
+</div>
+<script>
+var LANGS=[
+  {c:'auto',n:'Auto-Detect'},{c:'bn-BD',n:'\u09AC\u09BE\u0982\u09B2\u09BE'},{c:'hi-IN',n:'\u0939\u093F\u0928\u094D\u0924\u0940'},{c:'en-US',n:'English US'},
+  {c:'en-GB',n:'English UK'},{c:'en-IN',n:'English IN'},{c:'ar-SA',n:'\u0627\u0644\u0639\u0631\u0628\u064A\u0629'},{c:'es-ES',n:'Espa\u00F1ol'},
+  {c:'fr-FR',n:'Fran\u00E7ais'},{c:'de-DE',n:'Deutsch'},{c:'pt-BR',n:'Portugu\u00EAs BR'},{c:'ru-RU',n:'\u0420\u0443\u0441\u0441\u043A\u0438\u0439'},
+  {c:'ja-JP',n:'\u65E5\u672C\u8A9E'},{c:'ko-KR',n:'\uD55C\uAD6D\uC5B4'},{c:'zh-CN',n:'\u4E2D\u6587\u7B80\u4F53'},{c:'zh-TW',n:'\u4E2D\u6587\u7E41\u9AD4'},
+  {c:'vi-VN',n:'Ti\u1EBFng Vi\u1EC7t'},{c:'it-IT',n:'Italiano'},{c:'th-TH',n:'\u0E44\u0E17\u0E22'},{c:'tr-TR',n:'T\u00FCrk\u00E7e'},
+  {c:'pl-PL',n:'Polski'},{c:'nl-NL',n:'Nederlands'},{c:'uk-UA',n:'\u0423\u043A\u0440\u0430\u0457\u043D\u0441\u044C\u043A\u0430'},{c:'sv-SE',n:'Svenska'},
+  {c:'id-ID',n:'Indonesia'},{c:'ms-MY',n:'Melayu'},{c:'ta-IN',n:'\u0B9A\u0BBF\u0BB4\u0BCD'},{c:'te-IN',n:'\u0C24\u0C46\u0C32\u0C41\u0C17\u0C41'},
+  {c:'ur-PK',n:'\u0627\u0631\u062F\u0648'},{c:'fa-IR',n:'\u0641\u0627\u0631\u0633\u06CC'},{c:'sw-KE',n:'Kiswahili'},{c:'af-ZA',n:'Afrikaans'}
+];
+var FEMALE_PREFS=['Google','Microsoft Zira','Microsoft Hazel','Samantha','Victoria','Karen','Moira','Tessa'];
+var MALE_PREFS=['Google','Microsoft David','Microsoft Mark','Daniel','Alex','Fred','Bruce'];
+var ws=null,rec=null,wantsListening=false,selLang='auto',restartTimer=null;
+var sessionSentences=[],interimText='';
+var micStream=null,analyser=null,animFrame=null,audioCtx=null;
+var recRestarting=false,lastActivity=0;
+var voiceGender='female',ttsEnabled=true,lastSpokenText='';
+var dot=document.getElementById('dot'),ctxt=document.getElementById('ctxt');
+var micBtn=document.getElementById('mic'),r1=document.getElementById('ring1');
+var r2=document.getElementById('ring2'),tr=document.getElementById('tr');
+var sendBtn=document.getElementById('send'),clrBtn=document.getElementById('clr');
+var langsEl=document.getElementById('langs');
+var mbar=document.getElementById('mbar'),mlabel=document.getElementById('mlabel');
+var ttsOut=document.getElementById('ttsOut'),ttsToggle=document.getElementById('ttsToggle');
+var vfBtn=document.getElementById('vf'),vmBtn=document.getElementById('vm');
+
+function pickVoice(g){
+  voiceGender=g;
+  vfBtn.className='voice-btn female'+(g==='female'?' on':'');
+  vmBtn.className='voice-btn male'+(g==='male'?' on':'');
+  sendWS({type:'voice-changed',gender:g});
+}
+vfBtn.onclick=function(){pickVoice('female')};
+vmBtn.onclick=function(){pickVoice('male')};
+
+LANGS.forEach(function(l){
+  var d=document.createElement('div');
+  d.className='lang'+(l.c==='auto'?' on':'');
+  d.dataset.lang=l.c;d.textContent=l.n;
+  d.onclick=function(){pickLang(l.c)};
+  langsEl.appendChild(d);
+});
+
+function pickLang(c){
+  selLang=c;
+  var all=langsEl.querySelectorAll('.lang');
+  for(var i=0;i<all.length;i++){all[i].classList.toggle('on',all[i].dataset.lang===c)}
+  sendWS({type:'language-changed',lang:c});
+  if(wantsListening&&rec){
+    try{rec.stop()}catch(e){}
+    setTimeout(function(){if(wantsListening)startRecognition()},200);
+  }
+}
+
+function connect(){
+  if(ws&&ws.readyState===1)return;
+  ws=new WebSocket('ws://127.0.0.1:14600');
+  ws.onopen=function(){dot.className='conn-dot ok';ctxt.textContent='Connected';ws.send(JSON.stringify({type:'ready'}))};
+  ws.onmessage=function(e){
+    try{
+      var d=JSON.parse(e.data);
+      if(d.type==='ping')ws.send(JSON.stringify({type:'pong'}));
+      if(d.type==='start-listening'&&!wantsListening)startListening();
+      if(d.type==='stop-listening'&&wantsListening)stopListening();
+      if(d.type==='set-language'&&d.lang)pickLang(d.lang);
+      if(d.type==='set-voice'&&d.gender)pickVoice(d.gender);
+      if(d.type==='tts-speak'&&d.text)speakText(d.text);
+      if(d.type==='tts-stop')stopSpeaking();
+    }catch(ex){}
+  };
+  ws.onclose=function(){dot.className='conn-dot';ctxt.textContent='Reconnecting';setTimeout(connect,2000)};
+  ws.onerror=function(){};
+}
+function sendWS(d){if(ws&&ws.readyState===1)ws.send(JSON.stringify(d))}
+
+async function startMicMeter(){
+  try{
+    micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:false,autoGainControl:true,channelCount:1}});
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    var src=audioCtx.createMediaStreamSource(micStream);
+    analyser=audioCtx.createAnalyser();analyser.fftSize=512;analyser.smoothingTimeConstant=0.2;
+    src.connect(analyser);
+    var data=new Uint8Array(analyser.frequencyBinCount);
+    function update(){
+      analyser.getByteFrequencyData(data);
+      var peak=0,sum=0;
+      for(var i=0;i<data.length;i++){sum+=data[i];if(data[i]>peak)peak=data[i]}
+      var avg=sum/data.length;var pct=Math.min(100,Math.max(0,(avg*4)+(peak*0.5)));
+      mbar.style.width=pct+'%';mbar.style.background=pct>60?'#ef4444':pct>30?'#eab308':'var(--accent)';
+      animFrame=requestAnimationFrame(update);
+    }
+    update();
+  }catch(e){mlabel.textContent='Mic access denied'}
+}
+function stopMicMeter(){
+  if(animFrame){cancelAnimationFrame(animFrame);animFrame=null}
+  if(micStream){micStream.getTracks().forEach(function(t){t.stop()});micStream=null}
+  if(audioCtx){audioCtx.close().catch(function(){});audioCtx=null}
+  analyser=null;mbar.style.width='0%';
+}
+
+function getLangCode(){return selLang==='auto'?'':selLang}
+
+function startListening(){
+  wantsListening=true;sessionSentences=[];interimText='';
+  startMicMeter();startRecognition();
+}
+
+function startRecognition(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){tr.innerHTML='<span class="err">SpeechRecognition not available</span>';return}
+  if(!rec){rec=new SR();rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=1}
+  var lc=getLangCode();if(lc)rec.lang=lc;
+  rec.onstart=function(){recRestarting=false;lastActivity=Date.now();setListeningUI(true)};
+  rec.onresult=function(event){
+    lastActivity=Date.now();
+    for(var i=event.resultIndex;i<event.results.length;i++){
+      var t=event.results[i][0].transcript;
+      if(event.results[i].isFinal){
+        var c=t.trim();
+        if(c.length>0){sessionSentences.push(c);sendWS({type:'transcript',final:true,text:c,fullText:sessionSentences.join(' '),lang:event.results[i][0].language||''})}
+        interimText='';
+      }else{interimText=t}
+    }
+    updDisplay();sendBtn.disabled=sessionSentences.length===0;
+  };
+  rec.onerror=function(e){
+    lastActivity=Date.now();
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'){
+      tr.innerHTML='<span class="err">Microphone blocked. Allow mic access.</span>';
+      wantsListening=false;setListeningUI(false);stopMicMeter();return;
+    }
+  };
+  rec.onend=function(){
+    if(!wantsListening)return;
+    if(!recRestarting){
+      recRestarting=true;
+      restartTimer=setTimeout(function(){
+        if(wantsListening&&rec){
+          try{rec.start()}
+          catch(e){restartTimer=setTimeout(function(){
+            if(wantsListening&&rec)try{rec.start()}catch(e2){}
+          },300)}
+        }
+      },50);
+    }
+  };
+  try{rec.start()}catch(e){if(wantsListening)restartTimer=setTimeout(function(){if(wantsListening&&rec)try{rec.start()}catch(e2){}},300)}
+}
+
+function cleanup(){
+  if(restartTimer){clearTimeout(restartTimer);restartTimer=null}
+  if(rec){try{rec.onstart=null;rec.onresult=null;rec.onerror=null;rec.onend=null;rec.stop()}catch(e){}rec=null}
+  recRestarting=false;
+}
+function stopListening(){wantsListening=false;cleanup();stopMicMeter();setListeningUI(false)}
+
+function setListeningUI(on){
+  if(on){
+    micBtn.innerHTML='<svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M19 11c0 3.53-2.61 6.43-6 6.92V21h-2v-3.08C7.61 17.43 5 14.53 5 11H7c0 2.76 2.24 5 5 5s5-2.24 5-5h2z"/></svg>';
+    micBtn.classList.add('on');r1.classList.add('on');r2.classList.add('on');
+    dot.className='conn-dot rec';ctxt.textContent='Listening';
+  }else{
+    micBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>';
+    micBtn.classList.remove('on');r1.classList.remove('on');r2.classList.remove('on');
+    if(wantsListening){dot.className='conn-dot rec';ctxt.textContent='Restarting...'}
+    else{dot.className='conn-dot ok';ctxt.textContent='Connected'}
+  }
+}
+
+function updDisplay(){
+  var h='';
+  if(sessionSentences.length>0)h='<span class="ft">'+esc(sessionSentences.join(' '))+'</span>';
+  if(interimText)h+='<span class="it">'+esc(interimText)+'</span>';
+  if(!h)h='<span class="ph">'+(wantsListening?'Listening...':'Press mic to start')+'</span>';
+  tr.innerHTML=h;tr.scrollTop=tr.scrollHeight;
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function detectLanguage(text){
+  if(/[\u0980-\u09FF]/.test(text))return'bn';
+  if(/[\u0600-\u06FF]/.test(text))return'ar';
+  if(/[\u0400-\u04FF]/.test(text))return'ru';
+  if(/[\u3040-\u309F\u30A0-\u30FF]/.test(text))return'ja';
+  if(/[\u4E00-\u9FFF]/.test(text))return'zh';
+  if(/[\uAC00-\uD7AF]/.test(text))return'ko';
+  if(/[\u0900-\u097F]/.test(text))return'hi';
+  return'en';
+}
+
+function findBestVoice(synth,lang){
+  var voices=synth.getVoices();
+  if(!voices.length)return null;
+  var prefs=voiceGender==='female'?FEMALE_PREFS:MALE_PREFS;
+  var langMap={en:['en-US','en-GB','en'],bn:['bn-BD','bn-IN','bn'],ar:['ar-SA','ar'],ru:['ru-RU','ru'],ja:['ja-JP','ja'],zh:['zh-CN','zh-TW','zh'],hi:['hi-IN','hi'],ko:['ko-KR','ko']};
+  var preferred=langMap[lang]||[lang];
+  for(var pi=0;pi<preferred.length;pi++){
+    for(var qi=0;qi<prefs.length;qi++){
+      for(var vi=0;vi<voices.length;vi++){
+        if(voices[vi].lang.startsWith(preferred[pi])&&voices[vi].name.indexOf(prefs[qi])>=0)return voices[vi];
+      }
+    }
+  }
+  for(var pi2=0;pi2<preferred.length;pi2++){
+    for(var vi2=0;vi2<voices.length;vi2++){
+      if(voices[vi2].lang.startsWith(preferred[pi2]))return voices[vi2];
+    }
+  }
+  for(var qi2=0;qi2<prefs.length;qi2++){
+    for(var vi3=0;vi3<voices.length;vi3++){
+      if(voices[vi3].name.indexOf(prefs[qi2])>=0)return voices[vi3];
+    }
+  }
+  return voices[0]||null;
+}
+
+function speakText(text){
+  if(!ttsEnabled||!text)return;
+  try{
+    var synth=window.speechSynthesis;
+    if(!synth)return;
+    synth.cancel();
+    var utter=new SpeechSynthesisUtterance(text.slice(0,3000));
+    var lang=detectLanguage(text);
+    var langMap2={bn:'bn-BD',ar:'ar-SA',ru:'ru-RU',ja:'ja-JP',hi:'hi-IN',zh:'zh-CN',ko:'ko-KR',en:'en-US'};
+    utter.lang=langMap2[lang]||'en-US';
+    utter.rate=1.0;utter.pitch=voiceGender==='female'?1.2:0.85;utter.volume=1.0;
+    var voice=findBestVoice(synth,lang);
+    if(voice)utter.voice=voice;
+    var color=voiceGender==='female'?'var(--female)':'var(--male)';
+    ttsOut.innerHTML='<span style="color:'+color+'">'+esc(text.slice(0,200))+'</span>';
+    if(text.length>200)ttsOut.innerHTML+='...';
+    utter.onend=function(){ttsOut.innerHTML='<span class="ph">AI responses will speak here</span>'};
+    utter.onerror=function(){ttsOut.innerHTML='<span class="err">TTS error</span>'};
+    synth.speak(utter);
+  }catch(e){console.warn('[V] TTS error:',e)}
+}
+
+function stopSpeaking(){
+  if(window.speechSynthesis)window.speechSynthesis.cancel();
+  ttsOut.innerHTML='<span class="ph">AI responses will speak here</span>';
+}
+
+function toggleTTS(){
+  ttsEnabled=!ttsEnabled;
+  ttsToggle.innerHTML=ttsEnabled?'\u25B6 TTS ON':'\u2586\u2586 TTS OFF';
+  ttsToggle.className=ttsEnabled?'btn btn-tts':'btn btn-tts off';
+  if(!ttsEnabled)stopSpeaking();
+  sendWS({type:'tts-changed',enabled:ttsEnabled,gender:voiceGender});
+}
+ttsToggle.onclick=toggleTTS;
+
+micBtn.onclick=function(){wantsListening?stopListening():startListening()};
+sendBtn.onclick=function(){
+  var text=sessionSentences.join(' ').trim();if(!text)return;
+  sendWS({type:'send-to-chat',text:text,lang:selLang});
+  sessionSentences=[];interimText='';updDisplay();sendBtn.disabled=true;
+};
+clrBtn.onclick=function(){sessionSentences=[];interimText='';updDisplay();sendBtn.disabled=true};
+
+connect();
+if(window.speechSynthesis){window.speechSynthesis.onvoiceschanged=function(){window.speechSynthesis.getVoices()};window.speechSynthesis.getVoices()}
+</script>
+</body>
+</html>

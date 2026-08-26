@@ -179,6 +179,12 @@ export const { use: usePermission, provider: PermissionProvider } = createSimple
       isPermissionAllowAll(directory: string) {
         return selected().isPermissionAllowAll(directory)
       },
+      getPermissionMode(sessionID: string, directory?: string): string {
+        try { return selected().api.getPermissionMode(sessionID, directory) } catch { return "allow" }
+      },
+      setPermissionMode(sessionID: string, directory: string, mode: 'deny' | 'always' | 'allow') {
+        try { selected().api.setPermissionMode(sessionID, directory, mode) } catch {}
+      },
     }
   },
 })

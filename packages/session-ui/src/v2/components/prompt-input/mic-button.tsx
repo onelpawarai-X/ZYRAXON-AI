@@ -61,13 +61,7 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
   let recognition: any = null
   let shouldListen = false
   let restartTimer: ReturnType<typeof setTimeout> | null = null
-
-  createEffect(() => {
-    const lang = props.language
-    if (lang && lang !== selectedLang()) {
-      setSelectedLang(lang)
-    }
-  })
+  let voiceUnsub: (() => void) | null = null
 
   createEffect(() => {
     const lang = props.language
@@ -140,16 +134,27 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     const api = (window as any).api
     if (api?.voiceStartListening) {
       setState("listening")
-      api.voiceStartListening()
       api.voiceSetLanguage(selectedLang())
-      const unsub = api.onVoiceEvent?.((ev: any) => {
+      api.voiceStartListening()
+
+      // Store unsub for cleanup
+      if (voiceUnsub) { voiceUnsub(); voiceUnsub = null }
+      voiceUnsub = api.onVoiceEvent?.((ev: any) => {
         if (ev.type === "voice-transcript" && ev.isFinal && ev.text) {
           props.onTranscript(ev.text, ev.lang || selectedLang())
           setInterim("")
         } else if (ev.type === "voice-transcript" && !ev.isFinal) {
           setInterim(ev.text || "")
         }
-      })
+      }) || null
+
+      // Retry if bridge not ready yet (Chrome takes time to connect)
+      setTimeout(() => {
+        if (state() === "listening") {
+          api.voiceSetLanguage(selectedLang())
+          api.voiceStartListening()
+        }
+      }, 1500)
       return
     }
     ensureRecognition()
@@ -182,6 +187,7 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     const api = (window as any).api
     if (api?.voiceStopListening) {
       api.voiceStopListening()
+      if (voiceUnsub) { voiceUnsub(); voiceUnsub = null }
       setState("idle")
       setInterim("")
       return
@@ -214,6 +220,13 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     const api = (window as any).api
     if (api?.voiceSetLanguage) {
       api.voiceSetLanguage(code)
+      if (state() === "listening") {
+        api.voiceStopListening()
+        setTimeout(() => {
+          api.voiceSetLanguage(code)
+          api.voiceStartListening()
+        }, 200)
+      }
       return
     }
     if (recognition && state() === "listening") {
@@ -230,6 +243,7 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
   onCleanup(() => {
     shouldListen = false
     if (restartTimer) clearTimeout(restartTimer)
+    if (voiceUnsub) { voiceUnsub(); voiceUnsub = null }
     if (recognition) {
       try { recognition.stop() } catch {}
     }

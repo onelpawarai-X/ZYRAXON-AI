@@ -100,6 +100,22 @@ export const SettingsGeneralV2: Component<{
     if (!props.sessionID) return undefined
     return serverSync().session.lineage.peek(props.sessionID)?.session.directory
   })
+
+  const permDir = createMemo(() => {
+    if (props.sessionID) {
+      return serverSync().session.lineage.peek(props.sessionID)?.session.directory
+    }
+    const sessions = Object.values(serverSync().session.data.info)
+    if (sessions.length > 0) return sessions[0]?.directory
+    return undefined
+  })
+
+  const permSessionID = createMemo(() => {
+    if (props.sessionID) return props.sessionID
+    const sessions = Object.values(serverSync().session.data.info)
+    if (sessions.length > 0) return sessions[0]?.id
+    return undefined
+  })
   const accepting = createMemo(() => {
     const value = dir()
     if (!value || !props.sessionID) return false
@@ -285,21 +301,46 @@ export const SettingsGeneralV2: Component<{
               { id: "always", value: "always", label: "Always — never ask again" },
             ]}
             current={(() => {
-              const mode = permission.getPermissionMode(props.sessionID ?? "", dir()!)
-              if (mode === "always") return { id: "always", value: "always", label: "Always — never ask again" }
-              if (mode === "deny") return { id: "deny", value: "deny", label: "Deny — always ask permission" }
+              try {
+                const directory = permDir()
+                if (directory) {
+                  if (permission.isAutoAcceptingDirectory(directory)) {
+                    return { id: "always", value: "always", label: "Always — never ask again" }
+                  }
+                }
+                const sid = permSessionID()
+                if (sid && directory) {
+                  const mode = permission.getPermissionMode(sid, directory)
+                  if (mode === "always") return { id: "always", value: "always", label: "Always — never ask again" }
+                  if (mode === "deny") return { id: "deny", value: "deny", label: "Deny — always ask permission" }
+                }
+              } catch {}
               return { id: "allow", value: "allow", label: "Allow — ask once per action" }
             })()}
             value={(o) => o.value}
             label={(o) => o.label}
             onSelect={(option) => {
-              if (!option || !dir() || !props.sessionID) return
-              if (option.value === "always") {
-                permission.enableAutoAccept(props.sessionID, dir()!)
-              } else if (option.value === "deny") {
-                permission.setPermissionMode(props.sessionID, dir()!, "deny")
-              } else {
-                permission.setPermissionMode(props.sessionID, dir()!, "allow")
+              if (!option) return
+              const directory = permDir()
+              const sid = permSessionID()
+              if (sid && directory) {
+                if (option.value === "always") {
+                  permission.enableAutoAccept(sid, directory)
+                } else if (option.value === "deny") {
+                  permission.setPermissionMode(sid, directory, "deny")
+                } else {
+                  permission.setPermissionMode(sid, directory, "allow")
+                }
+              } else if (directory) {
+                if (option.value === "always") {
+                  if (!permission.isAutoAcceptingDirectory(directory)) {
+                    permission.toggleAutoAcceptDirectory(directory)
+                  }
+                } else if (option.value === "deny") {
+                  if (permission.isAutoAcceptingDirectory(directory)) {
+                    permission.toggleAutoAcceptDirectory(directory)
+                  }
+                }
               }
             }}
             placement="bottom-end"
@@ -668,7 +709,7 @@ export const SettingsGeneralV2: Component<{
       <SettingsListV2>
         <SettingsRowV2
           title="Auto-speak responses"
-          description="AI responses are automatically spoken aloud using Bark TTS"
+          description="AI responses are automatically spoken aloud using browser TTS"
         >
           <div data-action="settings-voice-auto-speak">
             <Switch
@@ -679,8 +720,36 @@ export const SettingsGeneralV2: Component<{
         </SettingsRowV2>
 
         <SettingsRowV2
+          title="Voice gender"
+          description="Select male or female voice for TTS output"
+        >
+          <div data-action="settings-voice-gender" class="flex gap-2">
+            <ButtonV2
+              size="normal"
+              variant={settings.general.voiceGender() === "male" ? "primary" : "neutral"}
+              onClick={() => {
+                settings.general.setVoiceGender("male")
+                try { ;(window as any).api?.voiceSetGender?.("male") } catch {}
+              }}
+            >
+              Male
+            </ButtonV2>
+            <ButtonV2
+              size="normal"
+              variant={settings.general.voiceGender() === "female" ? "primary" : "neutral"}
+              onClick={() => {
+                settings.general.setVoiceGender("female")
+                try { ;(window as any).api?.voiceSetGender?.("female") } catch {}
+              }}
+            >
+              Female
+            </ButtonV2>
+          </div>
+        </SettingsRowV2>
+
+        <SettingsRowV2
           title="Voice language"
-          description="Language for text-to-speech output"
+          description="Language for speech recognition and TTS"
         >
           <SelectV2
             appearance="inline"
@@ -760,19 +829,14 @@ export const SettingsGeneralV2: Component<{
             }
             value={(o) => o.value}
             label={(o) => o.label}
-            onSelect={(option) => option && settings.general.setVoiceLanguage(option.value)}
+            onSelect={(option) => {
+              if (!option) return
+              settings.general.setVoiceLanguage(option.value)
+              try { ;(window as any).api?.voiceSetLanguage?.(option.value) } catch {}
+            }}
             placement="bottom-end"
             gutter={6}
           />
-        </SettingsRowV2>
-
-        <SettingsRowV2
-          title="Bark TTS Model"
-          description="Local text-to-speech engine — runs on your machine"
-        >
-          <div data-action="settings-voice-bark-status" class="flex items-center gap-2">
-            <span class="text-v2-text-text-muted text-12-regular">Not downloaded</span>
-          </div>
         </SettingsRowV2>
       </SettingsListV2>
     </div>

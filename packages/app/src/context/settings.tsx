@@ -40,6 +40,7 @@ export interface Settings {
     shouldDisplayTabsToast?: boolean
     voiceAutoSpeak?: boolean
     voiceLanguage?: string
+    voiceGender?: string
     voiceRate?: number
     voicePitch?: number
   }
@@ -189,6 +190,8 @@ const defaultSettings: Settings = {
     editToolPartsExpanded: false,
     showCustomAgents: false,
     mobileTitlebarPosition: "top",
+    voiceAutoSpeak: true,
+    voiceLanguage: "en-US",
   },
   appearance: {
     fontSize: 14,
@@ -334,6 +337,24 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
       setStore("general", "followup", "steer")
     })
 
+    createEffect(() => {
+      const gender = store.general?.voiceGender
+      if (typeof gender !== "string") return
+      try {
+        const api = typeof window !== "undefined" ? (window as any).api : undefined
+        if (api?.voiceSetGender) api.voiceSetGender(gender)
+      } catch {}
+    })
+
+    createEffect(() => {
+      const lang = store.general?.voiceLanguage
+      if (typeof lang !== "string") return
+      try {
+        const api = typeof window !== "undefined" ? (window as any).api : undefined
+        if (api?.voiceSetLanguage) api.voiceSetLanguage(lang)
+      } catch {}
+    })
+
     return {
       ready,
       get current() {
@@ -433,9 +454,13 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         setVoiceAutoSpeak(value: boolean) {
           setStore("general", "voiceAutoSpeak", value)
         },
-        voiceLanguage: withFallback(() => store.general?.voiceLanguage, "bn-BD"),
+        voiceLanguage: withFallback(() => store.general?.voiceLanguage, "en-US"),
         setVoiceLanguage(value: string) {
           setStore("general", "voiceLanguage", value)
+        },
+        voiceGender: withFallback(() => store.general?.voiceGender, "male"),
+        setVoiceGender(value: string) {
+          setStore("general", "voiceGender", value)
         },
         voiceRate: withFallback(() => store.general?.voiceRate, 1.0),
         setVoiceRate(value: number) {
