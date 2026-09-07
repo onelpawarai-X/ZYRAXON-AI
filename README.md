@@ -13,7 +13,8 @@
 </p>
 
 <p align="center">
-  <a href="https://zyraxonai.lovable.app"><img alt="Website" src="https://img.shields.io/badge/Website-zyraxonai.lovable.app-00f5ff?style=for-the-badge&logo=googlechrome&logoColor=white" /></a>
+  <a href="https://zyraxonai.lovable.app"><img alt="ZYRAXON AI" src="https://img.shields.io/badge/ZYRAXON_AI-zyraxonai.lovable.app-00f5ff?style=for-the-badge&logo=googlechrome&logoColor=white" /></a>
+  <a href="https://zyraxon-pro.ai.studio"><img alt="ZYRAXON Pro" src="https://img.shields.io/badge/ZYRAXON_Pro-zyraxon--pro.ai.studio-ff6b00?style=for-the-badge&logo=cloudflare&logoColor=white" /></a>
   <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><img alt="Version" src="https://img.shields.io/github/v/release/onelpawarai-X/ZYRAXON-AI?style=for-the-badge&color=blue" /></a>
   <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/onelpawarai-X/ZYRAXON-AI?style=for-the-badge&color=yellow" /></a>
   <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/issues"><img alt="Issues" src="https://img.shields.io/github/issues/onelpawarai-X/ZYRAXON-AI?style=for-the-badge&color=red" /></a>
@@ -23,7 +24,8 @@
 </p>
 
 <p align="center">
-  <a href="https://zyraxonai.lovable.app"><strong>Visit our Website</strong></a> &nbsp;|&nbsp;
+  <a href="https://zyraxonai.lovable.app"><strong>ZYRAXON AI — Main Website</strong></a> &nbsp;|&nbsp;
+  <a href="https://zyraxon-pro.ai.studio"><strong>ZYRAXON Pro — Cloud Agent</strong></a> &nbsp;|&nbsp;
   <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><strong>Download</strong></a> &nbsp;|&nbsp;
   <a href="https://youtube.com/@zyraxon-aix"><strong>YouTube</strong></a>
 </p>
@@ -33,6 +35,15 @@
   Reads your files. Writes your code. Runs your commands. Builds your projects. Deploys your apps.<br>
   It has <strong>9 Agent Modes</strong>, <strong>357+ Tools</strong>, <strong>Eternal Memory</strong>, <strong>Self-Healing</strong>, <strong>Code Guardian</strong>, <strong>Monaco AI Assistant</strong>, and it <strong>evolves itself</strong>.
 </p>
+
+---
+
+## Our Websites
+
+| Website | Description | Link |
+|---------|-------------|------|
+| **ZYRAXON AI** | Main website — Download all apps, explore projects, documentation | [zyraxonai.lovable.app](https://zyraxonai.lovable.app) |
+| **ZYRAXON Pro** | Next-Gen AI Developer & Fullstack Workspace — Cloud Agent, All-in-One Cloud Platform | [zyraxon-pro.ai.studio](https://zyraxon-pro.ai.studio) |
 
 ---
 
