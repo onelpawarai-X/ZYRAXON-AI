@@ -84,6 +84,14 @@ const getBase = (appId: string): Configuration => ({
       to: "voice-bridge.html",
     },
     {
+      from: "resources/voice-preload.js",
+      to: "voice-preload.js",
+    },
+    {
+      from: "scripts/voice-bridge-server.cjs",
+      to: "voice-bridge-server.cjs",
+    },
+    {
       from: "resources/default-mcp-config.json",
       to: "default-mcp-config.json",
     },

@@ -108,6 +108,7 @@ const layer: Layer.Layer<
     })
 
     const systemPaths = Effect.fn("Instruction.systemPaths")(function* () {
+      const _t = Date.now()
       const config = yield* cfg.get()
       const ctx = yield* InstanceState.context
       const paths = new Set<string>()
@@ -149,10 +150,12 @@ const layer: Layer.Layer<
         }
       }
 
+      console.log(`[instruction.systemPaths] found ${paths.size} files in ${Date.now() - _t}ms`)
       return paths
     })
 
     const system = Effect.fn("Instruction.system")(function* () {
+      const _tInst = Date.now()
       const config = yield* cfg.get()
       const paths = yield* systemPaths()
       const urls = (config.instructions ?? []).filter(
@@ -160,8 +163,14 @@ const layer: Layer.Layer<
       )
 
       const files = yield* Effect.forEach(Array.from(paths), read, { concurrency: 8 })
+      yield* Effect.logInfo("instruction_timing", { op: "file_read", fileCount: paths.size, ms: Date.now() - _tInst })
+      const _tFetch = Date.now()
       const remote = yield* Effect.forEach(urls, fetch, { concurrency: 4 })
+      if (urls.length > 0) {
+        yield* Effect.logInfo("instruction_timing", { op: "url_fetch", urlCount: urls.length, ms: Date.now() - _tFetch })
+      }
 
+      yield* Effect.logInfo("instruction_timing", { op: "system_total", fileCount: paths.size, urlCount: urls.length, ms: Date.now() - _tInst })
       return [
         ...Array.from(paths).flatMap((item, i) => (files[i] ? [`Instructions from: ${item}\n${files[i]}`] : [])),
         ...urls.flatMap((item, i) => (remote[i] ? [`Instructions from: ${item}\n${remote[i]}`] : [])),

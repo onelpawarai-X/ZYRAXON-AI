@@ -838,8 +838,18 @@ export function AssistantParts(props: {
     if (!textParts.length) return
     const text = textParts.map((p: any) => p.text).join(" ").slice(0, 3000)
     if (!text) return
+
+    // Send TTS to Chrome voice bridge (primary — Chrome has better speech)
     try {
-      // Use renderer's SpeechSynthesis directly — works reliably in Electron
+      const api = (window as any).api
+      if (api?.voiceTTSSpeak) {
+        api.voiceTTSSpeak(text)
+        return
+      }
+    } catch {}
+
+    // Fallback: use renderer's SpeechSynthesis directly
+    try {
       const synth = window.speechSynthesis
       if (!synth) return
       synth.cancel()

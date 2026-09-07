@@ -55,13 +55,32 @@ export function PromptInputV2Composer(props: PromptInputV2ComposerProps) {
   useCommands(props)
   useEditHandler(props)
 
-  // Listen for voice bridge language changes and sync to settings
+  // Voice bridge event handling — bidirectional sync without infinite loops
   createEffect(() => {
     const api = (window as any).api
     if (!api?.onVoiceEvent) return
+
+    let lastSyncSent = 0
+
     const unsub = api.onVoiceEvent((ev: any) => {
+      // Voice bridge language changed → sync TO app
       if (ev.type === "voice-language" && ev.lang) {
         settings.general.setVoiceLanguage(ev.lang)
+      }
+      // Voice bridge gender changed → sync TO app
+      if (ev.type === "voice-gender" && ev.gender) {
+        settings.general.setVoiceGender(ev.gender)
+      }
+      // Voice bridge connected → push current settings TO voice bridge
+      if (ev.type === "voice-mic-state") {
+        const now = Date.now()
+        if (now - lastSyncSent > 2000) {
+          lastSyncSent = now
+          const lang = settings.general.voiceLanguage()
+          const gender = settings.general.voiceGender()
+          try { api.voiceSetLanguage?.(lang) } catch {}
+          try { api.voiceSetGender?.(gender) } catch {}
+        }
       }
     })
     onCleanup(unsub)

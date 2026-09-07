@@ -463,7 +463,7 @@ export const ProvidersLoginCommand = effectCmd({
       )
     }
 
-    if (provider === "zyraxon") {
+    if (provider === "opencode") {
       yield* Prompt.log.info("Create an api key at https://zyraxon.ai/auth")
     }
 

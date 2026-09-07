@@ -267,6 +267,7 @@ export async function getMemoryStatsDetailed(): Promise<{
 // ============================================
 
 export async function autoInjectContext(userMessage: string, agent: string): Promise<string> {
+  const _t = Date.now()
   const ctx = await loadAutoContext()
   if (!ctx.enabled) return ""
   const parts: string[] = []
@@ -297,8 +298,11 @@ export async function autoInjectContext(userMessage: string, agent: string): Pro
   }
 
   // SQLite-powered unlimited memory recall
+  let memoryCount = 0
   try {
+    const _tMem = Date.now()
     const memories = await searchMemories(userMessage, MAX_CONTEXT_MEMORIES)
+    memoryCount = memories.length
     if (memories.length > 0) {
       const memStr = memories.map(m => {
         const age = Date.now() - m.timestamp
@@ -308,13 +312,16 @@ export async function autoInjectContext(userMessage: string, agent: string): Pro
       }).join("\n")
       parts.push(`Unlimited memory recall (${memories.length} matches):\n${memStr}`)
     }
-  } catch {}
+    console.log(`[autoInjectContext] memory_search: ${memories.length} results in ${Date.now() - _tMem}ms`)
+  } catch (e: any) {
+    console.log(`[autoInjectContext] memory_search ERROR: ${e?.message ?? e}`)
+  }
 
   ctx.lastInjection = Date.now()
   ctx.injectedCount++
-  await saveAutoContext(ctx)
 
   if (parts.length === 0) return ""
+  console.log(`[autoInjectContext] total: ${Date.now() - _t}ms, memories: ${memoryCount}, parts: ${parts.length}`)
   return `[ZYRAXON INFINITE MEMORY]\n${parts.join("\n\n")}\n[/ZYRAXON INFINITE MEMORY]\n\n`
 }
 
@@ -422,7 +429,7 @@ function extractTags(text: string): string[] {
     config: "config", configuration: "config", settings: "config",
     master: "master", মাস্টার: "master",
     important: "important", critical: "important",
-    zyraxon: "zyraxon", zyraxon: "zyraxon",
+    opencode: "opencode", opencode: "opencode",
   }
   for (const [keyword, tag] of Object.entries(tagMap)) {
     if (lower.includes(keyword) && !tags.includes(tag)) tags.push(tag)

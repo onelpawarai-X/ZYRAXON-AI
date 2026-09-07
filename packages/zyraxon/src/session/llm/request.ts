@@ -174,7 +174,7 @@ export const prepare = Effect.fn("LLMRequestPrep.prepare")(function* (input: Pre
     })
   }
 
-  const zyraxonProjectID = input.model.providerID.startsWith("zyraxon")
+  const opencodeProjectID = input.model.providerID.startsWith("opencode")
     ? (yield* InstanceState.context).project.id
     : undefined
 
@@ -185,12 +185,12 @@ export const prepare = Effect.fn("LLMRequestPrep.prepare")(function* (input: Pre
     params,
     messageTransformOptions: options,
     headers: {
-      ...(input.model.providerID.startsWith("zyraxon")
+      ...(input.model.providerID.startsWith("opencode")
         ? {
-            ...(zyraxonProjectID ? { "x-zyraxon-project": zyraxonProjectID } : {}),
-            "x-zyraxon-session": input.sessionID,
-            "x-zyraxon-request": input.user.id,
-            "x-zyraxon-client": input.flags.client,
+            ...(opencodeProjectID ? { "x-opencode-project": opencodeProjectID } : {}),
+            "x-opencode-session": input.sessionID,
+            "x-opencode-request": input.user.id,
+            "x-opencode-client": input.flags.client,
             "User-Agent": USER_AGENT,
           }
         : {

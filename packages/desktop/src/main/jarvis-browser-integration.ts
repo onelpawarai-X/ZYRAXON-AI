@@ -7,7 +7,7 @@
  */
 
 import { app, ipcMain, BrowserWindow } from 'electron';
-import { spawn, ChildProcess } from 'child_process';
+import { spawn, execSync, ChildProcess } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -52,11 +52,28 @@ export class JarvisBrowserIntegration {
   private _tabs: Map<string, TabInfo> = new Map();
   private _messageId: number = 0;
   private _pendingRequests: Map<number, { resolve: Function; reject: Function }> = new Map();
+  private _reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private _reconnectAttempts: number = 0;
+  private _maxReconnectAttempts: number = 10;
+  private _reconnecting: boolean = false;
+
+  private _getRealChromeProfileDir(): string {
+    const homeDir = app.getPath('home')
+    const platform = process.platform
+    if (platform === 'win32') return path.join(homeDir, 'AppData', 'Local', 'Google', 'Chrome', 'User Data')
+    if (platform === 'darwin') return path.join(homeDir, 'Library', 'Application Support', 'Google', 'Chrome')
+    return path.join(homeDir, '.config', 'google-chrome')
+  }
+
+  private _getDebugProfileDir(): string {
+    return path.join(this._getRealChromeProfileDir(), 'ZYRAXON-Debug')
+  }
 
   constructor(config: Partial<JarvisConfig> = {}) {
+    const realChromeProfile = this._getRealChromeProfileDir()
     this._config = {
       port: config.port || 9222,
-      userDataDir: config.userDataDir || path.join(app.getPath('userData'), 'jarvis-browser-profile'),
+      userDataDir: config.userDataDir || realChromeProfile,
       headless: config.headless ?? false,
       stealth: config.stealth ?? true,
       autoSolveCaptcha: config.autoSolveCaptcha ?? true,
@@ -65,11 +82,38 @@ export class JarvisBrowserIntegration {
 
   async initialize(): Promise<void> {
     console.log('[Jarvis Browser] Initializing...');
-    
-    if (!fs.existsSync(this._config.userDataDir)) {
-      fs.mkdirSync(this._config.userDataDir, { recursive: true });
+
+    // Step 1: Try to connect to existing Chrome with debugging enabled
+    if (await this._isDebuggingAvailable()) {
+      console.log('[Jarvis Browser] Found Chrome with debugging enabled!');
+      await this._connectWebSocket();
+      if (this._config.stealth) await this._applyStealthMode();
+      this._connected = true;
+      console.log('[Jarvis Browser] Ready! Connected to real Chrome with all your logins.');
+      return;
     }
 
+    // Step 2: Chrome running WITHOUT debugging port
+    // DO NOT KILL CHROME — instead, launch a SECOND Chrome with debugging + separate profile
+    // User's original Chrome stays open with all tabs and logins
+    if (this._isChromeRunning()) {
+      console.log('[Jarvis Browser] Chrome running without debugging. Launching second instance with debugging enabled...');
+      // Use a separate profile for the debugging instance so it doesn't conflict
+      const debugProfile = this._getDebugProfileDir();
+      const chromePath = this._findChrome();
+      if (!chromePath) {
+        throw new Error('Google Chrome not found.');
+      }
+      await this._launchChromeWithProfile(chromePath, debugProfile);
+      await this._waitForChrome();
+      await this._connectWebSocket();
+      if (this._config.stealth) await this._applyStealthMode();
+      this._connected = true;
+      console.log('[Jarvis Browser] Ready! Connected to Chrome debug instance. Your main Chrome is untouched.');
+      return;
+    }
+
+    // Step 3: Chrome not running — launch with debugging + default profile
     const chromePath = this._findChrome();
     if (!chromePath) {
       throw new Error('Google Chrome not found. Please install Chrome from https://www.google.com/chrome/');
@@ -85,7 +129,7 @@ export class JarvisBrowserIntegration {
     }
 
     this._connected = true;
-    console.log('[Jarvis Browser] Ready! Connected to real Chrome browser.');
+    console.log('[Jarvis Browser] Ready! Connected to real Chrome with ALL your logins.');
   }
 
   private _findChrome(): string | null {
@@ -113,10 +157,91 @@ export class JarvisBrowserIntegration {
     return null;
   }
 
+  private _isChromeRunning(): boolean {
+    try {
+      if (process.platform === 'win32') {
+        const result = execSync('tasklist /FI "IMAGENAME eq chrome.exe" /NH', { encoding: 'utf-8', timeout: 5000 });
+        return result.includes('chrome.exe');
+      } else if (process.platform === 'darwin') {
+        execSync('pgrep -x "Google Chrome"', { timeout: 5000 });
+        return true;
+      } else {
+        execSync('pgrep -x "chrome"', { timeout: 5000 });
+        return true;
+      }
+    } catch {
+      return false;
+    }
+  }
+
+  private async _isDebuggingAvailable(): Promise<boolean> {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        http.get(`http://127.0.0.1:${this._config.port}/json/version`, (res) => {
+          let data = '';
+          res.on('data', (chunk) => data += chunk);
+          res.on('end', () => {
+            try { JSON.parse(data); resolve(); } catch { reject(new Error('Invalid')); }
+          });
+        }).on('error', reject);
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async _gracefullyCloseChrome(): Promise<void> {
+    console.log('[Jarvis Browser] Gracefully closing Chrome (saving state)...');
+    try {
+      if (process.platform === 'win32') {
+        // Send WM_CLOSE to all Chrome windows — this saves tabs, cookies, session
+        // Does NOT force kill — Chrome saves everything before closing
+        try {
+          execSync('powershell -Command "Get-Process chrome -ErrorAction SilentlyContinue | ForEach-Object { $_.CloseMainWindow() | Out-Null }"', {
+            encoding: 'utf-8',
+            timeout: 10000,
+          });
+        } catch {}
+
+        // Wait up to 8 seconds for Chrome to close gracefully
+        for (let i = 0; i < 16; i++) {
+          await new Promise(r => setTimeout(r, 500));
+          const result = execSync('tasklist /FI "IMAGENAME eq chrome.exe" /NH', { encoding: 'utf-8', timeout: 3000 });
+          if (!result.includes('chrome.exe')) {
+            console.log('[Jarvis Browser] Chrome closed gracefully.');
+            return;
+          }
+        }
+
+        // If still running after 8 seconds, try again with Alt+F4 approach
+        console.log('[Jarvis Browser] Chrome still running, trying Alt+F4...');
+        try {
+          execSync('powershell -Command "Get-Process chrome -ErrorAction SilentlyContinue | ForEach-Object { $_.CloseMainWindow() | Out-Null }"', {
+            encoding: 'utf-8',
+            timeout: 5000,
+          });
+        } catch {}
+
+        await new Promise(r => setTimeout(r, 3000));
+      } else if (process.platform === 'darwin') {
+        execSync('osascript -e \'tell application "Google Chrome" to quit\'', { timeout: 10000 });
+        await new Promise(r => setTimeout(r, 2000));
+      } else {
+        execSync('pkill -x chrome', { timeout: 10000 });
+        await new Promise(r => setTimeout(r, 2000));
+      }
+    } catch (e: any) {
+      console.log('[Jarvis Browser] Graceful close note:', e.message?.slice(0, 100));
+    }
+  }
+
   private async _launchChrome(chromePath: string): Promise<void> {
+    // Use user's real Chrome profile — preserves all logged-in accounts
     const args = [
       `--remote-debugging-port=${this._config.port}`,
       `--user-data-dir=${this._config.userDataDir}`,
+      '--restore-last-session',
       '--no-first-run',
       '--no-default-browser-check',
       '--disable-background-networking',
@@ -137,7 +262,40 @@ export class JarvisBrowserIntegration {
     });
     this._chromeProcess.unref();
 
-    console.log(`[Jarvis Browser] Chrome launched with PID: ${this._chromeProcess.pid}`);
+    console.log(`[Jarvis Browser] Chrome launched with PID: ${this._chromeProcess.pid} (real profile, debugging on port ${this._config.port})`);
+  }
+
+  private async _launchChromeWithProfile(chromePath: string, profileDir: string): Promise<void> {
+    // Launch Chrome with a separate profile + debugging port
+    // This does NOT affect the user's main Chrome — it stays open with all tabs
+    if (!fs.existsSync(profileDir)) {
+      fs.mkdirSync(profileDir, { recursive: true });
+    }
+    const args = [
+      `--user-data-dir=${profileDir}`,
+      `--remote-debugging-port=${this._config.port}`,
+      '--no-first-run',
+      '--no-default-browser-check',
+      '--disable-background-networking',
+      '--disable-sync',
+      '--disable-translate',
+      '--disable-infobars',
+      '--disable-blink-features=AutomationControlled',
+      'about:blank',
+    ];
+
+    if (this._config.headless) {
+      args.push('--headless=new');
+    }
+
+    this._chromeProcess = spawn(chromePath, args, {
+      detached: true,
+      stdio: 'ignore',
+    });
+    this._chromeProcess.unref();
+
+    console.log(`[Jarvis Browser] Chrome debug instance launched (PID: ${this._chromeProcess.pid}, profile: ${profileDir}, port: ${this._config.port})`);
+    console.log(`[Jarvis Browser] NOTE: Your main Chrome is untouched. This is a separate debug instance.`);
   }
 
   private async _waitForChrome(timeout: number = 15000): Promise<void> {
@@ -178,6 +336,8 @@ export class JarvisBrowserIntegration {
       
       this._wsConnection.on('open', () => {
         console.log('[Jarvis Browser] WebSocket connected!');
+        this._reconnectAttempts = 0;
+        this._reconnecting = false;
         resolve();
       });
       
@@ -196,8 +356,44 @@ export class JarvisBrowserIntegration {
         } catch (e) {}
       });
       
-      this._wsConnection.on('error', reject);
+      this._wsConnection.on('close', () => {
+        console.log('[Jarvis Browser] WebSocket disconnected.');
+        if (this._connected && !this._reconnecting) {
+          this._scheduleReconnect();
+        }
+      });
+      
+      this._wsConnection.on('error', (err) => {
+        console.log('[Jarvis Browser] WebSocket error:', (err as Error).message?.slice(0, 80));
+        if (!this._reconnecting) {
+          reject(err);
+        }
+      });
     });
+  }
+
+  private async _scheduleReconnect(): Promise<void> {
+    if (this._reconnectAttempts >= this._maxReconnectAttempts) {
+      console.log('[Jarvis Browser] Max reconnection attempts reached. Disconnected.');
+      this._connected = false;
+      return;
+    }
+    
+    this._reconnecting = true;
+    this._reconnectAttempts++;
+    const delay = Math.min(1000 * Math.pow(2, this._reconnectAttempts - 1), 30000);
+    console.log(`[Jarvis Browser] Reconnecting in ${delay}ms (attempt ${this._reconnectAttempts}/${this._maxReconnectAttempts})...`);
+    
+    this._reconnectTimer = setTimeout(async () => {
+      try {
+        await this._connectWebSocket();
+        console.log('[Jarvis Browser] Reconnected successfully!');
+      } catch (e: any) {
+        console.log('[Jarvis Browser] Reconnect failed:', e.message?.slice(0, 80));
+        this._reconnecting = false;
+        this._scheduleReconnect();
+      }
+    }, delay);
   }
 
   private async _getWebSocketUrl(): Promise<string> {
@@ -465,14 +661,86 @@ export class JarvisBrowserIntegration {
   }
 
   async destroy(): Promise<void> {
+    if (this._reconnectTimer) {
+      clearTimeout(this._reconnectTimer);
+      this._reconnectTimer = null;
+    }
     if (this._wsConnection) {
       this._wsConnection.close();
     }
-    if (this._chromeProcess) {
-      this._chromeProcess.kill();
-    }
     this._connected = false;
-    console.log('[Jarvis Browser] Destroyed');
+    this._reconnecting = false;
+    this._chromeProcess = null;
+    console.log('[Jarvis Browser] Disconnected from Chrome (browser stays open)');
+  }
+
+  async listProfiles(): Promise<Array<{name: string; directory: string}>> {
+    const profileBase = this._getRealChromeProfileDir();
+    const profiles: Array<{name: string; directory: string}> = [];
+    
+    try {
+      // Chrome stores profiles in "Default", "Profile 1", "Profile 2", etc.
+      const entries = fs.readdirSync(profileBase);
+      for (const entry of entries) {
+        if (entry === 'Default' || /^Profile \d+$/.test(entry)) {
+          const prefsPath = path.join(profileBase, entry, 'Preferences');
+          let name = entry;
+          try {
+            if (fs.existsSync(prefsPath)) {
+              const prefs = JSON.parse(fs.readFileSync(prefsPath, 'utf-8'));
+              if (prefs.profile?.name) name = prefs.profile.name;
+            }
+          } catch {}
+          profiles.push({ name, directory: entry });
+        }
+      }
+    } catch (e: any) {
+      console.log('[Jarvis Browser] Profile list error:', e.message?.slice(0, 80));
+    }
+    
+    return profiles;
+  }
+
+  async switchProfile(profileDirectory: string): Promise<void> {
+    if (this._connected) {
+      this._wsConnection?.close();
+      this._connected = false;
+    }
+
+    const chromePath = this._findChrome();
+    if (!chromePath) throw new Error('Chrome not found');
+
+    // Use a separate debug profile to avoid conflicting with running Chrome
+    const debugProfile = this._getDebugProfileDir();
+    if (!fs.existsSync(debugProfile)) {
+      fs.mkdirSync(debugProfile, { recursive: true });
+    }
+
+    // Use a different port if Chrome is already running to avoid port conflict
+    const port = this._isChromeRunning() ? this._config.port + 1 : this._config.port;
+    this._config.port = port;
+
+    const args = [
+      `--user-data-dir=${debugProfile}`,
+      `--remote-debugging-port=${port}`,
+      '--no-first-run',
+      '--no-default-browser-check',
+      '--disable-background-networking',
+      '--disable-sync',
+      '--disable-translate',
+      '--disable-infobars',
+      '--disable-blink-features=AutomationControlled',
+      'about:blank',
+    ];
+
+    this._chromeProcess = spawn(chromePath, args, { detached: true, stdio: 'ignore' });
+    this._chromeProcess.unref();
+
+    await this._waitForChrome();
+    await this._connectWebSocket();
+    if (this._config.stealth) await this._applyStealthMode();
+    this._connected = true;
+    console.log(`[Jarvis Browser] Switched to debug profile (port ${port})`);
   }
 
   get isConnected(): boolean {
@@ -539,6 +807,18 @@ export function registerJarvisBrowserIPC(_mainWindow?: BrowserWindow): void {
     if (!jarvisInstance) return { success: false, error: 'Not initialized' };
     const tabs = await jarvisInstance.listTabs();
     return { success: true, tabs };
+  });
+
+  ipcMain.handle('jarvis-browser:list-profiles', async () => {
+    if (!jarvisInstance) return { success: false, error: 'Not initialized' };
+    const profiles = await jarvisInstance.listProfiles();
+    return { success: true, profiles };
+  });
+
+  ipcMain.handle('jarvis-browser:switch-profile', async (_, profileDir: string) => {
+    if (!jarvisInstance) return { success: false, error: 'Not initialized' };
+    await jarvisInstance.switchProfile(profileDir);
+    return { success: true };
   });
 
   ipcMain.handle('jarvis-browser:create-tab', async (_, url?: string) => {

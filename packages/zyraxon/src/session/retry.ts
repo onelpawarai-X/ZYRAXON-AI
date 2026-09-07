@@ -91,6 +91,7 @@ export function retryable(error: Err, provider: string) {
       !matchesRetryableMessage(error.data.responseBody)
     )
       return undefined
+
     if (error.data.responseBody?.includes("FreeUsageLimitError")) {
       return {
         message: GO_UPSELL_MESSAGE,
@@ -98,7 +99,7 @@ export function retryable(error: Err, provider: string) {
           reason: "free_tier_limit",
           provider,
           title: "Free limit reached",
-          message: "Subscribe to ZYRAXON Go for reliable access to the best open-source models, starting at $5/month.",
+          message: "Subscribe to ZYRAXON Go for reliable access to the best open-source models for $10/month.",
           label: "subscribe",
           link: GO_UPSELL_URL,
         },

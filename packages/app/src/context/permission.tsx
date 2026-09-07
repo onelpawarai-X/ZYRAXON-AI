@@ -76,7 +76,27 @@ export const { use: usePermission, provider: PermissionProvider } = createSimple
 
     const ensure = (key: ServerConnection.Key) => {
       const conn = global.servers.list().find((item) => ServerConnection.key(item) === key)
-      if (!conn) throw new Error(`Permission server not found: ${key}`)
+      if (!conn) {
+        // Server not yet ready (e.g. stale URL from previous session or sidecar still booting)
+        // Return a safe no-op fallback so the app doesn't crash on startup
+        const fallbackConn = global.servers.list()[0]
+        if (fallbackConn) {
+          const ctx = global.ensureServerCtx(fallbackConn)
+          const existing = states.get(ctx.sdk.scope)
+          if (existing) return existing.state
+          const root = createRoot(
+            (dispose) => ({
+              key: ServerConnection.key(fallbackConn),
+              dispose,
+              state: createServerPermissionState({ sdk: ctx.sdk, sync: ctx.sync }),
+            }),
+            owner ?? undefined,
+          )
+          states.set(ctx.sdk.scope, root)
+          return root.state
+        }
+        throw new Error(`Permission server not found: ${key}`)
+      }
       const ctx = global.ensureServerCtx(conn)
       const existing = states.get(ctx.sdk.scope)
       if (existing && global.servers.list().some((item) => ServerConnection.key(item) === existing.key)) {
@@ -117,13 +137,46 @@ export const { use: usePermission, provider: PermissionProvider } = createSimple
     onCleanup(() => states.forEach((value) => value.dispose()))
 
     let lastSelected: PermissionState | undefined
-    const selected = () => {
+
+    const safeEnsure = (key: ServerConnection.Key): PermissionState | undefined => {
+      try { return ensure(key) } catch { return undefined }
+    }
+
+    const selected = (): PermissionState | undefined => {
       const key = activeServer()
-      if (global.servers.list().some((conn) => ServerConnection.key(conn) === key)) {
-        lastSelected = ensure(key)
+      const found = safeEnsure(key)
+      if (found) {
+        lastSelected = found
+        return found
       }
-      if (lastSelected) return lastSelected
-      return ensure(server.key)
+      if (lastSelected) {
+        // Verify lastSelected's scope still has a live server — if not, clear it
+        const scopes = global.servers.list().map((c) => {
+          try { return global.ensureServerCtx(c).sdk.scope } catch { return undefined }
+        })
+        // If we still have any server, keep lastSelected; otherwise it may be stale but keep it for now
+        if (global.servers.list().length > 0) return lastSelected
+        return lastSelected
+      }
+      const fallback = safeEnsure(server.key)
+      if (fallback) {
+        lastSelected = fallback
+        return fallback
+      }
+      const anyConn = global.servers.list()[0]
+      if (anyConn) {
+        const anyState = safeEnsure(ServerConnection.key(anyConn))
+        if (anyState) {
+          lastSelected = anyState
+          return anyState
+        }
+      }
+      return lastSelected ?? undefined
+    }
+
+    // Safe wrapper — returns undefined when no server is ready yet (app still booting)
+    const selectedOrUndefined = (): PermissionState | undefined => {
+      try { return selected() } catch { return lastSelected ?? undefined }
     }
     const activeDirectory = createMemo(() => {
       const directory = decode64(params.dir)
@@ -132,58 +185,58 @@ export const { use: usePermission, provider: PermissionProvider } = createSimple
       if (draft) return draft.directory
       if (!params.id) return
       if (!global.servers.list().some((conn) => ServerConnection.key(conn) === activeServer())) return
-      return selected().sync.session.lineage.peek(params.id)?.session.directory
+      return selectedOrUndefined()?.sync.session.lineage.peek(params.id)?.session.directory
     })
 
     createEffect(() => {
       const directory = activeDirectory()
       if (!directory) return
-      selected().enableConfiguredDirectory(directory)
+      selectedOrUndefined()?.enableConfiguredDirectory(directory)
     })
 
     const permissionsEnabled = createMemo(() => {
       const directory = activeDirectory()
       if (!directory) return false
-      return selected().permissionsEnabled(directory)
+      try { return selectedOrUndefined()?.permissionsEnabled(directory) ?? false } catch { return false }
     })
 
     return {
-      ready: () => selected().ready(),
+      ready: () => { try { return selectedOrUndefined()?.ready() ?? false } catch { return false } },
       ensureServerState: (key: ServerConnection.Key) => ensure(key).api,
-      currentServerState: () => selected().api,
+      currentServerState: () => { const s = selectedOrUndefined(); if (!s) throw new Error("No server ready"); return s.api },
       respond(input: Parameters<PermissionRespondFn>[0]) {
-        selected().respond(input)
+        try { selectedOrUndefined()?.respond(input) } catch {}
       },
       autoResponds(permission: PermissionRequest, directory?: string) {
-        return selected().autoResponds(permission, directory)
+        try { return selectedOrUndefined()?.autoResponds(permission, directory) ?? false } catch { return false }
       },
       isAutoAccepting(sessionID: string, directory?: string) {
-        return selected().isAutoAccepting(sessionID, directory)
+        try { return selectedOrUndefined()?.isAutoAccepting(sessionID, directory) ?? false } catch { return false }
       },
       isAutoAcceptingDirectory(directory: string) {
-        return selected().isAutoAcceptingDirectory(directory)
+        try { return selectedOrUndefined()?.isAutoAcceptingDirectory(directory) ?? false } catch { return false }
       },
       toggleAutoAccept(sessionID: string, directory: string) {
-        selected().toggleAutoAccept(sessionID, directory)
+        try { selectedOrUndefined()?.toggleAutoAccept(sessionID, directory) } catch {}
       },
       toggleAutoAcceptDirectory(directory: string) {
-        selected().toggleAutoAcceptDirectory(directory)
+        try { selectedOrUndefined()?.toggleAutoAcceptDirectory(directory) } catch {}
       },
       enableAutoAccept(sessionID: string, directory: string) {
-        selected().enableAutoAccept(sessionID, directory)
+        try { selectedOrUndefined()?.enableAutoAccept(sessionID, directory) } catch {}
       },
       disableAutoAccept(sessionID: string, directory?: string) {
-        selected().disableAutoAccept(sessionID, directory)
+        try { selectedOrUndefined()?.disableAutoAccept(sessionID, directory) } catch {}
       },
       permissionsEnabled,
       isPermissionAllowAll(directory: string) {
-        return selected().isPermissionAllowAll(directory)
+        try { return selectedOrUndefined()?.isPermissionAllowAll(directory) ?? false } catch { return false }
       },
       getPermissionMode(sessionID: string, directory?: string): string {
-        try { return selected().api.getPermissionMode(sessionID, directory) } catch { return "allow" }
+        try { return selectedOrUndefined()?.api.getPermissionMode(sessionID, directory) ?? "allow" } catch { return "allow" }
       },
       setPermissionMode(sessionID: string, directory: string, mode: 'deny' | 'always' | 'allow') {
-        try { selected().api.setPermissionMode(sessionID, directory, mode) } catch {}
+        try { selectedOrUndefined()?.api.setPermissionMode(sessionID, directory, mode) } catch {}
       },
     }
   },
@@ -226,7 +279,7 @@ function createServerPermissionState(input: { sdk: ServerSDK; sync: ServerSync }
     if (store.autoAccept[key] !== undefined) return
     setStore(
       produce((draft) => {
-        draft.autoAccept[key] = true
+        draft.autoAccept[key] = "always"
       }),
     )
   }

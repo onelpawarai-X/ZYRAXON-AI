@@ -47,6 +47,7 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
   messages: SessionV1.WithParts[]
   promptOps: TaskPromptOps
 }) {
+  const _tToolsStart = Date.now()
   const tools: Record<string, AITool> = {}
   const run = yield* EffectBridge.make()
   const plugin = yield* Plugin.Service
@@ -89,12 +90,15 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
         .pipe(Effect.orDie),
   })
 
-  for (const item of yield* registry.tools({
+  const _tRegTools = Date.now()
+  const registryTools = yield* registry.tools({
     modelID: ModelV2.ID.make(input.model.api.id),
     providerID: input.model.providerID,
     agent: input.agent,
     permission: input.session.permission,
-  })) {
+  })
+  console.log(`[SessionTools.resolve] registry.tools: ${registryTools.length} tools in ${Date.now() - _tRegTools}ms`)
+  for (const item of registryTools) {
     const schema = ProviderTransform.schema(input.model, ToolJsonSchema.fromTool(item))
     tools[item.id] = tool({
       description: item.description,
@@ -385,9 +389,16 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
     })
   }
 
-  if (flags.experimentalCodeMode) return tools
+  if (flags.experimentalCodeMode) {
+    console.log(`[SessionTools.resolve] DONE: ${Object.keys(tools).length} tools in ${Date.now() - _tToolsStart}ms (experimentalCodeMode)`)
+    return tools
+  }
 
-  for (const [key, entry] of Object.entries(yield* mcp.tools())) {
+  const _tMcpTools = Date.now()
+  const mcpToolsList = yield* mcp.tools()
+  const mcpToolEntries = Object.entries(mcpToolsList)
+  console.log(`[SessionTools.resolve] mcp.tools: ${mcpToolEntries.length} tools in ${Date.now() - _tMcpTools}ms`)
+  for (const [key, entry] of mcpToolEntries) {
     const item = McpCatalog.convertTool(entry.def, entry.client, entry.timeout)
     const execute = item.execute
     if (!execute) continue
@@ -489,6 +500,7 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
     tools[key] = item
   }
 
+  console.log(`[SessionTools.resolve] DONE: ${Object.keys(tools).length} tools in ${Date.now() - _tToolsStart}ms`)
   return tools
 })
 

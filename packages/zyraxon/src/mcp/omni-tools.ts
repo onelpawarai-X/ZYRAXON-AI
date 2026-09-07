@@ -328,10 +328,10 @@ export async function omniCostRouter(params: {
     const { taskType, complexity, contextSize = 4096, needsVision = false } = params
 
     const models = [
-      { name: 'gpt-5.4-nano', provider: 'zyraxon', cost: 0, context: 32000, fit: 'simple' },
-      { name: 'mimo-v2.5-free', provider: 'zyraxon', cost: 0, context: 200000, fit: 'reasoning' },
-      { name: 'big-pickle', provider: 'zyraxon', cost: 0, context: 200000, fit: 'coding' },
-      { name: 'deepseek-v4-flash-free', provider: 'zyraxon', cost: 0, context: 200000, fit: 'reasoning' },
+      { name: 'gpt-5.4-nano', provider: 'opencode', cost: 0, context: 32000, fit: 'simple' },
+      { name: 'mimo-v2.5-free', provider: 'opencode', cost: 0, context: 200000, fit: 'reasoning' },
+      { name: 'big-pickle', provider: 'opencode', cost: 0, context: 200000, fit: 'coding' },
+      { name: 'deepseek-v4-flash-free', provider: 'opencode', cost: 0, context: 200000, fit: 'reasoning' },
       { name: 'gemini-3.5-flash', provider: 'google', cost: 0, context: 1000000, fit: 'vision' },
     ]
 

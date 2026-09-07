@@ -2254,6 +2254,7 @@ export default function Page() {
                       newSessionWorktree={newSessionWorktree()}
                       onNewSessionWorktreeReset={() => setStore("newSessionWorktree", "main")}
                       onSubmit={() => {
+                        window.dispatchEvent(new CustomEvent("tts-stop"))
                         comments.clear()
                         resumeScroll()
                       }}
@@ -2282,6 +2283,7 @@ export default function Page() {
                       },
                       onNewSessionWorktreeReset: () => setStore("newSessionWorktree", "main"),
                       onSubmit: () => {
+                        window.dispatchEvent(new CustomEvent("tts-stop"))
                         comments.clear()
                         resumeScroll()
                       },

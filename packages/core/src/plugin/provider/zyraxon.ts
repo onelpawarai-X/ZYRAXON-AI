@@ -36,7 +36,7 @@ const Org = Schema.Struct({ id: Schema.String, name: Schema.String })
 
 function oauth(http: HttpClient.HttpClient) {
   return {
-    integrationID: Integration.ID.make("zyraxon"),
+    integrationID: Integration.ID.make("opencode"),
     method: {
       id: methodID,
       type: "oauth",
@@ -75,7 +75,7 @@ function oauth(http: HttpClient.HttpClient) {
 }
 
 export const ZyraxonPlugin = define<HttpClient.HttpClient | EventV2.Service | Scope.Scope>({
-  id: "zyraxon",
+  id: "opencode",
   effect: Effect.fn(function* (ctx) {
     const events = yield* EventV2.Service
     const http = yield* HttpClient.HttpClient
@@ -84,7 +84,7 @@ export const ZyraxonPlugin = define<HttpClient.HttpClient | EventV2.Service | Sc
     let providers: typeof ConfigV1.Info.Type.provider | undefined
 
     const load = Effect.fn("ZyraxonPlugin.load")(function* () {
-      const connection = yield* ctx.integration.connection.active("zyraxon")
+      const connection = yield* ctx.integration.connection.active("opencode")
       const credential = connection
         ? yield* ctx.integration.connection.resolve(connection).pipe(Effect.catch(() => Effect.succeed(undefined)))
         : undefined
@@ -99,18 +99,18 @@ export const ZyraxonPlugin = define<HttpClient.HttpClient | EventV2.Service | Sc
     })
 
     yield* ctx.integration.transform((draft) => {
-      draft.update("zyraxon", (integration) => {
+      draft.update("opencode", (integration) => {
         integration.name = "ZYRAXON"
       })
       draft.method.update(oauth(http))
-      draft.method.update({ integrationID: "zyraxon", method: { type: "key", label: "API key (service account)" } })
+      draft.method.update({ integrationID: "opencode", method: { type: "key", label: "API key (service account)" } })
     })
 
-    connected = (yield* ctx.integration.connection.active("zyraxon")) !== undefined
+    connected = (yield* ctx.integration.connection.active("opencode")) !== undefined
     yield* ctx.catalog.transform((catalog) => {
       for (const [providerID, item] of Object.entries(providers ?? {})) {
         catalog.provider.update(providerID, (provider) => {
-          provider.integrationID = Integration.ID.make("zyraxon")
+          provider.integrationID = Integration.ID.make("opencode")
           if (item.name !== undefined) provider.name = item.name
           provider.api = item.npm
             ? { type: "aisdk", package: item.npm, url: item.api }
@@ -162,9 +162,9 @@ export const ZyraxonPlugin = define<HttpClient.HttpClient | EventV2.Service | Sc
         }
       }
 
-      const item = catalog.provider.get(ProviderV2.ID.zyraxon)
+      const item = catalog.provider.get(ProviderV2.ID.opencode)
       if (!item) return
-      const hasKey = Boolean(process.env.ZYRAXON_API_KEY || connected || item.provider.request.body.apiKey)
+      const hasKey = Boolean(process.env.OPENCODE_API_KEY || connected || item.provider.request.body.apiKey)
       catalog.provider.update(item.provider.id, (provider) => {
         if (!hasKey) provider.request.body.apiKey = "public"
       })
@@ -179,7 +179,7 @@ export const ZyraxonPlugin = define<HttpClient.HttpClient | EventV2.Service | Sc
 
     const refresh = () => loading.withPermit(load().pipe(Effect.andThen(ctx.catalog.reload())))
     yield* events.subscribe(Integration.Event.ConnectionUpdated).pipe(
-      Stream.filter((event) => event.data.integrationID === Integration.ID.make("zyraxon")),
+      Stream.filter((event) => event.data.integrationID === Integration.ID.make("opencode")),
       Stream.runForEach(refresh),
       Effect.forkScoped({ startImmediately: true }),
     )

@@ -218,7 +218,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
           },
         },
       }),
-    zyraxon: Effect.fnUntraced(function* (input: Info) {
+    opencode: Effect.fnUntraced(function* (input: Info) {
       const env = yield* dep.env()
       const hasKey = iife(() => {
         if (input.env.some((item) => env[item])) return true
@@ -227,7 +227,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
       const ok =
         hasKey ||
         Boolean(yield* dep.auth(input.id)) ||
-        Boolean((yield* dep.config()).provider?.["zyraxon"]?.options?.apiKey)
+        Boolean((yield* dep.config()).provider?.["opencode"]?.options?.apiKey)
 
       if (!ok) {
         for (const [key, value] of Object.entries(input.models)) {
@@ -629,9 +629,9 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://zyraxon.ai/",
-            "X-Title": "zyraxon",
-            "X-Source": "zyraxon",
+            "HTTP-Referer": "https://opencode.ai/",
+            "X-Title": "opencode",
+            "X-Source": "opencode",
           },
         },
       }),
@@ -640,8 +640,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://zyraxon.ai/",
-            "X-Title": "zyraxon",
+            "HTTP-Referer": "https://opencode.ai/",
+            "X-Title": "opencode",
           },
         },
       }),
@@ -650,8 +650,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: provider.source === "config",
         options: {
           headers: {
-            "HTTP-Referer": "https://zyraxon.ai/",
-            "X-Title": "zyraxon",
+            "HTTP-Referer": "https://opencode.ai/",
+            "X-Title": "opencode",
             "X-BILLING-INVOKE-ORIGIN": "ZYRAXON",
           },
         },
@@ -661,8 +661,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "http-referer": "https://zyraxon.ai/",
-            "x-title": "zyraxon",
+            "http-referer": "https://opencode.ai/",
+            "x-title": "opencode",
           },
         },
       }),
@@ -767,8 +767,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://zyraxon.ai/",
-            "X-Title": "zyraxon",
+            "HTTP-Referer": "https://opencode.ai/",
+            "X-Title": "opencode",
           },
         },
       }),
@@ -1020,7 +1020,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "X-Cerebras-3rd-Party-Integration": "zyraxon",
+            "X-Cerebras-3rd-Party-Integration": "opencode",
           },
         },
       }),
@@ -1029,8 +1029,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://zyraxon.ai/",
-            "X-Title": "zyraxon",
+            "HTTP-Referer": "https://opencode.ai/",
+            "X-Title": "opencode",
           },
         },
       }),
@@ -1635,6 +1635,7 @@ const layer = Layer.effect(
               model.provider?.npm ??
               provider.npm ??
               existingModel?.api.npm ??
+              cloudflareGatewayNpm(providerID, apiID) ??
               modelsDev[providerID]?.npm ??
               "@ai-sdk/openai-compatible"
             const name = iife(() => {
@@ -1675,7 +1676,7 @@ const layer = Layer.effect(
                   pdf: model.modalities?.output?.includes("pdf") ?? existingModel?.capabilities.output.pdf ?? false,
                 },
                 interleaved:
-                  model.interleaved ??
+                  (typeof model.interleaved === "string" ? { field: model.interleaved } : model.interleaved) ??
                   existingModel?.capabilities.interleaved ??
                   (!existingModel && apiNpm === "@ai-sdk/openai-compatible" && apiID.includes("deepseek")
                     ? { field: "reasoning_content" }
@@ -1714,17 +1715,22 @@ const layer = Layer.effect(
           database[providerID] = parsed
         }
 
-        // load env
+        // load env — load providers whose env vars are set,
+        // providers with no env vars (e.g. builtin opencode),
+        // and always load "opencode" provider (has built-in free models)
         const envs = yield* env.all()
         for (const [id, provider] of Object.entries(database)) {
           const providerID = ProviderV2.ID.make(id)
           if (disabled.has(providerID)) continue
-          const apiKey = provider.env.map((item) => envs[item]).find(Boolean)
-          if (!apiKey) continue
-          mergeProvider(providerID, {
-            source: "env",
-            key: provider.env.length === 1 ? apiKey : undefined,
-          })
+          if (id === "opencode" || provider.env.length === 0) {
+            // Builtin/free provider — always load
+            mergeProvider(providerID, { source: "env", key: undefined })
+          } else {
+            const apiKey = provider.env.map((item) => envs[item]).find(Boolean)
+            if (apiKey) {
+              mergeProvider(providerID, { source: "env", key: apiKey })
+            }
+          }
         }
 
         // load apikeys
@@ -1787,26 +1793,6 @@ const layer = Layer.effect(
           if (provider.name) partial.name = provider.name
           if (provider.options) partial.options = provider.options
           mergeProvider(providerID, partial)
-        }
-
-        // ── Opencode free provider: always available without API key ──
-        // The opencode provider from models.dev should be available as a free
-        // "public" provider even when no OPENCODE_API_KEY is set. This matches
-        // the upstream opencode behavior where OpencodePlugin sets apiKey="public".
-        const opencodeID = ProviderV2.ID.make("opencode")
-        if (!providers[opencodeID] && database[opencodeID] && isProviderAllowed(opencodeID)) {
-          mergeProvider(opencodeID, {
-            source: "env",
-            options: { apiKey: "public" },
-          })
-          // Disable paid models on the opencode provider (cost > 0)
-          if (providers[opencodeID]) {
-            for (const [modelID, model] of Object.entries(providers[opencodeID].models)) {
-              if (Array.isArray(model.cost) && model.cost.some((c: any) => (c.input ?? 0) > 0)) {
-                model.status = "disabled"
-              }
-            }
-          }
         }
 
         const gitlab = ProviderV2.ID.make("gitlab")
@@ -1954,8 +1940,8 @@ const layer = Layer.effect(
         if (existing) return existing
 
         const customFetch = options["fetch"]
-        const chunkTimeout = options["chunkTimeout"]
-        const headerTimeout = options["headerTimeout"]
+        const chunkTimeout = options["chunkTimeout"] ?? 300_000
+        const headerTimeout = options["headerTimeout"] ?? 300_000
         delete options["chunkTimeout"]
         delete options["headerTimeout"]
 
@@ -2028,6 +2014,7 @@ const layer = Layer.effect(
     )
 
     const getModel = Effect.fn("Provider.getModel")(function* (providerID: ProviderV2.ID, modelID: ModelV2.ID) {
+      const _t = Date.now()
       const s = yield* InstanceState.get(state)
       const provider = s.providers[providerID]
       if (!provider) {
@@ -2037,34 +2024,32 @@ const layer = Layer.effect(
           : fuzzysort
               .go(providerID, Object.keys({ ...s.catalog, ...s.providers }), { limit: 3, threshold: -10000 })
               .map((m) => m.target)
+        yield* Effect.logWarning("provider.getModel: provider not found", { providerID, modelID, ms: Date.now() - _t })
         return yield* new ModelNotFoundError({ providerID, modelID, suggestions })
       }
 
-      let info = provider.models[modelID]
-      // Fallback: if model not in provider.models, check catalog (V2 catalog may have it from plugins)
-      if (!info) {
-        const catalogProvider = s.catalog[providerID]
-        if (catalogProvider?.models?.[modelID]) {
-          info = catalogProvider.models[modelID]
-          // Also add to provider.models so future lookups are fast
-          provider.models[modelID] = info
-        }
-      }
+      const info = provider.models[modelID]
       if (!info) {
         const current = modelSuggestions(provider, modelID, runtimeFlags.enableExperimentalModels)
         const suggestions = current.length
           ? current
           : modelSuggestions(s.catalog[providerID], modelID, runtimeFlags.enableExperimentalModels)
+        yield* Effect.logWarning("provider.getModel: model not found", { providerID, modelID, availableModels: Object.keys(provider.models).length, ms: Date.now() - _t })
         return yield* new ModelNotFoundError({ providerID, modelID, suggestions })
       }
+      yield* Effect.logInfo("provider.getModel: resolved", { providerID, modelID, ms: Date.now() - _t, capabilities: info.capabilities ? JSON.stringify(info.capabilities).substring(0, 200) : "none" })
       return info
     })
 
     const getLanguage = Effect.fn("Provider.getLanguage")(function* (model: Model) {
+      const _tLang = Date.now()
       const s = yield* InstanceState.get(state)
       const envs = yield* env.all()
       const key = `${model.providerID}/${model.id}`
-      if (s.models.has(key)) return s.models.get(key)!
+      if (s.models.has(key)) {
+        yield* Effect.logInfo("provider.getLanguage: cached", { providerID: model.providerID, modelID: model.id, ms: Date.now() - _tLang })
+        return s.models.get(key)!
+      }
 
       const provider = s.providers[model.providerID]
       return yield* EffectPromise.refineRejection(
@@ -2082,6 +2067,7 @@ const layer = Layer.effect(
               )
             : sdk.languageModel(model.api.id)
           s.models.set(key, language)
+          console.log(`[provider.getLanguage] resolved NEW: ${key} in ${Date.now() - _tLang}ms`)
           return language
         },
         (cause) =>
@@ -2135,7 +2121,7 @@ const layer = Layer.effect(
         return undefined
       }
 
-      const priority = providerID.startsWith("zyraxon")
+      const priority = providerID.startsWith("opencode")
         ? ["gpt-nano"]
         : providerID.startsWith("github-copilot")
           ? ["gpt-mini", ...smallModelFamilyPriority]

@@ -7,6 +7,11 @@ import type { Transport, TransportPrepareInput } from "./index"
 import * as ProviderShared from "../../protocols/shared"
 import { mergeJsonRecords, type LLMRequest } from "../../schema"
 
+// Transport-level timeouts — prevent the app from hanging when a provider
+// is unreachable or stops sending SSE chunks mid-stream.
+const HEADER_TIMEOUT_MS = 30_000  // 30s for response headers
+const CHUNK_TIMEOUT_MS = 60_000   // 60s between SSE chunks (per-chunk reset)
+
 export type JsonRequestInput<Body> = TransportPrepareInput<Body>
 
 export interface JsonRequestParts<Body = unknown> {
@@ -129,23 +134,38 @@ export const httpJson = <Body, Frame>(input: HttpJsonInput<Body, Frame>): HttpJs
     ),
   frames: (prepared, request, runtime) =>
     Stream.unwrap(
-      runtime.http
-        .execute(prepared.request)
-        .pipe(
-          Effect.map((response) =>
-            prepared.framing.frame(
-              response.stream.pipe(
-                Stream.mapError((error) =>
-                  ProviderShared.eventError(
-                    `${request.model.provider}/${request.model.route.id}`,
-                    `Failed to read ${request.model.provider}/${request.model.route.id} stream`,
-                    ProviderShared.errorText(error),
+      Effect.gen(function* () {
+        const _tHttp = Date.now()
+        console.log(`[http-transport] frames() START url=${request.model.provider}/${request.model.route.id} header_timeout=${HEADER_TIMEOUT_MS}ms`)
+        const result = yield* runtime.http
+          .execute(prepared.request)
+          .pipe(
+            // Header timeout: abort if provider doesn't respond within 30s
+            Effect.timeoutOrElse({
+              duration: HEADER_TIMEOUT_MS,
+              orElse: () => Effect.fail(ProviderShared.eventError(
+                `${request.model.provider}/${request.model.route.id}`,
+                `Provider response headers timed out after ${HEADER_TIMEOUT_MS / 1000}s — provider may be unavailable`,
+              )),
+            }),
+            Effect.map((response) => {
+              console.log(`[http-transport] headers received in ${Date.now() - _tHttp}ms status=${response.status}`)
+              return prepared.framing.frame(
+                response.stream.pipe(
+                  Stream.mapError((error) =>
+                    ProviderShared.eventError(
+                      `${request.model.provider}/${request.model.route.id}`,
+                      `Failed to read ${request.model.provider}/${request.model.route.id} stream`,
+                      ProviderShared.errorText(error),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ),
-        ),
+              )
+            }),
+          )
+        console.log(`[http-transport] frames() DONE in ${Date.now() - _tHttp}ms`)
+        return result
+      }),
     ),
 })
 

@@ -340,6 +340,355 @@ export function MessageTimeline(props: {
   const timelineRowByKey = projection.rowByKey
   const timelineRows = projection.rows
 
+  const spokenStorageKey = () => `tts-spoken-${sessionKey()}`
+  const ttsSpokenIds = new Set<string>(loadPersistedSpokenIds())
+  const ttsSentText = new Map<string, string>()
+  const TTS_SERVER = "http://127.0.0.1:19810"
+
+  // TTS SERIAL queue — ONE audio at a time, never parallel
+  const ttsAudioQueue: ArrayBuffer[] = []
+  let ttsPlaying = false
+  let ttsFetching = false
+  let ttsAbortController: AbortController | null = null
+  let currentAudio: HTMLAudioElement | null = null
+  // Text waiting to be sent to TTS — FIFO queue, never dropped
+  const ttsPendingText: string[] = []
+  // Safety: reset ttsFetching if stuck for more than 60 seconds
+  let ttsLastFetchTime = 0
+
+  function stopAllTTS() {
+    if (ttsAbortController) {
+      ttsAbortController.abort()
+      ttsAbortController = null
+    }
+    if (currentAudio) {
+      try { currentAudio.pause(); currentAudio.currentTime = 0 } catch {}
+      currentAudio = null
+    }
+    ttsAudioQueue.length = 0
+    ttsPlaying = false
+    ttsFetching = false
+    ttsPendingText.length = 0
+  }
+
+  function playNextInQueue() {
+    if (ttsAudioQueue.length === 0) { ttsPlaying = false; currentAudio = null; return }
+    ttsPlaying = true
+    const buffer = ttsAudioQueue.shift()!
+    try {
+      const blob = new Blob([buffer], { type: "audio/mpeg" })
+      const url = URL.createObjectURL(blob)
+      const audio = new Audio(url)
+      currentAudio = audio
+      audio.onended = () => { URL.revokeObjectURL(url); currentAudio = null; playNextInQueue() }
+      audio.onerror = () => { URL.revokeObjectURL(url); currentAudio = null; playNextInQueue() }
+      audio.play().catch(() => { URL.revokeObjectURL(url); currentAudio = null; playNextInQueue() })
+    } catch {
+      playNextInQueue()
+    }
+  }
+
+  function playTTSBuffer(buffer: ArrayBuffer) {
+    ttsAudioQueue.push(buffer)
+    if (!ttsPlaying) playNextInQueue()
+  }
+
+  // Expose stopAllTTS globally
+  ;(window as any).__stopTTS = stopAllTTS
+
+  function loadPersistedSpokenIds(): string[] {
+    try {
+      const raw = localStorage.getItem(spokenStorageKey())
+      return raw ? JSON.parse(raw) : []
+    } catch { return [] }
+  }
+
+  function persistSpokenIds() {
+    try {
+      localStorage.setItem(spokenStorageKey(), JSON.stringify([...ttsSpokenIds]))
+    } catch {}
+  }
+
+  const nonLatinRe = /[\u0980-\u09FF\u0900-\u097F\u0600-\u06FF\u0400-\u04FF\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7AF\u0E00-\u0E7F]/
+
+  function stripThinkingBlocks(text: string): string {
+    text = text.replace(/<thinking>[\s\S]*?<\/thinking>/gi, "")
+    text = text.replace(/<\/?thinking[^>]*>/gi, "")
+    text = text.replace(/```[\s\S]*?```/g, "")
+    text = text.replace(/<tool_use>[\s\S]*?<\/tool_use>/gi, "")
+    text = text.replace(/<tool_result>[\s\S]*?<\/tool_result>/gi, "")
+    text = text.replace(/<\/?antml:thinking[^>]*>/gi, "")
+    text = text.replace(/<think>[\s\S]*?<\/think>/gi, "")
+    text = text.replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, "")
+    text = text.replace(/\[INST\][\s\S]*?\[\/INST\]/gi, "")
+    text = text.replace(/<<SYS>>[\s\S]*?<\/<SYS>>/gi, "")
+    return text
+  }
+
+  function stripEnglishReasoning(text: string): string {
+    const lines = text.split("\n")
+    const hasNonLatin = lines.some((l) => nonLatinRe.test(l))
+    if (!hasNonLatin) return text
+    return lines
+      .filter((line) => {
+        const t = line.trim()
+        if (!t) return true
+        return nonLatinRe.test(t)
+      })
+      .join("\n")
+      .trim()
+  }
+
+  function extractCleanText(msgId: string): string {
+    const syncData = sync().data
+    const parts = syncData.part[msgId] ?? []
+    let text = ""
+    for (const part of parts) {
+      if (part.type === "text" && "text" in part) text += (part as any).text
+    }
+    text = stripThinkingBlocks(text)
+    text = stripEnglishReasoning(text)
+    text = text.replace(/\n{3,}/g, "\n\n").trim()
+    return text
+  }
+
+  // TTS text: strip thinking blocks only, keep ALL languages (Bengali + English)
+  function extractTTSText(msgId: string): string {
+    const syncData = sync().data
+    const parts = syncData.part[msgId] ?? []
+    let text = ""
+    for (const part of parts) {
+      if (part.type === "text" && "text" in part) text += (part as any).text
+    }
+    text = stripThinkingBlocks(text)
+    text = text.replace(/\n{3,}/g, "\n\n").trim()
+    return text
+  }
+
+  // TTS health check — non-blocking, auto-restart
+  let ttsServerHealthy = true
+  let ttsLastHealthCheck = 0
+  async function checkTTSServer(): Promise<boolean> {
+    const now = Date.now()
+    if (now - ttsLastHealthCheck < 10000) return ttsServerHealthy
+    ttsLastHealthCheck = now
+    try {
+      const resp = await fetch(`${TTS_SERVER}/health`, { signal: AbortSignal.timeout(2000) })
+      ttsServerHealthy = resp.ok
+    } catch {
+      ttsServerHealthy = false
+      try {
+        const electron = (window as any).electron
+        if (electron?.ipcRenderer) {
+          await electron.ipcRenderer.invoke("tts-restart")
+          ttsServerHealthy = true
+        }
+      } catch {}
+    }
+    return ttsServerHealthy
+  }
+
+  // Send TTS to server — queue-based, NEVER drops text
+  async function sendTTSText(text: string) {
+    if (!text || text.trim().length === 0) return
+    ttsPendingText.push(text)
+    if (ttsFetching) return
+    flushTTSPending()
+  }
+
+  async function flushTTSPending() {
+    // Safety: if ttsFetching stuck for >60s, force reset
+    if (ttsFetching && Date.now() - ttsLastFetchTime > 60000) {
+      console.warn("[TTS] Safety: ttsFetching stuck, force resetting")
+      ttsFetching = false
+    }
+    if (ttsPendingText.length === 0) { ttsFetching = false; return }
+    ttsFetching = true
+    ttsLastFetchTime = Date.now()
+
+    while (ttsPendingText.length > 0) {
+      const chunk = ttsPendingText.shift()!
+      if (!chunk || chunk.trim().length === 0) continue
+
+      // Wait for previous audio to finish
+      const waitStart = Date.now()
+      while (ttsPlaying) {
+        await new Promise(r => setTimeout(r, 50))
+        if (Date.now() - waitStart > 15000) { ttsPlaying = false; break }
+      }
+
+      if (ttsAbortController) {
+        ttsAbortController.abort()
+        ttsAbortController = null
+      }
+
+      const gender = settings.general.voiceGender?.() === "male" ? "m" : "f"
+      const voiceLang = settings.general.voiceLanguage?.() || "en-US"
+      const lang = voiceLang.split("-")[0] || "en"
+      const url = `${TTS_SERVER}/speak?text=${encodeURIComponent(chunk)}&gender=${gender}&lang=${lang}`
+
+      const controller = new AbortController()
+      ttsAbortController = controller
+
+      try {
+        const resp = await fetch(url, { signal: AbortSignal.timeout(30000) })
+        if (!resp.ok || controller.signal.aborted) continue
+        const buf = await resp.arrayBuffer()
+        if (buf && buf.byteLength > 100 && !controller.signal.aborted) {
+          playTTSBuffer(buf)
+        }
+      } catch (e: any) {
+        if (e?.name !== "AbortError") ttsServerHealthy = false
+      }
+    }
+    ttsFetching = false
+    ttsLastFetchTime = Date.now()
+  }
+
+  const mountedMessageIDs = new Set<string>()
+  let mountedSnapshotDone = false
+  let ttsProcessingGuard = false
+
+  function processTTSForMessages() {
+    if (ttsProcessingGuard) return
+    ttsProcessingGuard = true
+    try { processTTSForMessagesInner() } finally { ttsProcessingGuard = false }
+  }
+
+  function processTTSForMessagesInner() {
+    const enabled = settings.general.voiceAutoSpeak()
+    if (!enabled) return
+
+    const byParent = assistantMessagesByParent()
+    if (!byParent) return
+
+    if (!mountedSnapshotDone) {
+      mountedSnapshotDone = true
+      for (const [, messages] of byParent) {
+        for (const msg of messages) {
+          if (msg.role === "assistant") mountedMessageIDs.add(msg.id)
+        }
+      }
+      for (const id of ttsSpokenIds) { mountedMessageIDs.add(id) }
+    }
+
+    for (const [, messages] of byParent) {
+      for (const msg of messages) {
+        if (msg.role !== "assistant") continue
+        if (mountedMessageIDs.has(msg.id)) continue
+        if (ttsSpokenIds.has(msg.id)) continue
+
+        const isActive = typeof msg.time?.completed !== "number"
+        const fullText = extractTTSText(msg.id)
+        if (!fullText) continue
+
+        const alreadySent = ttsSentText.get(msg.id) || ""
+
+        if (isActive) {
+          // ACTIVE message: send each complete sentence immediately
+          const unsentText = fullText.slice(alreadySent.length)
+          if (unsentText.length < 1) continue
+
+          // Find best sentence/phrase break point
+          const sentenceEnders = ["।", "॥", ".", "!", "?", "\n"]
+          let bestEnd = -1
+          let lastSpace = -1
+          for (let ci = 0; ci < unsentText.length; ci++) {
+            const ch = unsentText[ci]
+            if (ch === " ") lastSpace = ci
+            for (const sep of sentenceEnders) {
+              if (ch === sep) { bestEnd = ci; break }
+            }
+            if (bestEnd >= 0) break
+          }
+
+          let chunk = ""
+          if (bestEnd >= 0) {
+            // Found sentence boundary — send immediately
+            chunk = unsentText.slice(0, bestEnd + 1).trim()
+          } else if (unsentText.length >= 200) {
+            // No sentence boundary but very long — force send at word boundary
+            if (lastSpace > 20) {
+              chunk = unsentText.slice(0, lastSpace).trim()
+            } else {
+              chunk = unsentText.trim()
+            }
+          }
+          // else: waiting for sentence boundary or 200+ chars
+
+          if (chunk.length >= 3) {
+            ttsSentText.set(msg.id, alreadySent + chunk)
+            sendTTSText(chunk)
+          }
+        } else {
+          // COMPLETED message: send remaining in large sentence-level chunks
+          ttsSpokenIds.add(msg.id)
+          persistSpokenIds()
+          const unsentText = fullText.slice(alreadySent.length).trim()
+          const textToSend = unsentText.length > 0 ? unsentText : ""
+          if (textToSend.length > 0) {
+            // Split into sentence-level chunks of ~300 chars
+            const sents = textToSend.split(/(?<=[।!?\.\n])\s*/)
+            let buf = ""
+            for (const s of sents) {
+              if (buf.length + s.length > 300 && buf.length > 0) {
+                sendTTSText(buf.trim())
+                buf = ""
+              }
+              buf += (buf ? " " : "") + s
+            }
+            if (buf.trim().length > 0) sendTTSText(buf.trim())
+          }
+        }
+      }
+    }
+  }
+
+  // EFFECT 1: Reactive — fires when messages or parts change
+  createEffect(on(
+    () => {
+      const byParent = assistantMessagesByParent()
+      const partIds: string[] = []
+      if (byParent) {
+        for (const [, messages] of byParent) {
+          for (const msg of messages) {
+            if (msg.role === "assistant") {
+              partIds.push(msg.id)
+              const parts = sync().data.part[msg.id]
+              if (parts) {
+                for (const p of parts) {
+                  if (p.type === "text" && "text" in p) {
+                    partIds.push(`${msg.id}:${(p as any).text?.length || 0}`)
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      return { byParent, partKey: partIds.join(",") }
+    },
+    () => {
+      processTTSForMessages()
+    }
+  ))
+
+  // EFFECT 2: Polling — every 500ms for real-time TTS detection
+  const ttsPollInterval = setInterval(() => {
+    processTTSForMessages()
+  }, 500)
+
+  // Listen for TTS stop events (when user sends a new message)
+  const handleTTSStop = () => stopAllTTS()
+  window.addEventListener("tts-stop", handleTTSStop)
+
+  onCleanup(() => {
+    clearInterval(ttsPollInterval)
+    window.removeEventListener("tts-stop", handleTTSStop)
+    delete (window as any).__stopTTS
+    stopAllTTS()
+  })
+
   let prependAnchor: { key: string; offset: number } | undefined
   let prependAnchorFrame: number | undefined
   let prependLoading = false
@@ -1036,21 +1385,35 @@ export function MessageTimeline(props: {
       <Show when={message()}>
         {(message) => (
           <Show when={part()}>
-            {(part) => (
-              <MessagePart
-                part={part()}
-                message={message()}
-                showAssistantCopyPartID={assistantCopyPartID(row().userMessageID)}
-                turnDurationMs={turnDurationMs(row().userMessageID)}
-                useV2Actions={settings.general.newLayoutDesigns()}
-                defaultOpen={defaultOpen()}
-                toolOpen={toolOpen[part().id] ?? defaultOpen()}
-                onToolOpenChange={(open) => setToolOpen(part().id, open)}
-                deferToolContent
-                virtualizeDiff={false}
-                onContentRendered={onSizeChange}
-              />
-            )}
+            {(part) => {
+              const filteredPart = createMemo(() => {
+                const p = part()
+                if (p.type === "text" && "text" in p) {
+                  const originalText = (p as any).text || ""
+                  let cleaned = stripThinkingBlocks(originalText)
+                  cleaned = stripEnglishReasoning(cleaned)
+                  if (cleaned !== originalText) {
+                    return { ...p, text: cleaned } as typeof p
+                  }
+                }
+                return p
+              })
+              return (
+                <MessagePart
+                  part={filteredPart()}
+                  message={message()}
+                  showAssistantCopyPartID={assistantCopyPartID(row().userMessageID)}
+                  turnDurationMs={turnDurationMs(row().userMessageID)}
+                  useV2Actions={settings.general.newLayoutDesigns()}
+                  defaultOpen={defaultOpen()}
+                  toolOpen={toolOpen[part().id] ?? defaultOpen()}
+                  onToolOpenChange={(open) => setToolOpen(part().id, open)}
+                  deferToolContent
+                  virtualizeDiff={false}
+                  onContentRendered={onSizeChange}
+                />
+              )
+            }}
           </Show>
         )}
       </Show>

@@ -1,68 +1,78 @@
-import { WebSocketServer, WebSocket } from "ws"
-import { createServer, IncomingMessage } from "http"
-import { spawn, execSync } from "child_process"
 import { join } from "path"
-import { readFileSync, existsSync } from "fs"
-import { app } from "electron"
+import { existsSync, readFileSync } from "fs"
+import { execSync, spawn, ChildProcess } from "child_process"
+import http from "http"
 
-const PORT = 14600
-let server: ReturnType<typeof createServer> | null = null
-let wss: WebSocketServer | null = null
-let chromeProcess: ReturnType<typeof spawn> | null = null
+const PORT = 19800
+const PROFILE_DIR = join(process.env.TEMP || "", "ZYRAXON-Voice-Profile")
+
+let chromeProcess: ChildProcess | null = null
+let httpServer: http.Server | null = null
 let rendererCallback: ((data: any) => void) | null = null
-let currentLanguage: string = "auto"
-let currentVoiceGender: string = "male"
-let pendingListening: boolean = false
+let currentLanguage = "en-US"
+let currentVoiceGender = "female"
+let pendingListening = false
+let htmlContent: string | null = null
+let pendingCommands: any[] = []
 
-export function setRendererCallback(cb: (data: any) => void) {
-  rendererCallback = cb
+export function setRendererCallback(cb: (data: any) => void) { rendererCallback = cb }
+
+function sendToVoice(data: any) {
+  pendingCommands.push(data)
+}
+
+function broadcastState() {
+  pendingCommands.push({
+    type: "sync-state",
+    language: currentLanguage,
+    gender: currentVoiceGender,
+    listening: pendingListening,
+  })
 }
 
 export function setVoiceLanguage(lang: string) {
   currentLanguage = lang
-  sendToVoiceBridge({ type: "set-language", lang })
+  pendingCommands.push({ type: "set-language", lang })
+  broadcastState()
 }
 
 export function setVoiceGender(gender: string) {
   currentVoiceGender = gender
-  sendToVoiceBridge({ type: "set-voice", gender })
+  pendingCommands.push({ type: "set-voice", gender })
+  broadcastState()
 }
 
-function findChrome(): string | null {
-  const isWin = process.platform === "win32"
-  const isMac = process.platform === "darwin"
-  const isLinux = process.platform === "linux"
+export function setVoiceListening(listening: boolean) {
+  pendingListening = listening
+  pendingCommands.push({ type: listening ? "start-listening" : "stop-listening" })
+  broadcastState()
+}
 
+export function sendVoiceTranscript(text: string) {
+  pendingCommands.push({ type: "transcript-display", text })
+}
+
+export function getCurrentLanguage() { return currentLanguage }
+export function getCurrentVoiceGender() { return currentVoiceGender }
+
+function handleMessage(raw: string) {
   try {
-    if (isWin) {
-      const result = execSync("where chrome 2>nul", { encoding: "utf8", timeout: 5000 }).trim()
-      if (result) return result.split("\n")[0].trim()
-    } else if (isMac) {
-      const result = execSync('mdfind "kMDItemCFBundleIdentifier == com.google.Chrome"', { encoding: "utf8", timeout: 5000 }).trim()
-      if (result) return result.split("\n")[0].trim() + "/Contents/MacOS/Google Chrome"
-    } else {
-      const result = execSync("which google-chrome || which google-chrome-stable || which chromium-browser || which chromium 2>/dev/null", { encoding: "utf8", timeout: 5000 }).trim()
-      if (result) return result.split("\n")[0].trim()
+    const data = JSON.parse(raw)
+    if (data.type === "ready") {
+      broadcastState()
+      rendererCallback?.({ type: "voice-mic-state", active: false })
+      return
     }
+    if (data.type === "ping") return
+    if (data.type === "transcript") rendererCallback?.({ type: "voice-transcript", text: data.text, fullText: data.fullText, isFinal: data.final, lang: data.lang })
+    else if (data.type === "send-to-chat") rendererCallback?.({ type: "voice-send", text: data.text, lang: data.lang })
+    else if (data.type === "language-changed") { currentLanguage = data.lang; rendererCallback?.({ type: "voice-language", lang: data.lang }) }
+    else if (data.type === "voice-changed") { currentVoiceGender = data.gender; rendererCallback?.({ type: "voice-gender", gender: data.gender }) }
+    else if (data.type === "mic-state") rendererCallback?.({ type: "voice-mic-state", active: data.active })
   } catch {}
-
-  const candidates = isWin
-    ? [
-        join(process.env.LOCALAPPDATA || "", "Google", "Chrome", "Application", "chrome.exe"),
-        join(process.env.PROGRAMFILES || "", "Google", "Chrome", "Application", "chrome.exe"),
-        join(process.env["PROGRAMFILES(X86)"] || "", "Google", "Chrome", "Application", "chrome.exe"),
-      ]
-    : isMac
-      ? ["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"]
-      : ["/usr/bin/google-chrome", "/usr/bin/google-chrome-stable", "/usr/bin/chromium-browser", "/usr/bin/chromium"]
-
-  for (const path of candidates) {
-    if (existsSync(path)) return path
-  }
-  return null
 }
 
-function findHTML(): string | null {
+function findHTMLPath(): string | null {
   const candidates = [
     join(process.resourcesPath || "", "voice-bridge.html"),
     join(__dirname, "..", "..", "resources", "voice-bridge.html"),
@@ -71,150 +81,167 @@ function findHTML(): string | null {
   return candidates.find((p) => existsSync(p)) || null
 }
 
-// ─── Combined HTTP + WebSocket Server (single port) ─────────────────
-function startServer(htmlPath: string) {
-  if (server) return
+function findChrome(): string | null {
+  const candidates = [
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    join(process.env.LOCALAPPDATA || "", "Google\\Chrome\\Application\\chrome.exe"),
+  ]
+  return candidates.find((p) => existsSync(p)) || null
+}
 
-  server = createServer((req: IncomingMessage, res: any) => {
-    if (req.url === "/" || req.url === "/voice-bridge.html") {
-      try {
-        const html = readFileSync(htmlPath, "utf8")
-        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" })
-        res.end(html)
-      } catch {
-        res.writeHead(500)
-        res.end("Error loading")
+function killPort(port: number) {
+  try {
+    const out = execSync(`netstat -ano | findstr :${port} | findstr LISTENING`, { encoding: "utf8", timeout: 3000 })
+    for (const line of out.trim().split("\n")) {
+      const pid = line.trim().split(/\s+/).pop()
+      if (pid && pid !== "0") {
+        try { execSync(`taskkill /F /PID ${pid}`, { encoding: "utf8", timeout: 3000 }) } catch {}
       }
-    } else if (req.url === "/health") {
-      res.writeHead(200, { "Content-Type": "application/json" })
-      res.end(JSON.stringify({ ok: true, clients: wss?.clients?.size || 0 }))
-    } else {
+    }
+  } catch {}
+}
+
+function startHTTPServer(): Promise<void> {
+  return new Promise((resolve) => {
+    if (httpServer) { resolve(); return }
+    killPort(PORT)
+
+    const htmlPath = findHTMLPath()
+    if (htmlPath) {
+      try { htmlContent = readFileSync(htmlPath, "utf8") } catch {}
+    }
+
+    httpServer = http.createServer((req, res) => {
+      res.setHeader("Access-Control-Allow-Origin", "*")
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type")
+
+      if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return }
+
+      if (req.method === "GET" && (req.url === "/" || req.url === "/index.html") && htmlContent) {
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" })
+        res.end(htmlContent)
+        return
+      }
+
+      if (req.method === "GET" && req.url === "/api/poll") {
+        const cmds = pendingCommands.splice(0)
+        res.writeHead(200, { "Content-Type": "application/json" })
+        res.end(JSON.stringify(cmds))
+        return
+      }
+
+      if (req.method === "GET" && req.url === "/api/health") {
+        res.writeHead(200, { "Content-Type": "application/json" })
+        res.end(JSON.stringify({ ok: true }))
+        return
+      }
+
+      if (req.method === "POST" && req.url === "/api/message") {
+        let body = ""
+        req.on("data", (c) => { body += c })
+        req.on("end", () => {
+          handleMessage(body)
+          res.writeHead(200, { "Content-Type": "application/json" })
+          res.end('{"ok":true}')
+        })
+        return
+      }
+
       res.writeHead(404)
       res.end("Not found")
-    }
-  })
-
-  // WebSocket upgraded from same HTTP server
-  wss = new WebSocketServer({ noServer: true })
-
-  server.on("upgrade", (req: IncomingMessage, socket: any, head: Buffer) => {
-    // Only allow WebSocket upgrade on root path
-    if (req.url === "/") {
-      wss!.handleUpgrade(req, socket, head, (ws) => {
-        wss!.emit("connection", ws, req)
-      })
-    } else {
-      socket.destroy()
-    }
-  })
-
-  wss.on("connection", (ws) => {
-    console.log("[VoiceBridge] Client connected")
-    // Send current language and voice gender to newly connected client
-    if (currentLanguage && currentLanguage !== "auto") {
-      ws.send(JSON.stringify({ type: "set-language", lang: currentLanguage }))
-    }
-    if (currentVoiceGender) {
-      ws.send(JSON.stringify({ type: "set-voice", gender: currentVoiceGender }))
-    }
-    // Send pending listening state to newly connected client
-    if (pendingListening) {
-      ws.send(JSON.stringify({ type: "start-listening" }))
-    }
-    ws.on("message", (raw) => {
-      try {
-        const data = JSON.parse(raw.toString())
-        if (data.type === "pong") return
-        if (data.type === "transcript") {
-          rendererCallback?.({ type: "voice-transcript", text: data.text, fullText: data.fullText, isFinal: data.final, lang: data.lang })
-        } else if (data.type === "send-to-chat") {
-          rendererCallback?.({ type: "voice-send", text: data.text, lang: data.lang })
-        } else if (data.type === "language-changed") {
-          rendererCallback?.({ type: "voice-language", lang: data.lang })
-        } else if (data.type === "voice-changed") {
-          rendererCallback?.({ type: "voice-gender", gender: data.gender })
-        } else if (data.type === "tts-changed") {
-          rendererCallback?.({ type: "voice-tts-config", enabled: data.enabled, gender: data.gender })
-        }
-      } catch {}
     })
-    ws.on("close", () => console.log("[VoiceBridge] Client disconnected"))
-  })
 
-  server.listen(PORT, "127.0.0.1", () => {
-    console.log(`[VoiceBridge] HTTP+WS on http://127.0.0.1:${PORT}`)
-  })
+    httpServer.listen(PORT, "127.0.0.1", () => {
+      console.log(`[VoiceBridge] HTTP server on port ${PORT}`)
+      resolve()
+    })
 
-  server.on("error", (err: any) => {
-    if (err.code === "EADDRINUSE") {
-      console.log(`[VoiceBridge] Port ${PORT} in use, killing existing process`)
-      // Try to kill whatever is using the port
-      try {
-        if (process.platform === "win32") {
-          execSync(`for /f "tokens=5" %a in ('netstat -aon ^| findstr :${PORT}') do taskkill /F /PID %a 2>nul`, { timeout: 5000 })
-        }
-      } catch {}
-      // Retry after short delay
-      setTimeout(() => {
-        server?.close()
-        server = null
-        startServer(htmlPath)
-      }, 1000)
-    }
+    httpServer.on("error", (e: any) => {
+      if (e.code === "EADDRINUSE") {
+        console.log(`[VoiceBridge] Port ${PORT} busy, killing...`)
+        killPort(PORT)
+        setTimeout(() => httpServer?.listen(PORT, "127.0.0.1"), 500)
+      }
+    })
   })
 }
 
-// ─── Launch Chrome ───────────────────────────────────────────────────
 function launchChrome() {
-  const chrome = findChrome()
-  if (!chrome) {
+  const chromePath = findChrome()
+  if (!chromePath) {
     console.log("[VoiceBridge] Chrome not found")
     return
   }
-  const url = `http://127.0.0.1:${PORT}/`
-  const profileDir = join(app?.getPath("userData") || homedir(), "voice-chrome-profile")
-  console.log(`[VoiceBridge] Launching Chrome → ${url}`)
-  chromeProcess = spawn(chrome, [
-    `--user-data-dir=${profileDir}`,
-    `--app=${url}`,
-    "--window-size=420,700",
+
+  const args = [
+    `--user-data-dir=${PROFILE_DIR}`,
     "--no-first-run",
+    "--no-default-browser-check",
     "--disable-extensions",
     "--disable-popup-blocking",
-    "--disable-default-apps",
-    "--disable-translate",
-    "--use-fake-ui-for-media-stream",
-    "--autoplay-policy=no-user-gesture-required",
-  ], { detached: false, stdio: "ignore" })
-  chromeProcess.on("error", () => { chromeProcess = null })
-  chromeProcess.on("exit", () => { chromeProcess = null })
+    "--disable-background-timer-throttling",
+    "--disable-backgrounding-occluded-windows",
+    "--disable-renderer-backgrounding",
+    `--app=http://127.0.0.1:${PORT}/`,
+  ]
+
+  try {
+    chromeProcess = spawn(chromePath, args, { detached: true, stdio: "ignore" })
+    chromeProcess.unref()
+    chromeProcess.on("error", (e) => console.log("[VoiceBridge] Chrome error:", e.message))
+    chromeProcess.on("exit", () => {
+      console.log("[VoiceBridge] Chrome exited")
+      chromeProcess = null
+    })
+    console.log("[VoiceBridge] Chrome launched")
+  } catch (e) {
+    console.log("[VoiceBridge] Failed to launch Chrome:", e)
+  }
 }
 
-// ─── Public API ──────────────────────────────────────────────────────
-export function startVoiceBridge() {
-  const htmlPath = findHTML()
-  if (!htmlPath) {
-    console.log("[VoiceBridge] voice-bridge.html not found in any location")
-    return
-  }
-  console.log(`[VoiceBridge] Using HTML: ${htmlPath}`)
-  startServer(htmlPath)
-  // Delay Chrome launch slightly so HTTP server is ready
-  setTimeout(launchChrome, 500)
+function killVoiceChrome() {
+  try {
+    const out = execSync(`tasklist /FI "IMAGENAME eq chrome.exe" /FO CSV /NH`, { encoding: "utf8", timeout: 3000 })
+    for (const line of out.trim().split("\n")) {
+      const match = line.match(/"chrome\.exe","(\d+)"/)
+      if (match) {
+        const pid = match[1]
+        try {
+          const cmdLine = execSync(`wmic process where ProcessId=${pid} get CommandLine /VALUE`, { encoding: "utf8", timeout: 3000 })
+          if (cmdLine.includes("ZYRAXON-Voice")) {
+            execSync(`taskkill /F /PID ${pid}`, { encoding: "utf8", timeout: 3000 })
+          }
+        } catch {}
+      }
+    }
+  } catch {}
+}
+
+let nodeTTSModule: typeof import("./tts-node") | null = null
+async function startTTSServer() {
+  if (nodeTTSModule) return
+  try {
+    const mod = await import("./tts-node")
+    nodeTTSModule = mod
+    await mod.startNodeTTS()
+    console.log("[VoiceBridge] TTS started")
+  } catch (e) { nodeTTSModule = null }
+}
+function stopTTSServer() {
+  if (nodeTTSModule) { try { nodeTTSModule.stopNodeTTS() } catch {} nodeTTSModule = null }
+}
+
+export async function startVoiceBridge() {
+  await startHTTPServer()
+  launchChrome()
+  await startTTSServer()
 }
 
 export function stopVoiceBridge() {
-  if (chromeProcess) { try { chromeProcess.kill() } catch {} chromeProcess = null }
-  if (wss) { wss.close(); wss = null }
-  if (server) { server.close(); server = null }
-}
-
-export function sendToVoiceBridge(data: any) {
-  // Track pending listening state
-  if (data.type === "start-listening") pendingListening = true
-  if (data.type === "stop-listening") pendingListening = false
-  if (!wss) return
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) client.send(JSON.stringify(data))
-  })
+  killVoiceChrome()
+  chromeProcess = null
+  if (httpServer) { try { httpServer.close() } catch {} httpServer = null }
+  stopTTSServer()
 }

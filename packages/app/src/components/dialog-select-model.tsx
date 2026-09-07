@@ -4,6 +4,7 @@ import {
   ComponentProps,
   createEffect,
   createMemo,
+  createSignal,
   For,
   JSX,
   onCleanup,
@@ -142,25 +143,98 @@ type Dismiss = "escape" | "outside" | "select" | "manage" | "provider"
 function LocalModelActions(props: { model: ModelItem; modelsCtx: ReturnType<typeof useModels> }) {
   const isDownloaded = () => props.modelsCtx.isDownloaded(props.model.id)
   const pinned = () => props.modelsCtx.localPinned.find((m) => m.id === props.model.id)
+  const [downloading, setDownloading] = createSignal(false)
+  const [progress, setProgress] = createSignal(0)
+  const [speed, setSpeed] = createSignal("")
+  const [error, setError] = createSignal<string | null>(null)
+
+  let progressUnsub: (() => void) | undefined
+
+  onCleanup(() => { progressUnsub?.() })
+
+  const startDownload = async (e: Event) => {
+    e.stopPropagation()
+    e.preventDefault()
+    const p = pinned()
+    if (!p || downloading()) return
+
+    setDownloading(true)
+    setProgress(0)
+    setError(null)
+
+    const api = (window as any).api
+    if (!api?.downloadModel) {
+      setError("Download not available")
+      setDownloading(false)
+      return
+    }
+
+    // Listen for progress updates
+    if (api.onDownloadModelProgress) {
+      progressUnsub = api.onDownloadModelProgress((prog: any) => {
+        if (prog.modelId === p.id) {
+          setProgress(prog.percent || 0)
+          if (prog.bytesDownloaded && prog.totalBytes) {
+            const mbDown = (prog.bytesDownloaded / 1024 / 1024).toFixed(1)
+            const mbTotal = (prog.totalBytes / 1024 / 1024).toFixed(0)
+            setSpeed(`${mbDown}/${mbTotal} MB`)
+          }
+        }
+      })
+    }
+
+    try {
+      const result = await api.downloadModel({
+        url: p.downloadUrl,
+        targetPath: `.zyraxon/models/${p.hfFile}`,
+        modelId: p.id,
+      })
+      if (result?.success) {
+        props.modelsCtx.markDownloaded(p.id)
+        setProgress(100)
+      } else {
+        setError(result?.error || "Download failed")
+      }
+    } catch (err: any) {
+      console.error("Download failed:", err)
+      setError(err?.message || "Download failed")
+    } finally {
+      setDownloading(false)
+      progressUnsub?.()
+    }
+  }
 
   return (
     <span
-      class="ml-auto shrink-0 text-[10px] cursor-pointer"
-      title={isDownloaded() ? "Model downloaded locally" : pinned() ? `Download ${pinned()!.hfSizeGB}GB from HuggingFace` : "Download"}
+      class="ml-auto shrink-0 cursor-pointer"
+      title={isDownloaded() ? "Model downloaded locally" : downloading() ? `Downloading ${progress().toFixed(0)}% - ${speed()}` : error() ? `Error: ${error()}` : pinned() ? `Download ${pinned()!.hfSizeGB}GB` : "Download"}
       onClick={(e) => {
-        e.stopPropagation()
-        e.preventDefault()
         if (isDownloaded()) {
+          e.stopPropagation()
+          e.preventDefault()
           props.modelsCtx.markDownloaded(props.model.id)
-        } else if (pinned()) {
-          window.open(pinned()!.hfUrl, "_blank")
-          props.modelsCtx.markDownloaded(props.model.id)
+        } else if (pinned() && !downloading()) {
+          void startDownload(e)
         }
       }}
     >
       {isDownloaded()
-        ? <span class="text-green-400">✓</span>
-        : <span class="text-blue-400 hover:text-blue-300">⬇</span>
+        ? <span class="text-green-400 text-[11px] font-bold"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+        : downloading()
+          ? (
+            <span class="inline-flex items-center gap-1">
+              <span class="relative w-4 h-4">
+                <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-linecap="round" class="text-blue-600/30" />
+                  <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round" class="text-blue-400" />
+                </svg>
+              </span>
+              <span class="text-[9px] text-blue-300 tabular-nums">{progress().toFixed(0)}%</span>
+            </span>
+          )
+          : error()
+            ? <span class="text-red-400 text-[10px]"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+            : <span class="text-blue-400 hover:text-blue-300 text-[10px]"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
       }
     </span>
   )

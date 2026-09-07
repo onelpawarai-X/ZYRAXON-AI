@@ -540,8 +540,18 @@ export function NewHome() {
   function openNewSession() {
     const conn = focusedServer()
     const project = newSessionProject()
-    if (!conn || !project) return
-    openProjectNewSession(conn, project.worktree)
+    if (conn && project) {
+      openProjectNewSession(conn, project.worktree)
+      return
+    }
+    // Fallback: use the home directory from server sync when no projects exist
+    if (conn) {
+      const ctx = global.ensureServerCtx(conn)
+      const homeDir = ctx.sync.data.path.home
+      if (homeDir) {
+        openProjectNewSession(conn, homeDir)
+      }
+    }
   }
 
   function openProjectNewSession(conn: ServerConnection.Any, directory: string) {
@@ -742,7 +752,7 @@ export function NewHome() {
               >
                 <Show
                   when={groups().length > 0}
-                  fallback={<HomeSessionsEmpty onNewSession={newSessionProject() ? openNewSession : undefined} />}
+                  fallback={<HomeSessionsEmpty onNewSession={openNewSession} />}
                 >
                   <div ref={sessionHeaderOpacity.setContentRef} class="flex flex-col pt-3 pr-3 pb-16">
                     <For each={groups()}>

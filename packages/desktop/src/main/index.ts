@@ -59,6 +59,9 @@ const APP_IDS: Record<string, string> = {
   beta: "ai.zyraxon.desktop.beta",
   prod: "ai.zyraxon.desktop",
 }
+// Allow AudioContext playback without user gesture (critical for TTS)
+app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required")
+
 const TEST_ONBOARDING = process.env.ZYRAXON_TEST_ONBOARDING === "1"
 const jsCallStackFeature = "DocumentPolicyIncludeJSCallStacksInCrashReports"
 
@@ -228,6 +231,10 @@ const main = Effect.gen(function* () {
     isQuitting = true
     event.preventDefault()
     setAppQuitting()
+    try {
+      const { getVoiceBridgeModule } = require("./voice-bridge-singleton") as typeof import("./voice-bridge-singleton")
+      getVoiceBridgeModule()?.stopVoiceBridge()
+    } catch {}
     void stopSidecars().finally(() => {
       app.quit()
     })
@@ -259,6 +266,18 @@ const main = Effect.gen(function* () {
   const serverReady = Deferred.makeUnsafe<ServerReadyData, unknown>()
 
   yield* Effect.promise(() => app.whenReady())
+
+  // ─── TTS Server Auto-Start (immediate, independent of voice bridge) ─────
+  // Start TTS server EARLY so it's ready when any IPC call comes in
+  yield* Effect.promise(async () => {
+    try {
+      const tts = await import("./tts-node")
+      await tts.startNodeTTS()
+      logger.info("TTS server auto-started on port 19810")
+    } catch (e) {
+      logger.warn("TTS server auto-start failed, will retry on first request", e)
+    }
+  })
 
   if (!TEST_ONBOARDING) migrate()
   yield* Effect.promise(() => cleanupStoreFiles(app.getPath("userData"))).pipe(
@@ -326,15 +345,18 @@ const main = Effect.gen(function* () {
   // Chrome-based speech recognition bridge for reliable voice-to-text
   yield* Effect.promise(async () => {
     try {
-      const { startVoiceBridge, setRendererCallback } = await import("./voice-bridge")
-      setRendererCallback((data) => {
+      const voiceBridge = await import("./voice-bridge")
+      const { setVoiceBridgeModule } = await import("./voice-bridge-singleton")
+      // Register the SINGLETON — both index.ts and ipc.ts use this same reference
+      setVoiceBridgeModule(voiceBridge)
+      voiceBridge.setRendererCallback((data) => {
         const win = getLastFocusedWindow()
         if (win && !win.isDestroyed()) {
           win.webContents.send("voice-event", data)
         }
       })
-      startVoiceBridge()
-      logger.info("Voice bridge started on port 14600")
+      voiceBridge.startVoiceBridge()
+      logger.info("Voice bridge started on port 19800")
     } catch (error) {
       logger.warn("failed to start voice bridge", error)
     }
@@ -482,6 +504,7 @@ const main = Effect.gen(function* () {
       }),
     )
     server = listener
+    setDefaultServerUrl(url)
     yield* Deferred.succeed(serverReady, {
       url,
       username: "zyraxon",

@@ -191,7 +191,7 @@ const layer = Layer.effect(
           },
           plan: {
             name: "plan",
-            description: "PLAN MODE — Supreme strategic analysis with 5 unique superpowers: Dependency Graph Oracle (maps entire dependency universe), Temporal Risk Analyzer (predicts bugs from git history), Counterfactual Simulator (simulates multiple approaches), Architecture Fossil Record (understands design evolution), and Impact Propagation Model (traces cascade of changes). Read-only by design.",
+            description: "PLAN MODE — Supreme strategic analysis with 5 unique superpowers: Dependency Graph Oracle (maps entire dependency universe), Temporal Risk Analyzer (predicts bugs from git history), Counterfactual Analyzer (analyzes multiple approaches), Architecture Fossil Record (understands design evolution), and Impact Propagation Model (traces cascade of changes). Read-only by design.",
             options: {},
             prompt: PROMPT_PLAN,
             permission: Permission.merge(

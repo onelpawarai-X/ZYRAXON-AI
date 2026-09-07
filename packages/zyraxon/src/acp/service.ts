@@ -100,7 +100,7 @@ export function make(input: {
     if (params.clientCapabilities?._meta?.["terminal-auth"] === true) {
       authMethod._meta = {
         "terminal-auth": {
-          command: "zyraxon",
+          command: "opencode",
           args: ["auth", "login"],
           label: "ZYRAXON Login",
         },
@@ -784,9 +784,9 @@ function defaultModelFromConfig(
   // First-session ACP startup must not scan historical sessions just to infer
   // a default. Configured model, zyraxon provider, then sorted best model keep
   // the protocol response deterministic without extra session/message reads.
-  const zyraxonProvider = providers[ProviderV2.ID.make("zyraxon")]
-  const zyraxonModel = zyraxonProvider ? Provider.sort(Object.values(zyraxonProvider.models))[0] : undefined
-  if (zyraxonProvider && zyraxonModel) return { providerID: zyraxonProvider.id, modelID: zyraxonModel.id }
+  const opencodeProvider = providers[ProviderV2.ID.make("opencode")]
+  const opencodeModel = opencodeProvider ? Provider.sort(Object.values(opencodeProvider.models))[0] : undefined
+  if (opencodeProvider && opencodeModel) return { providerID: opencodeProvider.id, modelID: opencodeModel.id }
 
   const best = Provider.sort(Object.values(providers).flatMap((provider) => Object.values(provider.models)))[0]
   if (best) return { providerID: best.providerID, modelID: best.id }

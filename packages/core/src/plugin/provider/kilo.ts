@@ -12,7 +12,7 @@ export const KiloPlugin = define({
           if (item.provider.api.url !== "https://api.kilo.ai/api/gateway") continue
           evt.provider.update(item.provider.id, (provider) => {
             provider.request.headers["HTTP-Referer"] = "https://zyraxon.ai/"
-            provider.request.headers["X-Title"] = "zyraxon"
+            provider.request.headers["X-Title"] = "opencode"
           })
         }
       }),

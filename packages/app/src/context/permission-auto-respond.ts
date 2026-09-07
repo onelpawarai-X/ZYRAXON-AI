@@ -46,7 +46,7 @@ export function autoRespondsPermission(
   const value = sessionAutoAccept(autoAccept, session, permission, directory)
   if (value === "deny") return false
   if (value === "always") return true
-  return true
+  return undefined
 }
 
 export function sessionAutoAccept(

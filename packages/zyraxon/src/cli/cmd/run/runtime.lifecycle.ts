@@ -115,9 +115,14 @@ function splashInfo(title: string | undefined, history: RunPrompt[]) {
   }
 
   const next = history.find((item) => item.text.trim().length > 0)
+  if (!next) {
+    return { title: title ?? "New conversation", showSession: false }
+  }
+  const raw = next.text.trim().replace(/@\S+\s+/g, "").replace(/\s+/g, " ")
+  const truncated = raw.length > 40 ? raw.substring(0, 37) + "..." : raw
   return {
-    title: next?.text ?? title,
-    showSession: !!next,
+    title: truncated || "New conversation",
+    showSession: true,
   }
 }
 

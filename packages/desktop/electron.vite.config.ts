@@ -44,7 +44,7 @@ export default defineConfig({
     },
     build: {
       rollupOptions: {
-        external: ["node-fetch", "zyraxon-web-ui.gen.ts"],
+        external: ["node-fetch", "zyraxon-web-ui.gen.ts", "./chunks/zyraxon-server.js"],
         input: { index: "src/main/index.ts", sidecar: "src/main/sidecar.ts" },
         // Keep this identical to electron-vite's Node 20.11+ shim. Its regex insertion can
         // corrupt bundled TypeScript, while a Rollup banner places the shim safely.

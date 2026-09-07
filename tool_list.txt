@@ -1,0 +1,154 @@
+﻿  [alert] (4 tools):
+    - Alert Create
+    - Notification Add Channel
+    - Escalation Create Policy
+    - Anomaly Alerter Add
+  [auth] (6 tools):
+    - RBAC Add Role
+    - Auth Add User
+    - Policy Add
+    - Access Log
+    - Token Create
+    - Certificate Generate
+  [code-guardian] (4 tools):
+    - Code Guardian Scan
+    - Code Guardian AI Context
+    - Code Guardian Status
+    - Code Guardian Clear
+  [common-sense] (6 tools):
+    - Reasoning Add Fact
+    - Causal Add Link
+    - World Model Add Object
+    - Context Set
+    - Analogy Add
+    - Spatial Add Object
+  [creativity] (5 tools):
+    - Idea Add Concept
+    - Innovation Add Technology
+    - Design Thinking Create
+    - Pattern Add
+    - Constraint Relax Add Problem
+  [dashboard] (5 tools):
+    - Dashboard Create Panel
+    - Chart Create
+    - Status Add Metric
+    - Real-Time Stream Create
+    - Widget Create
+  [data-logger] (5 tools):
+    - TimeSeries Create
+    - Event Log
+    - Audit Record
+    - Export CSV
+    - Storage Allocate
+  [decision] (6 tools):
+    - Decision Add Option
+    - Scenario Analyzer Create
+    - Risk Add
+    - Tradeoff Add
+    - Decision Tree Create
+    - Causal Add Variable
+  [digital-twin] (5 tools):
+    - Digital Twin Create
+    - Physics Add Body
+    - Scenario Create
+    - Sync Add Source
+    - Sim Scheduler Add Task
+  [ethics] (5 tools):
+    - Ethics Add Principle
+    - Bias Add Dataset
+    - Fairness Add Model
+    - Transparency Add Decision
+    - Safety Validate Action
+  [ml] (6 tools):
+    - Vision Detect
+    - NLP Analyze
+    - Prediction Add Dataset
+    - Classifier Add Class
+    - Anomaly Add Metric
+    - RL Create State
+  [physical] (8 tools):
+    - Arduino Connect
+    - Arduino Digital Write
+    - Arduino Analog Read
+    - Raspberry Pi Connect
+    - RPi GPIO Read
+    - CAN Bus Connect
+    - CAN Send Frame
+    - I2C Read Byte
+  [predictive] (6 tools):
+    - Failure Predictor Add
+    - Maintenance Add Task
+    - Spare Parts Add
+    - Vibration Add Sensor
+    - Oil Analysis Add Sample
+    - Thermal Trend Add Sensor
+  [remote] (6 tools):
+    - WebSocket Start
+    - REST Add Route
+    - Network Auth Add Client
+    - Remote Session Connect
+    - Command Register
+    - Heartbeat Start
+  [safety] (7 tools):
+    - FailSafe Add Rule
+    - Watchdog Start
+    - Emergency Activate
+    - Redundancy Add Channel
+    - FMEA Add Component
+    - Safety Interlock Add
+    - Circuit Breaker Add
+  [sdr] (7 tools):
+    - SDR Connect
+    - SDR FFT
+    - WiFi Scan
+    - Bluetooth Scan
+    - LoRa Connect
+    - GPS Connect
+    - Signal Analyze
+  [sensor] (8 tools):
+    - LiDAR Connect
+    - LiDAR Point Cloud
+    - Camera Connect
+    - Radar Connect
+    - IMU Connect
+    - IMU Acceleration
+    - Ultrasonic Connect
+    - Thermal Connect
+  [ultra-x] (37 tools):
+    - Universal Command Process
+    - Universal Command Devices
+    - Universal Command History
+    - Reality Bridge Register Device
+    - Reality Bridge Control Device
+    - Reality Bridge Get States
+    - Reality Bridge Create Scene
+    - Reality Bridge Activate Scene
+    - Omni Creator Create
+    - Omni Creator Templates
+    - Omni Creator Projects
+    - Time Manipulator Timeline
+    - Time Manipulator Snapshot
+    - Time Manipulator Evolution
+    - Time Manipulator Predict
+    - Time Manipulator Bug Patterns
+    - Consciousness Register Agent
+    - Consciousness Transfer Knowledge
+    - Consciousness Start Collaboration
+    - Consciousness List Agents
+    - Self-Evolving Analyze Code
+    - Self-Evolving Suggest Refactor
+    - Self-Evolving Evolution Trend
+    - Emotion Analyze Text
+    - Emotion Get Adaptation
+    - Emotion Get Mood Trend
+    - Memory Palace Store
+    - Memory Palace Query
+    - Memory Palace Stats
+    - Memory Palace Connect
+    - Reality Simulate Scenario
+    - Reality Simulator Results
+    - Singularity Process Request
+    - Singularity Self-Heal
+    - Singularity Learn
+    - Singularity State
+    - Singularity Evolution Steps

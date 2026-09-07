@@ -1,9 +1,11 @@
 import { createEffect, createSignal, onCleanup, onMount, Show } from "solid-js"
 import type * as Monaco from "monaco-editor"
 import { useTheme } from "@zyraxon-ai/ui/theme/context"
+import { useSettings } from "@/context/settings"
 import { CodeGuardianScanner, CodeGuardianAIFeedback, type CodeIssue } from "./code-guardian"
 import {
   MonacoAIAssistant,
+  ScanningAnimator,
   injectAIAssistantStyles,
   type GenerateOptions,
 } from "./monaco-ai-assistant"
@@ -62,6 +64,7 @@ export interface MonacoEditorProps {
 
 export function MonacoEditor(props: MonacoEditorProps) {
   const theme = useTheme()
+  const settings = useSettings()
   let containerRef: HTMLDivElement | undefined
   let editor: Monaco.editor.IStandaloneCodeEditor | undefined
   let monaco: typeof import("monaco-editor") | undefined
@@ -74,7 +77,8 @@ export function MonacoEditor(props: MonacoEditorProps) {
   const [aiGenerating, setAiGenerating] = createSignal(false)
   const [activePrompt, setActivePrompt] = createSignal<string | null>(null)
 
-  const aiAssistant = new MonacoAIAssistant({ model: "opencode/deepseek-v4-flash-free" })
+  const aiAssistant = new MonacoAIAssistant()
+  const scanningAnimator = new ScanningAnimator()
   const guardian = new CodeGuardianScanner()
   const feedback = new CodeGuardianAIFeedback()
   let tokenBuffer = ""
@@ -82,6 +86,13 @@ export function MonacoEditor(props: MonacoEditorProps) {
   let widgetDisposable: Monaco.editor.IEditorDecorationsCollection | null = null
   let inlineChatWidget: Monaco.editor.IContentWidget | null = null
   let inlineChatLine: number | null = null
+  // Voice bridge mic state — shared across open/close
+  let voiceBridgeUnsubGlobal: (() => void) | null = null
+  let voiceBridgeActiveGlobal = false
+  const stopInlineMicGlobal = () => {
+    if (voiceBridgeUnsubGlobal) { try { voiceBridgeUnsubGlobal() } catch {} voiceBridgeUnsubGlobal = null }
+    if (voiceBridgeActiveGlobal) { try { (window as any).api?.voiceStopListening?.() } catch {} voiceBridgeActiveGlobal = false }
+  }
 
   const getTheme = () => {
     if (props.theme) return props.theme
@@ -100,47 +111,277 @@ export function MonacoEditor(props: MonacoEditorProps) {
     removeInlineChat()
 
     inlineChatLine = lineNumber
+    const isDark = document.documentElement.dataset.colorScheme === "dark"
+    const bg = isDark ? "#0d0d1a" : "#ffffff"
+    const border = isDark ? "rgba(0,255,136,0.25)" : "rgba(0,180,100,0.3)"
+    const text = isDark ? "#e4e4ed" : "#1a1a2e"
+    const text2 = isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)"
+    const inputBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)"
+    const accent = "#00ff88"
+    const accent2 = "#00ccff"
+    const currentVoiceLang = settings.general.voiceLanguage() || "en-US"
+
     const domNode = document.createElement("div")
     domNode.style.cssText = `
-      width: 340px; padding: 8px 10px;
-      background: #1a1a2e; border: 1px solid rgba(0,255,136,0.3);
-      border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-      z-index: 20; display: flex; flex-direction: column; gap: 6px;
+      width: 460px; padding: 10px 12px;
+      background: ${bg}; border: 1px solid ${border};
+      border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      z-index: 20; display: flex; flex-direction: column; gap: 8px;
+      animation: slideDown 0.2s ease-out;
     `
     domNode.innerHTML = `
-      <div style="display:flex;align-items:center;gap:6px;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00ff88" stroke-width="2">
+      <style>
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        .aic-row { display: flex; align-items: center; gap: 6px; }
+        .aic-icon { width: 16px; height: 16px; flex-shrink: 0; }
+        .aic-label { color: ${accent}; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }
+        .aic-select { padding: 4px 8px; border-radius: 6px; border: 1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"};
+          background: ${inputBg}; color: ${text}; font-size: 11px; outline: none; cursor: pointer;
+          font-family: inherit; appearance: none; -webkit-appearance: none; min-width: 110px;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6' fill='none' stroke='${encodeURIComponent(text2)}' stroke-width='1.5'/%3E%3C/svg%3E");
+          background-repeat: no-repeat; background-position: right 6px center; padding-right: 22px; }
+        .aic-btn { padding: 5px 8px; border-radius: 6px; border: 1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"};
+          background: transparent; color: ${text2}; cursor: pointer; transition: all 0.2s;
+          display: flex; align-items: center; justify-content: center; }
+        .aic-btn:hover { border-color: ${accent}; color: ${accent}; background: rgba(0,255,136,0.05); }
+        .aic-btn svg { width: 14px; height: 14px; fill: currentColor; }
+        .aic-input { flex: 1; padding: 7px 10px; border-radius: 8px; border: 1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"};
+          background: ${inputBg}; color: ${text}; font-size: 12px; outline: none; font-family: inherit; }
+        .aic-input:focus { border-color: ${accent}; box-shadow: 0 0 0 2px rgba(0,255,136,0.1); }
+        .aic-send { padding: 6px 16px; border-radius: 8px; border: none;
+          background: linear-gradient(135deg,${accent},${accent2}); color: #000; font-size: 11px;
+          font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+        .aic-send:hover { transform: scale(1.03); box-shadow: 0 2px 12px rgba(0,255,136,0.3); }
+        .aic-send:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .aic-cancel { padding: 6px 12px; border-radius: 8px; border: 1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"};
+          background: transparent; color: ${text2}; font-size: 11px; cursor: pointer; }
+        .aic-cancel:hover { border-color: #ef4444; color: #ef4444; }
+        .aic-err { font-size: 11px; color: #ff6b6b; padding: 4px 0; }
+      </style>
+      <div class="aic-row">
+        <svg class="aic-icon" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="2">
           <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
         </svg>
-        <span style="color:#00ff88;font-size:11px;font-weight:600;letter-spacing:0.5px;">AI ASSISTANT</span>
+        <span class="aic-label">AI GENERATE</span>
+        <div style="flex:1"></div>
+        <select class="aic-select" id="aic-model"><option value="auto">Loading models...</option></select>
+        <select class="aic-select" id="aic-lang">
+          <option value="auto" ${currentVoiceLang === "auto" ? "selected" : ""}>Auto Detect</option>
+          <option value="en-US" ${currentVoiceLang === "en-US" ? "selected" : ""}>English</option>
+          <option value="bn-BD" ${currentVoiceLang === "bn-BD" ? "selected" : ""}>Bengali</option>
+          <option value="hi-IN" ${currentVoiceLang === "hi-IN" ? "selected" : ""}>Hindi</option>
+          <option value="ar-SA" ${currentVoiceLang === "ar-SA" ? "selected" : ""}>Arabic</option>
+          <option value="fr-FR" ${currentVoiceLang === "fr-FR" ? "selected" : ""}>French</option>
+          <option value="de-DE" ${currentVoiceLang === "de-DE" ? "selected" : ""}>German</option>
+          <option value="es-ES" ${currentVoiceLang === "es-ES" ? "selected" : ""}>Spanish</option>
+          <option value="ru-RU" ${currentVoiceLang === "ru-RU" ? "selected" : ""}>Russian</option>
+          <option value="ja-JP" ${currentVoiceLang === "ja-JP" ? "selected" : ""}>Japanese</option>
+          <option value="ko-KR" ${currentVoiceLang === "ko-KR" ? "selected" : ""}>Korean</option>
+          <option value="zh-CN" ${currentVoiceLang === "zh-CN" ? "selected" : ""}>Chinese</option>
+          <option value="pt-BR" ${currentVoiceLang === "pt-BR" ? "selected" : ""}>Portuguese</option>
+          <option value="it-IT" ${currentVoiceLang === "it-IT" ? "selected" : ""}>Italian</option>
+          <option value="tr-TR" ${currentVoiceLang === "tr-TR" ? "selected" : ""}>Turkish</option>
+          <option value="th-TH" ${currentVoiceLang === "th-TH" ? "selected" : ""}>Thai</option>
+          <option value="pl-PL" ${currentVoiceLang === "pl-PL" ? "selected" : ""}>Polish</option>
+          <option value="nl-NL" ${currentVoiceLang === "nl-NL" ? "selected" : ""}>Dutch</option>
+          <option value="vi-VN" ${currentVoiceLang === "vi-VN" ? "selected" : ""}>Vietnamese</option>
+          <option value="uk-UA" ${currentVoiceLang === "uk-UA" ? "selected" : ""}>Ukrainian</option>
+          <option value="sv-SE" ${currentVoiceLang === "sv-SE" ? "selected" : ""}>Swedish</option>
+          <option value="da-DK" ${currentVoiceLang === "da-DK" ? "selected" : ""}>Danish</option>
+          <option value="fi-FI" ${currentVoiceLang === "fi-FI" ? "selected" : ""}>Finnish</option>
+          <option value="nb-NO" ${currentVoiceLang === "nb-NO" ? "selected" : ""}>Norwegian</option>
+          <option value="cs-CZ" ${currentVoiceLang === "cs-CZ" ? "selected" : ""}>Czech</option>
+          <option value="ro-RO" ${currentVoiceLang === "ro-RO" ? "selected" : ""}>Romanian</option>
+          <option value="el-GR" ${currentVoiceLang === "el-GR" ? "selected" : ""}>Greek</option>
+          <option value="he-IL" ${currentVoiceLang === "he-IL" ? "selected" : ""}>Hebrew</option>
+          <option value="hu-HU" ${currentVoiceLang === "hu-HU" ? "selected" : ""}>Hungarian</option>
+          <option value="id-ID" ${currentVoiceLang === "id-ID" ? "selected" : ""}>Indonesian</option>
+          <option value="ms-MY" ${currentVoiceLang === "ms-MY" ? "selected" : ""}>Malay</option>
+          <option value="ta-IN" ${currentVoiceLang === "ta-IN" ? "selected" : ""}>Tamil</option>
+          <option value="te-IN" ${currentVoiceLang === "te-IN" ? "selected" : ""}>Telugu</option>
+          <option value="mr-IN" ${currentVoiceLang === "mr-IN" ? "selected" : ""}>Marathi</option>
+          <option value="gu-IN" ${currentVoiceLang === "gu-IN" ? "selected" : ""}>Gujarati</option>
+          <option value="kn-IN" ${currentVoiceLang === "kn-IN" ? "selected" : ""}>Kannada</option>
+          <option value="ml-IN" ${currentVoiceLang === "ml-IN" ? "selected" : ""}>Malayalam</option>
+          <option value="ur-PK" ${currentVoiceLang === "ur-PK" ? "selected" : ""}>Urdu</option>
+          <option value="fa-IR" ${currentVoiceLang === "fa-IR" ? "selected" : ""}>Persian</option>
+          <option value="sw-KE" ${currentVoiceLang === "sw-KE" ? "selected" : ""}>Swahili</option>
+          <option value="af-ZA" ${currentVoiceLang === "af-ZA" ? "selected" : ""}>Afrikaans</option>
+        </select>
       </div>
-      <input type="text" placeholder="Tell AI what to do with this code..."
-        style="width:100%;padding:7px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#e4e4ed;font-size:12px;outline:none;font-family:inherit;"
-        class="ai-chat-input" />
-      <div style="display:flex;gap:6px;justify-content:flex-end;">
-        <button class="ai-chat-cancel" style="padding:4px 12px;border-radius:5px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:rgba(255,255,255,0.45);font-size:11px;cursor:pointer;">Esc</button>
-        <button class="ai-chat-send" style="padding:4px 12px;border-radius:5px;border:none;background:linear-gradient(135deg,#00ff88,#00ccff);color:#000;font-size:11px;font-weight:600;cursor:pointer;">Generate</button>
+      <div class="aic-row">
+        <input type="text" class="aic-input" id="aic-input" placeholder="Type what AI should do..." />
+        <button class="aic-btn" id="aic-mic" title="Voice input">
+          <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+        </button>
+      </div>
+      <div class="aic-row" style="justify-content:flex-end;gap:6px;">
+        <button class="aic-cancel" id="aic-cancel">Esc</button>
+        <button class="aic-send" id="aic-send">Generate</button>
       </div>
     `
 
-    const input = domNode.querySelector(".ai-chat-input") as HTMLInputElement
-    const cancelBtn = domNode.querySelector(".ai-chat-cancel") as HTMLButtonElement
-    const sendBtn = domNode.querySelector(".ai-chat-send") as HTMLButtonElement
+    const input = domNode.querySelector("#aic-input") as HTMLInputElement
+    const cancelBtn = domNode.querySelector("#aic-cancel") as HTMLButtonElement
+    const sendBtn = domNode.querySelector("#aic-send") as HTMLButtonElement
+    const micBtn = domNode.querySelector("#aic-mic") as HTMLButtonElement
+    const modelSelect = domNode.querySelector("#aic-model") as HTMLSelectElement
+    const langSelect = domNode.querySelector("#aic-lang") as HTMLSelectElement
 
+    // ── Dynamic model loading: fetch free models from opencode provider directly ──
+    aiAssistant.listAvailableModels().then((models) => {
+      modelSelect.innerHTML = ""
+      const autoOpt = document.createElement("option")
+      autoOpt.value = "auto"
+      autoOpt.textContent = `Auto (Free — ${models.length} models)`
+      modelSelect.appendChild(autoOpt)
+      for (const m of models) {
+        const opt = document.createElement("option")
+        opt.value = m.id
+        // Show short name: "opencode/big-pickle" → "Big Pickle"
+        const shortName = m.id.includes("/") ? m.id.split("/").pop()! : m.id
+        opt.textContent = shortName
+        opt.title = m.id
+        modelSelect.appendChild(opt)
+      }
+      console.log("[Monaco] Loaded", models.length, "free models from opencode provider")
+    }).catch((err) => {
+      console.error("[Monaco] Failed to load models from provider:", err)
+      modelSelect.innerHTML = '<option value="auto">Auto (Free)</option>'
+      const errDiv = document.createElement("div")
+      errDiv.className = "aic-err"
+      errDiv.textContent = `Models unavailable: ${err.message || err}`
+      domNode.appendChild(errDiv)
+      setTimeout(() => errDiv.remove(), 5000)
+    })
+
+    // Stop ALL events from propagating to Monaco editor (bubble phase — allows buttons/selects to work)
+    const stopAll = (e: Event) => { e.stopPropagation() }
+    domNode.addEventListener("mousedown", stopAll)
+    domNode.addEventListener("mouseup", stopAll)
+    domNode.addEventListener("click", stopAll)
+    domNode.addEventListener("dblclick", stopAll)
+    domNode.addEventListener("keydown", stopAll)
+    domNode.addEventListener("keyup", stopAll)
+    domNode.addEventListener("keypress", stopAll)
+    domNode.addEventListener("contextmenu", stopAll)
+
+    let micRecognition: any = null
+    const cleanupVoiceBridgeMicLocal = () => {
+      if (voiceBridgeUnsubGlobal) { try { voiceBridgeUnsubGlobal() } catch {} voiceBridgeUnsubGlobal = null }
+      if (voiceBridgeActiveGlobal) {
+        try { (window as any).api?.voiceStopListening?.() } catch {}
+        voiceBridgeActiveGlobal = false
+      }
+      micBtn.style.color = ""
+    }
+    micBtn.addEventListener("click", (e) => {
+      e.stopPropagation()
+      const api = (window as any).api
+      // Prefer voice bridge (same as agent) — routes through Chrome HTML for reliable recognition
+      const canUseBridge = api?.voiceStartListening && api?.onVoiceEvent
+      if (canUseBridge) {
+        if (voiceBridgeActiveGlobal) { cleanupVoiceBridgeMicLocal(); return }
+        // Sync selected language to bridge before listening
+        const bridgeLang = langSelect.value || currentVoiceLang
+        try { api.voiceSetLanguage(bridgeLang) } catch {}
+        micBtn.style.color = accent
+        voiceBridgeActiveGlobal = true
+        let accText = ""
+        voiceBridgeUnsubGlobal = api.onVoiceEvent((ev: any) => {
+          if (ev.type === "voice-transcript" && typeof ev.text === "string") {
+            // ev.fullText accumulates; use it for Monaco input
+            const t = ev.fullText || ev.text
+            if (t) { input.value = t; accText = t }
+          }
+          if (ev.type === "voice-mic-state" && ev.active === false && voiceBridgeActiveGlobal) {
+            // Bridge stopped — keep accText
+            cleanupVoiceBridgeMicLocal()
+          }
+        })
+        // Start bridge listening — Chrome HTML's SpeechRecognition will stream transcripts
+        api.voiceStartListening().catch((err: any) => {
+          console.error("[Monaco Mic Bridge] voiceStartListening failed:", err)
+          cleanupVoiceBridgeMicLocal()
+          // Fallback to direct SpeechRecognition
+          fallbackDirectMic()
+        })
+        return
+      }
+      // Fallback: direct browser SpeechRecognition
+      fallbackDirectMic()
+      function fallbackDirectMic() {
+        const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+        if (!SR) {
+          const warn = document.createElement("div")
+          warn.className = "aic-err"
+          warn.textContent = "Speech recognition not available in this browser"
+          domNode.appendChild(warn)
+          setTimeout(() => warn.remove(), 3000)
+          return
+        }
+        if (micRecognition) { try { micRecognition.stop() } catch {} micRecognition = null; micBtn.style.color = ""; return }
+        micRecognition = new SR()
+        micRecognition.continuous = false
+        micRecognition.interimResults = true
+        let recLang = langSelect.value
+        if (!recLang || recLang === "auto") recLang = navigator.language || "en-US"
+        micRecognition.lang = recLang
+        console.log("[Monaco Mic] Direct recognition lang:", recLang)
+        micRecognition.onresult = (ev: any) => {
+          const t = Array.from(ev.results).map((r: any) => r[0].transcript).join("")
+          input.value = t
+        }
+        micRecognition.onend = () => { micRecognition = null; micBtn.style.color = ""; }
+        micRecognition.onerror = (ev: any) => {
+          console.error("[Monaco Mic] Error:", ev.error)
+          micRecognition = null; micBtn.style.color = ""
+          const warn = document.createElement("div")
+          warn.className = "aic-err"
+          warn.textContent = `Mic error: ${ev.error || "unknown"}`
+          domNode.appendChild(warn)
+          setTimeout(() => warn.remove(), 3000)
+        }
+        try { micRecognition.start(); micBtn.style.color = accent } catch (err: any) {
+          micRecognition = null
+          const warn = document.createElement("div")
+          warn.className = "aic-err"
+          warn.textContent = `Mic failed: ${err.message || err}`
+          domNode.appendChild(warn)
+          setTimeout(() => warn.remove(), 3000)
+        }
+      }
+    })
+
+    const stopAllMic = () => {
+      if (micRecognition) { try { micRecognition.stop() } catch {} micRecognition = null }
+      if (voiceBridgeUnsubGlobal) { try { voiceBridgeUnsubGlobal() } catch {} voiceBridgeUnsubGlobal = null }
+      if (voiceBridgeActiveGlobal) { try { (window as any).api?.voiceStopListening?.() } catch {} voiceBridgeActiveGlobal = false }
+      micBtn.style.color = ""
+    }
     input.addEventListener("keydown", (e) => {
       e.stopPropagation()
-      if (e.key === "Enter" && input.value.trim()) {
-        executeInlineChat(lineNumber, input.value.trim())
+      if (e.key === "Enter" && !e.shiftKey && input.value.trim()) {
+        stopAllMic()
+        executeInlineChat(lineNumber, input.value.trim(), modelSelect.value)
       }
       if (e.key === "Escape") {
+        stopAllMic()
         removeInlineChat()
         editor!.focus()
       }
     })
     input.addEventListener("mousedown", (e) => e.stopPropagation())
-    cancelBtn.addEventListener("click", () => { removeInlineChat(); editor!.focus() })
-    sendBtn.addEventListener("click", () => {
-      if (input.value.trim()) executeInlineChat(lineNumber, input.value.trim())
+    input.addEventListener("focus", (e) => e.stopPropagation())
+    cancelBtn.addEventListener("click", (e) => {
+      e.stopPropagation()
+      stopAllMic()
+      removeInlineChat(); editor!.focus()
+    })
+    sendBtn.addEventListener("click", (e) => {
+      e.stopPropagation()
+      stopAllMic()
+      if (input.value.trim()) executeInlineChat(lineNumber, input.value.trim(), modelSelect.value)
     })
 
     inlineChatWidget = {
@@ -156,6 +397,7 @@ export function MonacoEditor(props: MonacoEditorProps) {
   }
 
   const removeInlineChat = () => {
+    stopInlineMicGlobal()
     if (editor && inlineChatWidget) {
       editor.removeContentWidget(inlineChatWidget)
       inlineChatWidget = null
@@ -166,15 +408,24 @@ export function MonacoEditor(props: MonacoEditorProps) {
   // ═══════════════════════════════════════════════════════════════
   // EXECUTE INLINE CHAT — Stream code rewrite
   // ═══════════════════════════════════════════════════════════════
-  const executeInlineChat = async (lineNumber: number, prompt: string) => {
+  const executeInlineChat = async (lineNumber: number, prompt: string, modelOverride?: string) => {
     removeInlineChat()
     if (aiGenerating()) return
 
     const currentCode = editor?.getValue() || ""
     const language = props.language || "typescript"
+    const selectedModel = modelOverride && modelOverride !== "auto" ? modelOverride : undefined
+
+    console.log("[Monaco] Generate: prompt=", prompt, " model=", selectedModel || "auto", " line=", lineNumber)
 
     setAiGenerating(true)
     setActivePrompt(prompt)
+
+    // Start scanning animation on all lines
+    try {
+      const totalLines = editor?.getModel()?.getLineCount() || 1
+      scanningAnimator.start(editor!, 1, totalLines)
+    } catch {}
 
     const options: GenerateOptions = {
       prompt,
@@ -182,12 +433,30 @@ export function MonacoEditor(props: MonacoEditorProps) {
       existingCode: currentCode,
       fileName: props.path,
       instruction: "generate",
+      modelId: selectedModel,
     }
 
     tokenBuffer = ""
+    isSyncing = true
+
+    // Safety timeout — if generation hangs, force-reset after 90 seconds
+    const safetyTimeout = setTimeout(() => {
+      if (aiGenerating()) {
+        console.warn("[Monaco] AI generation timed out after 90s, forcing reset")
+        aiAssistant.cancel()
+        scanningAnimator.stop()
+        setAiGenerating(false)
+        setActivePrompt(null)
+        isSyncing = true
+        editor?.setValue(currentCode)
+        isSyncing = false
+      }
+    }, 90000)
 
     await aiAssistant.generateCode(options, {
-      onStart: () => {},
+      onStart: () => {
+        console.log("[Monaco] Generation started")
+      },
       onToken: (_token, fullCode) => {
         if (!editor) return
         tokenBuffer = fullCode
@@ -200,29 +469,56 @@ export function MonacoEditor(props: MonacoEditorProps) {
           props.onChange?.(tokenBuffer)
           const lineCount = editor.getModel()?.getLineCount() || 0
           editor.revealLine(lineCount)
-        }, 30)
+        }, 16)
       },
       onComplete: (fullCode) => {
-        if (!editor) return
+        clearTimeout(safetyTimeout)
+        scanningAnimator.stop()
         if (streamingDebounce) clearTimeout(streamingDebounce)
+        if (!editor) return
+        const finalCode = fullCode?.trim() ? fullCode : currentCode
+        console.log("[Monaco] Generation complete, code length:", finalCode.length)
+        // Animate: apply final code with typewriter-like reveal
         isSyncing = true
-        editor.setValue(fullCode || currentCode)
+        editor.setValue(finalCode)
         isSyncing = false
-        props.onChange?.(fullCode || currentCode)
+        props.onChange?.(finalCode)
         setAiGenerating(false)
         setActivePrompt(null)
-        if (fullCode) {
-          runGuardianScan(fullCode)
-          props.onSave?.(fullCode)
+        if (fullCode?.trim()) {
+          runGuardianScan(finalCode)
+          props.onSave?.(finalCode)
         }
       },
-      onError: (_error) => {
+      onError: (error) => {
+        console.error("[Monaco] AI generation error:", error)
+        clearTimeout(safetyTimeout)
+        scanningAnimator.stop()
         if (streamingDebounce) clearTimeout(streamingDebounce)
         setAiGenerating(false)
         setActivePrompt(null)
-        isSyncing = true
-        editor?.setValue(currentCode)
         isSyncing = false
+        // Show prominent error — toast + inline widget
+        try {
+          // Flash the error in editor
+          if (editor && monaco) {
+            const errorWidget = {
+              getId: () => `ai-error-${Date.now()}`,
+              getDomNode: () => {
+                const node = document.createElement("div")
+                node.style.cssText = "width:420px;padding:12px 16px;background:#2d1b1b;border:1px solid #ff4444;border-radius:10px;color:#ff6b6b;font-size:12px;font-family:inherit;box-shadow:0 4px 20px rgba(255,0,0,0.3);line-height:1.5;"
+                node.innerHTML = `<b>AI Generation Failed</b><br/>${error.message || "Unknown error"}<br/><span style="font-size:10px;opacity:0.6">Check that opencode provider is configured and the model is available.</span>`
+                setTimeout(() => { try { editor.removeContentWidget(errorWidget) } catch {} }, 8000)
+                return node
+              },
+              getPosition: () => ({
+                position: { lineNumber: Math.min((editor.getModel()?.getLineCount() || 1) + 1, 999), column: 1 },
+                preference: [monaco.editor.ContentWidgetPositionPreference.BELOW],
+              }),
+            }
+            editor.addContentWidget(errorWidget)
+          }
+        } catch {}
       },
     })
   }
@@ -509,37 +805,35 @@ export function MonacoEditor(props: MonacoEditorProps) {
 
   return (
     <div class="relative flex flex-col w-full h-full" style={{ "min-height": "300px" }}>
-      {/* EDITOR — double-click line to open AI chat */}
+      {/* EDITOR — double-click ANYWHERE to open AI chat */}
       <div
         ref={containerRef}
         class="flex-1 min-h-0"
         style={{ width: "100%" }}
         onDblClick={(e: MouseEvent) => {
-          if (aiGenerating()) return
-          const target = e.target as HTMLElement
-          const lineEl = target.closest("[data-line-number]")
-          if (lineEl) {
-            const lineNum = parseInt(lineEl.getAttribute("data-line-number") || "")
-            if (lineNum && lineNum > 0) {
-              e.preventDefault()
-              e.stopPropagation()
-              showInlineChat(lineNum)
-            }
+          if (aiGenerating() || !editor || !monaco) return
+          e.preventDefault()
+          e.stopPropagation()
+          // Calculate line number from click position — works ANYWHERE on editor
+          let lineNum = 0
+          try {
+            const editorRect = containerRef!.getBoundingClientRect()
+            const mouseY = e.clientY - editorRect.top
+            const scrollTop = editor.getScrollTop()
+            const layoutInfo = editor.getLayoutInfo()
+            const lineHeight = editor.getOption(monaco.editor.EditorOption.lineHeight) || 20
+            lineNum = Math.floor((mouseY + scrollTop - layoutInfo.paddingTop) / lineHeight) + 1
+          } catch {}
+          // Fallback: use cursor position
+          if (!lineNum && editor) {
+            const pos = editor.getPosition()
+            if (pos) lineNum = pos.lineNumber
+          }
+          if (lineNum > 0) {
+            showInlineChat(lineNum)
           }
         }}
-        onClick={(e: MouseEvent) => {
-          const target = e.target as HTMLElement
-          if (target.classList?.contains("margin") || target.closest(".margin-view-overlays")) {
-            const lineEl = target.closest("[data-line-number]") || target
-            const lineNum = parseInt(lineEl.getAttribute?.("data-line-number") || (lineEl as any)?.innerText)
-            if (lineNum && lineNum > 0) {
-              e.preventDefault()
-              e.stopPropagation()
-              showInlineChat(lineNum)
-            }
-          }
-          handleClick()
-        }}
+        onClick={() => handleClick()}
       />
 
       {/* AI GENERATING STATUS */}

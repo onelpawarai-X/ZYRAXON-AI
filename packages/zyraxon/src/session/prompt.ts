@@ -194,6 +194,18 @@ const layer = Layer.effect(
       return parts
     })
 
+    function deriveFallbackTitle(userMessage: string): string {
+      const stripped = userMessage
+        .replace(/<think>[\s\S]*?<\/think>/g, "")
+        .replace(/^@\S+\s+/gm, "")
+        .replace(/\s+/g, " ")
+        .trim()
+      if (stripped.length === 0) return "New conversation"
+      const words = stripped.split(" ")
+      const slice = words.slice(0, 6).join(" ")
+      return slice.length > 50 ? slice.substring(0, 47) + "..." : slice
+    }
+
     const title = Effect.fn("SessionPrompt.ensureTitle")(function* (input: {
       session: Session.Info
       history: SessionV1.WithParts[]
@@ -217,8 +229,21 @@ const layer = Layer.effect(
       const subtasks = firstUser.parts.filter((p): p is SessionV1.SubtaskPart => p.type === "subtask")
       const onlySubtasks = subtasks.length > 0 && firstUser.parts.every((p) => p.type === "subtask")
 
+      const rawUserText = onlySubtasks
+        ? subtasks.map((p) => p.prompt).join("\n")
+        : firstUser.parts
+            .filter((p): p is SessionV1.TextPart => p.type === "text")
+            .map((p) => p.text)
+            .join("\n")
+
       const ag = yield* agents.get("title")
-      if (!ag) return
+      if (!ag) {
+        const fallback = deriveFallbackTitle(rawUserText)
+        yield* sessions
+          .setTitle({ sessionID: input.session.id, title: fallback })
+          .pipe(Effect.catchCause((cause) => Effect.logError("failed to set fallback title (no agent)", { error: Cause.squash(cause) })))
+        return
+      }
       const mdl = ag.model
         ? yield* provider.getModel(ag.model.providerID, ag.model.modelID)
         : ((yield* provider.getSmallModel(input.providerID)) ??
@@ -235,22 +260,44 @@ const layer = Layer.effect(
           tools: {},
           model: mdl,
           sessionID: input.session.id,
-          retries: 2,
-          messages: [{ role: "user", content: "Generate a title for this conversation:\n" }, ...msgs],
+          retries: 1,
+          messages: [
+            {
+              role: "user",
+              content:
+                "Generate a short, descriptive title (max 50 chars) for this conversation. Reply ONLY with the title, no quotes, no explanation:\n",
+            },
+            ...msgs,
+          ],
         })
         .pipe(
           Stream.filter(LLMEvent.is.textDelta),
           Stream.map((e) => e.text),
           Stream.mkString,
           Effect.orDie,
+          Effect.timeout(15_000),
+          Effect.catchAll((cause) =>
+            Effect.gen(function* () {
+              yield* Effect.logWarning("title LLM call failed, using fallback", { error: Cause.squash(cause) })
+              return deriveFallbackTitle(rawUserText)
+            }),
+          ),
         )
       const cleaned = text
         .replace(/<think>[\s\S]*?<\/think>\s*/g, "")
+        .replace(/^["'`]+|["'`]+$/g, "")
+        .replace(/^(title|here(?:'s| is) (?:a )?title|conversation title)[:\s]*/i, "")
         .split("\n")
         .map((line) => line.trim())
         .find((line) => line.length > 0)
-      if (!cleaned) return
-      const t = cleaned.length > 100 ? cleaned.substring(0, 97) + "..." : cleaned
+      if (!cleaned) {
+        const fallback = deriveFallbackTitle(rawUserText)
+        yield* sessions
+          .setTitle({ sessionID: input.session.id, title: fallback })
+          .pipe(Effect.catchCause((cause) => Effect.logError("failed to set fallback title (empty LLM output)", { error: Cause.squash(cause) })))
+        return
+      }
+      const t = cleaned.length > 80 ? cleaned.substring(0, 77) + "..." : cleaned
       yield* sessions
         .setTitle({ sessionID: input.session.id, title: t })
         .pipe(Effect.catchCause((cause) => Effect.logError("failed to generate title", { error: Cause.squash(cause) })))
@@ -1056,9 +1103,14 @@ const layer = Layer.effect(
     const prompt: (input: PromptInput) => Effect.Effect<SessionV1.WithParts, Image.Error> = Effect.fn(
       "SessionPrompt.prompt",
     )(function* (input: PromptInput) {
+      const _tPrompt = Date.now()
+      yield* Effect.logInfo("prompt_start", { "session.id": input.sessionID })
       const session = yield* sessions.get(input.sessionID).pipe(Effect.orDie)
       yield* revert.cleanup(session)
+      yield* Effect.logInfo("prompt_timing", { "session.id": input.sessionID, op: "revert.cleanup", ms: Date.now() - _tPrompt })
+      const _tUserMsg = Date.now()
       const message = yield* createUserMessage(input)
+      yield* Effect.logInfo("prompt_timing", { "session.id": input.sessionID, op: "createUserMessage", ms: Date.now() - _tUserMsg })
       yield* sessions.touch(input.sessionID)
 
       const permissions: PermissionV1.Rule[] = []
@@ -1070,6 +1122,7 @@ const layer = Layer.effect(
         yield* sessions.setPermission({ sessionID: session.id, permission: permissions })
       }
 
+      yield* Effect.logInfo("prompt_timing", { "session.id": input.sessionID, op: "prompt_total", ms: Date.now() - _tPrompt })
       if (input.noReply === true) return message
       return yield* loop({ sessionID: input.sessionID })
     })
@@ -1088,16 +1141,20 @@ const layer = Layer.effect(
         let structured: unknown
         let step = 0
         const session = yield* sessions.get(sessionID).pipe(Effect.orDie)
+        const rateLimitedModels = new Set<string>()
 
         while (true) {
           yield* status.set(sessionID, { type: "busy" })
           yield* Effect.logInfo("loop", { "session.id": sessionID, step })
+          const _t0 = Date.now()
 
           let msgs = yield* MessageV2.filterCompactedEffect(sessionID).pipe(
             Effect.provideService(Database.Service, database),
           )
+          yield* Effect.logInfo("loop_timing", { "session.id": sessionID, step, op: "filterCompactedEffect", ms: Date.now() - _t0 })
 
           const { user: lastUser, assistant: lastAssistant, finished: lastFinished, tasks } = MessageV2.latest(msgs)
+          yield* Effect.logInfo("loop_timing", { "session.id": sessionID, step, op: "latest", ms: Date.now() - _t0 })
 
           if (!lastUser) throw new Error("No user message found in stream. This should never happen.")
 
@@ -1111,6 +1168,32 @@ const layer = Layer.effect(
             (lastAssistantMsg?.parts ?? []).some(
               (part) => part.type === "tool" && !part.metadata?.providerExecuted && !isOrphanedInterruptedTool(part),
             ) ?? false
+
+          // Break if the assistant message has an error (e.g. stream error,
+          // rate limit, empty response). Without this check the loop spins
+          // forever because halt() sets error but not finish.
+          // EXCEPTION: rate limit errors — try a different model instead of breaking
+          if (lastAssistant?.error && !hasToolCalls && lastUser.id < lastAssistant.id) {
+            const errMsg = JSON.stringify(lastAssistant.error).toLowerCase()
+            const isRateLimit = errMsg.includes("rate") && errMsg.includes("limit")
+            if (isRateLimit) {
+              const modelKey = `${lastUser.model.providerID}/${lastUser.model.modelID}`
+              rateLimitedModels.add(modelKey)
+              yield* Effect.logWarning("rate limit detected, will try different model", {
+                "session.id": sessionID,
+                model: modelKey,
+              })
+              // Delete the error message so loop can continue with fallback model
+              yield* sessions.deleteMessage(lastAssistant.id)
+              continue
+            }
+            yield* Effect.logInfo("exiting loop due to assistant error", {
+              "session.id": sessionID,
+              messageID: lastAssistant.id,
+              error: lastAssistant.error,
+            })
+            break
+          }
 
           if (
             lastAssistant?.finish &&
@@ -1134,15 +1217,38 @@ const layer = Layer.effect(
           }
 
           step++
-          if (step === 1)
-            yield* title({
-              session,
-              modelID: lastUser.model.modelID,
-              providerID: lastUser.model.providerID,
-              history: msgs,
-            }).pipe(Effect.ignore, Effect.forkIn(scope))
 
-          const model = yield* getModel(lastUser.model.providerID, lastUser.model.modelID, sessionID)
+          // Check if current model is rate-limited, fallback to default
+          const currentModelKey = `${lastUser.model.providerID}/${lastUser.model.modelID}`
+          let modelProviderID = lastUser.model.providerID
+          let modelModelID = lastUser.model.modelID
+          if (rateLimitedModels.has(currentModelKey)) {
+            const defaultModel = yield* provider.defaultModel().pipe(Effect.orDie)
+            modelProviderID = defaultModel.providerID
+            modelModelID = defaultModel.id
+            yield* Effect.logWarning("using fallback model due to rate limit", {
+              "session.id": sessionID,
+              original: currentModelKey,
+              fallback: `${modelProviderID}/${modelModelID}`,
+            })
+          }
+
+          const _tModel = Date.now()
+          const model = yield* getModel(modelProviderID, modelModelID, sessionID).pipe(
+            Effect.timeout(8_000),
+            Effect.catchTag("TimeoutException", () =>
+              Effect.gen(function* () {
+                yield* Effect.logWarning("getModel timed out, falling back to default model", {
+                  "session.id": sessionID,
+                  providerID: lastUser.model.providerID,
+                  modelID: lastUser.model.modelID,
+                })
+                return yield* provider.defaultModel().pipe(Effect.orDie)
+              }),
+            ),
+          )
+          yield* Effect.logInfo("loop_timing", { "session.id": sessionID, step, op: "getModel", ms: Date.now() - _tModel })
+
           const task = tasks.pop()
 
           if (task?.type === "subtask") {
@@ -1171,7 +1277,11 @@ const layer = Layer.effect(
             continue
           }
 
+
+          const _tAgent = Date.now()
           const agent = yield* agents.get(lastUser.agent)
+          yield* Effect.logInfo("loop_timing", { "session.id": sessionID, step, op: "agents.get", ms: Date.now() - _tAgent })
+
           if (!agent) {
             const available = (yield* agents.list()).filter((a) => !a.hidden).map((a) => a.name)
             const hint = available.length ? ` Available agents: ${available.join(", ")}` : ""
@@ -1179,13 +1289,27 @@ const layer = Layer.effect(
             yield* events.publish(Session.Event.Error, { sessionID, error: error.toObject() })
             throw error
           }
+
+          if (step === 1) {
+            yield* title({
+              session,
+              modelID: lastUser.model.modelID,
+              providerID: lastUser.model.providerID,
+              history: msgs,
+            }).pipe(Effect.ignore, Effect.forkIn(scope))
+          }
+
           const maxSteps = agent.steps ?? Infinity
           const isLastStep = step >= maxSteps
+
+          const _tRemind = Date.now()
           msgs = yield* SessionReminders.apply({ messages: msgs, agent, session }).pipe(
             Effect.provideService(RuntimeFlags.Service, flags),
             Effect.provideService(FSUtil.Service, fsys),
             Effect.provideService(Session.Service, sessions),
           )
+          yield* Effect.logInfo("loop_timing", { "session.id": sessionID, step, op: "SessionReminders", ms: Date.now() - _tRemind })
+
 
           const msg: SessionV1.Assistant = {
             id: MessageID.ascending(),
@@ -1214,6 +1338,7 @@ const layer = Layer.effect(
             yield* sessions.updateMessage(msg)
           })
 
+          const _tCreate = Date.now()
           const handle = yield* processor
             .create({
               assistantMessage: msg,
@@ -1221,12 +1346,14 @@ const layer = Layer.effect(
               model,
             })
             .pipe(Effect.onInterrupt(() => finalizeInterruptedAssistant))
+          yield* Effect.logInfo("loop_timing", { "session.id": sessionID, step, op: "processor.create", ms: Date.now() - _tCreate })
 
           const outcome: "break" | "continue" = yield* Effect.gen(function* () {
             const lastUserMsg = msgs.findLast((m) => m.info.role === "user")
             const bypassAgentCheck = (lastUserMsg?.parts ?? []).some((p) => p.type === "agent") ?? false
             const promptOps = yield* ops()
 
+            const _tTools = Date.now()
             const tools = yield* SessionTools.resolve({
               agent,
               session,
@@ -1243,6 +1370,7 @@ const layer = Layer.effect(
               Effect.provideService(Truncate.Service, truncate),
               Effect.provideService(RuntimeFlags.Service, flags),
             )
+            yield* Effect.logInfo("loop_timing", { "session.id": sessionID, step, op: "SessionTools.resolve", ms: Date.now() - _tTools })
 
             if (lastUser.format?.type === "json_schema") {
               tools["StructuredOutput"] = createStructuredOutputTool({
@@ -1258,6 +1386,7 @@ const layer = Layer.effect(
 
             yield* plugin.trigger("experimental.chat.messages.transform", {}, { messages: msgs })
 
+            const _tSysPrompt = Date.now()
             const [skills, env, instructions, mcpInstructions, modelMsgs] = yield* Effect.all([
               sys.skills(agent),
               sys.environment(model),
@@ -1265,6 +1394,7 @@ const layer = Layer.effect(
               sys.mcp(agent, session.permission),
               MessageV2.toModelMessagesEffect(msgs, model),
             ])
+            yield* Effect.logInfo("loop_timing", { "session.id": sessionID, step, op: "system_prompt_all", ms: Date.now() - _tSysPrompt })
             const system = [
               ...env,
               ...instructions,
@@ -1278,13 +1408,18 @@ const layer = Layer.effect(
               ?.parts?.filter((p): p is SessionV1.TextPart => p.type === "text")
               .map((p) => p.text)
               .join("\n") ?? ""
+            const _tAutoCtx = Date.now()
             const autoCtx = yield* Effect.promise(() => autoInjectContext(lastUserText, lastUser.agent))
+            yield* Effect.logInfo("loop_timing", { "session.id": sessionID, step, op: "autoInjectContext", ms: Date.now() - _tAutoCtx })
             if (autoCtx) system.push(autoCtx)
 
-            // AUTO VISION: Inject latest daemon screenshot as image for ALL agents
+            // AUTO VISION: Inject latest daemon screenshot as image for vision-capable models only
             // 24/7 daemon captures every 3s — only the latest single frame exists
+            // Non-vision models skip this to avoid provider slowness
             let finalMessages = [...modelMsgs]
-            try {
+            const supportsImage = model.capabilities?.input?.image ?? false
+            if (supportsImage) {
+              try {
               const { capture: daemonCap, buffer: daemonBuf } = autoScreenVision.getLatestCapture()
               if (daemonCap && daemonBuf && daemonBuf.length > 500 && daemonCap.filepath) {
                 const base64 = daemonBuf.toString("base64")
@@ -1319,9 +1454,15 @@ const layer = Layer.effect(
             } catch (e) {
               yield* Effect.logError("auto-vision injection failed", { error: e })
             }
+            } else {
+              yield* Effect.logInfo("auto-vision skipped — model does not support image input", {
+                model: `${model.providerID}/${model.id}`,
+              })
+            }
 
             const format = lastUser.format ?? { type: "text" as const }
             if (format.type === "json_schema") system.push(STRUCTURED_OUTPUT_SYSTEM_PROMPT)
+            yield* Effect.logInfo("loop_timing", { "session.id": sessionID, step, op: "pre_stream_total", ms: Date.now() - _t0 })
             const result = yield* handle.process({
               user: lastUser,
               agent,

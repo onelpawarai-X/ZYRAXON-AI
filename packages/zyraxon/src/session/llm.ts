@@ -83,6 +83,7 @@ const live: Layer.Layer<
     const flags = yield* RuntimeFlags.Service
 
     const run = Effect.fn("LLM.run")(function* (input: StreamRequest) {
+      const _tLlmRun = Date.now()
       yield* Effect.logInfo("stream", {
         providerID: input.model.providerID,
         modelID: input.model.id,
@@ -92,6 +93,7 @@ const live: Layer.Layer<
         mode: input.agent.mode,
       })
 
+      const _tLang = Date.now()
       const [language, cfg, item, info] = yield* Effect.all(
         [
           provider.getLanguage(input.model),
@@ -101,8 +103,10 @@ const live: Layer.Layer<
         ],
         { concurrency: "unbounded" },
       )
+      yield* Effect.logInfo("llm_timing", { "session.id": input.sessionID, op: "getLanguage+config+provider+auth", ms: Date.now() - _tLang })
 
       const isWorkflow = language instanceof GitLabWorkflowLanguageModel
+      const _tPrep = Date.now()
       const prepared = yield* LLMRequestPrep.prepare({
         ...input,
         provider: item,
@@ -111,6 +115,7 @@ const live: Layer.Layer<
         flags,
         isWorkflow,
       })
+      yield* Effect.logInfo("llm_timing", { "session.id": input.sessionID, op: "LLMRequestPrep.prepare", ms: Date.now() - _tPrep, toolCount: Object.keys(prepared.tools).length, systemPromptCount: prepared.system.length, messageCount: prepared.messages.length })
 
       // Wire up toolExecutor for DWS workflow models so that tool calls
       // from the workflow service are executed via zyraxon's tool system
@@ -268,6 +273,7 @@ const live: Layer.Layer<
         })
       }
 
+      yield* Effect.logInfo("llm_timing", { "session.id": input.sessionID, op: "pre_streamText_total", ms: Date.now() - _tLlmRun })
       yield* Effect.logInfo("llm runtime selected", {
         "llm.runtime": "ai-sdk",
         "llm.provider": input.model.providerID,

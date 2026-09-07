@@ -402,8 +402,8 @@ ZYRAXON TOOLS (31 categories, 354 registered tools):
   - Memory Palace Query
   - Memory Palace Stats
   - Memory Palace Connect
-  - Reality Simulate Scenario
-  - Reality Simulator Results
+  - Reality Analyze Scenario
+  - Reality Analyzer Results
   - Singularity Process Request
   - Singularity Self-Heal
   - Singularity Learn

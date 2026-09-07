@@ -96,10 +96,11 @@ const layer = Layer.effect(
     const database = yield* Database.Service
 
     const create = Effect.fn("SessionProcessor.create")(function* (input: Input) {
-      // Pre-capture snapshot before the LLM stream starts. The AI SDK
-      // may execute tools internally before emitting start-step events,
-      // so capturing inside the event handler can be too late.
-      const initialSnapshot = yield* snapshot.track()
+      // Snapshot tracking DISABLED for performance. The automatic git snapshot
+      // (git add -A + git write-tree) was running on EVERY message, taking 60+ seconds
+      // for large projects (27k+ files). Users already have git in their projects.
+      // Snapshot can be triggered on-demand via IPC if needed.
+      const initialSnapshot = undefined
       const ctx: ProcessorContext = {
         assistantMessage: input.assistantMessage,
         sessionID: input.sessionID,
@@ -422,7 +423,7 @@ const layer = Layer.effect(
             throw new Error(value.message)
 
           case "step-start":
-            if (!ctx.snapshot) ctx.snapshot = yield* snapshot.track()
+            // Snapshot tracking disabled for performance
             yield* session.updatePart({
               id: PartID.ascending(),
               messageID: ctx.assistantMessage.id,
@@ -433,7 +434,7 @@ const layer = Layer.effect(
             return
 
           case "step-finish": {
-            const completedSnapshot = yield* snapshot.track()
+            // Snapshot tracking disabled for performance
             yield* Effect.forEach(Object.keys(ctx.reasoningMap), finishReasoning)
             const usage = Session.getUsage({
               model: ctx.model,
@@ -446,7 +447,7 @@ const layer = Layer.effect(
             yield* session.updatePart({
               id: PartID.ascending(),
               reason: value.reason,
-              snapshot: completedSnapshot,
+              snapshot: ctx.snapshot,
               messageID: ctx.assistantMessage.id,
               sessionID: ctx.assistantMessage.sessionID,
               type: "step-finish",
@@ -625,26 +626,40 @@ const layer = Layer.effect(
       })
 
       const process = Effect.fn("SessionProcessor.process")(function* (streamInput: LLM.StreamInput) {
+        const _tProcess = Date.now()
         yield* Effect.logInfo("process", {
           "session.id": input.sessionID,
           messageID: input.assistantMessage.id,
+          modelID: input.model.id,
+          providerID: input.model.providerID,
+          systemPromptCount: streamInput.system.length,
+          messageCount: streamInput.messages.length,
+          toolCount: Object.keys(streamInput.tools).length,
         })
         ctx.needsCompaction = false
         ctx.shouldBreak = (yield* config.get()).experimental?.continue_loop_on_deny !== true
+
+        // Track whether we received ANY events from the LLM stream.
+        let receivedAnyEvent = false
 
         return yield* Effect.gen(function* () {
           yield* Effect.gen(function* () {
             ctx.currentText = undefined
             ctx.reasoningMap = {}
             yield* status.set(ctx.sessionID, { type: "busy" })
+            const _tStream = Date.now()
             const stream = llm.stream(streamInput)
+            yield* Effect.logInfo("llm_timing", { "session.id": input.sessionID, op: "llm.stream.call", ms: Date.now() - _tStream })
 
             yield* stream.pipe(
-              Stream.tap((event) => handleEvent(event)),
+              Stream.tap((event) => {
+                receivedAnyEvent = true
+                return handleEvent(event)
+              }),
               Stream.takeUntil(() => ctx.needsCompaction),
               Stream.runDrain,
             )
-          }).pipe(
+          }          ).pipe(
             Effect.onInterrupt(() =>
               Effect.gen(function* () {
                 aborted = true
@@ -678,6 +693,41 @@ const layer = Layer.effect(
 
           if (ctx.needsCompaction) return "compact"
           if (ctx.blocked || ctx.assistantMessage.error) return "stop"
+
+          // If the stream completed without any events and no finish reason,
+          // the LLM produced an empty response.  Surface this as an error
+          // instead of silently looping forever.
+          if (!receivedAnyEvent && !ctx.assistantMessage.finish) {
+            yield* Effect.logWarning("LLM stream produced no events", {
+              "session.id": input.sessionID,
+              messageID: input.assistantMessage.id,
+            })
+            ctx.assistantMessage.error = MessageV2.fromError(
+              new Error("The model returned an empty response. Please try again or switch models."),
+              { providerID: input.model.providerID },
+            )
+            yield* events.publish(Session.Event.Error, {
+              sessionID: ctx.assistantMessage.sessionID,
+              error: ctx.assistantMessage.error,
+            })
+            yield* status.set(ctx.sessionID, { type: "idle" })
+            return "stop"
+          }
+
+          // If events were received but the stream ended without a finish
+          // reason (e.g. connection dropped mid-response), set a default
+          // "stop" finish so the runLoop can exit properly instead of
+          // spinning on "Thinking" forever.
+          if (receivedAnyEvent && !ctx.assistantMessage.finish && !ctx.assistantMessage.error) {
+            yield* Effect.logWarning("LLM stream ended without finish reason", {
+              "session.id": input.sessionID,
+              messageID: input.assistantMessage.id,
+            })
+            ctx.assistantMessage.finish = "stop"
+            ctx.assistantMessage.time.completed = Date.now()
+            yield* session.updateMessage(ctx.assistantMessage)
+          }
+
           return "continue"
         })
       })

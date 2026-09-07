@@ -83,7 +83,7 @@ const layer = Layer.effect(
           deletions: diffs.reduce((sum, x) => sum + x.deletions, 0),
           files: diffs.length,
         },
-      })
+      }).pipe(Effect.catchCause(() => Effect.void))
       return yield* sessions.get(input.sessionID).pipe(Effect.orDie)
     })
 

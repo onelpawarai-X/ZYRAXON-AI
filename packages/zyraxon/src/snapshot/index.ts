@@ -165,8 +165,11 @@ const layer: Layer.Layer<Service, never, FSUtil.Service | AppProcess.Service | C
         const locked = <A, E, R>(fx: Effect.Effect<A, E, R>) => lock(state.gitdir).withPermits(1)(fx)
 
         const enabled = Effect.fnUntraced(function* () {
-          if (state.vcs !== "git") return false
-          return (yield* config.get()).snapshot !== false
+          // DISABLED: Snapshot creates a separate git repo and runs git add/write-tree
+          // on EVERY message. For large projects (27k+ files), this takes 60+ seconds
+          // per message, making the app unusably slow. Users already have git in their
+          // projects — this redundant tracking adds no value.
+          return false
         })
 
         const excludes = Effect.fnUntraced(function* () {

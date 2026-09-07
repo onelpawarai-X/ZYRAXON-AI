@@ -39,17 +39,16 @@ export function schema<S extends EffectSchema.Decoder<unknown, never>>(
 ): DeepMutable<S["Type"]> {
   const extra = topLevelExtraKeys(schema, data)
   if (extra.length) {
-    throw new InvalidError({
-      path: source,
-      issues: [
-        {
-          code: "unrecognized_keys",
-          keys: extra,
-          path: [],
-          message: `Unrecognized key${extra.length === 1 ? "" : "s"}: ${extra.join(", ")}`,
-        },
-      ],
-    })
+    // Instead of throwing, log a warning and strip the extra keys so the
+    // config can still load.  Custom fields like `streaming`, `memory`,
+    // `selfHealing`, or user-defined `agents` should not prevent the app
+    // from starting.
+    console.warn(`[config] ${source}: unrecognized keys ignored: ${extra.join(", ")}`)
+    if (typeof data === "object" && data !== null && !Array.isArray(data)) {
+      const cleaned = { ...data }
+      for (const key of extra) delete cleaned[key]
+      data = cleaned
+    }
   }
 
   const decoded = EffectSchema.decodeUnknownExit(schema)(data, { errors: "all", propertyOrder: "original" })

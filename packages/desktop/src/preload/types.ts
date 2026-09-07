@@ -130,6 +130,8 @@ export type ElectronAPI = {
   getPathForFile: (file: File) => string
   saveFilePicker: (opts?: { title?: string; defaultPath?: string }) => Promise<string | null>
   openLink: (url: string) => void
+  openYouTubePlayer: (videoUrl: string) => Promise<boolean>
+  ttsRestart: () => Promise<boolean>
   openPath: (path: string, app?: string) => Promise<void>
   revealPath: (path: string) => Promise<boolean>
   readClipboardImage: () => Promise<{ buffer: ArrayBuffer; width: number; height: number } | null>
@@ -157,8 +159,12 @@ export type ElectronAPI = {
   voiceStopListening: () => Promise<void>
   voiceSetLanguage: (lang: string) => Promise<void>
   voiceSendText: (text: string) => Promise<void>
-  voiceTTSSpeak: (text: string) => Promise<void>
+  voiceTTSSpeak: (text: string) => void
   voiceTTSStop: () => Promise<void>
+  voiceTTSEnabled: (enabled: boolean) => Promise<void>
+  onVoiceTTSAudio: (callback: (buffer: ArrayBuffer) => void) => () => void
+  onVoiceTTSError: (callback: (error: string) => void) => () => void
+  removeVoiceTTSAudioListener: () => void
   voiceSetGender: (gender: string) => Promise<void>
 
   youtubeStreamStart: (config: StreamConfig) => Promise<StreamState>
@@ -172,6 +178,19 @@ export type ElectronAPI = {
   getPreviewState: () => Promise<PreviewState>
   setPreviewState: (state: PreviewState) => Promise<void>
   onSitePreviewUpdate: (cb: (state: PreviewState) => void) => () => void
+
+  // Model Download
+  downloadModel: (config: { url: string; targetPath: string; modelId: string }) => Promise<{ success: boolean; path?: string; skipped?: boolean; error?: string }>
+  onDownloadModelProgress: (cb: (progress: { modelId: string; bytesDownloaded: number; totalBytes: number; percent: number }) => void) => () => void
+
+  // Backend Manager
+  backendStatus: () => Promise<{ backends: Array<{ type: string; running: boolean; port: number; pid: number | null }> }>
+  backendStart: (config: { type: string; modelPath: string; serverFlags?: string[] }) => Promise<{ success: boolean; port?: number; error?: string }>
+  backendStop: (type: string) => Promise<{ success: boolean }>
+  generateImage: (config: { modelPath: string; prompt: string; width?: number; height?: number; steps?: number; seed?: number }) => Promise<{ success: boolean; imagePath?: string; imageBase64?: string; error?: string; elapsedMs?: number }>
+  generateMusic: (config: { modelPath: string; prompt: string; duration?: number }) => Promise<{ success: boolean; audioPath?: string; audioBase64?: string; error?: string; elapsedMs?: number }>
+  generateTTS: (config: { text: string; voice?: string }) => Promise<{ success: boolean; audioPath?: string; audioBase64?: string; error?: string; elapsedMs?: number }>
+  generateVideo: (config: { modelPath: string; prompt: string; numFrames?: number }) => Promise<{ success: boolean; videoPath?: string; videoBase64?: string; error?: string; elapsedMs?: number }>
 
   // Jarvis Browser - Real Chrome automation
   jarvisBrowser: {

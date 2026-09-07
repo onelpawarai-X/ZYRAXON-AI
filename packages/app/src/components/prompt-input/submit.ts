@@ -391,6 +391,20 @@ export function createPromptSubmit(input: PromptSubmitInput) {
           else navigate(`/${base64Encode(sessionDirectory)}/session/${session.id}`)
           submission.retarget(prompt.capture({ dir: base64Encode(sessionDirectory), id: session.id }))
         })
+
+        // Client-side title generation fallback
+        // Server generates title via ensureTitle() but it silently fails (Effect.ignore)
+        // So we generate a title from the first message as a fallback
+        if (text.trim().length > 0) {
+          const titleText = text.trim().slice(0, 100)
+          void client.session
+            .update({ sessionID: created.id, title: titleText })
+            .then(() => {
+              // Update the local session store with the new title
+              seed(sessionDirectory, { ...created, title: titleText })
+            })
+            .catch(() => {})
+        }
       }
     }
     if (!session) {

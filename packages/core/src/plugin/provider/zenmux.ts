@@ -12,7 +12,7 @@ export const ZenmuxPlugin = define({
           if (item.provider.api.url !== "https://zenmux.ai/api/v1") continue
           evt.provider.update(item.provider.id, (provider) => {
             provider.request.headers["HTTP-Referer"] ??= "https://zyraxon.ai/"
-            provider.request.headers["X-Title"] ??= "zyraxon"
+            provider.request.headers["X-Title"] ??= "opencode"
           })
         }
       }),

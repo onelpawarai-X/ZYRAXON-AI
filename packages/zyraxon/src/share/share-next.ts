@@ -188,8 +188,12 @@ const layer = Layer.effect(
             const info = data.info
             yield* sync(info.sessionID, [{ type: "message", data: structuredClone(info) as SDK.Message }])
             if (info.role !== "user") return
-            const model = yield* provider.getModel(info.model.providerID, info.model.modelID)
-            yield* sync(info.sessionID, [{ type: "model", data: [model] }])
+            const model = yield* provider.getModel(info.model.providerID, info.model.modelID).pipe(
+              Effect.catchCause(() => Effect.succeed(undefined)),
+            )
+            if (model) {
+              yield* sync(info.sessionID, [{ type: "model", data: [model] }])
+            }
           }),
         )
         yield* watch(MessageV2.Event.PartUpdated, (data) =>

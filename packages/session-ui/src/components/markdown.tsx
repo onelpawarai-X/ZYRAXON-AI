@@ -31,6 +31,7 @@ import { markdownBlockKey, type MarkdownToken } from "./markdown-worker-protocol
 import { shouldResetCodeTokens, type RenderedCodeState } from "./markdown-code-state"
 import { getCachedMarkdown, sanitizeMarkdown, touchCachedMarkdown, type MarkdownCacheEntry } from "./markdown-cache"
 import { inlineCodeKind } from "./markdown-inline-code-kind"
+import { renderAllRichContent } from "./rich-content"
 
 type RenderedBlock =
   | (MarkdownCacheEntry & { key: string; mode: Exclude<Block["mode"], "code"> })
@@ -270,10 +271,78 @@ function markInlineCode(root: HTMLDivElement) {
   }
 }
 
-const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/
+const bareUrlRegex = /https?:\/\/[^\s<>()`"'\u200B]+/g
+
+function autoLinkBareUrls(root: HTMLDivElement) {
+  // Only process text nodes that are NOT inside pre, code, a, [data-component], or reasoning parts
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parent = node.parentElement
+      if (!parent) return NodeFilter.FILTER_REJECT
+      const tag = parent.tagName
+      if (tag === "PRE" || tag === "CODE" || tag === "A" || tag === "SCRIPT" || tag === "STYLE") return NodeFilter.FILTER_REJECT
+      if (parent.closest("pre, code, a, [data-component]")) return NodeFilter.FILTER_REJECT
+      if (parent.closest('[data-component="reasoning-part"]')) return NodeFilter.FILTER_REJECT
+      return NodeFilter.FILTER_ACCEPT
+    },
+  })
+  const textNodes: Text[] = []
+  let node: Text | null
+  while ((node = walker.nextNode() as Text | null)) {
+    if (node.textContent && bareUrlRegex.test(node.textContent)) {
+      textNodes.push(node)
+    }
+  }
+  bareUrlRegex.lastIndex = 0
+
+  for (const textNode of textNodes) {
+    const text = textNode.textContent ?? ""
+    if (!text.match(bareUrlRegex)) continue
+    bareUrlRegex.lastIndex = 0
+
+    const frag = document.createDocumentFragment()
+    let lastIndex = 0
+    let match: RegExpExecArray | null
+
+    while ((match = bareUrlRegex.exec(text)) !== null) {
+      // Add text before the URL
+      if (match.index > lastIndex) {
+        frag.appendChild(document.createTextNode(text.slice(lastIndex, match.index)))
+      }
+
+      const url = match[0]
+      const link = document.createElement("a")
+      link.href = url
+      link.target = "_blank"
+      link.rel = "noopener noreferrer"
+      link.className = "external-link"
+      link.textContent = url
+      frag.appendChild(link)
+
+      lastIndex = match.index + url.length
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      frag.appendChild(document.createTextNode(text.slice(lastIndex)))
+    }
+
+    textNode.parentNode?.replaceChild(frag, textNode)
+  }
+}
+
+const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|results\?search_query=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11}|[^\s<>()`"']+)/
 
 function embedYouTube(root: HTMLDivElement) {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null)
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      // Skip YouTube embeds inside reasoning/thinking sections — only embed in response text
+      const parent = node.parentElement
+      if (!parent) return NodeFilter.FILTER_ACCEPT
+      if (parent.closest('[data-component="reasoning-part"]')) return NodeFilter.FILTER_REJECT
+      return NodeFilter.FILTER_ACCEPT
+    },
+  })
   const textNodes: Text[] = []
   let node: Text | null
   while ((node = walker.nextNode() as Text | null)) {
@@ -285,28 +354,89 @@ function embedYouTube(root: HTMLDivElement) {
     const text = textNode.textContent ?? ""
     const match = text.match(youtubeRegex)
     if (!match) continue
-    const videoId = match[1]
-    const container = document.createElement("div")
-    container.setAttribute("data-component", "youtube-embed")
-    container.style.position = "relative"
-    container.style.paddingBottom = "56.25%"
-    container.style.height = "0"
-    container.style.overflow = "hidden"
-    container.style.borderRadius = "8px"
-    container.style.margin = "1rem 0"
-    const iframe = document.createElement("iframe")
-    iframe.src = `https://www.youtube.com/embed/${videoId}`
-    iframe.setAttribute("frameborder", "0")
-    iframe.setAttribute("allowfullscreen", "true")
-    iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture")
-    iframe.setAttribute("loading", "lazy")
-    iframe.style.position = "absolute"
-    iframe.style.top = "0"
-    iframe.style.left = "0"
-    iframe.style.width = "100%"
-    iframe.style.height = "100%"
-    container.appendChild(iframe)
-    textNode.parentNode?.replaceChild(container, textNode)
+
+    const isSearchUrl = text.includes("results?search_query=")
+    const fullUrl = match[0].startsWith("http") ? match[0] : `https://${match[0]}`
+
+    if (isSearchUrl) {
+      const container = document.createElement("div")
+      container.setAttribute("data-component", "youtube-search")
+      container.style.cssText = "border:1px solid var(--v2-border-border-muted,rgba(255,255,255,0.1));border-radius:8px;overflow:hidden;margin:12px 0;background:var(--v2-background-bg-layer-01,#1a1a2e);"
+
+      const header = document.createElement("div")
+      header.style.cssText = "display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.08);"
+      header.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff0000" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19.1c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.43z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" fill="#ff0000"/></svg><span style="font-size:12px;font-weight:600;color:var(--v2-text-text-muted,#888);">YouTube Search</span></div>`
+      container.appendChild(header)
+
+      const link = document.createElement("a")
+      link.href = fullUrl
+      link.target = "_blank"
+      link.rel = "noopener noreferrer"
+      link.style.cssText = "display:block;padding:12px 14px;color:#3b82f6;text-decoration:none;font-size:13px;word-break:break-all;transition:background 0.15s;"
+      link.textContent = fullUrl
+      link.addEventListener("mouseenter", () => link.style.background = "rgba(59,130,246,0.08)")
+      link.addEventListener("mouseleave", () => link.style.background = "transparent")
+      container.appendChild(link)
+
+      textNode.parentNode?.replaceChild(container, textNode)
+    } else {
+      const videoId = match[1]
+      if (!videoId || videoId.length < 5) continue
+
+      const wrapper = document.createElement("div")
+      wrapper.setAttribute("data-component", "youtube-embed-wrapper")
+      wrapper.style.cssText = "margin:12px 0;"
+
+      // NO iframe — use thumbnail card (iframe blocked by YouTube from Electron)
+      const card = document.createElement("div")
+      card.setAttribute("data-component", "youtube-embed")
+      card.style.cssText = "position:relative;border-radius:8px;overflow:hidden;background:#000;border:1px solid var(--v2-border-border-muted,rgba(255,255,255,0.1));cursor:pointer;max-width:480px;"
+
+      // Thumbnail image
+      const thumb = document.createElement("img")
+      thumb.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+      thumb.alt = "YouTube Video"
+      thumb.style.cssText = "width:100%;display:block;aspect-ratio:16/9;object-fit:cover;background:#111;"
+      thumb.onerror = () => { thumb.src = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` }
+      card.appendChild(thumb)
+
+      // Play button overlay
+      const playBtn = document.createElement("div")
+      playBtn.style.cssText = "position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);transition:background 0.2s;"
+      playBtn.innerHTML = `<svg width="56" height="56" viewBox="0 0 24 24" fill="white" style="filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));"><polygon points="9.5 7.5 16.5 12 9.5 16.5"/></svg>`
+      card.appendChild(playBtn)
+
+      // On click → open YouTube in Electron BrowserWindow (plays inside app)
+      card.addEventListener("click", () => {
+        const electron = (window as any).electron
+        if (electron?.ipcRenderer) {
+          electron.ipcRenderer.invoke("open-youtube-player", fullUrl)
+        } else {
+          window.open(fullUrl, "_blank")
+        }
+      })
+      card.addEventListener("mouseenter", () => { playBtn.style.background = "rgba(0,0,0,0.5)" })
+      card.addEventListener("mouseleave", () => { playBtn.style.background = "rgba(0,0,0,0.35)" })
+
+      wrapper.appendChild(card)
+
+      // Link row below card
+      const linkRow = document.createElement("div")
+      linkRow.style.cssText = "margin-top:6px;display:flex;align-items:center;gap:6px;"
+      const ytIcon = document.createElement("span")
+      ytIcon.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="#ff0000" style="flex-shrink:0;"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19.1c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.43z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" fill="white"/></svg>`
+      linkRow.appendChild(ytIcon)
+      const linkEl = document.createElement("a")
+      linkEl.href = fullUrl
+      linkEl.target = "_blank"
+      linkEl.rel = "noopener noreferrer"
+      linkEl.style.cssText = "color:#3b82f6;text-decoration:none;font-size:12px;word-break:break-all;"
+      linkEl.textContent = fullUrl
+      linkRow.appendChild(linkEl)
+      wrapper.appendChild(linkRow)
+
+      textNode.parentNode?.replaceChild(wrapper, textNode)
+    }
   }
 }
 
@@ -343,8 +473,10 @@ function decorate(root: HTMLDivElement, labels: CopyLabels) {
   for (const block of blocks) {
     ensureCodeWrapper(block, labels)
   }
+  autoLinkBareUrls(root)
   embedYouTube(root)
   makeImagesExpandable(root)
+  renderAllRichContent(root)
   if (!document.body.hasAttribute("data-new-layout")) return
   markInlineCode(root)
   markCodeLinks(root)
@@ -558,6 +690,11 @@ export function Markdown(
     container
       .querySelectorAll<HTMLElement>('[data-slot="markdown-copy-button"]')
       .forEach((button) => setCopyState(button, labels, button.dataset.copied === "true"))
+
+    // Render rich content (Mermaid, HTML, SVG, Video, Audio) for code blocks
+    // This must run AFTER code blocks are created so pre > code.language-X exists
+    renderAllRichContent(container)
+
     if (!copyCleanup)
       copyCleanup = setupCodeCopy(container, () => ({
         copy: i18n.t("ui.message.copy"),

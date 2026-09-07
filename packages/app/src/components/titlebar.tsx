@@ -368,9 +368,21 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
                 const project = global.ensureServerCtx(conn).projects.list()[0]
                 return project ? [{ server: ServerConnection.key(conn), project }] : []
               })[0]
-              if (!fallback) return
+              if (fallback) {
+                tabs.newDraft({ server: fallback.server, directory: fallback.project.worktree }, "")
+                return
+              }
 
-              tabs.newDraft({ server: fallback.server, directory: fallback.project.worktree }, "")
+              // Last resort: use the home directory from server sync as default project
+              const conn = server.current
+              if (conn) {
+                const ctx = global.ensureServerCtx(conn)
+                const homeDir = ctx.sync.data.path.home
+                if (homeDir) {
+                  ctx.projects.open(homeDir)
+                  tabs.newDraft({ server: ServerConnection.key(conn), directory: homeDir }, "")
+                }
+              }
             }
             const toggleHome = () => tabs.toggleHome({ home: layout.route().type === "home", current: currentTab() })
 

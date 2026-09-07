@@ -109,6 +109,8 @@ const api: ElectronAPI = {
   getPathForFile: (file) => webUtils.getPathForFile(file),
   saveFilePicker: (opts) => ipcRenderer.invoke("save-file-picker", opts),
   openLink: (url) => ipcRenderer.send("open-link", url),
+  openYouTubePlayer: (videoUrl) => ipcRenderer.invoke("open-youtube-player", videoUrl),
+  ttsRestart: () => ipcRenderer.invoke("tts-restart"),
   openPath: (path, app) => ipcRenderer.invoke("open-path", path, app),
   revealPath: (path) => ipcRenderer.invoke("reveal-path", path),
   readClipboardImage: () => ipcRenderer.invoke("read-clipboard-image"),
@@ -167,6 +169,23 @@ const api: ElectronAPI = {
     return () => ipcRenderer.removeListener("site-preview-update", handler)
   },
 
+  // Model Download
+  downloadModel: (config) => ipcRenderer.invoke("download-model", config),
+  onDownloadModelProgress: (cb) => {
+    const handler = (_: unknown, progress: any) => cb(progress)
+    ipcRenderer.on("download-model-progress", handler)
+    return () => ipcRenderer.removeListener("download-model-progress", handler)
+  },
+
+  // Backend Manager
+  backendStatus: () => ipcRenderer.invoke("backend-status"),
+  backendStart: (config) => ipcRenderer.invoke("backend-start", config),
+  backendStop: (type) => ipcRenderer.invoke("backend-stop", type),
+  generateImage: (config) => ipcRenderer.invoke("generate-image", config),
+  generateMusic: (config) => ipcRenderer.invoke("generate-music", config),
+  generateTTS: (config) => ipcRenderer.invoke("generate-tts", config),
+  generateVideo: (config) => ipcRenderer.invoke("generate-video", config),
+
   // Voice Bridge - Chrome speech → chat box
   onVoiceEvent: (cb) => {
     const handler = (_: unknown, data: any) => cb(data)
@@ -177,8 +196,22 @@ const api: ElectronAPI = {
   voiceStopListening: () => ipcRenderer.invoke("voice-stop-listening"),
   voiceSetLanguage: (lang: string) => ipcRenderer.invoke("voice-set-language", lang),
   voiceSendText: (text: string) => ipcRenderer.invoke("voice-send-text", text),
-  voiceTTSSpeak: (text: string) => ipcRenderer.invoke("voice-tts-speak", text),
+  voiceTTSSpeak: (text: string) => ipcRenderer.send("voice-tts-speak", text),
   voiceTTSStop: () => ipcRenderer.invoke("voice-tts-stop"),
+  voiceTTSEnabled: (enabled: boolean) => ipcRenderer.invoke("voice-tts-enabled", enabled),
+  onVoiceTTSAudio: (callback: (buffer: ArrayBuffer) => void) => {
+    const wrapper = (_event: any, buffer: ArrayBuffer) => callback(buffer)
+    ipcRenderer.on("voice-tts-audio", wrapper)
+    return () => { try { ipcRenderer.removeListener("voice-tts-audio", wrapper) } catch {} }
+  },
+  onVoiceTTSError: (callback: (error: string) => void) => {
+    const wrapper = (_event: any, error: string) => callback(error)
+    ipcRenderer.on("voice-tts-error", wrapper)
+    return () => { try { ipcRenderer.removeListener("voice-tts-error", wrapper) } catch {} }
+  },
+  removeVoiceTTSAudioListener: () => {
+    // Do NOT removeAllListeners — it destroys all components' audio playback
+  },
   voiceSetGender: (gender: string) => ipcRenderer.invoke("voice-set-gender", gender),
 
   // Jarvis Browser - Real Chrome automation

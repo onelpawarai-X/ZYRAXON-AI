@@ -2,7 +2,6 @@ import * as monaco from "monaco-editor"
 
 export interface AIAssistantConfig {
   provider: "opencode"
-  model: string
   baseUrl: string
   apiKey?: string
 }
@@ -13,6 +12,7 @@ export interface GenerateOptions {
   existingCode: string
   fileName?: string
   instruction?: "fix" | "generate" | "explain" | "improve"
+  modelId?: string
 }
 
 export interface StreamCallbacks {
@@ -22,18 +22,20 @@ export interface StreamCallbacks {
   onStart: () => void
 }
 
-const SYSTEM_PROMPT = `You are an expert code assistant integrated into a code editor.
-Your job is to generate, fix, improve, or explain code based on user instructions.
+const SYSTEM_PROMPT = `You are ZYRAXON AI, an expert code assistant built into a professional code editor.
 
-RULES:
-1. ONLY output the code - no explanations, no markdown, no code fences
-2. Match the existing code style and conventions
-3. Preserve imports and existing structure
-4. Use proper indentation matching the file
-5. If fixing bugs, keep the original intent
-6. If asked to improve, make minimal but effective changes
-7. NEVER add comments unless specifically asked
-8. Output ONLY the final code, nothing else`
+YOUR ONLY JOB: Generate, fix, or improve code. You are NOT a chatbot. You do NOT ask questions.
+
+CRITICAL RULES:
+1. ONLY output code — no explanations, no markdown, no code fences, no comments about what you did
+2. NEVER ask clarifying questions — just do the best you can with what's given
+3. NEVER respond in any language other than what the user writes in. If user writes in Bengali, respond with code comments in Bengali. If user writes in English, respond in English.
+4. Match existing code style and conventions exactly
+5. Preserve imports, structure, and existing logic unless the user explicitly says to remove something
+6. If fixing bugs: keep original intent, fix the bug
+7. If improving: make minimal but effective changes for performance, readability, error handling
+8. If generating from scratch: write complete, working, production-quality code
+9. Output ONLY the final code. NOTHING else. Not even a newline before or after.`
 
 const INSTRUCTION_PROMPTS: Record<string, string> = {
   generate: "Generate complete, working code based on this instruction. Output ONLY the code.",
@@ -46,14 +48,149 @@ export class MonacoAIAssistant {
   private abortController: AbortController | null = null
   private isGenerating = false
   private config: AIAssistantConfig
+  private urlPromise: Promise<string | null> | null = null
+  private cachedModel: string | null = null
+  private resolvedUrl: string | null = null
+  private urlResolutionAttempts = 0
 
   constructor(config?: Partial<AIAssistantConfig>) {
     this.config = {
       provider: "opencode",
-      model: config?.model || "opencode/deepseek-v4-flash-free",
-      baseUrl: config?.baseUrl || "https://api.opencode.ai/v1",
+      baseUrl: config?.baseUrl || "http://127.0.0.1:3000/v1",
       apiKey: config?.apiKey,
     }
+    if (typeof window !== "undefined" && (window as any).api?.getDefaultServerUrl) {
+      this.urlPromise = (window as any).api.getDefaultServerUrl() as Promise<string | null>
+      this.urlPromise.then((url: string | null) => {
+        if (url) {
+          this.resolvedUrl = url
+          this.config.baseUrl = url + "/v1"
+          console.log("[MonacoAI] Server URL set to:", this.config.baseUrl)
+        }
+      }).catch((err: unknown) => {
+        console.error("[MonacoAI] Failed to get server URL:", err)
+      })
+    }
+  }
+
+  private async resolveBaseUrl(): Promise<string> {
+    // Try to get from IPC with retry — server may not be ready yet
+    if (typeof window !== "undefined" && (window as any).api?.getDefaultServerUrl) {
+      for (let i = 0; i < 20; i++) {
+        try {
+          const url = await (window as any).api.getDefaultServerUrl() as Promise<string | null>
+          if (url) {
+            this.resolvedUrl = url
+            this.config.baseUrl = url + "/v1"
+            console.log("[MonacoAI] Resolved server URL (attempt " + (i + 1) + "):", this.config.baseUrl)
+            return this.config.baseUrl
+          }
+        } catch {
+          // ignore
+        }
+        await new Promise(r => setTimeout(r, 1000))
+      }
+    }
+
+    // Try stored URL
+    if (this.resolvedUrl) {
+      this.config.baseUrl = this.resolvedUrl + "/v1"
+      return this.config.baseUrl
+    }
+
+    // Fallback: try common ports
+    const fallbackPorts = [3000, 3001, 4000, 5000, 8080, 8888]
+    for (const port of fallbackPorts) {
+      try {
+        const res = await fetch(`http://127.0.0.1:${port}/global/health`, {
+          method: "GET",
+          signal: AbortSignal.timeout(1000),
+        })
+        if (res.ok) {
+          this.resolvedUrl = `http://127.0.0.1:${port}`
+          this.config.baseUrl = `http://127.0.0.1:${port}/v1`
+          console.log("[MonacoAI] Found server on port", port)
+          return this.config.baseUrl
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    console.warn("[MonacoAI] Using default baseUrl:", this.config.baseUrl)
+    return this.config.baseUrl
+  }
+
+  /** Fetch available free models — deduplicated, curated list */
+  async listAvailableModels(): Promise<Array<{ id: string; name: string }>> {
+    const baseUrl = await this.resolveBaseUrl()
+    const url = `${baseUrl}/models`
+    console.log("[MonacoAI] Listing models from:", url)
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) })
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "")
+      throw new Error(`Cannot list models: HTTP ${res.status} ${errText}`)
+    }
+    const data = await res.json() as { data?: Array<{ id: string; owned_by?: string; name?: string }> }
+    const allModels = data?.data ?? []
+    console.log("[MonacoAI] All models from provider:", allModels.length)
+
+    // Deduplicate by ID, prioritize opencode-prefixed models
+    const seen = new Set<string>()
+    const unique: Array<{ id: string; name: string; priority: number }> = []
+    for (const m of allModels) {
+      if (seen.has(m.id)) continue
+      seen.add(m.id)
+      // Priority: opencode/ > openrouter/ > others
+      const priority = m.id.startsWith("opencode/") ? 2 : m.id.startsWith("openrouter/") ? 1 : 0
+      const name = m.name || m.id.split("/").pop() || m.id
+      unique.push({ id: m.id, name, priority })
+    }
+
+    // Sort: opencode first, then openrouter, then others
+    unique.sort((a, b) => b.priority - a.priority)
+
+    const list = unique.slice(0, 40).map(m => ({ id: m.id, name: m.name }))
+    console.log("[MonacoAI] Filtered models:", list.length, "from", allModels.length, "total")
+    return list
+  }
+
+  private async resolveFreeModel(options?: { preferredModel?: string }): Promise<string> {
+    if (options?.preferredModel && options.preferredModel !== "auto") {
+      console.log("[MonacoAI] Using user-selected model:", options.preferredModel)
+      return options.preferredModel
+    }
+    if (this.cachedModel) {
+      console.log("[MonacoAI] Using cached model:", this.cachedModel)
+      return this.cachedModel
+    }
+    const baseUrl = await this.resolveBaseUrl()
+    const url = `${baseUrl}/models`
+    console.log("[MonacoAI] Auto: fetching models:", url)
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) })
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "")
+      throw new Error(`Cannot fetch models: HTTP ${res.status} ${errText}`)
+    }
+    const data = await res.json() as { data?: Array<{ id: string; owned_by?: string }> }
+    const allModels = data?.data ?? []
+    if (allModels.length === 0) throw new Error("No models available from backend. Check server is running.")
+
+    // Deduplicate — prefer opencode-prefixed models
+    const seen = new Set<string>()
+    const opencodeModels: string[] = []
+    for (const m of allModels) {
+      if (seen.has(m.id)) continue
+      seen.add(m.id)
+      if (m.id.startsWith("opencode/") || m.id.startsWith("openrouter/")) {
+        opencodeModels.push(m.id)
+      }
+    }
+    const pool = opencodeModels.length > 0 ? opencodeModels : allModels.map(m => m.id)
+    const modelId = pool[0]!
+    console.log("[MonacoAI] Auto-selected model:", modelId)
+    this.cachedModel = modelId
+    return modelId
   }
 
   async generateCode(
@@ -74,7 +211,12 @@ export class MonacoAIAssistant {
     callbacks.onStart()
 
     try {
-      const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
+      const baseUrl = await this.resolveBaseUrl()
+      console.log("[MonacoAI] Base URL:", baseUrl)
+      const modelId = await this.resolveFreeModel({ preferredModel: options.modelId })
+      console.log("[MonacoAI] Sending chat completion to:", `${baseUrl}/chat/completions`, "model:", modelId)
+
+      const response = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -83,7 +225,7 @@ export class MonacoAIAssistant {
             : {}),
         },
         body: JSON.stringify({
-          model: this.config.model,
+          model: modelId,
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
             { role: "user", content: userMessage },
@@ -95,17 +237,26 @@ export class MonacoAIAssistant {
         signal: this.abortController.signal,
       })
 
+      console.log("[MonacoAI] Response status:", response.status, response.statusText)
+
       if (!response.ok) {
         const errorText = await response.text()
+        console.error("[MonacoAI] API error:", response.status, errorText)
+        // If 404, the server might not have this endpoint
+        if (response.status === 404) {
+          throw new Error("Server does not support AI generation. The backend server may need to be updated.")
+        }
         throw new Error(`API Error ${response.status}: ${errorText}`)
       }
 
       await this.processStream(response, callbacks)
     } catch (error: any) {
       if (error.name === "AbortError") {
+        console.log("[MonacoAI] Generation aborted")
         callbacks.onComplete("")
         return
       }
+      console.error("[MonacoAI] Generation error:", error)
       callbacks.onError(error)
     } finally {
       this.isGenerating = false
@@ -123,6 +274,7 @@ export class MonacoAIAssistant {
     const decoder = new TextDecoder()
     let buffer = ""
     let fullCode = ""
+    let lineCount = 0
 
     while (true) {
       const { done, value } = await reader.read()
@@ -137,6 +289,7 @@ export class MonacoAIAssistant {
         if (!trimmed || !trimmed.startsWith("data: ")) continue
         const data = trimmed.slice(6)
         if (data === "[DONE]") {
+          console.log("[MonacoAI] Stream complete, code length:", fullCode.length)
           callbacks.onComplete(fullCode)
           return
         }
@@ -146,6 +299,10 @@ export class MonacoAIAssistant {
           const delta = parsed.choices?.[0]?.delta
           if (delta?.content) {
             fullCode += delta.content
+            lineCount++
+            if (lineCount % 10 === 0) {
+              console.log("[MonacoAI] Streaming... tokens:", lineCount, "code length:", fullCode.length)
+            }
             callbacks.onToken(delta.content, fullCode)
           }
         } catch {
@@ -154,6 +311,7 @@ export class MonacoAIAssistant {
       }
     }
 
+    console.log("[MonacoAI] Stream ended (no [DONE]), code length:", fullCode.length)
     callbacks.onComplete(fullCode)
   }
 
@@ -189,6 +347,7 @@ export class MonacoAIAssistant {
 
   updateConfig(config: Partial<AIAssistantConfig>): void {
     this.config = { ...this.config, ...config }
+    if (config.baseUrl) this.cachedModel = null
   }
 }
 

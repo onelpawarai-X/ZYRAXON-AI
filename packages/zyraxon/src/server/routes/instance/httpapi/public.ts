@@ -529,7 +529,7 @@ function normalizeParameter(param: OpenApiParameter, route: string) {
 
 export const PublicApi = ZyraxonHttpApi.annotateMerge(
   OpenApi.annotations({
-    title: "zyraxon",
+    title: "opencode",
     version: "1.0.0",
     description: "zyraxon api",
     transform: matchLegacyOpenApi,

@@ -18,8 +18,45 @@ import type { UpdaterController } from "./updater-controller"
 import { createUpdaterSubscriptions } from "./updater-subscriptions"
 import { YouTubeStreamManager } from "./youtube-stream"
 
+// Backend Manager — lazy-loaded
+let backendManager: typeof import("./backend-manager") | null = null
+function getBackendManager() {
+  if (!backendManager) {
+    try { backendManager = require("./backend-manager") } catch { return null }
+  }
+  return backendManager
+}
+
+  // TTS Server — auto-start + health check (ensures port 19810 is always alive)
+async function ensureTTSServer(): Promise<boolean> {
+  try {
+    const http = await import("node:http")
+    // Quick health check
+    await new Promise<void>((resolve, reject) => {
+      http.get("http://127.0.0.1:19810/health", (res) => {
+        res.resume()
+        resolve()
+      }).on("error", () => reject(new Error("not running")))
+    })
+    return true
+  } catch {
+    // Not running — start it
+    try {
+      const tts = await import("./tts-node")
+      await tts.startNodeTTS()
+      return true
+    } catch (e) {
+      console.error("[TTS] Auto-start failed:", e)
+      return false
+    }
+  }
+}
+
 const streamManager = new YouTubeStreamManager()
 let streamListenerAttached = false
+
+// Voice bridge module — singleton reference (shared with index.ts)
+import { getVoiceBridgeModule } from "./voice-bridge-singleton"
 
 const pickerFilters = (ext?: string[]) => {
   if (!ext || ext.length === 0) return undefined
@@ -242,6 +279,27 @@ export function registerIpcHandlers(deps: Deps) {
     void shell.openExternal(url)
   })
 
+  // YouTube player — opens video in a new Electron BrowserWindow (no iframe needed)
+  ipcMain.handle("open-youtube-player", (_event: IpcMainInvokeEvent, videoUrl: string) => {
+    const win = new BrowserWindow({
+      width: 800,
+      height: 500,
+      minWidth: 400,
+      minHeight: 300,
+      title: "YouTube Player",
+      backgroundColor: "#000000",
+      autoHideMenuBar: true,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+      },
+    })
+    win.loadURL(videoUrl)
+    win.setMenuBarVisibility(false)
+    win.on("closed", () => {})
+    return true
+  })
+
   ipcMain.handle("open-path", async (_event: IpcMainInvokeEvent, path: string, app?: string) => {
     if (!app) return shell.openPath(path)
     await new Promise<void>((resolve, reject) => {
@@ -359,41 +417,117 @@ export function registerIpcHandlers(deps: Deps) {
 
   // Voice Bridge — Chrome speech recognition controls
   ipcMain.handle("voice-start-listening", () => {
-    const { sendToVoiceBridge } = require("./voice-bridge")
-    sendToVoiceBridge({ type: "start-listening" })
+    const vb = getVoiceBridgeModule()
+    if (!vb) return false
+    vb.setVoiceListening(true)
     return true
   })
   ipcMain.handle("voice-stop-listening", () => {
-    const { sendToVoiceBridge } = require("./voice-bridge")
-    sendToVoiceBridge({ type: "stop-listening" })
+    const vb = getVoiceBridgeModule()
+    if (!vb) return false
+    vb.setVoiceListening(false)
     return true
   })
   ipcMain.handle("voice-set-language", (_event: IpcMainInvokeEvent, lang: string) => {
-    const { setVoiceLanguage } = require("./voice-bridge")
-    setVoiceLanguage(lang)
+    const vb = getVoiceBridgeModule()
+    if (!vb) return false
+    vb.setVoiceLanguage(lang)
     return true
   })
   ipcMain.handle("voice-send-text", (_event: IpcMainInvokeEvent, text: string) => {
-    const { sendToVoiceBridge } = require("./voice-bridge")
-    sendToVoiceBridge({ type: "send-to-chat", text })
+    const vb = getVoiceBridgeModule()
+    if (!vb) return false
+    vb.sendVoiceTranscript(text)
     return true
   })
 
-  ipcMain.handle("voice-tts-speak", (_event: IpcMainInvokeEvent, text: string) => {
-    const { sendToVoiceBridge } = require("./voice-bridge")
-    sendToVoiceBridge({ type: "tts-speak", text })
-    return true
+  // TTS restart — called from renderer when server is down
+  ipcMain.handle("tts-restart", async () => {
+    try {
+      const tts = await import("./tts-node")
+      tts.stopNodeTTS()
+      await new Promise(r => setTimeout(r, 500))
+      await tts.startNodeTTS()
+      console.log("[TTS] Server restarted successfully")
+      return true
+    } catch (e) {
+      console.error("[TTS] Restart failed:", e)
+      return false
+    }
+  })
+
+  ipcMain.on("voice-tts-speak", async (event: IpcMainEvent, text: string) => {
+    if (!text) return
+    console.log("[TTS-IPC] Received voice-tts-speak, text:", text.slice(0, 80))
+    const ready = await ensureTTSServer()
+    if (!ready) {
+      console.error("[TTS-IPC] Server not available, skipping speak")
+      event.reply("voice-tts-error", "TTS server failed to start")
+      return
+    }
+    const vb = getVoiceBridgeModule()
+    const lang = vb?.getCurrentLanguage()?.split("-")[0] || "bn"
+    const gender = vb?.getCurrentVoiceGender() === "male" ? "m" : "f"
+
+    // Split into sentences — larger chunks = fewer HTTP requests = faster
+    const sentences: string[] = []
+    let rem = text
+    if (rem.length > 500) {
+      while (rem.length > 800) {
+        let idx = rem.lastIndexOf(".", 790)
+        if (idx < 300) idx = rem.lastIndexOf("!", 790)
+        if (idx < 300) idx = rem.lastIndexOf("?", 790)
+        if (idx < 300) idx = rem.lastIndexOf("।", 790)
+        if (idx < 300) idx = rem.lastIndexOf("\n", 790)
+        if (idx < 300) idx = rem.lastIndexOf(" ", 790)
+        if (idx < 300) idx = 800
+        sentences.push(rem.slice(0, idx + 1).trim())
+        rem = rem.slice(idx + 1)
+      }
+    }
+    if (rem.trim()) sentences.push(rem.trim())
+
+    // PARALLEL: fire all TTS requests at once, send audio as each completes
+    let anySuccess = false
+    const promises = sentences.map(async (s) => {
+      if (!s) return
+      try {
+        const url = `http://127.0.0.1:19810/speak?text=${encodeURIComponent(s)}&lang=${lang}&gender=${gender}`
+        const resp = await fetch(url)
+        if (!resp.ok) {
+          console.error("[TTS-Direct] HTTP error:", resp.status)
+          return
+        }
+        const buf = Buffer.from(await resp.arrayBuffer())
+        if (buf.length > 100) {
+          event.reply("voice-tts-audio", buf)
+          anySuccess = true
+        }
+      } catch (e) {
+        console.error("[TTS-Direct] Error:", e)
+      }
+    })
+    await Promise.allSettled(promises)
+    if (!anySuccess && sentences.length > 0) {
+      console.error("[TTS-IPC] All sentences failed to generate audio")
+      event.reply("voice-tts-error", "TTS generation failed — check internet connection")
+    }
   })
 
   ipcMain.handle("voice-tts-stop", () => {
-    const { sendToVoiceBridge } = require("./voice-bridge")
-    sendToVoiceBridge({ type: "tts-stop" })
+    // Voice bridge no longer handles TTS — main app does
+    return true
+  })
+
+  ipcMain.handle("voice-tts-enabled", (_event: IpcMainInvokeEvent, enabled: boolean) => {
+    // Voice bridge no longer handles TTS — main app does
     return true
   })
 
   ipcMain.handle("voice-set-gender", (_event: IpcMainInvokeEvent, gender: string) => {
-    const { setVoiceGender } = require("./voice-bridge")
-    setVoiceGender(gender)
+    const vb = getVoiceBridgeModule()
+    if (!vb) return false
+    vb.setVoiceGender(gender)
     return true
   })
 
@@ -465,6 +599,170 @@ export function registerIpcHandlers(deps: Deps) {
     } catch (error) {
       console.error("[IPC] Failed to set preview state:", error)
     }
+  })
+
+  // ─── Model Download IPC ───────────────────────────────────────────────────
+  ipcMain.handle("download-model", async (_event: IpcMainInvokeEvent, config: { url: string; targetPath: string; modelId: string }) => {
+    const { join, dirname, resolve } = await import("node:path")
+    const { homedir } = await import("node:os")
+    const { mkdir, access, stat } = await import("node:fs/promises")
+    const { createWriteStream } = await import("node:fs")
+    const https = await import("node:https")
+    const http = await import("node:http")
+
+    // Resolve targetPath relative to home directory
+    const resolvedTarget = config.targetPath.startsWith("/")
+      ? config.targetPath
+      : resolve(homedir(), config.targetPath)
+    const targetDir = dirname(resolvedTarget)
+    await mkdir(targetDir, { recursive: true })
+
+    // Check if already downloaded
+    try {
+      await access(resolvedTarget)
+      const s = await stat(resolvedTarget)
+      if (s.size > 10_000_000) {
+        return { success: true, path: resolvedTarget, skipped: true }
+      }
+    } catch {}
+
+    return new Promise((resolve, reject) => {
+      const protocol = config.url.startsWith("https") ? https : http
+      const request = protocol.get(config.url, { headers: { "User-Agent": "ZYRAXON/1.0" } }, (response) => {
+        if (response.statusCode === 301 || response.statusCode === 302) {
+          // Follow redirect
+          const redirectUrl = response.headers.location
+          if (redirectUrl) {
+            const redirProtocol = redirectUrl.startsWith("https") ? https : http
+            redirProtocol.get(redirectUrl, { headers: { "User-Agent": "ZYRAXON/1.0" } }, (redirResponse) => {
+              if (redirResponse.statusCode !== 200) {
+                reject(new Error(`Download failed with status ${redirResponse.statusCode}`))
+                return
+              }
+              const fileStream = createWriteStream(resolvedTarget)
+              let bytesDownloaded = 0
+              const totalBytes = parseInt(redirResponse.headers["content-length"] || "0", 10)
+
+              redirResponse.on("data", (chunk: Buffer) => {
+                bytesDownloaded += chunk.length
+                const percent = totalBytes > 0 ? Math.round((bytesDownloaded / totalBytes) * 100) : 0
+                _event.sender.send("download-model-progress", {
+                  modelId: config.modelId,
+                  bytesDownloaded,
+                  totalBytes,
+                  percent,
+                })
+              })
+
+              redirResponse.pipe(fileStream)
+              fileStream.on("finish", () => {
+                fileStream.close()
+                resolve({ success: true, path: resolvedTarget })
+              })
+              fileStream.on("error", (err) => {
+                reject(err)
+              })
+            }).on("error", reject)
+            return
+          }
+        }
+
+        if (response.statusCode !== 200) {
+          reject(new Error(`Download failed with status ${response.statusCode}`))
+          return
+        }
+
+        const fileStream = createWriteStream(resolvedTarget)
+        let bytesDownloaded = 0
+        const totalBytes = parseInt(response.headers["content-length"] || "0", 10)
+
+        response.on("data", (chunk: Buffer) => {
+          bytesDownloaded += chunk.length
+          const percent = totalBytes > 0 ? Math.round((bytesDownloaded / totalBytes) * 100) : 0
+          _event.sender.send("download-model-progress", {
+            modelId: config.modelId,
+            bytesDownloaded,
+            totalBytes,
+            percent,
+          })
+        })
+
+        response.pipe(fileStream)
+        fileStream.on("finish", () => {
+          fileStream.close()
+          resolve({ success: true, path: resolvedTarget })
+        })
+        fileStream.on("error", (err) => {
+          reject(err)
+        })
+      })
+
+      request.on("error", reject)
+      request.setTimeout(600000, () => {
+        request.destroy()
+        reject(new Error("Download timeout after 10 minutes"))
+      })
+    })
+  })
+
+  // ─── Backend Manager IPC ─────────────────────────────────────────────────
+  ipcMain.handle("backend-status", () => {
+    const bm = getBackendManager()
+    if (!bm) return { backends: [] }
+    return { backends: bm.getAllBackendStatuses() }
+  })
+
+  ipcMain.handle("backend-start", async (_event: IpcMainInvokeEvent, config: { type: string; modelPath: string; serverFlags?: string[] }) => {
+    const bm = getBackendManager()
+    if (!bm) return { success: false, error: "Backend manager not available" }
+    try {
+      const result = await bm.startBackend(config.type, config.modelPath, config.serverFlags || [])
+      return { success: true, port: result.port }
+    } catch (err: any) {
+      return { success: false, error: err.message }
+    }
+  })
+
+  ipcMain.handle("backend-stop", (_event: IpcMainInvokeEvent, type: string) => {
+    const bm = getBackendManager()
+    if (bm) bm.stopBackend(type)
+    return { success: true }
+  })
+
+  ipcMain.handle("generate-image", async (_event: IpcMainInvokeEvent, config: { modelPath: string; prompt: string; width?: number; height?: number; steps?: number; seed?: number }) => {
+    const bm = getBackendManager()
+    if (!bm) return { success: false, error: "Backend manager not available" }
+    return bm.generateImage(config.modelPath, {
+      prompt: config.prompt,
+      width: config.width,
+      height: config.height,
+      steps: config.steps,
+      seed: config.seed,
+    })
+  })
+
+  ipcMain.handle("generate-music", async (_event: IpcMainInvokeEvent, config: { modelPath: string; prompt: string; duration?: number }) => {
+    const bm = getBackendManager()
+    if (!bm) return { success: false, error: "Backend manager not available" }
+    return bm.generateMusic(config.modelPath, {
+      prompt: config.prompt,
+      duration: config.duration,
+    })
+  })
+
+  ipcMain.handle("generate-tts", async (_event: IpcMainInvokeEvent, config: { text: string; voice?: string }) => {
+    const bm = getBackendManager()
+    if (!bm) return { success: false, error: "Backend manager not available" }
+    return bm.generateTTS(config.text, config.voice as any)
+  })
+
+  ipcMain.handle("generate-video", async (_event: IpcMainInvokeEvent, config: { modelPath: string; prompt: string; numFrames?: number }) => {
+    const bm = getBackendManager()
+    if (!bm) return { success: false, error: "Backend manager not available" }
+    return bm.generateVideo(config.modelPath, {
+      prompt: config.prompt,
+      numFrames: config.numFrames,
+    })
   })
 }
 
