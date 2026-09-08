@@ -1142,6 +1142,7 @@ const layer = Layer.effect(
         let step = 0
         const session = yield* sessions.get(sessionID).pipe(Effect.orDie)
         const rateLimitedModels = new Set<string>()
+        const MAX_RATE_LIMIT_RETRIES = 3
 
         while (true) {
           yield* status.set(sessionID, { type: "busy" })
@@ -1175,7 +1176,7 @@ const layer = Layer.effect(
           // EXCEPTION: rate limit errors — try a different model instead of breaking
           if (lastAssistant?.error && !hasToolCalls && lastUser.id < lastAssistant.id) {
             const errMsg = JSON.stringify(lastAssistant.error).toLowerCase()
-            const isRateLimit = errMsg.includes("rate") && errMsg.includes("limit")
+            const isRateLimit = (errMsg.includes("rate") && errMsg.includes("limit")) || errMsg.includes("429") || errMsg.includes("rate_limit") || errMsg.includes("too many requests") || errMsg.includes("resource_exhausted")
             if (isRateLimit) {
               const modelKey = `${lastUser.model.providerID}/${lastUser.model.modelID}`
               rateLimitedModels.add(modelKey)
@@ -1218,14 +1219,40 @@ const layer = Layer.effect(
 
           step++
 
-          // Check if current model is rate-limited, fallback to default
+          // Check if current model is rate-limited, fallback to a non-rate-limited model
           const currentModelKey = `${lastUser.model.providerID}/${lastUser.model.modelID}`
           let modelProviderID = lastUser.model.providerID
           let modelModelID = lastUser.model.modelID
           if (rateLimitedModels.has(currentModelKey)) {
+            // Try default model first
             const defaultModel = yield* provider.defaultModel().pipe(Effect.orDie)
-            modelProviderID = defaultModel.providerID
-            modelModelID = defaultModel.id
+            const defaultKey = `${defaultModel.providerID}/${defaultModel.id}`
+            if (!rateLimitedModels.has(defaultKey)) {
+              modelProviderID = defaultModel.providerID
+              modelModelID = defaultModel.id
+            } else {
+              // Default is also rate-limited — find any non-rate-limited model
+              const allProviders = yield* provider.list().pipe(Effect.orDie)
+              let found = false
+              for (const [, prov] of Object.entries(allProviders)) {
+                for (const [mid, m] of Object.entries(prov.models)) {
+                  const mk = `${prov.id}/${mid}`
+                  if (!rateLimitedModels.has(mk) && m.status === "active") {
+                    modelProviderID = prov.id
+                    modelModelID = mid
+                    found = true
+                    break
+                  }
+                }
+                if (found) break
+              }
+              if (!found) {
+                yield* Effect.logError("no non-rate-limited models available", {
+                  "session.id": sessionID,
+                  rateLimitedModels: [...rateLimitedModels].join(","),
+                })
+              }
+            }
             yield* Effect.logWarning("using fallback model due to rate limit", {
               "session.id": sessionID,
               original: currentModelKey,
@@ -1519,7 +1546,39 @@ const layer = Layer.effect(
               }
             }
 
-            if (result === "stop") return "break" as const
+            if (result === "stop") {
+              // Check if this is a rate limit error — if so, switch model instead of breaking
+              const errObj = handle.message.error
+              if (errObj) {
+                const errMsg = JSON.stringify(errObj).toLowerCase()
+                const isRateLimit = (errMsg.includes("rate") && errMsg.includes("limit")) || errMsg.includes("429") || errMsg.includes("rate_limit") || errMsg.includes("too many requests") || errMsg.includes("resource_exhausted")
+                if (isRateLimit) {
+                  const modelKey = `${lastUser.model.providerID}/${lastUser.model.modelID}`
+                  rateLimitedModels.add(modelKey)
+                  yield* Effect.logWarning("rate limit detected in process result, switching model", {
+                    "session.id": sessionID,
+                    model: modelKey,
+                    rateLimitedCount: rateLimitedModels.size,
+                  })
+                  // Safety: if too many models are rate-limited, stop trying
+                  if (rateLimitedModels.size >= MAX_RATE_LIMIT_RETRIES) {
+                    yield* Effect.logError("all models rate-limited, giving up", {
+                      "session.id": sessionID,
+                      rateLimitedModels: [...rateLimitedModels].join(","),
+                    })
+                    handle.message.error = {
+                      message: "All available models are rate-limited. Please wait a moment and try again, or switch to a different provider.",
+                    }
+                    yield* sessions.updateMessage(handle.message)
+                    return "break" as const
+                  }
+                  // Delete the error message so loop can continue with fallback model
+                  yield* sessions.deleteMessage(handle.message.id)
+                  return "continue" as const
+                }
+              }
+              return "break" as const
+            }
             if (result === "compact") {
               yield* compaction.create({
                 sessionID,

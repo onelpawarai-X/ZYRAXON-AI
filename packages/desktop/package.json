@@ -2,7 +2,7 @@
     "name": "@zyraxon-ai/desktop",
     "productName": "ZYRAXON",
     "private": true,
-    "version": "19.0.0",
+    "version": "19.0.1",
     "type": "module",
     "license": "BSL-1.1",
     "homepage": "https://zyraxonai.lovable.app/",

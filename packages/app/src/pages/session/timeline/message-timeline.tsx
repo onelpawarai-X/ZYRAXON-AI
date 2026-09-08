@@ -343,6 +343,8 @@ export function MessageTimeline(props: {
   const spokenStorageKey = () => `tts-spoken-${sessionKey()}`
   const ttsSpokenIds = new Set<string>(loadPersistedSpokenIds())
   const ttsSentText = new Map<string, string>()
+  // Track spoken content by text hash to prevent double-speaking across retries
+  const ttsSpokenContentHashes = new Set<string>()
   const TTS_SERVER = "http://127.0.0.1:19810"
 
   // TTS SERIAL queue — ONE audio at a time, never parallel
@@ -407,6 +409,15 @@ export function MessageTimeline(props: {
     try {
       localStorage.setItem(spokenStorageKey(), JSON.stringify([...ttsSpokenIds]))
     } catch {}
+  }
+
+  // Simple content hash for TTS dedup — prevents double-speaking across message retries
+  function contentHash(text: string): string {
+    let hash = 0
+    for (let i = 0; i < text.length; i++) {
+      hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0
+    }
+    return hash.toString(36)
   }
 
   const nonLatinRe = /[\u0980-\u09FF\u0900-\u097F\u0600-\u06FF\u0400-\u04FF\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7AF\u0E00-\u0E7F]/
@@ -582,6 +593,10 @@ export function MessageTimeline(props: {
         const fullText = extractTTSText(msg.id)
         if (!fullText) continue
 
+        // Content hash dedup: skip if same text was already spoken (prevents double-speaking across retries)
+        const textHash = contentHash(fullText)
+        if (ttsSpokenContentHashes.has(textHash)) continue
+
         const alreadySent = ttsSentText.get(msg.id) || ""
 
         if (isActive) {
@@ -623,6 +638,7 @@ export function MessageTimeline(props: {
         } else {
           // COMPLETED message: send remaining in large sentence-level chunks
           ttsSpokenIds.add(msg.id)
+          ttsSpokenContentHashes.add(textHash)
           persistSpokenIds()
           const unsentText = fullText.slice(alreadySent.length).trim()
           const textToSend = unsentText.length > 0 ? unsentText : ""
