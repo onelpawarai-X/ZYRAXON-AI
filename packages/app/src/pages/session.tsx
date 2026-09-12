@@ -389,6 +389,33 @@ export default function Page() {
     })
   })
 
+  // Daily task activation: listen for scheduler-triggered prompts
+  onMount(() => {
+    const handleDailyTaskRun = (event: Event) => {
+      const detail = (event as CustomEvent).detail
+      if (!detail?.prompt) return
+      if (!prompt.ready()) return
+      const text = detail.prompt
+      prompt.set([{ type: "text", content: text, start: 0, end: text.length }], text.length)
+      // Trigger form submit after a short delay to ensure prompt state is updated
+      setTimeout(() => {
+        // Find the prompt input form (DockShellForm renders a <form>)
+        const forms = document.querySelectorAll("form")
+        for (const form of forms) {
+          if (form.querySelector('[data-component="prompt-input"]')) {
+            form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }))
+            return
+          }
+        }
+        // Fallback: click the submit button
+        const submitBtn = document.querySelector('[data-action="prompt-submit"]')
+        if (submitBtn) submitBtn.click()
+      }, 100)
+    }
+    window.addEventListener("daily-task-run", handleDailyTaskRun)
+    onCleanup(() => window.removeEventListener("daily-task-run", handleDailyTaskRun))
+  })
+
   const [ui, setUi] = createStore({
     pendingMessage: undefined as string | undefined,
     reviewSnap: false,

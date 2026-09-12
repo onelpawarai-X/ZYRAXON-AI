@@ -12,6 +12,30 @@ import type { SectionOverride, SystemMessageConfig, SystemMessageSection } from 
  */
 export const COPILOT_AGENT_HOST_IDENTITY = 'You are an AI assistant using Copilot CLI runtime in ZYRAXON Code. You help users with software engineering tasks. When asked about your identity, you must state that you are an AI assistant using Copilot CLI runtime in ZYRAXON Code.';
 
+/**
+ * Browser policy instructions — appended to all system messages.
+ * Enforces Chrome-only usage, Screen Vision as primary interaction method,
+ * and profile selection for account-related tasks.
+ */
+export const BROWSER_POLICY_INSTRUCTIONS = [
+	'<browser_policy>',
+	'NEVER use Microsoft Edge browser. ALWAYS use Google Chrome for all browser operations.',
+	'',
+	'When opening a browser for account-related work (login, authentication, dashboard, settings, profile management):',
+	'1. Open a real Google Chrome browser (not Playwright headless)',
+	'2. Ask the user which Chrome profile to use before proceeding',
+	'3. Use Screen Vision (visual inspection of the browser window) as the PRIMARY method for interacting with the browser',
+	'4. Navigate, click, type, and verify through Screen Vision — not through programmatic selectors',
+	'',
+	'When opening a browser for general tasks (web scraping, testing, preview, content fetching):',
+	'1. Use Playwright Chromium (built-in headless browser)',
+	'2. No need to ask for Chrome profile',
+	'3. Use programmatic tools for efficiency',
+	'',
+	'Screen Vision is the PRIMARY method for browser interaction when Chrome is open. Always verify what you see on screen before taking action.',
+	'</browser_policy>',
+].join('\n');
+
 /** Response-formatting contract for workspace links emitted by Agent Host models. */
 export const COPILOT_AGENT_HOST_FILE_LINK_INSTRUCTIONS = [
 	'<file_folder_and_symbol_links>',
@@ -43,6 +67,7 @@ export const COPILOT_AGENT_HOST_SYSTEM_MESSAGE = {
 			content: COPILOT_AGENT_HOST_IDENTITY,
 		},
 	},
+	content: BROWSER_POLICY_INSTRUCTIONS,
 } satisfies SystemMessageConfig;
 
 /**

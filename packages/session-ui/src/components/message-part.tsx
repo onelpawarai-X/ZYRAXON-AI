@@ -779,6 +779,7 @@ export function AssistantParts(props: {
   const last = createMemo(() => grouped().at(-1)?.key)
 
   const lastSpokenMessageID = { value: "" }
+  const lastSpokenTime = { value: 0 }
 
   const detectLanguage = (text: string): string => {
     const bengali = /[\u0980-\u09FF]/
@@ -832,7 +833,11 @@ export function AssistantParts(props: {
     const lastMsg = msgs_list[msgs_list.length - 1]
     if (typeof lastMsg.time.completed !== "number") return
     if (lastSpokenMessageID.value === lastMsg.id) return
+    // Debounce: skip if spoke less than 300ms ago (prevents double-speak)
+    const now = Date.now()
+    if (now - lastSpokenTime.value < 300) return
     lastSpokenMessageID.value = lastMsg.id
+    lastSpokenTime.value = now
     const partsList = list(data.store.part?.[lastMsg.id], emptyParts)
     const textParts = partsList.filter((p: any) => p.type === "text" && p.text)
     if (!textParts.length) return
@@ -843,6 +848,8 @@ export function AssistantParts(props: {
     try {
       const api = (window as any).api
       if (api?.voiceTTSSpeak) {
+        // Stop any currently playing audio before starting new (prevents double-speak)
+        try { api.voiceTTSStop?.() } catch {}
         api.voiceTTSSpeak(text)
         return
       }

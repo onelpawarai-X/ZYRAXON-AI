@@ -933,8 +933,19 @@ function HomeUtilityNav(props: {
   language: ReturnType<typeof useLanguage>
 }) {
   const navigate = useNavigate()
+  const [showCloudAgent, setShowCloudAgent] = createSignal(false)
   return (
     <div class={`${props.class ?? ""} min-w-0 flex-col gap-1 pr-3`}>
+      <button
+        type="button"
+        class={`${HOME_PROJECT_NAV_ROW} h-10 rounded-[8px] text-v2-text-text-faint [&>[data-slot=icon-svg]]:text-v2-icon-icon-muted`}
+        onClick={() => setShowCloudAgent(true)}
+      >
+        <span class="flex items-center gap-2">
+          <IconV2 name="cloud" size="small" />
+          <span class={HOME_PROJECT_NAV_LABEL}>Cloud Agent</span>
+        </span>
+      </button>
       <button
         type="button"
         class={`${HOME_PROJECT_NAV_ROW} h-10 rounded-[8px] text-v2-text-text-faint [&>[data-slot=icon-svg]]:text-v2-icon-icon-muted`}
@@ -965,6 +976,98 @@ function HomeUtilityNav(props: {
           <span class={HOME_PROJECT_NAV_LABEL}>{props.language.t("sidebar.help")}</span>
         </span>
       </button>
+      <CloudAgentDialog show={showCloudAgent()} onClose={() => setShowCloudAgent(false)} />
+    </div>
+  )
+}
+
+function CloudAgentDialog(props: { show: boolean; onClose: () => void }) {
+  let iframeRef: HTMLIFrameElement | undefined
+  let currentBridgeId: string | null = null
+  let removeVoiceEvent: (() => void) | null = null
+
+  function handleSpeechMessage(ev: MessageEvent) {
+    if (!ev.data) return
+    const { type, bridgeId, lang } = ev.data
+
+    if (type === "zyraxon-speech-start") {
+      const api = (window as any).api
+      if (!api) return
+
+      currentBridgeId = bridgeId
+
+      if (lang) {
+        api.voiceSetLanguage(lang).catch(() => {})
+      }
+
+      api.voiceStartListening().catch(() => {})
+    }
+
+    if (type === "zyraxon-speech-stop") {
+      const api = (window as any).api
+      if (!api) return
+      api.voiceStopListening().catch(() => {})
+      currentBridgeId = null
+    }
+  }
+
+  function handleVoiceEvent(event: any) {
+    if (event.type === "voice-transcript" && event.isFinal && event.text && currentBridgeId) {
+      iframeRef?.contentWindow?.postMessage(
+        { type: "zyraxon-speech-result", bridgeId: currentBridgeId, result: event.text.trim() },
+        "*",
+      )
+    }
+  }
+
+  onMount(() => {
+    window.addEventListener("message", handleSpeechMessage)
+    const api = (window as any).api
+    if (api?.onVoiceEvent) {
+      removeVoiceEvent = api.onVoiceEvent(handleVoiceEvent)
+    }
+  })
+
+  onCleanup(() => {
+    window.removeEventListener("message", handleSpeechMessage)
+    if (removeVoiceEvent) {
+      removeVoiceEvent()
+      removeVoiceEvent = null
+    }
+    currentBridgeId = null
+  })
+
+  return (
+    <div
+      class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      style={{ display: props.show ? "flex" : "none" }}
+      onClick={props.onClose}
+    >
+      <div
+        class="relative flex h-[85vh] w-[90vw] max-w-[1200px] flex-col overflow-hidden rounded-xl border border-v2-border-border-base bg-v2-background-bg-base shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div class="flex items-center justify-between border-b border-v2-border-border-base px-4 py-3">
+          <div class="flex items-center gap-2">
+            <IconV2 name="cloud" size="small" class="text-v2-icon-icon-muted" />
+            <span class="text-sm font-medium text-v2-text-text-base">Cloud Agent — ZYRAXON-Pro</span>
+          </div>
+          <button
+            type="button"
+            class="flex h-7 w-7 items-center justify-center rounded-md text-v2-text-text-muted hover:bg-v2-overlay-simple-overlay-hover"
+            onClick={props.onClose}
+          >
+            <IconV2 name="close" size="small" />
+          </button>
+        </div>
+        <iframe
+          ref={iframeRef}
+          src="https://zyraxon-pro.ai.studio/"
+          class="h-full w-full flex-1 border-0"
+          allow="clipboard-read; clipboard-write; microphone"
+          title="Cloud Agent"
+        />
+      </div>
     </div>
   )
 }

@@ -65,6 +65,13 @@ const getBase = (appId: string): Configuration => ({
     desktopName: `${appId}.desktop`,
   },
   files: ["out/**/*", "resources/icons/**", "resources/entitlements.plist"],
+  asarUnpack: [
+    "node_modules/@playwright/**",
+    "node_modules/playwright-core/**",
+    "node_modules/playwright/**",
+    "node_modules/chromium-bidi/**",
+    "jarvis-browser/**",
+  ],
   extraResources: [
     {
       from: "native/",

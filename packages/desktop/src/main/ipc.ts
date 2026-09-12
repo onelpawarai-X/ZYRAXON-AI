@@ -55,6 +55,11 @@ async function ensureTTSServer(): Promise<boolean> {
 const streamManager = new YouTubeStreamManager()
 let streamListenerAttached = false
 
+// TTS debounce — skip if same text arrives within 300ms
+let lastTtsText = ""
+let lastTtsTime = 0
+const TTS_DEBOUNCE_MS = 300
+
 // Voice bridge module — singleton reference (shared with index.ts)
 import { getVoiceBridgeModule } from "./voice-bridge-singleton"
 
@@ -383,36 +388,9 @@ export function registerIpcHandlers(deps: Deps) {
     })
   })
 
-  ipcMain.handle("transcribe-audio", async (_event: IpcMainInvokeEvent, audioBase64: string, mimeType: string) => {
-    const apiKey = findOpenAIKey()
-    if (!apiKey) {
-      throw new Error("No OpenAI API key found. Set OPENAI_API_KEY environment variable or add an OpenAI provider in ZYRAXON config.")
-    }
-
-    const ext = mimeType.includes("webm") ? "webm" : mimeType.includes("mp4") ? "mp4" : "wav"
-    const formData = new FormData()
-    const binaryStr = atob(audioBase64)
-    const bytes = new Uint8Array(binaryStr.length)
-    for (let i = 0; i < binaryStr.length; i++) {
-      bytes[i] = binaryStr.charCodeAt(i)
-    }
-    const blob = new Blob([bytes], { type: mimeType })
-    formData.append("file", blob, `audio.${ext}`)
-    formData.append("model", "whisper-1")
-    formData.append("response_format", "text")
-
-    const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}` },
-      body: formData,
-    })
-
-    if (!res.ok) {
-      const err = await res.text().catch(() => "Unknown error")
-      throw new Error(`OpenAI Whisper API error (${res.status}): ${err}`)
-    }
-
-    return (await res.text()).trim()
+  ipcMain.handle("transcribe-audio", async (_event: IpcMainInvokeEvent, _audioBase64: string, _mimeType: string) => {
+    console.warn("[IPC] transcribe-audio is deprecated — use voice bridge IPC (voiceStartListening/voiceStopListening) instead")
+    throw new Error("Direct audio transcription is no longer supported. Use the voice bridge mic button instead.")
   })
 
   // Voice Bridge — Chrome speech recognition controls
@@ -458,6 +436,16 @@ export function registerIpcHandlers(deps: Deps) {
 
   ipcMain.on("voice-tts-speak", async (event: IpcMainEvent, text: string) => {
     if (!text) return
+
+    // Debounce: skip if same text arrives within 300ms (prevents double-speak)
+    const now = Date.now()
+    if (text === lastTtsText && now - lastTtsTime < TTS_DEBOUNCE_MS) {
+      console.log("[TTS-IPC] Debounced duplicate request")
+      return
+    }
+    lastTtsText = text
+    lastTtsTime = now
+
     console.log("[TTS-IPC] Received voice-tts-speak, text:", text.slice(0, 80))
     const ready = await ensureTTSServer()
     if (!ready) {
@@ -487,16 +475,16 @@ export function registerIpcHandlers(deps: Deps) {
     }
     if (rem.trim()) sentences.push(rem.trim())
 
-    // PARALLEL: fire all TTS requests at once, send audio as each completes
+    // SEQUENTIAL: process one sentence at a time to prevent overlapping audio
     let anySuccess = false
-    const promises = sentences.map(async (s) => {
-      if (!s) return
+    for (const s of sentences) {
+      if (!s) continue
       try {
         const url = `http://127.0.0.1:19810/speak?text=${encodeURIComponent(s)}&lang=${lang}&gender=${gender}`
         const resp = await fetch(url)
         if (!resp.ok) {
           console.error("[TTS-Direct] HTTP error:", resp.status)
-          return
+          continue
         }
         const buf = Buffer.from(await resp.arrayBuffer())
         if (buf.length > 100) {
@@ -506,8 +494,7 @@ export function registerIpcHandlers(deps: Deps) {
       } catch (e) {
         console.error("[TTS-Direct] Error:", e)
       }
-    })
-    await Promise.allSettled(promises)
+    }
     if (!anySuccess && sentences.length > 0) {
       console.error("[TTS-IPC] All sentences failed to generate audio")
       event.reply("voice-tts-error", "TTS generation failed — check internet connection")
@@ -827,3 +814,94 @@ function findOpenAIKey(): string | null {
 
   return null
 }
+
+// ─── Daily Tasks IPC ──────────────────────────────────────────────────────
+ipcMain.handle("daily-tasks:get", async () => {
+  try {
+    const { loadTasks } = await import("./daily-task-storage")
+    return loadTasks()
+  } catch (error) {
+    console.error("[IPC] Failed to get daily tasks:", error)
+    return []
+  }
+})
+
+ipcMain.handle("daily-tasks:save", async (_event: IpcMainInvokeEvent, tasks: any[]) => {
+  try {
+    const { saveTasks } = await import("./daily-task-storage")
+    saveTasks(tasks)
+    return true
+  } catch (error) {
+    console.error("[IPC] Failed to save daily tasks:", error)
+    return false
+  }
+})
+
+ipcMain.handle("daily-tasks:run", async (_event: IpcMainInvokeEvent, task: any) => {
+  try {
+    const { BrowserWindow } = await import("electron")
+    const windows = BrowserWindow.getAllWindows()
+    if (windows.length > 0) {
+      const win = windows[0]
+      if (win.isMinimized()) win.restore()
+      if (!win.isVisible()) win.show()
+      win.focus()
+      win.webContents.send("daily-task:activate", {
+        taskId: task.id,
+        prompt: task.prompt,
+        time: task.time,
+      })
+    }
+    return true
+  } catch (error) {
+    console.error("[IPC] Failed to run daily task:", error)
+    return false
+  }
+})
+
+let cloudAgentWindow: BrowserWindow | null = null
+
+ipcMain.handle("cloud-agent:open", async () => {
+  if (cloudAgentWindow && !cloudAgentWindow.isDestroyed()) {
+    cloudAgentWindow.focus()
+    return true
+  }
+  cloudAgentWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    title: "Cloud Agent — ZYRAXON-Pro",
+    icon: undefined,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  })
+  // Grant microphone/camera permissions for speech recognition
+  cloudAgentWindow.webContents.session.setPermissionRequestHandler((_wc, permission, callback) => {
+    const allowed = permission === "media" || permission === "clipboard-sanitized-write" || permission === "notifications"
+    callback(allowed)
+  })
+  cloudAgentWindow.webContents.session.setPermissionCheckHandler((_wc, permission, _origin, details) => {
+    if (permission === "media" || permission === "clipboard-sanitized-write" || permission === "notifications") {
+      return details.requestingUrl?.startsWith("https://zyraxon-pro.ai.studio") ||
+        details.requestingUrl?.startsWith("https://zyraxon.ai") || false
+    }
+    return false
+  })
+  // Device permission handler for microphone access
+  cloudAgentWindow.webContents.session.setDevicePermissionHandler((details, callback) => {
+    if (details.deviceType === "microphone" || details.deviceType === "camera") {
+      const url = details.requestingUrl || details.origin
+      if (url.includes("zyraxon-pro.ai.studio") || url.includes("zyraxon.ai")) {
+        callback(true)
+        return
+      }
+    }
+    callback(false)
+  })
+  cloudAgentWindow.setMenu(null)
+  await cloudAgentWindow.loadURL("https://zyraxon-pro.ai.studio/")
+  cloudAgentWindow.on("closed", () => { cloudAgentWindow = null })
+  return true
+}))

@@ -151,9 +151,9 @@ export class DefaultAgentPrompt extends PromptElement<DefaultAgentPromptProps> {
 				{tools[ToolName.CoreRunInTerminal] && <>NEVER try to edit a file by running terminal commands unless the user specifically asks for it.<br /></>}
 				{!tools.hasSomeEditTool && <>You don't currently have any tools available for editing files. If the user asks you to edit a file, you can ask the user to enable editing tools or print a codeblock with the suggested changes.<br /></>}
 				{!tools[ToolName.CoreRunInTerminal] && <>You don't currently have any tools available for running terminal commands. If the user asks you to run a terminal command, you can ask the user to enable terminal tools or print a codeblock with the suggested command.<br /></>}
-				{tools[ToolName.CoreOpenBrowserPage] && tools.hasAgenticBrowserTools && <>Use the browser tools ({ToolName.CoreOpenBrowserPage}, {agenticBrowserTools.find(k => tools[k])}, etc.) when beneficial for front-end tasks, such as when visualizing or validating UI changes.<br /></>}
-				Tools can be disabled by the user. You may see tools used previously in the conversation that are not currently available. Be careful to only use the tools that are currently available to you.
-			</Tag>
+			{tools[ToolName.CoreOpenBrowserPage] && tools.hasAgenticBrowserTools && <>Use the browser tools ({ToolName.CoreOpenBrowserPage}, {agenticBrowserTools.find(k => tools[k])}, etc.) when beneficial for front-end tasks, such as when visualizing or validating UI changes. ALWAYS use Google Chrome — NEVER use Microsoft Edge. For account-related browser work, open real Chrome and ask the user which profile to use; then use Screen Vision as the primary interaction method. For general browsing tasks, use Playwright Chromium (built-in headless browser).<br /></>}
+			Tools can be disabled by the user. You may see tools used previously in the conversation that are not currently available. Be careful to only use the tools that are currently available to you.
+		</Tag>
 			{this.props.codesearchMode && <CodesearchModeInstructions {...this.props} />}
 			{tools[ToolName.EditFile] && !tools[ToolName.ApplyPatch] && <Tag name='editFileInstructions'>
 				{tools[ToolName.ReplaceString] ?
@@ -310,23 +310,22 @@ export class AlternateGPTPrompt extends PromptElement<DefaultAgentPromptProps> {
 				{tools[ToolName.CoreRunInTerminal] && <>NEVER try to edit a file by running terminal commands unless the user specifically asks for it.<br /></>}
 				{!tools.hasSomeEditTool && <>You don't currently have any tools available for editing files. If the user asks you to edit a file, you can ask the user to enable editing tools or print a codeblock with the suggested changes.<br /></>}
 				{!tools[ToolName.CoreRunInTerminal] && <>You don't currently have any tools available for running terminal commands. If the user asks you to run a terminal command, you can ask the user to enable terminal tools or print a codeblock with the suggested command.<br /></>}
-				{tools[ToolName.CoreOpenBrowserPage] && tools.hasAgenticBrowserTools && <>Use the browser tools ({ToolName.CoreOpenBrowserPage}, {agenticBrowserTools.find(k => tools[k])}, etc.) when beneficial for front-end tasks, such as when visualizing or validating UI changes.<br /></>}
-				Tools can be disabled by the user. You may see tools used previously in the conversation that are not currently available. Be careful to only use the tools that are currently available to you.<br />
-				{tools[ToolName.FetchWebPage] && <>If the user provides a URL, you MUST use the {ToolName.FetchWebPage} tool to retrieve the content from the web page. After fetching, review the content returned by {ToolName.FetchWebPage}. If you find any additional URL's or links that are relevant, use the {ToolName.FetchWebPage} tool again to retrieve those links. Recursively gather all relevant information by fetching additional links until you have all of the information that you need.</>}<br />
-			</Tag>
-			{tools[ToolName.EditFile] && !tools[ToolName.ApplyPatch] && <Tag name='editFileInstructions'>
-				{tools[ToolName.ReplaceString] ?
-					<>
-						Before you edit an existing file, make sure you either already have it in the provided context, or read it with the {ToolName.ReadFile} tool, so that you can make proper changes.<br />
-						{tools[ToolName.MultiReplaceString]
-							? <>Use the {ToolName.ReplaceString} tool for single string replacements, paying attention to context to ensure your replacement is unique. Prefer the {ToolName.MultiReplaceString} tool when you need to make multiple string replacements across one or more files in a single operation. This is significantly more efficient than calling {ToolName.ReplaceString} multiple times and should be your first choice for: fixing similar patterns across files, applying consistent formatting changes, bulk refactoring operations, or any scenario where you need to make the same type of change in multiple places.<br /></>
-							: <>Use the {ToolName.ReplaceString} tool to edit files, paying attention to context to ensure your replacement is unique. You can use this tool multiple times per file.<br /></>}
-						Use the {ToolName.EditFile} tool to insert code into a file ONLY if {tools[ToolName.MultiReplaceString] ? `${ToolName.MultiReplaceString}/` : ''}{ToolName.ReplaceString} has failed.<br />
-						When editing files, group your changes by file.<br />
-						{isGpt5 && <>Make the smallest set of edits needed and avoid reformatting or moving unrelated code. Preserve existing style and conventions, and keep imports, exports, and public APIs stable unless the task requires changes. Prefer completing all edits for a file within a single message when practical.<br /></>}
-						NEVER show the changes to the user, just call the tool, and the edits will be applied and shown to the user.<br />
-						NEVER print a codeblock that represents a change to a file, use {ToolName.ReplaceString}{tools[ToolName.MultiReplaceString] ? `, ${ToolName.MultiReplaceString},` : ''} or {ToolName.EditFile} instead.<br />
-						For each file, give a short description of what needs to be changed, then use the {ToolName.ReplaceString}{tools[ToolName.MultiReplaceString] ? `, ${ToolName.MultiReplaceString},` : ''} or {ToolName.EditFile} tools. You can use any tool multiple times in a response, and you can keep writing text after using a tool.<br /></> :
+			{tools[ToolName.CoreOpenBrowserPage] && tools.hasAgenticBrowserTools && <>Use the browser tools ({ToolName.CoreOpenBrowserPage}, {agenticBrowserTools.find(k => tools[k])}, etc.) when beneficial for front-end tasks, such as when visualizing or validating UI changes. ALWAYS use Google Chrome — NEVER use Microsoft Edge. For account-related browser work, open real Chrome and ask the user which profile to use; then use Screen Vision as the primary interaction method. For general browsing tasks, use Playwright Chromium (built-in headless browser).<br /></>}
+			Tools can be disabled by the user. You may see tools used previously in the conversation that are not currently available. Be careful to only use the tools that are currently available to you.
+		</Tag>
+		{this.props.codesearchMode && <CodesearchModeInstructions {...this.props} />}
+		{tools[ToolName.EditFile] && !tools[ToolName.ApplyPatch] && <Tag name='editFileInstructions'>
+			{tools[ToolName.ReplaceString] ?
+				<>
+					Before you edit an existing file, make sure you either already have it in the provided context, or read it with the {ToolName.ReadFile} tool, so that you can make proper changes.<br />
+					{tools[ToolName.MultiReplaceString]
+						? <>Use the {ToolName.ReplaceString} tool for single string replacements, paying attention to context to ensure your replacement is unique. Prefer the {ToolName.MultiReplaceString} tool when you need to make multiple string replacements across one or more files in a single operation. This is significantly more efficient than calling {ToolName.ReplaceString} multiple times and should be your first choice for: fixing similar patterns across files, applying consistent formatting changes, bulk refactoring operations, or any scenario where you need to make the same type of change in multiple places. Do not announce which tool you're using (for example, avoid saying "I'll implement all the changes using multi_replace_string_in_file").<br /></>
+						: <>Use the {ToolName.ReplaceString} tool to edit files, paying attention to context to ensure your replacement is unique. You can use this tool multiple times per file.<br /></>}
+					Use the {ToolName.EditFile} tool to insert code into a file ONLY if {tools[ToolName.MultiReplaceString] ? `${ToolName.MultiReplaceString}/` : ''}{ToolName.ReplaceString} has failed.<br />
+					When editing files, group your changes by file.<br />
+					NEVER show the changes to the user, just call the tool, and the edits will be applied and shown to the user.<br />
+					NEVER print a codeblock that represents a change to a file, use {ToolName.ReplaceString}{tools[ToolName.MultiReplaceString] ? `, ${ToolName.MultiReplaceString},` : ''} or {ToolName.EditFile} instead.<br />
+					For each file, give a short description of what needs to be changed, then use the {ToolName.ReplaceString}{tools[ToolName.MultiReplaceString] ? `, ${ToolName.MultiReplaceString},` : ''} or {ToolName.EditFile} tools. You can use any tool multiple times in a response, and you can keep writing text after using a tool.<br /></> :
 					<>
 						Don't try to edit an existing file without reading it first, so you can make changes properly.<br />
 						Use the {ToolName.EditFile} tool to edit files. When editing files, group your changes by file.<br />

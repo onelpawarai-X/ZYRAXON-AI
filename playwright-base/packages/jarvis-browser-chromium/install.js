@@ -14,14 +14,7 @@
  * limitations under the License.
  */
 
-let install;
-
-try {
-  if (!require('jarvis-browser-core/lib/coreBundle').utils.isLikelyNpxGlobal())
-    install = require('jarvis-browser-core/lib/coreBundle').registry.installBrowsersForNpmInstall;
-} catch (e) {
-  // Dev build, don't install browsers by default.
-}
-
-if (install)
-  install(['chromium', 'chromium-headless-shell', 'ffmpeg']);
+// ZYRAXON: Skip Chromium download — we connect to REAL Chrome via CDP
+// The user's actual Chrome browser (with all profiles, logins, cookies) is used
+// via --remote-debugging-port=9222. No bundled Chromium needed.
+console.log('[ZYRAXON] Skipping Chromium download — using real Chrome via CDP');

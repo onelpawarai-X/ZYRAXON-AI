@@ -86,13 +86,8 @@ export function MonacoEditor(props: MonacoEditorProps) {
   let widgetDisposable: Monaco.editor.IEditorDecorationsCollection | null = null
   let inlineChatWidget: Monaco.editor.IContentWidget | null = null
   let inlineChatLine: number | null = null
-  // Voice bridge mic state — shared across open/close
-  let voiceBridgeUnsubGlobal: (() => void) | null = null
-  let voiceBridgeActiveGlobal = false
-  const stopInlineMicGlobal = () => {
-    if (voiceBridgeUnsubGlobal) { try { voiceBridgeUnsubGlobal() } catch {} voiceBridgeUnsubGlobal = null }
-    if (voiceBridgeActiveGlobal) { try { (window as any).api?.voiceStopListening?.() } catch {} voiceBridgeActiveGlobal = false }
-  }
+  let mouseDownDisposable: Monaco.IDisposable | null = null
+
 
   const getTheme = () => {
     if (props.theme) return props.theme
@@ -266,99 +261,81 @@ export function MonacoEditor(props: MonacoEditorProps) {
     domNode.addEventListener("keypress", stopAll)
     domNode.addEventListener("contextmenu", stopAll)
 
-    let micRecognition: any = null
-    const cleanupVoiceBridgeMicLocal = () => {
-      if (voiceBridgeUnsubGlobal) { try { voiceBridgeUnsubGlobal() } catch {} voiceBridgeUnsubGlobal = null }
-      if (voiceBridgeActiveGlobal) {
-        try { (window as any).api?.voiceStopListening?.() } catch {}
-        voiceBridgeActiveGlobal = false
-      }
-      micBtn.style.color = ""
+    let mediaRecorder: MediaRecorder | null = null
+    let audioChunks: Blob[] = []
+    let audioStream: MediaStream | null = null
+    let micRecordingActive = false
+    let micRecordingTimer: ReturnType<typeof setInterval> | null = null
+    let micRecordingSeconds = 0
+    const cleanupMediaRecorder = () => {
+      if (micRecordingTimer) { clearInterval(micRecordingTimer); micRecordingTimer = null }
+      if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null }
+      mediaRecorder = null; audioChunks = []; micRecordingActive = false; micRecordingSeconds = 0
     }
+    const stopAllMic = () => {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        try { mediaRecorder.stop() } catch {}
+      }
+      cleanupMediaRecorder()
+      micBtn.style.color = ""
+      micBtn.title = "Voice input"
+    }
+    const blobToBase64 = (blob: Blob): Promise<string> => new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve((reader.result as string).split(",")[1])
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
     micBtn.addEventListener("click", (e) => {
       e.stopPropagation()
-      const api = (window as any).api
-      // Prefer voice bridge (same as agent) — routes through Chrome HTML for reliable recognition
-      const canUseBridge = api?.voiceStartListening && api?.onVoiceEvent
-      if (canUseBridge) {
-        if (voiceBridgeActiveGlobal) { cleanupVoiceBridgeMicLocal(); return }
-        // Sync selected language to bridge before listening
-        const bridgeLang = langSelect.value || currentVoiceLang
-        try { api.voiceSetLanguage(bridgeLang) } catch {}
-        micBtn.style.color = accent
-        voiceBridgeActiveGlobal = true
-        let accText = ""
-        voiceBridgeUnsubGlobal = api.onVoiceEvent((ev: any) => {
-          if (ev.type === "voice-transcript" && typeof ev.text === "string") {
-            // ev.fullText accumulates; use it for Monaco input
-            const t = ev.fullText || ev.text
-            if (t) { input.value = t; accText = t }
-          }
-          if (ev.type === "voice-mic-state" && ev.active === false && voiceBridgeActiveGlobal) {
-            // Bridge stopped — keep accText
-            cleanupVoiceBridgeMicLocal()
-          }
-        })
-        // Start bridge listening — Chrome HTML's SpeechRecognition will stream transcripts
-        api.voiceStartListening().catch((err: any) => {
-          console.error("[Monaco Mic Bridge] voiceStartListening failed:", err)
-          cleanupVoiceBridgeMicLocal()
-          // Fallback to direct SpeechRecognition
-          fallbackDirectMic()
-        })
+      if (micRecordingActive) {
+        stopAllMic()
         return
       }
-      // Fallback: direct browser SpeechRecognition
-      fallbackDirectMic()
-      function fallbackDirectMic() {
-        const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-        if (!SR) {
-          const warn = document.createElement("div")
-          warn.className = "aic-err"
-          warn.textContent = "Speech recognition not available in this browser"
-          domNode.appendChild(warn)
-          setTimeout(() => warn.remove(), 3000)
-          return
+      navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 16000 } }).then(stream => {
+        audioStream = stream
+        audioChunks = []
+        const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/wav"
+        mediaRecorder = new MediaRecorder(stream, { mimeType })
+        mediaRecorder.ondataavailable = (ev) => { if (ev.data.size > 0) audioChunks.push(ev.data) }
+        mediaRecorder.onstop = async () => {
+          try {
+            const blob = new Blob(audioChunks, { type: mimeType })
+            const base64 = await blobToBase64(blob)
+            const api = (window as any).api
+            if (api?.transcribeAudio) {
+              const text = await api.transcribeAudio(base64, mimeType)
+              if (text && text.trim()) input.value = text.trim()
+            }
+          } catch (err: any) {
+            console.error("[Monaco Mic] Transcription error:", err)
+            const warn = document.createElement("div")
+            warn.className = "aic-err"
+            warn.textContent = `Mic error: ${err.message || "transcription failed"}`
+            domNode.appendChild(warn)
+            setTimeout(() => warn.remove(), 3000)
+          } finally {
+            cleanupMediaRecorder()
+            micBtn.style.color = ""
+            micBtn.title = "Voice input"
+          }
         }
-        if (micRecognition) { try { micRecognition.stop() } catch {} micRecognition = null; micBtn.style.color = ""; return }
-        micRecognition = new SR()
-        micRecognition.continuous = false
-        micRecognition.interimResults = true
-        let recLang = langSelect.value
-        if (!recLang || recLang === "auto") recLang = navigator.language || "en-US"
-        micRecognition.lang = recLang
-        console.log("[Monaco Mic] Direct recognition lang:", recLang)
-        micRecognition.onresult = (ev: any) => {
-          const t = Array.from(ev.results).map((r: any) => r[0].transcript).join("")
-          input.value = t
-        }
-        micRecognition.onend = () => { micRecognition = null; micBtn.style.color = ""; }
-        micRecognition.onerror = (ev: any) => {
-          console.error("[Monaco Mic] Error:", ev.error)
-          micRecognition = null; micBtn.style.color = ""
-          const warn = document.createElement("div")
-          warn.className = "aic-err"
-          warn.textContent = `Mic error: ${ev.error || "unknown"}`
-          domNode.appendChild(warn)
-          setTimeout(() => warn.remove(), 3000)
-        }
-        try { micRecognition.start(); micBtn.style.color = accent } catch (err: any) {
-          micRecognition = null
-          const warn = document.createElement("div")
-          warn.className = "aic-err"
-          warn.textContent = `Mic failed: ${err.message || err}`
-          domNode.appendChild(warn)
-          setTimeout(() => warn.remove(), 3000)
-        }
-      }
+        mediaRecorder.onerror = () => { cleanupMediaRecorder(); micBtn.style.color = ""; micBtn.title = "Voice input" }
+        mediaRecorder.start(250)
+        micRecordingActive = true
+        micBtn.style.color = accent
+        micBtn.title = "Click to stop recording"
+        micRecordingSeconds = 0
+        micRecordingTimer = setInterval(() => { micRecordingSeconds++; micBtn.title = `Recording ${micRecordingSeconds}s — Click to stop` }, 1000)
+      }).catch((err: any) => {
+        const warn = document.createElement("div")
+        warn.className = "aic-err"
+        warn.textContent = err.name === "NotAllowedError" ? "Mic access denied" : `Mic failed: ${err.message || err}`
+        domNode.appendChild(warn)
+        setTimeout(() => warn.remove(), 3000)
+      })
     })
 
-    const stopAllMic = () => {
-      if (micRecognition) { try { micRecognition.stop() } catch {} micRecognition = null }
-      if (voiceBridgeUnsubGlobal) { try { voiceBridgeUnsubGlobal() } catch {} voiceBridgeUnsubGlobal = null }
-      if (voiceBridgeActiveGlobal) { try { (window as any).api?.voiceStopListening?.() } catch {} voiceBridgeActiveGlobal = false }
-      micBtn.style.color = ""
-    }
     input.addEventListener("keydown", (e) => {
       e.stopPropagation()
       if (e.key === "Enter" && !e.shiftKey && input.value.trim()) {
@@ -397,7 +374,6 @@ export function MonacoEditor(props: MonacoEditorProps) {
   }
 
   const removeInlineChat = () => {
-    stopInlineMicGlobal()
     if (editor && inlineChatWidget) {
       editor.removeContentWidget(inlineChatWidget)
       inlineChatWidget = null
@@ -699,6 +675,26 @@ export function MonacoEditor(props: MonacoEditorProps) {
       userEditDebounce = setTimeout(() => { userHasEdited = false }, 1000)
     })
 
+    // Double-click handler via Monaco's own event system (DOM bubbling is blocked by Monaco internals)
+    mouseDownDisposable = editor.onMouseDown((e) => {
+      if (aiGenerating()) return
+      if (e.event.detail !== 2) return
+      let lineNumber = e.target.position?.lineNumber
+      if (!lineNumber) {
+        try {
+          const editorRect = containerRef!.getBoundingClientRect()
+          const mouseY = e.event.clientY - editorRect.top
+          const scrollTop = editor.getScrollTop()
+          const layoutInfo = editor.getLayoutInfo()
+          const lineHeight = editor.getOption(monaco!.editor.EditorOption.lineHeight) || 20
+          lineNumber = Math.floor((mouseY + scrollTop - layoutInfo.paddingTop) / lineHeight) + 1
+        } catch {}
+      }
+      if (lineNumber && lineNumber > 0) {
+        showInlineChat(lineNumber)
+      }
+    })
+
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       const value = editor?.getValue() || ""
       props.onSave?.(value)
@@ -800,39 +796,17 @@ export function MonacoEditor(props: MonacoEditorProps) {
     if (userEditDebounce) clearTimeout(userEditDebounce)
     if (streamingDebounce) clearTimeout(streamingDebounce)
     widgetDisposable?.clear()
+    mouseDownDisposable?.dispose()
     editor?.dispose()
   })
 
   return (
     <div class="relative flex flex-col w-full h-full" style={{ "min-height": "300px" }}>
-      {/* EDITOR — double-click ANYWHERE to open AI chat */}
+      {/* EDITOR — double-click ANYWHERE to open AI chat (handled via editor.onMouseDown) */}
       <div
         ref={containerRef}
         class="flex-1 min-h-0"
         style={{ width: "100%" }}
-        onDblClick={(e: MouseEvent) => {
-          if (aiGenerating() || !editor || !monaco) return
-          e.preventDefault()
-          e.stopPropagation()
-          // Calculate line number from click position — works ANYWHERE on editor
-          let lineNum = 0
-          try {
-            const editorRect = containerRef!.getBoundingClientRect()
-            const mouseY = e.clientY - editorRect.top
-            const scrollTop = editor.getScrollTop()
-            const layoutInfo = editor.getLayoutInfo()
-            const lineHeight = editor.getOption(monaco.editor.EditorOption.lineHeight) || 20
-            lineNum = Math.floor((mouseY + scrollTop - layoutInfo.paddingTop) / lineHeight) + 1
-          } catch {}
-          // Fallback: use cursor position
-          if (!lineNum && editor) {
-            const pos = editor.getPosition()
-            if (pos) lineNum = pos.lineNumber
-          }
-          if (lineNum > 0) {
-            showInlineChat(lineNum)
-          }
-        }}
         onClick={() => handleClick()}
       />
 

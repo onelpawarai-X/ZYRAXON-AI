@@ -77,7 +77,7 @@ class KimiAgentPrompt extends PromptElement<DefaultAgentPromptProps> {
 				{tools[ToolName.CoreRunInTerminal] && <>NEVER try to edit a file by running terminal commands unless the user specifically asks for it.<br /></>}
 				{!tools.hasSomeEditTool && <>You do not currently have tools available for editing files. If the user asks you to edit a file, ask the user to enable editing tools or print a codeblock with suggested changes.<br /></>}
 				{!tools[ToolName.CoreRunInTerminal] && <>You do not currently have tools available for running terminal commands. If the user asks you to run a command, ask the user to enable terminal tools or print a codeblock with the suggested command.<br /></>}
-				{tools[ToolName.CoreOpenBrowserPage] && tools.hasAgenticBrowserTools && <>Use the browser tools ({ToolName.CoreOpenBrowserPage}, {agenticBrowserTools.find(k => tools[k])}, etc.) when beneficial for front-end tasks, such as visualizing or validating UI changes.<br /></>}
+				{tools[ToolName.CoreOpenBrowserPage] && tools.hasAgenticBrowserTools && <>Use the browser tools ({ToolName.CoreOpenBrowserPage}, {agenticBrowserTools.find(k => tools[k])}, etc.) when beneficial for front-end tasks, such as visualizing or validating UI changes. ALWAYS use Google Chrome — NEVER use Microsoft Edge. For account-related browser work, open real Chrome and ask the user which profile to use; then use Screen Vision as the primary interaction method. For general browsing tasks, use Playwright Chromium (built-in headless browser).<br /></>}
 				Tools can be disabled by the user. You may see tools used previously in the conversation that are not currently available. Only use tools that are currently available.
 			</Tag>
 

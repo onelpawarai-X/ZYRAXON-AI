@@ -6,7 +6,7 @@ import * as path from "node:path"
 
 if (!process.env.NODE_OPTIONS?.includes("max-old-space-size")) {
   const current = process.env.NODE_OPTIONS ?? ""
-  process.env.NODE_OPTIONS = `${current} --max-old-space-size=8192`.trim()
+  process.env.NODE_OPTIONS = `${current} --max-old-space-size=4096`.trim()
 }
 
 const ZYRAXON_SERVER_DIST = "../zyraxon/dist/node"
@@ -373,7 +373,7 @@ export const FFIType = { void:0, i8:1, u8:2, i16:3, u16:4, i32:5, u32:6, i64:7, 
     publicDir: "../../../app/public",
     root: "src/renderer",
     build: {
-      sourcemap: true,
+      sourcemap: process.env.SENTRY_AUTH_TOKEN ? true : false,
       rollupOptions: {
         input: {
           main: "src/renderer/index.html",

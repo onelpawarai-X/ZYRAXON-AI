@@ -291,6 +291,16 @@ function BodyDesignClass() {
 // shell (router root) so they stay mounted regardless of the active server/route.
 function SharedProviders(props: ParentProps) {
   initStreamListeners()
+
+  // Listen for daily task activation from main process
+  if (typeof window !== "undefined" && (window as any).api?.onDailyTaskActivate) {
+    (window as any).api.onDailyTaskActivate((data: { taskId: string; prompt: string; time: string }) => {
+      console.log("[DailyTask] Activating AI for task:", data.prompt)
+      // Dispatch event so session page can handle it
+      window.dispatchEvent(new CustomEvent("daily-task-run", { detail: data }))
+    })
+  }
+
   return (
     <>
       <BodyDesignClass />

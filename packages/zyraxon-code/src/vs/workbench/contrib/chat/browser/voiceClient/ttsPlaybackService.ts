@@ -103,6 +103,12 @@ export class TtsPlaybackService extends Disposable implements ITtsPlaybackServic
 		}
 		if (!audio) { return; }
 
+		// GUARD: If audio is already playing, stop it immediately before starting
+		// the new chunk. This prevents two voices speaking simultaneously.
+		if (this._isPlaying) {
+			this.stopPlayback();
+		}
+
 		const turn = this._ensurePlayTurn(window);
 		const gen = this._playbackGen;
 		const binary = window.atob(audio);

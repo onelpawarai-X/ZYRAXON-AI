@@ -26,13 +26,16 @@ const layer = Layer.effect(
 
     yield* db.run("PRAGMA journal_mode = WAL")
     yield* db.run("PRAGMA synchronous = NORMAL")
-    yield* db.run("PRAGMA busy_timeout = 30000")
-    yield* db.run("PRAGMA cache_size = -8192")
+    yield* db.run("PRAGMA busy_timeout = 5000")
+    yield* db.run("PRAGMA cache_size = -65536")
+    yield* db.run("PRAGMA mmap_size = 268435456")
     yield* db.run("PRAGMA temp_store = MEMORY")
     yield* db.run("PRAGMA foreign_keys = ON")
     yield* db.run("PRAGMA wal_autocheckpoint = 1000")
     yield* db.run("PRAGMA secure_delete = OFF")
     yield* db.run("PRAGMA auto_vacuum = INCREMENTAL")
+    yield* db.run("PRAGMA wal_checkpoint(PASSIVE)")
+    yield* db.run("PRAGMA optimize")
     yield* DatabaseMigration.apply(db)
 
     return { db }

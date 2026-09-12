@@ -65,6 +65,7 @@ export const createSessionTabs = (input: TabsInput) => {
     if (active === "preview") return active
     if (active === "allfiles") return active
     if (active === "ecosystem") return active
+    if (active === "daily-tasks") return active
     if (active === SESSION_OPEN_FILE_TAB && openFileOpen()) return active
     if (active === "review" && review()) return active
     if (active && input.pathFromTab(active)) return input.normalizeTab(active)

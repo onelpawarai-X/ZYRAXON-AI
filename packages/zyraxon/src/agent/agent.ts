@@ -12,7 +12,7 @@ import { ProviderTransform } from "@/provider/transform"
 import PROMPT_GENERATE from "./generate.txt"
 import PROMPT_COMPACTION from "./prompt/compaction.txt"
 import PROMPT_EXPLORE from "./prompt/explore.txt"
-import PROMPT_SUMMARY from "./prompt/summary.txt"
+
 import PROMPT_TITLE from "./prompt/title.txt"
 import PROMPT_BUILD from "./prompt/build.txt"
 import PROMPT_PLAN from "./prompt/plan.txt"
@@ -453,21 +453,6 @@ const layer = Layer.effect(
               user,
             ),
             prompt: PROMPT_TITLE,
-          },
-          summary: {
-            name: "summary",
-            mode: "primary",
-            options: {},
-            native: true,
-            hidden: true,
-            permission: Permission.merge(
-              defaults,
-              Permission.fromConfig({
-                "*": "deny",
-              }),
-              user,
-            ),
-            prompt: PROMPT_SUMMARY,
           },
         }
 

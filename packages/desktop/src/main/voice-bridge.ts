@@ -82,11 +82,14 @@ function findHTMLPath(): string | null {
 }
 
 function findChrome(): string | null {
+  const pf = process.env["PROGRAMFILES"] || ""
+  const pf86 = process.env["PROGRAMFILES(X86)"] || ""
+  const local = process.env["LOCALAPPDATA"] || ""
   const candidates = [
-    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-    join(process.env.LOCALAPPDATA || "", "Google\\Chrome\\Application\\chrome.exe"),
-  ]
+    pf ? join(pf, "Google", "Chrome", "Application", "chrome.exe") : null,
+    pf86 ? join(pf86, "Google", "Chrome", "Application", "chrome.exe") : null,
+    local ? join(local, "Google", "Chrome", "Application", "chrome.exe") : null,
+  ].filter(Boolean) as string[]
   return candidates.find((p) => existsSync(p)) || null
 }
 

@@ -1163,7 +1163,7 @@ export class TestContext {
 				return await webkit.launch({ headless });
 			}
 			case 'win32': {
-				const executablePath = process.env['PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH'] ?? 'C:\\Program Files (x86)\\Zyraxon\\Edge\\Application\\msedge.exe';
+				const executablePath = process.env['PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH'] ?? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 				this.log(`Using Chromium executable at: ${executablePath}`);
 				return await chromium.launch({ headless, executablePath });
 			}

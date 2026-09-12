@@ -28,6 +28,7 @@ import { inArray } from "drizzle-orm"
 import { lt } from "drizzle-orm"
 import { or } from "drizzle-orm"
 import { MessageTable, PartTable, SessionTable } from "@zyraxon-ai/core/session/sql"
+import { messageCache } from "./cache"
 import { ProviderError } from "@/provider/error"
 import { iife } from "@/util/iife"
 import { errorMessage } from "@/util/error"
@@ -457,6 +458,10 @@ export const page = Effect.fn("MessageV2.page")(function* (input: {
   const more = rows.length > input.limit
   const slice = more ? rows.slice(0, input.limit) : rows
   const items = yield* hydrate(db, slice)
+  // Cache each loaded message+parts for instant re-access
+  for (const item of items) {
+    messageCache.set(`${input.sessionID}:${item.info.id}`, item)
+  }
   items.reverse()
   const tail = slice.at(-1)
   return {
@@ -504,6 +509,9 @@ export function parts(messageID: MessageID) {
 }
 
 export const get = Effect.fn("MessageV2.get")(function* (input: { sessionID: SessionID; messageID: MessageID }) {
+  const cacheKey = `${input.sessionID}:${input.messageID}`
+  const cached = messageCache.get(cacheKey)
+  if (cached) return cached as { info: Info; parts: Part[] }
   const { db } = yield* Database.Service
   const row = yield* db
     .select()
@@ -512,10 +520,12 @@ export const get = Effect.fn("MessageV2.get")(function* (input: { sessionID: Ses
     .get()
     .pipe(Effect.orDie)
   if (!row) return yield* new NotFoundError({ message: `Message not found: ${input.messageID}` })
-  return {
+  const result = {
     info: info(row),
     parts: yield* parts(input.messageID),
   }
+  messageCache.set(cacheKey, result)
+  return result
 })
 
 export function filterCompacted(msgs: Iterable<WithParts>) {

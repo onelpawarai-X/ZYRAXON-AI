@@ -12,8 +12,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#06060c;color:#e4e4e
 .conn{display:flex;align-items:center;gap:5px;font-size:10px;color:rgba(255,255,255,.45)}
 .dot{width:7px;height:7px;border-radius:50%;background:#ef4444;transition:all .3s}
 .dot.ok{background:#00e87b;box-shadow:0 0 6px #00e87b}
-.dot.rec{background:#00e87b;animation:pulse 1.2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.dot.rec{background:#ff3b3b;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .content{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 12px;gap:4px;overflow-y:auto}
 .row{display:flex;gap:5px}
 .vbtn{padding:4px 12px;border-radius:16px;font-size:11px;font-weight:600;border:1.5px solid rgba(255,255,255,.1);background:rgba(25,25,45,.5);color:rgba(255,255,255,.4);cursor:pointer}
@@ -24,28 +24,26 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#06060c;color:#e4e4e
 .lg{padding:2px 6px;border-radius:10px;font-size:9px;font-weight:500;border:1px solid rgba(255,255,255,.08);background:rgba(25,25,45,.6);color:rgba(255,255,255,.4);cursor:pointer;transition:all .15s;white-space:nowrap}
 .lg:hover{border-color:rgba(255,255,255,.25);color:#e4e4ed}
 .lg.on{background:#00e87b;color:#000;border-color:#00e87b;font-weight:600}
-.met{width:140px;height:3px;background:rgba(25,25,45,.5);border-radius:2px}
-.metb{height:100%;width:0%;background:#00e87b;border-radius:2px;transition:width .05s}
-.metl{font-size:8px;color:rgba(255,255,255,.3);text-align:center}
 .mw{position:relative;width:80px;height:80px;display:flex;align-items:center;justify-content:center}
 .mr{position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(255,255,255,.1);transition:all .3s}
-.mr.on{border-color:#00e87b;box-shadow:0 0 16px rgba(0,232,123,.2);animation:ring 2s ease-out infinite}
-@keyframes ring{0%{transform:scale(1);opacity:1}100%{transform:scale(1.4);opacity:0}}
+.mr.on{border-color:#ff3b3b;box-shadow:0 0 20px rgba(255,59,59,.35);animation:ringPulse 1.5s ease-out infinite}
+@keyframes ringPulse{0%{transform:scale(1);opacity:1}100%{transform:scale(1.5);opacity:0}}
 .mr2{position:absolute;inset:5px;border-radius:50%;border:1px solid rgba(255,255,255,.06)}
-.mr2.on{border-color:rgba(0,232,123,.25)}
+.mr2.on{border-color:rgba(255,59,59,.25)}
 .mc{width:48px;height:48px;border-radius:50%;border:none;background:rgba(25,25,45,.6);color:#e4e4ed;cursor:pointer;position:relative;z-index:2;display:flex;align-items:center;justify-content:center;transition:all .3s}
-.mc.on{background:#00e87b;color:#000;box-shadow:0 0 24px rgba(0,232,123,.3)}
+.mc.recording{background:#ff3b3b;color:#fff;box-shadow:0 0 30px rgba(255,59,59,.4)}
 .mc svg{width:18px;height:18px;fill:currentColor}
 .tx{width:90%;max-width:480px;min-height:36px;max-height:80px;overflow-y:auto;background:rgba(18,18,30,.7);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:7px 10px;font-size:12px;line-height:1.5}
 .ft{color:#00e87b}.it{color:#3b82f6;opacity:.7}
 .ph{color:rgba(255,255,255,.25);font-size:11px}
 .tl{font-size:8px;color:rgba(255,255,255,.25);text-align:center}
-.to{width:90%;max-width:480px;min-height:28px;max-height:55px;overflow-y:auto;background:rgba(0,232,123,.04);border:1px solid rgba(0,232,123,.12);border-radius:10px;padding:5px 8px;font-size:10px;line-height:1.4;color:#00e87b}
 .bar{display:flex;align-items:center;justify-content:center;gap:5px;padding:7px 12px;background:rgba(18,18,30,.85);border-top:1px solid rgba(255,255,255,.08)}
 .btn{padding:4px 10px;border-radius:6px;border:none;font-size:10px;font-weight:500;cursor:pointer}
 .bt{background:#00e87b;color:#000}.bt.off{background:rgba(255,255,255,.08);color:rgba(255,255,255,.35)}
 .bg{background:transparent;color:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.08)}
 .bp{background:#3b82f6;color:#fff}.bp:disabled{background:rgba(255,255,255,.08);color:rgba(255,255,255,.2);cursor:not-allowed}
+.timer{font-size:14px;font-weight:600;color:#ff3b3b;font-variant-numeric:tabular-nums;min-width:50px;text-align:center}
+.status-msg{font-size:11px;color:rgba(255,255,255,.5);text-align:center;min-height:16px}
 </style>
 </head>
 <body>
@@ -55,8 +53,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#06060c;color:#e4e4e
 </div>
 <div class="content">
   <div class="row">
-    <button class="vbtn f on" id="vf">&#9792; Female</button>
-    <button class="vbtn m" id="vm">&#9794; Male</button>
+    <button class="vbtn f on" id="vf">♀ Female</button>
+    <button class="vbtn m" id="vm">♂ Male</button>
   </div>
   <div class="lgw" id="lgw">
     <div class="lg on" data-lang="auto">Auto-Detect</div>
@@ -115,178 +113,239 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#06060c;color:#e4e4e
       <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
     </button>
   </div>
-  <div class="tx" id="tx"><span class="ph">Press mic to start</span></div>
-  <div class="tl">TTS — handled by main app</div>
-  <div class="to" id="to"><span class="ph">TTS plays in main app</span></div>
+  <div class="timer" id="timer"></div>
+  <div class="status-msg" id="statusMsg"></div>
+  <div class="tx" id="tx"><span class="ph">Click mic to start recording</span></div>
 </div>
 <div class="bar">
   <button class="btn bg" id="cl">Clear</button>
-  <button class="btn bp" id="sn" disabled>&#9654; Send</button>
+  <button class="btn bp" id="sn" disabled>▶ Send</button>
 </div>
 <script>
-var API="http://127.0.0.1:19800";
-var rec=null,selLang="auto",voiceGender="female";
-var wantsListening=false,sessionSentences=[],interimText="";
-var recRestarting=false;
-var micStream=null,analyser=null,animFrame=null;
-var pollTimer=null;
-navigator.mediaDevices.getUserMedia({audio:true}).then(function(s){s.getTracks().forEach(function(t){t.stop()})}).catch(function(){});
+var API = "http://127.0.0.1:19800";
+var selLang = "auto", voiceGender = "female";
+var isRecording = false;
+var rec = null;
+var finalTranscript = "";
+var interimText = "";
+var timerInterval = null;
+var recordStartTime = 0;
+var micStream = null, analyser = null, animFrame = null;
+var pollTimer = null;
 
-function $(id){return document.getElementById(id)}
+function $(id) { return document.getElementById(id); }
 
-function send(d){
-  fetch(API+"/api/message",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)}).catch(function(){});
+function send(d) {
+  fetch(API + "/api/message", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).catch(function() {});
 }
 
-function pickLang(c){
-  selLang=c;
-  var els=document.querySelectorAll(".lg");
-  for(var i=0;i<els.length;i++){
-    els[i].classList.toggle("on",els[i].getAttribute("data-lang")===c);
+function pickLang(c) {
+  selLang = c;
+  var els = document.querySelectorAll(".lg");
+  for (var i = 0; i < els.length; i++) {
+    els[i].classList.toggle("on", els[i].getAttribute("data-lang") === c);
   }
-  send({type:"language-changed",lang:c});
-}
-function pickGender(g){
-  voiceGender=g;
-  $("vf").className="vbtn f"+(g==="female"?" on":"");
-  $("vm").className="vbtn m"+(g==="male"?" on":"");
-  send({type:"voice-changed",gender:g});
+  send({ type: "language-changed", lang: c });
 }
 
-function onMessage(d){
-  if(!d||!d.type)return;
-  if(d.type==="sync-state"){
-    if(d.language)pickLang(d.language);
-    if(d.gender)pickGender(d.gender);
+function pickGender(g) {
+  voiceGender = g;
+  $("vf").className = "vbtn f" + (g === "female" ? " on" : "");
+  $("vm").className = "vbtn m" + (g === "male" ? " on" : "");
+  send({ type: "voice-changed", gender: g });
+}
+
+function onMessage(d) {
+  if (!d || !d.type) return;
+  if (d.type === "sync-state") {
+    if (d.language) pickLang(d.language);
+    if (d.gender) pickGender(d.gender);
     return;
   }
-  if(d.type==="set-language"&&d.lang)pickLang(d.lang);
-  if(d.type==="set-voice"&&d.gender)pickGender(d.gender);
-  if(d.type==="start-listening"&&!wantsListening)startListening();
-  if(d.type==="stop-listening"&&wantsListening)stopListening();
-  if(d.type==="transcript-display"&&d.text){
-    sessionSentences.push(d.text);interimText="";updDisplay();
-    $("sn").disabled=sessionSentences.length===0;return;
-  }
-  if(d.type==="interim-display"&&d.text){interimText=d.text;updDisplay();return}
+  if (d.type === "set-language" && d.lang) pickLang(d.lang);
+  if (d.type === "set-voice" && d.gender) pickGender(d.gender);
+  if (d.type === "start-listening" && !isRecording) startRecording();
+  if (d.type === "stop-listening" && isRecording) stopRecording();
 }
 
-window._onMainMessage=function(d){onMessage(d)};
+window._onMainMessage = function(d) { onMessage(d); };
 
-function pollServer(){
-  fetch(API+"/api/poll").then(function(r){return r.json()}).then(function(msgs){
-    if(Array.isArray(msgs)){for(var i=0;i<msgs.length;i++)onMessage(msgs[i])}
-  }).catch(function(){});
+function pollServer() {
+  fetch(API + "/api/poll").then(function(r) { return r.json() }).then(function(msgs) {
+    if (Array.isArray(msgs)) { for (var i = 0; i < msgs.length; i++) onMessage(msgs[i]); }
+  }).catch(function() {});
 }
 
-function connect(){
-  $("dot").className="dot ok";$("ctx").textContent="Connected";
-  send({type:"ready"});
-  pollTimer=setInterval(pollServer,50);
+function connect() {
+  $("dot").className = "dot ok"; $("ctx").textContent = "Connected";
+  send({ type: "ready" });
+  pollTimer = setInterval(pollServer, 50);
   pollServer();
 }
 
-function startMicMeter(){
-  navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:false,autoGainControl:true}}).then(function(s){
-    micStream=s;
-    var AC=window.AudioContext||window.webkitAudioContext;
-    var ctx=new AC();
-    var src=ctx.createMediaStreamSource(s);
-    analyser=ctx.createAnalyser();analyser.fftSize=512;
+function startMicMeter() {
+  navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true } }).then(function(s) {
+    micStream = s;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    var ctx = new AC();
+    var src = ctx.createMediaStreamSource(s);
+    analyser = ctx.createAnalyser(); analyser.fftSize = 512;
     src.connect(analyser);
-    var data=new Uint8Array(analyser.frequencyBinCount);
-    function update(){
+    var data = new Uint8Array(analyser.frequencyBinCount);
+    function update() {
       analyser.getByteFrequencyData(data);
-      var peak=0,sum=0;
-      for(var i=0;i<data.length;i++){sum+=data[i];if(data[i]>peak)peak=data[i]}
-      var pct=Math.min(100,Math.max(0,(sum/data.length)*4+peak*0.5));
-      $("mb").style.width=pct+"%";
-      animFrame=requestAnimationFrame(update);
+      var peak = 0, sum = 0;
+      for (var i = 0; i < data.length; i++) { sum += data[i]; if (data[i] > peak) peak = data[i]; }
+      var pct = Math.min(100, Math.max(0, (sum / data.length) * 4 + peak * 0.5));
+      $("mb") && ($("mb").style.width = pct + "%");
+      animFrame = requestAnimationFrame(update);
     }
     update();
-  }).catch(function(){});
-}
-function stopMicMeter(){
-  if(animFrame){cancelAnimationFrame(animFrame);animFrame=null}
-  if(micStream){micStream.getTracks().forEach(function(t){t.stop()});micStream=null}
-  analyser=null;$("mb").style.width="0%";
+  }).catch(function() {});
 }
 
-function startListening(){
-  wantsListening=true;sessionSentences=[];interimText="";
-  startRec();startMicMeter();
-  send({type:"mic-state",active:true});
-  if(!window._recWatchdog){
-    window._recWatchdog=setInterval(function(){
-      if(!wantsListening||!rec)return;
-      try{if(rec.recognizing===false||rec.readyState==="ended"){try{rec.start()}catch(e){startRec()}}}catch(ex){}
-    },2000);
-  }
+function stopMicMeter() {
+  if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+  if (micStream) { micStream.getTracks().forEach(function(t) { t.stop(); }); micStream = null; }
+  analyser = null;
 }
-function startRec(){
-  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){$("tx").innerHTML='<span style="color:#f59e0b;font-size:10px">SpeechRecognition unavailable</span>';setRecUI(true);return}
-  if(!rec){rec=new SR();rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=1}
-  if(selLang!=="auto")rec.lang=selLang;
-  rec.onstart=function(){recRestarting=false;setRecUI(true)};
-  rec.onresult=function(ev){
-    for(var i=ev.resultIndex;i<ev.results.length;i++){
-      var t=ev.results[i][0].transcript;
-      if(ev.results[i].isFinal){
-        var c=t.trim();
-        if(c.length>0){sessionSentences.push(c);send({type:"transcript",final:true,text:c,fullText:sessionSentences.join(" "),lang:ev.results[i][0].language||""})}
-        interimText="";
-      }else{interimText=t}
-    }
-    updDisplay();$("sn").disabled=sessionSentences.length===0;
-  };
-  rec.onerror=function(e){
-    if(e.error==="not-allowed"||e.error==="service-not-allowed"){
-      $("tx").innerHTML='<span style="color:#f59e0b;font-size:10px">Mic active, speak into microphone</span>';
-      setRecUI(true);
-    }else if(e.error==="no-speech"||e.error==="aborted"||e.error==="network"){
-      if(wantsListening){setTimeout(function(){if(wantsListening)startRec()},100)}
-    }
-  };
-  rec.onend=function(){
-    if(!wantsListening)return;
-    setTimeout(function(){if(wantsListening)startRec()},0);
-  };
-  try{rec.start()}catch(e){if(wantsListening)setTimeout(function(){if(wantsListening)startRec()},100)}
-}
-function cleanup(){if(rec){try{rec.onstart=null;rec.onresult=null;rec.onerror=null;rec.onend=null;rec.stop()}catch(e){}rec=null}recRestarting=false}
-function stopListening(){wantsListening=false;cleanup();stopMicMeter();setRecUI(false);send({type:"mic-state",active:false});if(window._recWatchdog){clearInterval(window._recWatchdog);window._recWatchdog=null}}
-function setRecUI(on){
-  if(on){
-    $("mc").innerHTML='<svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M19 11c0 3.53-2.61 6.43-6 6.92V21h-2v-3.08C7.61 17.43 5 14.53 5 11H7c0 2.76 2.24 5 5 5s5-2.24 5-5h2z"/></svg>';
-    $("mc").classList.add("on");$("r1").classList.add("on");$("r2").classList.add("on");
-    $("dot").className="dot rec";$("ctx").textContent="Listening";
-  }else{
-    $("mc").innerHTML='<svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>';
-    $("mc").classList.remove("on");$("r1").classList.remove("on");$("r2").classList.remove("on");
-    $("dot").className="dot ok";$("ctx").textContent="Connected";
-  }
-}
-function updDisplay(){
-  var h="";
-  for(var i=0;i<sessionSentences.length;i++){
-    h+='<div class="ft">'+esc(sessionSentences[i])+'</div>';
-  }
-  if(interimText)h+='<div class="it">'+esc(interimText)+'</div>';
-  if(!h)h='<span class="ph">Press mic to start</span>';
-  $("tx").innerHTML=h;
-}
-function esc(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML}
 
-$("vf").onclick=function(){pickGender("female")};
-$("vm").onclick=function(){pickGender("male")};
-$("mc").onclick=function(){wantsListening?stopListening():startListening()};
-$("sn").onclick=function(){
-  var text=sessionSentences.join(" ").trim();if(!text)return;
-  send({type:"send-to-chat",text:text,lang:selLang});
-  sessionSentences=[];interimText="";updDisplay();$("sn").disabled=true;
+function updateTimer() {
+  var elapsed = Math.floor((Date.now() - recordStartTime) / 1000);
+  var min = Math.floor(elapsed / 60);
+  var sec = elapsed % 60;
+  $("timer").textContent = (min < 10 ? "0" : "") + min + ":" + (sec < 10 ? "0" : "") + sec;
+}
+
+function startRecording() {
+  if (isRecording) return;
+  isRecording = true;
+  finalTranscript = "";
+  interimText = "";
+  recordStartTime = Date.now();
+
+  $("mc").classList.add("recording");
+  $("mc").innerHTML = '<svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+  $("r1").classList.add("on"); $("r2").classList.add("on");
+  $("dot").className = "dot rec"; $("ctx").textContent = "Recording...";
+  $("statusMsg").textContent = "Recording... click mic to stop";
+  $("tx").innerHTML = '<span class="ph">Listening...</span>';
+  $("sn").disabled = true;
+
+  timerInterval = setInterval(updateTimer, 1000);
+  updateTimer();
+  startMicMeter();
+  startSpeechRecognition();
+  send({ type: "mic-state", active: true });
+}
+
+function stopRecording() {
+  if (!isRecording) return;
+  isRecording = false;
+
+  clearInterval(timerInterval);
+  $("timer").textContent = "";
+  $("statusMsg").textContent = "Processing...";
+
+  stopSpeechRecognition();
+  stopMicMeter();
+
+  $("mc").classList.remove("recording");
+  $("mc").innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>';
+  $("r1").classList.remove("on"); $("r2").classList.remove("on");
+  $("dot").className = "dot ok"; $("ctx").textContent = "Connected";
+
+  var text = finalTranscript.trim();
+  if (text) {
+    $("tx").innerHTML = '<div class="ft">' + esc(text) + '</div>';
+    $("statusMsg").textContent = "Ready to send";
+    $("sn").disabled = false;
+    send({ type: "transcript", final: true, text: text, fullText: text, lang: selLang });
+    setTimeout(function() {
+      send({ type: "mic-state", active: false });
+    }, 200);
+  } else {
+    $("tx").innerHTML = '<span class="ph">No speech detected. Click mic to try again</span>';
+    $("statusMsg").textContent = "";
+    $("sn").disabled = true;
+    send({ type: "mic-state", active: false });
+  }
+}
+
+function startSpeechRecognition() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    $("tx").innerHTML = '<span style="color:#f59e0b;font-size:10px">SpeechRecognition unavailable</span>';
+    $("statusMsg").textContent = "";
+    return;
+  }
+  if (!rec) { rec = new SR(); rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1; }
+  if (selLang !== "auto") rec.lang = selLang;
+
+  rec.onstart = function() {};
+  rec.onresult = function(ev) {
+    interimText = "";
+    for (var i = ev.resultIndex; i < ev.results.length; i++) {
+      var t = ev.results[i][0].transcript;
+      if (ev.results[i].isFinal) {
+        var c = t.trim();
+        if (c.length > 0) {
+          finalTranscript += (finalTranscript ? " " : "") + c;
+        }
+      } else {
+        interimText += t;
+      }
+    }
+    updDisplay();
+  };
+  rec.onerror = function(e) {
+    if (e.error === "no-speech" || e.error === "aborted" || e.error === "network") {
+      if (isRecording) { try { rec.start(); } catch(ex) {} }
+    }
+  };
+  rec.onend = function() {
+    if (isRecording) { try { rec.start(); } catch(ex) {} }
+  };
+  try { rec.start(); } catch(e) {}
+}
+
+function stopSpeechRecognition() {
+  if (rec) {
+    try {
+      rec.onstart = null; rec.onresult = null; rec.onerror = null; rec.onend = null;
+      rec.stop();
+    } catch(e) {}
+  }
+}
+
+function updDisplay() {
+  var h = "";
+  if (finalTranscript) h += '<div class="ft">' + esc(finalTranscript) + '</div>';
+  if (interimText) h += '<div class="it">' + esc(interimText) + '</div>';
+  if (!h) h = '<span class="ph">Listening...</span>';
+  $("tx").innerHTML = h;
+}
+
+function esc(s) { var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+$("vf").onclick = function() { pickGender("female"); };
+$("vm").onclick = function() { pickGender("male"); };
+$("mc").onclick = function() { isRecording ? stopRecording() : startRecording(); };
+$("sn").onclick = function() {
+  var text = finalTranscript.trim();
+  if (!text) return;
+  send({ type: "send-to-chat", text: text, lang: selLang });
+  finalTranscript = ""; interimText = ""; updDisplay();
+  $("sn").disabled = true;
+  $("statusMsg").textContent = "Sent!";
+  setTimeout(function() { $("statusMsg").textContent = ""; }, 1500);
 };
-$("cl").onclick=function(){sessionSentences=[];interimText="";updDisplay();$("sn").disabled=true};
+$("cl").onclick = function() { finalTranscript = ""; interimText = ""; updDisplay(); $("sn").disabled = true; $("statusMsg").textContent = ""; };
+
+document.querySelectorAll(".lg").forEach(function(el) {
+  el.onclick = function() { pickLang(el.getAttribute("data-lang")); };
+});
+
 connect();
 </script>
 </body>
