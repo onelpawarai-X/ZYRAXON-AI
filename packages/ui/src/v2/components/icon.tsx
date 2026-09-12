@@ -165,6 +165,10 @@ const icons = {
     viewBox: "0 0 20 20",
     body: `<path d="M10 2.5V5.5M14.5 5.5L12.5 7.5M17.5 10H14.5M14.5 14.5L12.5 12.5M10 17.5V14.5M5.5 14.5L7.5 12.5M2.5 10H5.5M5.5 5.5L7.5 7.5" stroke="currentColor" stroke-linecap="square"/>`,
   },
+  cloud: {
+    viewBox: "0 0 20 20",
+    body: `<path d="M5.5 14.5C3.29 14.5 1.5 12.71 1.5 10.5C1.5 8.55 2.87 6.91 4.7 6.55C5.18 4.52 7.02 3 9.2 3C11.06 3 12.66 4.13 13.34 5.72C13.62 5.68 13.91 5.66 14.2 5.66C17.1 5.66 19.5 7.82 19.5 10.5C19.5 13.18 17.1 15.5 14.2 15.5H5.5V14.5Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
 }
 
 const spriteID = "zyraxon-v2-icon-sprite"

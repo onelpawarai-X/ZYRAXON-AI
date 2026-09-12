@@ -30,6 +30,7 @@ import { useDialog } from "@zyraxon-ai/ui/context/dialog"
 import FileTree from "@/components/file-tree"
 import { normalizeFileTreeV2Path } from "@/components/file-tree-v2-model"
 import { SessionContextUsage } from "@/components/session-context-usage"
+import { DailyTasksPanel } from "@/components/daily-tasks-panel"
 
 const reviewTabID = "session-side-panel-review-tab"
 const reviewTabPanelID = "session-side-panel-review-tabpanel"
@@ -387,19 +388,26 @@ export function SessionSidePanel(props: {
                                 <span>{language.t("session.files.all")}</span>
                               </Tabs.Trigger>
                               <Show when={reviewTab() && props.canReview()}>
-                                <Tabs.Trigger
-                                  value="review"
-                                  id={reviewTabID}
-                                  aria-controls={activeTab() === "review" ? reviewTabPanelID : undefined}
-                                >
-                                  <div class="flex items-center gap-1.5">
-                                    <div>{language.t("session.tab.review")}</div>
-                                    <Show when={props.hasReview()}>
-                                      <div>{props.reviewCount()}</div>
-                                    </Show>
-                                  </div>
-                                </Tabs.Trigger>
-                              </Show>
+                              <Tabs.Trigger
+                                value="review"
+                                id={reviewTabID}
+                                aria-controls={activeTab() === "review" ? reviewTabPanelID : undefined}
+                              >
+                                <div class="flex items-center gap-1.5">
+                                  <div>{language.t("session.tab.review")}</div>
+                                  <Show when={props.hasReview()}>
+                                    <div>{props.reviewCount()}</div>
+                                  </Show>
+                                </div>
+                              </Tabs.Trigger>
+                            </Show>
+                            <Tabs.Trigger
+                              value="daily-tasks"
+                              class="flex items-center gap-1.5"
+                            >
+                              <Icon name="calendar" size="small" />
+                              <span>Daily Tasks</span>
+                            </Tabs.Trigger>
                               <Show when={contextOpen()}>
                                 <Tabs.Trigger
                                   value="context"
@@ -511,6 +519,12 @@ export function SessionSidePanel(props: {
                             </div>
                           </Show>
 
+                          <Show when={activeTab() === "daily-tasks"}>
+                            <div class="flex flex-col h-full overflow-hidden">
+                              <DailyTasksPanel />
+                            </div>
+                          </Show>
+
 
                           <Show when={activeTab() === "empty"}>
                             <Tabs.Content value="empty" class="flex flex-col h-full overflow-hidden contain-strict">
@@ -606,6 +620,13 @@ export function SessionSidePanel(props: {
                                   : language.t("session.tab.review")}
                               </Tabs.Trigger>
                             </Show>
+                            <Tabs.Trigger
+                              value="daily-tasks"
+                              class="flex items-center gap-1.5"
+                            >
+                              <Icon name="calendar" size="small" />
+                              <span>Daily Tasks</span>
+                            </Tabs.Trigger>
                             <Show when={contextOpen()}>
                               <Tabs.Trigger
                                 value="context"
@@ -732,6 +753,12 @@ export function SessionSidePanel(props: {
                             <div class="flex-1 min-h-0 overflow-hidden">
                               {props.reviewPanel()}
                             </div>
+                          </div>
+                        </Show>
+
+                        <Show when={activeTab() === "daily-tasks"}>
+                          <div class="flex flex-col h-full overflow-hidden">
+                            <DailyTasksPanel />
                           </div>
                         </Show>
 

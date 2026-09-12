@@ -29,6 +29,7 @@ import type { SQL } from "drizzle-orm"
 import { PartTable, SessionTable } from "@zyraxon-ai/core/session/sql"
 import { ProjectTable } from "@zyraxon-ai/core/project/sql"
 import { MessageV2 } from "./message-v2"
+import { sessionCache } from "./cache"
 import type { InstanceContext } from "../project/instance-context"
 import { InstanceState } from "@/effect/instance-state"
 import { Snapshot } from "@/snapshot"
@@ -540,9 +541,13 @@ const layer: Layer.Layer<
     })
 
     const get = Effect.fn("Session.get")(function* (id: SessionID) {
+      const cached = sessionCache.get(id)
+      if (cached) return cached as Info
       const row = yield* db.select().from(SessionTable).where(eq(SessionTable.id, id)).get().pipe(Effect.orDie)
       if (!row) return yield* Effect.fail(new NotFoundError({ message: `Session not found: ${id}` }))
-      return fromRow(row)
+      const info = fromRow(row)
+      sessionCache.set(id, info)
+      return info
     })
 
     const list = Effect.fn("Session.list")(function* (input?: ListInput) {
@@ -621,6 +626,7 @@ const layer: Layer.Layer<
           yield* remove(child.id)
         }
 
+        sessionCache.delete(sessionID)
         yield* events.publish(SessionV1.Event.Deleted, { sessionID, info: session })
         yield* events.remove(sessionID)
       } catch (error) {
@@ -745,6 +751,7 @@ const layer: Layer.Layer<
           revert: info.revert === null ? undefined : (info.revert ?? current.revert),
           permission: info.permission === null ? undefined : (info.permission ?? current.permission),
         } as Info
+        sessionCache.set(sessionID, next)
         yield* events.publish(SessionV1.Event.Updated, { sessionID, info: next })
       })
 
@@ -1005,7 +1012,14 @@ function listByProject(
     .all()
     .pipe(
       Effect.orDie,
-      Effect.map((rows) => rows.map(fromRow)),
+      Effect.map((rows) => {
+        const result = rows.map(fromRow)
+        // Cache each session from the listing for instant future access
+        for (const s of result) {
+          sessionCache.set(s.id, s)
+        }
+        return result
+      }),
     )
 }
 

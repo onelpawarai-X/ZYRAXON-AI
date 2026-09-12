@@ -214,6 +214,19 @@ const api: ElectronAPI = {
   },
   voiceSetGender: (gender: string) => ipcRenderer.invoke("voice-set-gender", gender),
 
+  // Daily Tasks
+  dailyTasksGet: () => ipcRenderer.invoke("daily-tasks:get"),
+  dailyTasksSave: (tasks: any[]) => ipcRenderer.invoke("daily-tasks:save", tasks),
+  dailyTasksRun: (task: any) => ipcRenderer.invoke("daily-tasks:run", task),
+  onDailyTaskActivate: (cb: (data: any) => void) => {
+    const handler = (_: unknown, data: any) => cb(data)
+    ipcRenderer.on("daily-task:activate", handler)
+    return () => ipcRenderer.removeListener("daily-task:activate", handler)
+  },
+
+  // Cloud Agent — opens in separate BrowserWindow (mic works natively)
+  cloudAgentOpen: () => ipcRenderer.invoke("cloud-agent:open"),
+
   // Jarvis Browser - Real Chrome automation
   jarvisBrowser: {
     init: (config?: any) => ipcRenderer.invoke("jarvis-browser:init", config),
@@ -229,6 +242,12 @@ const api: ElectronAPI = {
     closeTab: (tabId: string) => ipcRenderer.invoke("jarvis-browser:close-tab", tabId),
     fillForm: (selector: string, value: string) => ipcRenderer.invoke("jarvis-browser:fill-form", selector, value),
     getElement: (x: number, y: number) => ipcRenderer.invoke("jarvis-browser:get-element", x, y),
+    listProfiles: () => ipcRenderer.invoke("jarvis-browser:list-profiles"),
+    switchProfile: (profileDir: string) => ipcRenderer.invoke("jarvis-browser:switch-profile", profileDir),
+    pinTab: (url: string, title?: string) => ipcRenderer.invoke("jarvis-browser:pin-tab", url, title),
+    listOpenTabs: () => ipcRenderer.invoke("jarvis-browser:list-open-tabs"),
+    switchTab: (targetId: string) => ipcRenderer.invoke("jarvis-browser:switch-tab", targetId),
+    clickCaptcha: () => ipcRenderer.invoke("jarvis-browser:click-captcha"),
     destroy: () => ipcRenderer.invoke("jarvis-browser:destroy"),
   },
 }

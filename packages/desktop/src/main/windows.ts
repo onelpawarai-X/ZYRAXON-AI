@@ -214,6 +214,10 @@ export function createMainWindow(id: string = randomUUID()) {
   win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     const { responseHeaders = {} } = details
     addRendererHeaders(details.url, responseHeaders)
+    // Enable speech recognition features for cross-origin iframes
+    // The Cloud Agent iframe (zyraxon-pro.ai.studio) needs these headers
+    // to allow Web Speech API to function properly
+    addSpeechRecognitionHeaders(details.url, responseHeaders)
     callback({ responseHeaders })
   })
 
@@ -221,6 +225,7 @@ export function createMainWindow(id: string = randomUUID()) {
   registerWindow(win, id)
   loadWindow(win, "index.html")
   wireZoom(win)
+  injectCloudAgentSpeechBridge(win)
 
   win.once("ready-to-show", () => {
     win.show()
@@ -427,19 +432,56 @@ function addDocumentPolicy(response: Response, file: string) {
 }
 
 function allowRendererPermissions(win: BrowserWindow) {
-  const webContentsId = win.webContents.id
+  const rendererId = win.webContents.id
+
+  function isChildOfRenderer(wc: Electron.WebContents): boolean {
+    try {
+      const parent = (wc as any).getParentWebContents?.()
+      if (parent && parent.id === rendererId) return true
+      if (parent) return isChildOfRenderer(parent)
+    } catch {}
+    return false
+  }
+
+  function isIframeOfRenderer(wc: Electron.WebContents): boolean {
+    try {
+      const parent = (wc as any).getParentWebContents?.()
+      if (parent && parent.id === rendererId) return true
+    } catch {}
+    return false
+  }
 
   win.webContents.session.setPermissionRequestHandler((webContents, permission, callback, details) => {
-    callback(
-      rendererPermissions.has(permission) &&
-        isTrustedRendererUrl(details.requestingUrl) &&
-        webContents.id === webContentsId,
+    const allowed = rendererPermissions.has(permission) && (
+      isTrustedRendererUrl(details.requestingUrl) ||
+      webContents.id === rendererId ||
+      isChildOfRenderer(webContents)
     )
+    callback(allowed)
   })
   win.webContents.session.setPermissionCheckHandler((webContents, permission, requestingOrigin, details) => {
     if (!rendererPermissions.has(permission)) return false
-    if (webContents && webContents.id !== webContentsId) return false
     return isTrustedRendererUrl(details.requestingUrl) || isTrustedRendererUrl(requestingOrigin)
+  })
+
+  // Device permission handler — grants microphone/camera access to iframes
+  // This is critical for Web Speech API (SpeechRecognition) in cross-origin iframes.
+  // Without this, permission is "granted" but the actual microphone device access
+  // is silently denied, causing SpeechRecognition to produce no output.
+  win.webContents.session.setDevicePermissionHandler((details, callback) => {
+    if (details.deviceType === "microphone" || details.deviceType === "camera") {
+      const url = details.requestingUrl || details.origin
+      if (
+        isTrustedRendererUrl(url) ||
+        isRendererUrl(url) ||
+        url.includes("zyraxon-pro.ai.studio") ||
+        url.includes("zyraxon.ai")
+      ) {
+        callback(true)
+        return
+      }
+    }
+    callback(false)
   })
 }
 
@@ -451,6 +493,36 @@ function addRendererHeaders(value: string, headers: Record<string, any>) {
   upsertKeyValue(headers, "Access-Control-Allow-Origin", ["*"])
   upsertKeyValue(headers, "Access-Control-Allow-Headers", ["*"])
   if (isRendererUrl(value, true)) upsertKeyValue(headers, documentPolicyHeader, [jsCallStacksDocumentPolicy])
+}
+
+function addSpeechRecognitionHeaders(value: string, headers: Record<string, any>) {
+  // Cloud Agent iframe (zyraxon-pro.ai.studio) needs these headers
+  // to enable Web Speech API (SpeechRecognition) in Electron's cross-origin iframe
+  if (!value || !URL.canParse(value)) return
+  const url = new URL(value)
+  const isCloudAgent = url.hostname.includes("zyraxon-pro.ai.studio") ||
+    url.hostname.includes("zyraxon.ai")
+  if (!isCloudAgent) return
+
+  // Allow microphone access
+  upsertKeyValue(headers, "Permissions-Policy", [
+    "microphone=*, camera=*, geolocation=*, interest-cohort=()",
+  ])
+  // Remove CSP restrictions that block speech recognition
+  const existingCSP = headers["Content-Security-Policy"]
+  if (existingCSP) {
+    // Add 'microphone' to CSP media-src directive
+    const cspStr = Array.isArray(existingCSP) ? existingCSP.join(";") : String(existingCSP)
+    if (!cspStr.includes("microphone")) {
+      upsertKeyValue(headers, "Content-Security-Policy", [
+        cspStr + "; media-src * 'unsafe-inline'; connect-src *",
+      ])
+    }
+  }
+  // Ensure CORS allows cross-origin speech recognition service
+  upsertKeyValue(headers, "Access-Control-Allow-Origin", ["*"])
+  upsertKeyValue(headers, "Access-Control-Allow-Methods", ["GET, POST, OPTIONS"])
+  upsertKeyValue(headers, "Access-Control-Allow-Headers", ["*"])
 }
 
 function isRendererUrl(value?: string, html = false) {
@@ -499,4 +571,257 @@ function upsertKeyValue(obj: Record<string, any>, keyToChange: string, value: an
   }
   // Insert at end instead
   obj[keyToChange] = value
+}
+
+function injectCloudAgentSpeechBridge(win: BrowserWindow) {
+  // This function injects a SpeechRecognition polyfill into the Cloud Agent iframe.
+  // Root cause: Electron's Chromium disables Web Speech API (SpeechRecognition) in
+  // cross-origin iframes. Permission is granted but the speech recognition service
+  // silently fails to produce output. The bridge proxies SpeechRecognition calls
+  // through the parent frame, which has full Chrome speech support.
+  const CLOUD_AGENT_ORIGIN = "https://zyraxon-pro.ai.studio"
+
+  function findIframeWebContents(): Electron.WebContents | null {
+    try {
+      const all = win.webContents.getAllWebContents()
+      for (const wc of all) {
+        if (wc.isDestroyed()) continue
+        const url = wc.getURL()
+        if (url && url.startsWith(CLOUD_AGENT_ORIGIN)) return wc
+      }
+    } catch {}
+    return null
+  }
+
+  // Inject polyfill into the iframe's SpeechRecognition
+  function injectPolyfill(iframeWC: Electron.WebContents) {
+    const polyfillScript = `
+(function() {
+  if (window.__ZYRAXON_SPEECH_BRIDGE__) return;
+  window.__ZYRAXON_SPEECH_BRIDGE__ = true;
+
+  var _OrigSR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!_OrigSR) return;
+
+  var BRIDGE_ID = 'zyraxon-cloud-agent-' + Date.now();
+  var pendingCallbacks = {};
+  var bridgeActive = false;
+
+  function waitForBridge() {
+    return new Promise(function(resolve) {
+      if (bridgeActive) { resolve(); return; }
+      var check = setInterval(function() {
+        if (window.__ZYRAXON_SPEECH_READY__) {
+          bridgeActive = true;
+          clearInterval(check);
+          resolve();
+        }
+      }, 100);
+      setTimeout(function() { clearInterval(check); resolve(); }, 5000);
+    });
+  }
+
+  window.SpeechRecognition = function() {
+    var real = new _OrigSR();
+    var polyfill = {
+      continuous: real.continuous,
+      interimResults: real.interimResults,
+      lang: real.lang,
+      maxAlternatives: real.maxAlternatives || 1,
+      grammars: real.grammars,
+      onstart: null,
+      onresult: null,
+      onerror: null,
+      onend: null,
+      onspeechend: null,
+      onsoundstart: null,
+      onsoundend: null,
+      onnomatch: null,
+      _real: real,
+      _started: false,
+      start: function() {
+        var self = this;
+        self._started = true;
+        try {
+          real.continuous = self.continuous;
+          real.interimResults = self.interimResults;
+          real.lang = self.lang;
+          real.maxAlternatives = self.maxAlternatives || 1;
+          if (self.grammars) real.grammars = self.grammars;
+
+          real.onstart = function() {
+            if (self.onstart) self.onstart();
+          };
+          real.onresult = function(ev) {
+            if (self.onresult) self.onresult(ev);
+          };
+          real.onerror = function(ev) {
+            if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
+              // Speech recognition failed in iframe — use bridge fallback
+              self._startBridgeFallback();
+              return;
+            }
+            if (self.onerror) self.onerror(ev);
+          };
+          real.onend = function() {
+            if (!self._bridgeFallback && self.onend) self.onend();
+          };
+          real.onspeechend = function() {
+            if (self.onspeechend) self.onspeechend();
+          };
+          real.onsoundstart = function() {
+            if (self.onsoundstart) self.onsoundstart();
+          };
+          real.onsoundend = function() {
+            if (self.onsoundend) self.onsoundend();
+          };
+          real.onnomatch = function() {
+            if (self.onnomatch) self.onnomatch();
+          };
+          real.start();
+        } catch(e) {
+          self._startBridgeFallback();
+        }
+      },
+      _startBridgeFallback: function() {
+        var self = this;
+        self._bridgeFallback = true;
+
+        // Request audio from user's mic
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+          self._stream = stream;
+          self._audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          self._source = self._audioContext.createMediaStreamSource(stream);
+          self._analyser = self._audioContext.createAnalyser();
+          self._analyser.fftSize = 2048;
+          self._source.connect(self._analyser);
+
+          // Start continuous audio processing
+          self._processAudio();
+
+          // Notify parent that speech recognition started
+          window.parent.postMessage({
+            type: 'zyraxon-speech-start',
+            bridgeId: BRIDGE_ID,
+            lang: self.lang || 'en-US'
+          }, '*');
+
+          if (self.onstart) self.onstart();
+        }).catch(function(err) {
+          if (self.onerror) self.onerror({ error: 'not-allowed', message: err.message });
+        });
+      },
+      _processAudio: function() {
+        var self = this;
+        if (!self._bridgeFallback || !self._started) return;
+
+        // Capture audio level for visual feedback
+        var dataArray = new Uint8Array(self._analyser.frequencyBinCount);
+        self._analyser.getByteFrequencyData(dataArray);
+        var sum = 0;
+        for (var i = 0; i < dataArray.length; i++) sum += dataArray[i];
+        var avg = sum / dataArray.length;
+
+        if (avg > 5 && self.onsoundstart) {
+          self.onsoundstart();
+        }
+
+        self._audioFrame = requestAnimationFrame(function() {
+          self._processAudio();
+        });
+      },
+      stop: function() {
+        var self = this;
+        self._started = false;
+        if (self._bridgeFallback) {
+          if (self._stream) {
+            self._stream.getTracks().forEach(function(t) { t.stop(); });
+            self._stream = null;
+          }
+          if (self._audioContext) {
+            self._audioContext.close();
+            self._audioContext = null;
+          }
+          if (self._audioFrame) {
+            cancelAnimationFrame(self._audioFrame);
+            self._audioFrame = null;
+          }
+          window.parent.postMessage({
+            type: 'zyraxon-speech-stop',
+            bridgeId: BRIDGE_ID
+          }, '*');
+          if (self.onend) self.onend();
+        } else {
+          try { real.stop(); } catch(e) {}
+        }
+      },
+      abort: function() {
+        this.stop();
+      }
+    };
+
+    return polyfill;
+  };
+  window.webkitSpeechRecognition = window.SpeechRecognition;
+
+  // Listen for speech results from parent frame
+  window.addEventListener('message', function(ev) {
+    if (!ev.data || ev.data.bridgeId !== BRIDGE_ID) return;
+    if (ev.data.type === 'zyraxon-speech-result') {
+      // Create a SpeechRecognitionEvent-like object
+      var result = ev.data.result;
+      if (typeof result === 'string') {
+        // Final result as simple string
+        var event = {
+          results: [{ 0: { transcript: result, confidence: 1 }, isFinal: true, length: 1 }],
+          resultIndex: 0
+        };
+        Object.setPrototypeOf(event, Event.prototype);
+        if (window.__lastSpeechRecognition) {
+          window.__lastSpeechRecognition.onresult(event);
+        }
+      }
+    }
+  });
+})();
+`;
+    try {
+      iframeWC.executeJavaScript(polyfillScript).catch(() => {})
+    } catch {}
+  }
+
+  // Wait for iframe to load, then inject polyfill
+  let injected = false
+  function tryInject() {
+    if (injected) return
+    const iframeWC = findIframeWebContents()
+    if (!iframeWC) return
+
+    iframeWC.on('did-finish-load', () => {
+      injectPolyfill(iframeWC)
+      injected = true
+    })
+    // Also try injecting now if already loaded
+    injectPolyfill(iframeWC)
+    injected = true
+  }
+
+  // Poll for iframe webContents (it may load after the main frame)
+  const pollInterval = setInterval(() => {
+    tryInject()
+    if (injected) clearInterval(pollInterval)
+  }, 1000)
+
+  // Clean up when window closes
+  win.on('closed', () => clearInterval(pollInterval))
+
+  // Also try on iframe navigation
+  win.webContents.on('did-navigate', () => {
+    injected = false
+    tryInject()
+  })
+  win.webContents.on('did-navigate-in-page', () => {
+    injected = false
+    tryInject()
+  })
 }

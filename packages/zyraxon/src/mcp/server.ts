@@ -9,6 +9,12 @@ import { securityTools } from "./security-tools"
 import { aiTools } from "./ai-tools"
 import { productivityTools } from "./productivity-tools"
 import { ultraTools } from "./ultra-tools"
+import { ultraCodeGen } from "./ultra-codegen"
+import { ultraSecuritySweep } from "./ultra-security-sweep"
+import { ultraPerformance } from "./ultra-performance"
+import { ultraRefactor } from "./ultra-refactor"
+import { ultraTestGen } from "./ultra-test-gen"
+import { ultraAutoDeploy } from "./ultra-autodeploy"
 import { proBuilderTools } from "./pro-builder-tools"
 import { autoMemory } from "../memory/auto-injection"
 import { autoScreenVision } from "../screen/auto-vision"
@@ -83,7 +89,6 @@ export const TOOL_REGISTRY = {
     wordFrequency: dataTools.wordFrequency,
     generatePassword: dataTools.generatePassword,
     regexMatch: dataTools.regexMatch,
-    textSummary: dataTools.textSummary,
     convertCase: dataTools.convertCase,
     trimText: dataTools.trimText,
     padText: dataTools.padText,
@@ -184,12 +189,12 @@ export const TOOL_REGISTRY = {
 
   // DARK EMPEROR ULTRA TOOLS (8 tools)
   ultra: {
-    ultraCodeGen: ultraTools.ultraCodeGen,
-    ultraAutoDeploy: ultraTools.ultraAutoDeploy,
-    ultraSecuritySweep: ultraTools.ultraSecuritySweep,
-    ultraPerformance: ultraTools.ultraPerformance,
-    ultraRefactor: ultraTools.ultraRefactor,
-    ultraTestGen: ultraTools.ultraTestGen,
+    ultraCodeGen,
+    ultraSecuritySweep,
+    ultraPerformance,
+    ultraRefactor,
+    ultraTestGen,
+    ultraAutoDeploy,
     ultraDocGen: ultraTools.ultraDocGen,
     ultraDebug: ultraTools.ultraDebug,
   },

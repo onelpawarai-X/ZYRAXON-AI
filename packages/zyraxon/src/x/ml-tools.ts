@@ -12,23 +12,13 @@ export class VisionModel {
 
     detect(image: string | Buffer): R {
         if (!this._model) return { ok: false, error: "No model loaded" };
-        const mockObjects = [
-            { label: "object_1", confidence: 0.92, bbox: [10, 20, 100, 80] },
-            { label: "object_2", confidence: 0.78, bbox: [150, 60, 90, 120] },
-            { label: "object_3", confidence: 0.45, bbox: [300, 200, 60, 60] },
-        ];
-        this._objects = mockObjects.filter(o => o.confidence >= this._confidence);
-        return { ok: true, data: { objects: this._objects, count: this._objects.length } };
+        this._objects = [];
+        return { ok: true, data: { objects: [], count: 0, message: "Vision detection requires a real ML model (e.g. TensorFlow.js, ONNX Runtime). Connect a model to enable object detection." } };
     }
 
     classify(image: string | Buffer): R {
         if (!this._model) return { ok: false, error: "No model loaded" };
-        const categories = [
-            { label: "nature", score: 0.87 },
-            { label: "indoor", score: 0.65 },
-            { label: "outdoor", score: 0.91 },
-        ];
-        return { ok: true, data: categories[0] };
+        return { ok: true, data: { label: null, score: 0, message: "Image classification requires a real ML model. Connect a trained classifier to enable." } };
     }
 
     segment(image: string | Buffer): R {
@@ -153,7 +143,7 @@ export class NLPModel {
 
     translate(text: string, targetLang: string): R {
         if (!this._model) return { ok: false, error: "No model loaded" };
-        return { ok: true, data: { original: text, translated: `[${targetLang}] ${text}`, targetLang } };
+        return { ok: false, error: `Translation to '${targetLang}' requires a real NLP translation model. Connect a model (e.g. MarianMT, mBART) to enable translation.` };
     }
 
     classify(text: string, categories?: string[]): R {
@@ -171,31 +161,7 @@ export class NLPModel {
 
 export class PredictionEngine {
     private _datasets: Map<string, Array<Record<string, any>>> = new Map();
-    private _models: Map<string, { algorithm: string; trained: boolean; accuracy: number; features: string[]; data: any[] }> = new Map();
-    private _nextAccuracy: number = 0.85;
-    private _nextPrediction: number = 0;
-    private _nextConfidence: number = 0.75;
-    private _accuracyDelta: number = 0;
-
-    setNextAccuracy(accuracy: number): R {
-        this._nextAccuracy = accuracy;
-        return { ok: true, data: { accuracy } };
-    }
-
-    setNextPrediction(prediction: number): R {
-        this._nextPrediction = prediction;
-        return { ok: true, data: { prediction } };
-    }
-
-    setNextConfidence(confidence: number): R {
-        this._nextConfidence = confidence;
-        return { ok: true, data: { confidence } };
-    }
-
-    setAccuracyDelta(delta: number): R {
-        this._accuracyDelta = delta;
-        return { ok: true, data: { delta } };
-    }
+    private _models: Map<string, { algorithm: string; trained: boolean; features: string[]; data: any[] }> = new Map();
 
     addDataset(name: string, data: Array<Record<string, any>>): R {
         if (!name || !data.length) return { ok: false, error: "Name and data required" };
@@ -208,24 +174,21 @@ export class PredictionEngine {
         if (!dataset) return { ok: false, error: `Dataset '${datasetName}' not found` };
         const features = Object.keys(dataset[0]);
         const modelId = `${datasetName}_${algorithm}_${Date.now()}`;
-        const accuracy = +this._nextAccuracy.toFixed(4);
-        this._models.set(modelId, { algorithm, trained: true, accuracy, features, data: dataset });
-        return { ok: true, data: { modelId, algorithm, accuracy, features } };
+        this._models.set(modelId, { algorithm, trained: true, features, data: dataset });
+        return { ok: true, data: { modelId, algorithm, features, message: "Model registered. Actual training requires a real ML library (e.g. TensorFlow.js, Brain.js)." } };
     }
 
     predict(modelId: string, input: Record<string, any>): R {
         const model = this._models.get(modelId);
         if (!model) return { ok: false, error: `Model '${modelId}' not found` };
         if (!model.trained) return { ok: false, error: "Model not trained" };
-        const prediction = +this._nextPrediction.toFixed(4);
-        const confidence = +this._nextConfidence.toFixed(4);
-        return { ok: true, data: { prediction, confidence, modelId, input } };
+        return { ok: false, error: `Prediction requires a real ML model. Model '${modelId}' is registered but inference requires an actual trained model backend.` };
     }
 
     getAccuracy(modelId: string): R {
         const model = this._models.get(modelId);
         if (!model) return { ok: false, error: `Model '${modelId}' not found` };
-        return { ok: true, data: { modelId, accuracy: model.accuracy, algorithm: model.algorithm } };
+        return { ok: true, data: { modelId, algorithm: model.algorithm, message: "Accuracy requires a real trained model with evaluation data." } };
     }
 
     getFeatures(modelId: string): R {
@@ -238,9 +201,7 @@ export class PredictionEngine {
         const model = this._models.get(modelId);
         if (!model) return { ok: false, error: `Model '${modelId}' not found` };
         model.data = [...model.data, ...newData];
-        model.accuracy = +(model.accuracy + this._accuracyDelta).toFixed(4);
-        model.accuracy = Math.max(0, Math.min(1, model.accuracy));
-        return { ok: true, data: { modelId, newAccuracy: model.accuracy, totalRows: model.data.length } };
+        return { ok: true, data: { modelId, totalRows: model.data.length, message: "Data added. Retrain the model to incorporate new data." } };
     }
 }
 

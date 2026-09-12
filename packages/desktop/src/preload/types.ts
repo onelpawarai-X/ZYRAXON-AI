@@ -192,6 +192,15 @@ export type ElectronAPI = {
   generateTTS: (config: { text: string; voice?: string }) => Promise<{ success: boolean; audioPath?: string; audioBase64?: string; error?: string; elapsedMs?: number }>
   generateVideo: (config: { modelPath: string; prompt: string; numFrames?: number }) => Promise<{ success: boolean; videoPath?: string; videoBase64?: string; error?: string; elapsedMs?: number }>
 
+  // Daily Tasks
+  dailyTasksGet: () => Promise<any[]>
+  dailyTasksSave: (tasks: any[]) => Promise<boolean>
+  dailyTasksRun: (task: any) => Promise<boolean>
+  onDailyTaskActivate: (cb: (data: { taskId: string; prompt: string; time: string }) => void) => () => void
+
+  // Cloud Agent
+  cloudAgentOpen: () => Promise<boolean>
+
   // Jarvis Browser - Real Chrome automation
   jarvisBrowser: {
     init: (config?: any) => Promise<{ success: boolean; error?: string }>

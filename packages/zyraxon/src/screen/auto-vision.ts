@@ -1,7 +1,7 @@
-// ZYRAXON Auto Screen Vision v4 — SINGLE FRAME ONLY
+// ZYRAXON Auto Screen Vision v5 — FAST SINGLE FRAME
 // 24/7 SILENT background daemon — keeps ONLY the latest frame
-// Every 3 seconds: capture new → delete old → keep only latest
-// Auto-injects into memory for ALL mode prompts
+// Every 1 second: capture new → delete old → keep only latest
+// Uses fastest possible capture method per platform
 
 import { exec } from "child_process"
 import { promisify } from "util"
@@ -32,7 +32,11 @@ let daemonInterval: NodeJS.Timeout | null = null
 let daemonRunning = false
 let latestCapture: ScreenCapture | null = null
 let latestBuffer: Buffer | null = null
-const CAPTURE_INTERVAL_MS = 3000
+const CAPTURE_INTERVAL_MS = 1000 // 1 second — FAST
+
+// Cached PowerShell script for maximum speed (compiled once, reused)
+let cachedPsScript: string | null = null
+let cachedPsPath: string | null = null
 
 function ensureDir() {
   try { fs.accessSync(SCREENSHOT_DIR) } catch { fs.mkdirSync(SCREENSHOT_DIR, { recursive: true }) }
@@ -47,29 +51,31 @@ async function captureScreen(): Promise<ScreenCapture> {
 
   try {
     if (platform === "win32") {
-      const psScript = `
-        Add-Type -AssemblyName System.Windows.Forms
-        Add-Type -AssemblyName System.Drawing
-        $screens = [System.Windows.Forms.Screen]::AllScreens
-        $totalW = 0; $totalH = 0
-        foreach ($s in $screens) {
-          if ($s.Bounds.Right -gt $totalW) { $totalW = $s.Bounds.Right }
-          if ($s.Bounds.Bottom -gt $totalH) { $totalH = $s.Bounds.Bottom }
-        }
-        $bmp = New-Object System.Drawing.Bitmap($totalW, $totalH)
-        $g = [System.Drawing.Graphics]::FromImage($bmp)
-        $g.CopyFromScreen(0, 0, 0, 0, [System.Drawing.Size]::new($totalW, $totalH))
-        $bmp.Save('${filepath.replace(/\\/g, "\\\\")}')
-        $g.Dispose(); $bmp.Dispose()
-        Write-Output "$totalW|$totalH"
-      `
-      const tmp = path.join(os.tmpdir(), `zyx_cap_${Date.now()}.ps1`)
-      fs.writeFileSync(tmp, psScript, "utf-8")
-      const { stdout } = await execAsync(`powershell -ExecutionPolicy Bypass -NoProfile -File "${tmp}"`, { timeout: 15000 })
-      fs.unlinkSync(tmp)
+      // FASTEST Windows capture: Use cached .ps1 file (avoid re-creating each time)
+      if (!cachedPsPath || !fs.existsSync(cachedPsPath)) {
+        const psScript = `
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+$screens = [System.Windows.Forms.Screen]::AllScreens
+$totalW = 0; $totalH = 0
+foreach ($s in $screens) {
+  if ($s.Bounds.Right -gt $totalW) { $totalW = $s.Bounds.Right }
+  if ($s.Bounds.Bottom -gt $totalH) { $totalH = $s.Bounds.Bottom }
+}
+$bmp = New-Object System.Drawing.Bitmap($totalW, $totalH)
+$g = [System.Drawing.Graphics]::FromImage($bmp)
+$g.CopyFromScreen(0, 0, 0, 0, [System.Drawing.Size]::new($totalW, $totalH))
+$bmp.Save('${filepath.replace(/\\/g, "\\\\")}')
+$g.Dispose(); $bmp.Dispose()
+Write-Output "$totalW|$totalH"
+`
+        cachedPsPath = path.join(os.tmpdir(), "zyx_fast_cap.ps1")
+        fs.writeFileSync(cachedPsPath, psScript, "utf-8")
+      }
+      const { stdout } = await execAsync(`powershell -ExecutionPolicy Bypass -NoProfile -File "${cachedPsPath}"`, { timeout: 10000 })
       const dims = stdout.trim().split("|").map(Number)
       if (dims.length === 2 && dims[0] > 0) { w = dims[0]; h = dims[1] }
-      method = "powershell"
+      method = "powershell-cached"
     } else if (platform === "darwin") {
       await execAsync(`screencapture -x -t jpg "${filepath}"`, { timeout: 10000 })
       method = "screencapture"
@@ -125,7 +131,7 @@ function captureNowSync(): ScreenCapture | null {
 
 function describeScreen(): string {
   const cap = latestCapture
-  if (!cap) return "Auto vision active — waiting for first capture (~3s)"
+  if (!cap) return "Auto vision active — waiting for first capture (~1s)"
   if (cap.error) return `Auto vision: ${cap.error}`
   return `Latest screen: ${new Date(cap.timestamp).toLocaleTimeString()} | ${cap.platform} | ${(cap.size / 1024).toFixed(1)}KB | ${cap.width}x${cap.height}`
 }

@@ -67,6 +67,11 @@ export const make = (
 
       if (options.disableWAL !== true && options.readonly !== true) {
         db.exec("PRAGMA journal_mode = WAL;")
+        db.exec("PRAGMA synchronous = NORMAL;")
+        db.exec("PRAGMA cache_size = -65536;")
+        db.exec("PRAGMA mmap_size = 268435456;")
+        db.exec("PRAGMA temp_store = MEMORY;")
+        db.exec("PRAGMA busy_timeout = 5000;")
       }
 
       const run = (sql: string, params: ReadonlyArray<unknown> = []) =>

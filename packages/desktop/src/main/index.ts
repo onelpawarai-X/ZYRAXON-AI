@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { mkdirSync, rmSync, readFileSync, existsSync } from "node:fs"
+import { mkdirSync, rmSync } from "node:fs"
 import * as http from "node:http"
 import { createServer } from "node:net"
 import { homedir, tmpdir } from "node:os"
@@ -17,7 +17,6 @@ import { CHANNEL } from "./constants"
 import { registerIpcHandlers, sendDeepLinks, sendMenuCommand, broadcastPreviewState } from "./ipc"
 import { forwardInitializationFailure } from "./initialization"
 import { exportDebugLogs, initCrashReporter, initLogging, startNetLog, write as writeLog } from "./logging"
-import { parseMarkdown } from "./markdown"
 import { createMenu } from "./menu"
 import {
   finishFirstLaunchOnboarding,
@@ -61,6 +60,8 @@ const APP_IDS: Record<string, string> = {
 }
 // Allow AudioContext playback without user gesture (critical for TTS)
 app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required")
+// Disable automation detection that can block SpeechRecognition in iframes
+app.commandLine.appendSwitch("disable-features", "AutomationControlled")
 
 const TEST_ONBOARDING = process.env.ZYRAXON_TEST_ONBOARDING === "1"
 const jsCallStackFeature = "DocumentPolicyIncludeJSCallStacksInCrashReports"
@@ -194,9 +195,10 @@ const main = Effect.gen(function* () {
   useEnvProxy()
   app.commandLine.appendSwitch("proxy-bypass-list", "<-loopback>")
   const features = app.commandLine.getSwitchValue("enable-features")
+  const speechFeatures = "SpeechRecognitionInIframe,PlatformSpeechRecognition"
   app.commandLine.appendSwitch(
     "enable-features",
-    features ? `${jsCallStackFeature},${features}` : jsCallStackFeature,
+    features ? `${jsCallStackFeature},${speechFeatures},${features}` : `${jsCallStackFeature},${speechFeatures}`,
   )
   if (!app.isPackaged) app.commandLine.appendSwitch("remote-debugging-port", "9222")
 
@@ -267,18 +269,6 @@ const main = Effect.gen(function* () {
 
   yield* Effect.promise(() => app.whenReady())
 
-  // ─── TTS Server Auto-Start (immediate, independent of voice bridge) ─────
-  // Start TTS server EARLY so it's ready when any IPC call comes in
-  yield* Effect.promise(async () => {
-    try {
-      const tts = await import("./tts-node")
-      await tts.startNodeTTS()
-      logger.info("TTS server auto-started on port 19810")
-    } catch (e) {
-      logger.warn("TTS server auto-start failed, will retry on first request", e)
-    }
-  })
-
   if (!TEST_ONBOARDING) migrate()
   yield* Effect.promise(() => cleanupStoreFiles(app.getPath("userData"))).pipe(
     Effect.tap((result) =>
@@ -317,7 +307,10 @@ const main = Effect.gen(function* () {
     isOldLayoutEligible,
     getDisplayBackend: async () => null,
     setDisplayBackend: async () => undefined,
-    parseMarkdown: async (markdown) => parseMarkdown(markdown),
+    parseMarkdown: async (markdown) => {
+      const { parseMarkdown } = await import("./markdown")
+      return parseMarkdown(markdown)
+    },
     checkAppExists: (appName) => checkAppExists(appName),
     resolveAppPath: async (appName) => resolveAppPath(appName),
     updater,
@@ -328,128 +321,8 @@ const main = Effect.gen(function* () {
   })
   registerWslIpcHandlers(wslServers)
 
-  // ─── Jarvis Browser Integration ──────────────────────────────────────────
-  // Real Chrome browser automation - 10x faster than any human
-  // Connects to system Chrome via CDP, no Chromium download needed
-  yield* Effect.promise(async () => {
-    try {
-      const { registerJarvisBrowserIPC } = await import("./jarvis-browser-integration")
-      registerJarvisBrowserIPC(getLastFocusedWindow())
-      logger.info("Jarvis Browser integration registered")
-    } catch (error) {
-      logger.warn("failed to initialize Jarvis Browser", error)
-    }
-  })
-
-  // ─── Voice Bridge ──────────────────────────────────────────────────────────
-  // Chrome-based speech recognition bridge for reliable voice-to-text
-  yield* Effect.promise(async () => {
-    try {
-      const voiceBridge = await import("./voice-bridge")
-      const { setVoiceBridgeModule } = await import("./voice-bridge-singleton")
-      // Register the SINGLETON — both index.ts and ipc.ts use this same reference
-      setVoiceBridgeModule(voiceBridge)
-      voiceBridge.setRendererCallback((data) => {
-        const win = getLastFocusedWindow()
-        if (win && !win.isDestroyed()) {
-          win.webContents.send("voice-event", data)
-        }
-      })
-      voiceBridge.startVoiceBridge()
-      logger.info("Voice bridge started on port 19800")
-    } catch (error) {
-      logger.warn("failed to start voice bridge", error)
-    }
-  })
-
-  // ─── MCP Config Auto-Create ──────────────────────────────────────────────
-  // Ensure zyraxon.jsonc exists with jarvis-browser MCP config on first launch
-  yield* Effect.promise(async () => {
-    try {
-      const { writeFileSync, mkdirSync, existsSync, readFileSync } = await import("node:fs")
-      const resourcesPath = app.isPackaged ? process.resourcesPath : join(import.meta.dirname, "..", "..", "..", "packages", "desktop", "resources")
-      const jarvisMcpPath = join(resourcesPath, "jarvis-browser-mcp.cjs")
-      const defaultConfig = {
-        "$schema": "https://zyraxon.ai/config.json",
-        "mcp": {
-          "jarvis-browser": {
-            "type": "local",
-            "command": ["node", jarvisMcpPath, "--headless", "--browser", "chrome", "--no-sandbox"],
-            "enabled": true,
-            "environment": {
-              "PLAYWRIGHT_MCP_HEADLESS": "true"
-            }
-          }
-        }
-      }
-
-      // Write to BOTH config locations so sidecar always finds it
-      const configDirs = [
-        join(homedir(), ".config", "zyraxon"),
-        join(homedir(), ".zyraxon"),
-      ]
-      for (const configDir of configDirs) {
-        if (!existsSync(configDir)) mkdirSync(configDir, { recursive: true })
-        const configPath = join(configDir, "zyraxon.jsonc")
-
-        if (!existsSync(configPath)) {
-          writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2), "utf-8")
-          logger.info("created default MCP config", { path: configPath })
-        } else {
-          let existing = readFileSync(configPath, "utf-8")
-          if (existing.charCodeAt(0) === 0xFEFF) existing = existing.slice(1)
-          const parsed = JSON.parse(existing)
-          if (!parsed.mcp || !parsed.mcp["jarvis-browser"]) {
-            parsed.mcp = parsed.mcp || {}
-            parsed.mcp["jarvis-browser"] = defaultConfig.mcp["jarvis-browser"]
-            writeFileSync(configPath, JSON.stringify(parsed, null, 2), "utf-8")
-            logger.info("added jarvis-browser to existing MCP config", { path: configPath })
-          } else {
-            const existingCmd = parsed.mcp["jarvis-browser"].command
-            const existingPath = existingCmd?.[1] ?? ""
-            const pathBroken = !existingPath || !existsSync(existingPath) || existingPath.includes("__RESOURCES_PATH__") || existingPath.includes("app.asar")
-            if (pathBroken) {
-              parsed.mcp["jarvis-browser"].command = defaultConfig.mcp["jarvis-browser"].command
-              writeFileSync(configPath, JSON.stringify(parsed, null, 2), "utf-8")
-              logger.info("fixed jarvis-browser MCP path in existing config", { path: configPath, oldPath: existingPath, newPath: jarvisMcpPath })
-            }
-          }
-        }
-      }
-    } catch (error) {
-      logger.warn("failed to auto-create MCP config", error)
-    }
-  })
-
   void updater.start()
 
-  // ─── Preview State File Watcher ─────────────────────────────────────────────
-  // Watches ~/.zyraxon/websites/preview-state.json for changes.
-  // When the tool publishes a site, it writes the URL here,
-  // and we broadcast it to all renderer windows.
-  {
-    const previewPath = join(homedir(), ".zyraxon", "websites", "preview-state.json")
-    let lastContent = ""
-    const checkPreview = () => {
-      try {
-        if (!existsSync(previewPath)) return
-        const content = readFileSync(previewPath, "utf-8")
-        if (content !== lastContent) {
-          lastContent = content
-          const state = JSON.parse(content) as PreviewState
-          broadcastPreviewState(state)
-        }
-      } catch {
-        // File doesn't exist yet — that's fine
-      }
-    }
-    // Poll every 2 seconds for file changes (fs.watch is unreliable on Windows)
-    const previewTimer = setInterval(checkPreview, 2000)
-    previewTimer.unref()
-    app.once("will-quit", () => clearInterval(previewTimer))
-    // Initial check
-    checkPreview()
-  }
   const updateTimer = setInterval(() => void updater.check(), 10 * 60 * 1000)
   updateTimer.unref()
   app.once("will-quit", () => clearInterval(updateTimer))
@@ -469,17 +342,17 @@ const main = Effect.gen(function* () {
     }
 
     const res = yield* Deferred.make<number, unknown>()
-    const server = createServer()
-    server.on("error", (e) => Deferred.failSync(res, () => e))
-    server.listen(0, "127.0.0.1", () => {
-      const address = server.address()
+    const srv = createServer()
+    srv.on("error", (e) => Deferred.failSync(res, () => e))
+    srv.listen(0, "127.0.0.1", () => {
+      const address = srv.address()
       if (typeof address !== "object" || !address) {
-        server.close()
+        srv.close()
         Deferred.failSync(res, () => new Error("Failed to get port"))
         return
       }
       const port = address.port
-      server.close(() => Effect.runSync(Deferred.succeed(res, port)))
+      srv.close(() => Effect.runSync(Deferred.succeed(res, port)))
     })
 
     return yield* Deferred.await(res)
@@ -488,6 +361,27 @@ const main = Effect.gen(function* () {
   const url = `http://${hostname}:${port}`
   const password = randomUUID()
 
+  // ─── CRITICAL: Show UI FIRST, fork sidecar in background ──────────────
+  // This is the key OpenCode pattern: restore windows immediately,
+  // then fork the sidecar loading as a background fiber.
+  // The renderer waits for serverReady via IPC — it does NOT block main.
+  const windows = restoreMainWindows()
+  if (windows.length) {
+    createMenu({
+      trigger: (id) => {
+        const win = getLastFocusedWindow()
+        if (win) sendMenuCommand(win, id)
+      },
+      checkForUpdates: () => {
+        void showUpdaterDialog(updater, true)
+      },
+      relaunch: () => {
+        relaunch()
+      },
+    })
+  }
+
+  // Fork sidecar loading — does NOT block UI
   const loadingTask = yield* Effect.gen(function* () {
     logger.log("sidecar connection started", { url })
 
@@ -527,23 +421,155 @@ const main = Effect.gen(function* () {
     logger.log("loading task finished")
   }).pipe(forwardInitializationFailure(serverReady), Effect.forkChild)
 
-  yield* Fiber.await(loadingTask)
+  // Do NOT await the fiber — sidecar loads in background while UI is visible
+  // yield* Fiber.await(loadingTask)  ← REMOVED: was blocking startup
 
-  const windows = restoreMainWindows()
-  if (windows.length) {
-    createMenu({
-      trigger: (id) => {
-        const win = getLastFocusedWindow()
-        if (win) sendMenuCommand(win, id)
-      },
-      checkForUpdates: () => {
-        void showUpdaterDialog(updater, true)
-      },
-      relaunch: () => {
-        relaunch()
-      },
-    })
-  }
+  // ─── DEFERRED: All non-critical services (background, non-blocking) ────
+  // These run AFTER the UI is visible. None block startup.
+
+  // Deferred TTS — lazy start, only when first IPC request comes in
+  void (async () => {
+    try {
+      const tts = await import("./tts-node")
+      await tts.startNodeTTS()
+      logger.info("TTS server auto-started on port 19810")
+    } catch (e) {
+      logger.warn("TTS server auto-start failed, will retry on first request", e)
+    }
+  })()
+
+  // Deferred daily task scheduler
+  void (async () => {
+    try {
+      const scheduler = await import("./daily-task-scheduler")
+      scheduler.startScheduler()
+      logger.info("Daily task scheduler started")
+    } catch (e) {
+      logger.warn("Daily task scheduler start failed", e)
+    }
+  })()
+
+  // Deferred Jarvis Browser Integration — IPC handlers registered lazily
+  void (async () => {
+    try {
+      const { registerJarvisBrowserIPC } = await import("./jarvis-browser-integration")
+      registerJarvisBrowserIPC(getLastFocusedWindow())
+      logger.info("Jarvis Browser integration registered")
+    } catch (error) {
+      logger.warn("failed to initialize Jarvis Browser", error)
+    }
+  })()
+
+  // Deferred Voice Bridge — Chrome-based speech recognition
+  void (async () => {
+    try {
+      const voiceBridge = await import("./voice-bridge")
+      const { setVoiceBridgeModule } = await import("./voice-bridge-singleton")
+      setVoiceBridgeModule(voiceBridge)
+      voiceBridge.setRendererCallback((data) => {
+        const { BrowserWindow } = require("electron") as typeof import("electron")
+        const allWindows = BrowserWindow.getAllWindows()
+        for (const win of allWindows) {
+          if (!win.isDestroyed()) {
+            try { win.webContents.send("voice-event", data) } catch {}
+          }
+        }
+      })
+      voiceBridge.startVoiceBridge()
+      logger.info("Voice bridge started on port 19800")
+    } catch (error) {
+      logger.warn("failed to start voice bridge", error)
+    }
+  })()
+
+  // Deferred MCP Config Auto-Create — async file I/O, non-blocking
+  void (async () => {
+    try {
+      const { writeFileSync, mkdirSync, existsSync, readFileSync } = await import("node:fs")
+      const { execSync: execCmd } = await import("node:child_process")
+      const resourcesPath = app.isPackaged ? process.resourcesPath : join(import.meta.dirname, "..", "..", "..", "packages", "desktop", "resources")
+      const jarvisMcpPath = join(resourcesPath, "jarvis-browser-mcp.cjs")
+      let nodeExe = "node"
+      try {
+        const resolved = execCmd("where node", { encoding: "utf8", timeout: 3000 }).trim().split("\n")[0].trim()
+        if (resolved && existsSync(resolved)) nodeExe = resolved
+      } catch {}
+      const defaultConfig = {
+        "$schema": "https://zyraxon.ai/config.json",
+        "mcp": {
+          "jarvis-browser": {
+            "type": "local",
+            "command": [nodeExe, jarvisMcpPath, "--headless", "--browser", "chrome", "--no-sandbox"],
+            "enabled": true,
+            "environment": {
+              "PLAYWRIGHT_MCP_HEADLESS": "true"
+            }
+          }
+        }
+      }
+
+      const configDirs = [
+        join(homedir(), ".config", "zyraxon"),
+        join(homedir(), ".zyraxon"),
+      ]
+      for (const configDir of configDirs) {
+        if (!existsSync(configDir)) mkdirSync(configDir, { recursive: true })
+        const configPath = join(configDir, "zyraxon.jsonc")
+
+        if (!existsSync(configPath)) {
+          writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2), "utf-8")
+          logger.info("created default MCP config", { path: configPath })
+        } else {
+          let existing = readFileSync(configPath, "utf-8")
+          if (existing.charCodeAt(0) === 0xFEFF) existing = existing.slice(1)
+          const parsed = JSON.parse(existing)
+          if (!parsed.mcp || !parsed.mcp["jarvis-browser"]) {
+            parsed.mcp = parsed.mcp || {}
+            parsed.mcp["jarvis-browser"] = defaultConfig.mcp["jarvis-browser"]
+            writeFileSync(configPath, JSON.stringify(parsed, null, 2), "utf-8")
+            logger.info("added jarvis-browser to existing MCP config", { path: configPath })
+          } else {
+            const existingCmd = parsed.mcp["jarvis-browser"].command
+            const existingPath = existingCmd?.[1] ?? ""
+            const nodeCmd = existingCmd?.[0] ?? ""
+            const pathBroken = !existingPath || !existsSync(existingPath) || existingPath.includes("__RESOURCES_PATH__") || existingPath.includes("app.asar")
+            const nodeBroken = !nodeCmd || nodeCmd === "node" || !existsSync(nodeCmd)
+            if (pathBroken || nodeBroken) {
+              parsed.mcp["jarvis-browser"].command = defaultConfig.mcp["jarvis-browser"].command
+              writeFileSync(configPath, JSON.stringify(parsed, null, 2), "utf-8")
+              logger.info("fixed jarvis-browser MCP config", { path: configPath, oldNode: nodeCmd, oldPath: existingPath })
+            }
+          }
+        }
+      }
+    } catch (error) {
+      logger.warn("failed to auto-create MCP config", error)
+    }
+  })()
+
+  // Deferred Preview State File Watcher — async file reads
+  void (async () => {
+    try {
+      const { existsSync, readFileSync } = await import("node:fs")
+      const previewPath = join(homedir(), ".zyraxon", "websites", "preview-state.json")
+      let lastContent = ""
+      const checkPreview = () => {
+        try {
+          if (!existsSync(previewPath)) return
+          const content = readFileSync(previewPath, "utf-8")
+          if (content !== lastContent) {
+            lastContent = content
+            const state = JSON.parse(content) as PreviewState
+            broadcastPreviewState(state)
+          }
+        } catch {}
+      }
+      const previewTimer = setInterval(checkPreview, 2000)
+      previewTimer.unref()
+      app.once("will-quit", () => clearInterval(previewTimer))
+      checkPreview()
+    } catch {}
+  })()
 })
 
 Effect.runFork(main)

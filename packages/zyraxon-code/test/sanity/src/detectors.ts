@@ -136,7 +136,7 @@ function detectBrowser(capabilities: Set<Capability>) {
 		case 'win32': {
 			const path =
 				process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ??
-				`${process.env['ProgramFiles(x86)']}\\Zyraxon\\Edge\\Application\\msedge.exe`;
+				`${process.env['ProgramFiles']}\\Google\\Chrome\\Application\\chrome.exe`;
 
 			if (fs.existsSync(path)) {
 				capabilities.add('browser');

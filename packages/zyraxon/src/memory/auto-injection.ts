@@ -31,7 +31,9 @@ async function initDb(): Promise<void> {
   db = new Database(DB_PATH)
   db.run("PRAGMA journal_mode=WAL")
   db.run("PRAGMA synchronous=NORMAL")
-  db.run("PRAGMA cache_size=-64000")
+  db.run("PRAGMA cache_size=-65536")
+  db.run("PRAGMA mmap_size=268435456")
+  db.run("PRAGMA temp_store=MEMORY")
   db.run("PRAGMA busy_timeout=5000")
 
   db.run(`CREATE TABLE IF NOT EXISTS memories (
@@ -80,11 +82,61 @@ async function initDb(): Promise<void> {
   db.run(`CREATE INDEX IF NOT EXISTS idx_conversations_timestamp ON conversations(timestamp)`)
   db.run(`CREATE INDEX IF NOT EXISTS idx_context_buffer_session ON context_buffer(session_id)`)
 
+  // Compound indexes for common query patterns
+  db.run(`CREATE INDEX IF NOT EXISTS idx_memories_cat_ts ON memories(category, timestamp DESC)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_memories_imp_ts ON memories(importance DESC, timestamp DESC)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_memories_project_ts ON memories(project_id, timestamp DESC)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_memories_session_ts ON memories(session_id, timestamp DESC)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_conv_session_turn ON conversations(session_id, turn_index DESC)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_error_type_msg ON error_record(error_type, error_message)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_pattern_type ON learned_pattern(pattern_type, frequency DESC)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_knowledge_type_name ON knowledge_entity(entity_type, name)`)
+
   try {
     db.run(`CREATE VIRTUAL TABLE IF NOT EXISTS memories_fts USING fts5(key, content, summary, tags, content=memories, content_rowid=rowid)`)
   } catch {
     try { db.run(`CREATE VIRTUAL TABLE IF NOT EXISTS memories_fts USING fts5(key, content, summary, tags)`) } catch {}
   }
+
+  // Ring buffer — last N turns, survives crashes (replaces file-based pending_save)
+  db.run(`CREATE TABLE IF NOT EXISTS ring_buffer (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    agent TEXT DEFAULT '',
+    model TEXT DEFAULT '',
+    timestamp INTEGER NOT NULL
+  )`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_ring_buffer_session ON ring_buffer(session_id, timestamp)`)
+
+  // Auto-evict ring buffer on insert (keeps last 200 per session — replaces slow subquery)
+  db.run(`CREATE TRIGGER IF NOT EXISTS trg_ring_buffer_evict AFTER INSERT ON ring_buffer
+    BEGIN
+      DELETE FROM ring_buffer WHERE id IN (
+        SELECT id FROM ring_buffer WHERE session_id = NEW.session_id
+        ORDER BY timestamp DESC LIMIT -1 OFFSET 200
+      );
+    END`)
+
+  // Heartbeat — memory daemon persistence (survives crashes)
+  db.run(`CREATE TABLE IF NOT EXISTS memory_heartbeat (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    last_beat INTEGER NOT NULL,
+    last_save INTEGER NOT NULL,
+    total_saves INTEGER NOT NULL DEFAULT 0,
+    uptime_ms INTEGER NOT NULL DEFAULT 0,
+    pid INTEGER NOT NULL DEFAULT 0
+  )`)
+  // Initialize heartbeat row if not exists
+  try { db.run(`INSERT OR IGNORE INTO memory_heartbeat (id, last_beat, last_save, total_saves, uptime_ms, pid) VALUES (1, ?, ?, 0, 0, ?)`, [Date.now(), Date.now(), process.pid]) } catch {}
+
+  // Pre-cached context table — instant injection without file I/O
+  db.run(`CREATE TABLE IF NOT EXISTS cached_context (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    context_json TEXT NOT NULL DEFAULT '{}',
+    updated_at INTEGER NOT NULL DEFAULT 0
+  )`)
 
   try { db.run(`INSERT OR IGNORE INTO memories_fts(memories_fts) VALUES('rebuild')`) } catch {}
 }
@@ -174,17 +226,25 @@ export async function searchMemories(query: string, limit: number = 25): Promise
   const queryLower = query.toLowerCase()
   const queryWords = queryLower.split(/\s+/).filter(w => w.length > 2)
 
+  // FTS5 search with phrase matching + prefix fallback
   let rows: any[]
   try {
-    rows = d.query(`SELECT * FROM memories_fts WHERE memories_fts MATCH ? ORDER BY rank LIMIT ?`).all(queryLower, limit) as any[]
-    if (rows.length > 0) {
-      const ids = rows.map((r: any) => r.id || r.rowid)
-      const placeholders = ids.map(() => '?').join(',')
-      return d.query(`SELECT * FROM memories WHERE id IN (${placeholders})`).all(...ids).map(rowToEntry)
+    // Try exact phrase match first
+    rows = d.query(`SELECT m.*, rank FROM memories_fts fts JOIN memories m ON m.rowid = fts.rowid WHERE memories_fts MATCH ? ORDER BY rank LIMIT ?`).all(`"${queryLower}"`, limit) as any[]
+    if (rows.length > 0) return rows.map(rowToEntry)
+  } catch {}
+
+  try {
+    // Fallback: OR-separated words with prefix matching
+    const ftsQuery = queryWords.map(w => `"${w}"*`).join(' OR ')
+    if (ftsQuery) {
+      rows = d.query(`SELECT m.*, rank FROM memories_fts fts JOIN memories m ON m.rowid = fts.rowid WHERE memories_fts MATCH ? ORDER BY rank LIMIT ?`).all(ftsQuery, limit) as any[]
+      if (rows.length > 0) return rows.map(rowToEntry)
     }
   } catch {}
 
-  rows = d.query(`SELECT * FROM memories ORDER BY importance DESC, timestamp DESC LIMIT ?`).all(limit) as any[]
+  // Final fallback: in-memory scoring with pre-filtered candidates
+  rows = d.query(`SELECT * FROM memories WHERE importance >= 3 ORDER BY importance DESC, timestamp DESC LIMIT ?`).all(Math.min(limit * 4, 200)) as any[]
   const scored = rows.map((r: any) => {
     let score = 0
     const keyL = (r.key || '').toLowerCase()
@@ -218,6 +278,8 @@ export async function storeConversationTurn(params: {
   d.run(`INSERT INTO conversations (id, session_id, role, content, agent, model, timestamp, turn_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [id, params.sessionId, params.role, params.content, params.agent || '', params.model || '', Date.now(), turnIndex])
   storeContextBuffer(params.sessionId, `${params.role}: ${params.content.substring(0, 500)}`)
+  // Also push to ring buffer (crash-proof, replaces file-based pending_save)
+  ringBufferPush({ sessionId: params.sessionId, role: params.role, content: params.content, agent: params.agent, model: params.model }).catch(() => {})
 }
 
 export async function getRecentConversationTurns(sessionId: string, count: number = 10): Promise<any[]> {
@@ -237,6 +299,160 @@ export async function getContextBuffer(sessionId: string): Promise<string[]> {
   const d = await getDb()
   const rows = d.query(`SELECT content FROM context_buffer WHERE session_id = ? ORDER BY id DESC LIMIT ?`).all(sessionId, RECENT_BUFFER_SIZE) as any[]
   return rows.map((r: any) => r.content).reverse()
+}
+
+// ============================================
+// PREPARED STATEMENT CACHE — Reuse hot queries
+// ============================================
+
+const stmtCache = new Map<string, any>()
+
+function preparedQuery(db: DB, sql: string): any {
+  let stmt = stmtCache.get(sql)
+  if (!stmt) {
+    stmt = db.query(sql)
+    stmtCache.set(sql, stmt)
+  }
+  return stmt
+}
+
+// ============================================
+// CURSOR PAGINATION — Efficient large-set traversal
+// ============================================
+
+export async function listMemoriesCursor(opts: {
+  cursor?: string; limit?: number; category?: string; minImportance?: number
+} = {}): Promise<{ items: MemoryEntry[]; nextCursor: string | null }> {
+  const d = await getDb()
+  const limit = Math.min(opts.limit || 50, 200)
+  const cursor = opts.cursor ? parseInt(Buffer.from(opts.cursor, 'base64').toString('utf-8')) : 0
+
+  let sql = `SELECT * FROM memories WHERE id > ?`
+  const params: any[] = [cursor]
+
+  if (opts.category) {
+    sql += ` AND category = ?`
+    params.push(opts.category)
+  }
+  if (opts.minImportance !== undefined) {
+    sql += ` AND importance >= ?`
+    params.push(opts.minImportance)
+  }
+  sql += ` ORDER BY id ASC LIMIT ?`
+  params.push(limit + 1) // fetch one extra to detect next page
+
+  const rows = d.query(sql).all(...params) as any[]
+  const hasMore = rows.length > limit
+  const items = rows.slice(0, limit).map(rowToEntry)
+  const nextCursor = hasMore
+    ? Buffer.from(String(rows[limit].id)).toString('base64')
+    : null
+
+  return { items, nextCursor }
+}
+
+export async function searchMemoriesCursor(opts: {
+  query: string; cursor?: string; limit?: number
+} = { query: "" }): Promise<{ items: MemoryEntry[]; nextCursor: string | null }> {
+  const d = await getDb()
+  const limit = Math.min(opts.limit || 25, 100)
+  const queryLower = opts.query.toLowerCase()
+
+  // Use FTS5 with cursor support
+  let rows: any[] = []
+  try {
+    const ftsQuery = queryLower.split(/\s+/).filter(w => w.length > 2).map(w => `"${w}"*`).join(' OR ')
+    if (ftsQuery) {
+      const sql = `SELECT m.*, rank, fts.rowid FROM memories_fts fts JOIN memories m ON m.rowid = fts.rowid
+        WHERE memories_fts MATCH ? AND m.id > ? ORDER BY rank LIMIT ?`
+      const cursorId = opts.cursor ? parseInt(Buffer.from(opts.cursor, 'base64').toString('utf-8')) : 0
+      rows = d.query(sql).all(ftsQuery, cursorId, limit + 1) as any[]
+    }
+  } catch {}
+
+  if (rows.length === 0) {
+    // Fallback with cursor
+    const cursorId = opts.cursor ? parseInt(Buffer.from(opts.cursor, 'base64').toString('utf-8')) : 0
+    const sql = `SELECT * FROM memories WHERE importance >= 3 AND id > ? ORDER BY importance DESC, timestamp DESC LIMIT ?`
+    rows = d.query(sql).all(cursorId, limit + 1) as any[]
+  }
+
+  const hasMore = rows.length > limit
+  const items = rows.slice(0, limit).map(rowToEntry)
+  const nextCursor = hasMore
+    ? Buffer.from(String(rows[limit].id)).toString('base64')
+    : null
+
+  return { items, nextCursor }
+}
+
+// ============================================
+// BATCH OPERATIONS — Bulk save/search in one transaction
+// ============================================
+
+export async function batchSave(entries: Array<{
+  key: string; content: string; summary?: string; tags?: string[]
+  category?: string; importance?: number; source?: string
+  projectId?: string; sessionId?: string
+}>): Promise<string[]> {
+  const d = await getDb()
+  const ids: string[] = []
+  const now = Date.now()
+
+  // Single transaction for all inserts
+  d.run("BEGIN TRANSACTION")
+  try {
+    const insertMem = preparedQuery(d, `INSERT OR REPLACE INTO memories
+      (id, key, content, summary, tags, category, importance, source, timestamp, access_count, last_accessed, project_id, session_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`)
+    const insertFts = preparedQuery(d, `INSERT INTO memories_fts (rowid, key, content, summary, tags)
+      VALUES (last_insert_rowid(), ?, ?, ?, ?)`)
+
+    for (const e of entries) {
+      const id = `mem_${now}_${Math.random().toString(36).slice(2, 10)}`
+      const tags = JSON.stringify(e.tags || [])
+      insertMem.run(id, e.key, e.content, e.summary || e.content.substring(0, 150),
+        tags, e.category || 'conversation', e.importance ?? 5, e.source || 'auto',
+        now, now, e.projectId || '', e.sessionId || '')
+      try { insertFts.run(e.key, e.content, e.summary || '', tags) } catch {}
+      ids.push(id)
+    }
+    d.run("COMMIT")
+  } catch (e) {
+    d.run("ROLLBACK")
+    throw e
+  }
+  return ids
+}
+
+export async function batchSearch(queries: string[], limitPerQuery: number = 5): Promise<Map<string, MemoryEntry[]>> {
+  const results = new Map<string, MemoryEntry[]>()
+  const d = await getDb()
+
+  // Use a single FTS query per search term
+  const searchFts = preparedQuery(d,
+    `SELECT m.*, rank FROM memories_fts fts JOIN memories m ON m.rowid = fts.rowid
+     WHERE memories_fts MATCH ? ORDER BY rank LIMIT ?`)
+
+  for (const q of queries) {
+    const queryLower = q.toLowerCase()
+    let rows: any[] = []
+
+    try {
+      const ftsQuery = queryLower.split(/\s+/).filter(w => w.length > 2).map(w => `"${w}"*`).join(' OR ')
+      if (ftsQuery) rows = searchFts.all(ftsQuery, limitPerQuery) as any[]
+    } catch {}
+
+    if (rows.length === 0) {
+      const fallback = preparedQuery(d,
+        `SELECT * FROM memories WHERE importance >= 3 AND (key LIKE ? OR content LIKE ?)
+         ORDER BY importance DESC, timestamp DESC LIMIT ?`)
+      rows = fallback.all(`%${queryLower}%`, `%${queryLower}%`, limitPerQuery) as any[]
+    }
+
+    results.set(q, rows.map(rowToEntry))
+  }
+  return results
 }
 
 export async function getMemoryStatsDetailed(): Promise<{
@@ -263,37 +479,133 @@ export async function getMemoryStatsDetailed(): Promise<{
 }
 
 // ============================================
+// RING BUFFER — Crash-proof conversation ring (replaces file-based pending_save)
+// ============================================
+
+const RING_BUFFER_MAX = 200
+
+export async function ringBufferPush(params: {
+  sessionId: string; role: string; content: string; agent?: string; model?: string
+}): Promise<void> {
+  const d = await getDb()
+  d.run(`INSERT INTO ring_buffer (session_id, role, content, agent, model, timestamp) VALUES (?, ?, ?, ?, ?, ?)`,
+    [params.sessionId, params.role, params.content, params.agent || '', params.model || '', Date.now()])
+  // Auto-eviction handled by trg_ring_buffer_evict trigger
+  // Global prune if total rows exceed 10x max (safety net)
+  const total = (d.query(`SELECT COUNT(*) as c FROM ring_buffer`).get() as any)?.c || 0
+  if (total > RING_BUFFER_MAX * 10) {
+    d.run(`DELETE FROM ring_buffer WHERE id NOT IN (
+      SELECT id FROM ring_buffer ORDER BY timestamp DESC LIMIT ?
+    )`, [RING_BUFFER_MAX * 5])
+  }
+}
+
+export async function ringBufferGet(sessionId: string, count: number = 10): Promise<Array<{
+  role: string; content: string; agent: string; model: string; timestamp: number
+}>> {
+  const d = await getDb()
+  return d.query(`SELECT role, content, agent, model, timestamp FROM ring_buffer
+    WHERE session_id = ? ORDER BY timestamp DESC LIMIT ?`).all(sessionId, count) as any[]
+}
+
+export async function ringBufferPrune(olderThanMs: number = 86400000): Promise<number> {
+  const d = await getDb()
+  const cutoff = Date.now() - olderThanMs
+  const before = (d.query(`SELECT COUNT(*) as c FROM ring_buffer`).get() as any)?.c || 0
+  d.run(`DELETE FROM ring_buffer WHERE timestamp < ?`, [cutoff])
+  const after = (d.query(`SELECT COUNT(*) as c FROM ring_buffer`).get() as any)?.c || 0
+  return before - after
+}
+
+// ============================================
+// HEARTBEAT — Memory daemon persistence (survives crashes)
+// ============================================
+
+export async function heartbeatBeat(): Promise<void> {
+  const d = await getDb()
+  d.run(`UPDATE memory_heartbeat SET last_beat = ?, uptime_ms = uptime_ms + 2000, pid = ? WHERE id = 1`,
+    [Date.now(), process.pid])
+}
+
+export async function heartbeatGetStats(): Promise<{
+  lastBeat: number; lastSave: number; totalSaves: number; uptimeMs: number; pid: number
+  isAlive: boolean; ageMs: number
+} | null> {
+  const d = await getDb()
+  const row = d.query(`SELECT * FROM memory_heartbeat WHERE id = 1`).get() as any
+  if (!row) return null
+  const now = Date.now()
+  return {
+    lastBeat: row.last_beat,
+    lastSave: row.last_save,
+    totalSaves: row.total_saves,
+    uptimeMs: row.uptime_ms,
+    pid: row.pid,
+    isAlive: (now - row.last_beat) < 5000,
+    ageMs: now - row.last_beat,
+  }
+}
+
+export async function heartbeatUptime(): Promise<number> {
+  const stats = await heartbeatGetStats()
+  return stats?.uptimeMs ?? 0
+}
+
+// ============================================
+// CACHED CONTEXT — Instant injection (pre-cached, no file I/O)
+// ============================================
+
+export async function cachedContextGet(): Promise<Record<string, any> | null> {
+  const d = await getDb()
+  const row = d.query(`SELECT context_json, updated_at FROM cached_context WHERE id = 1`).get() as any
+  if (!row) return null
+  // Cache valid for 30 seconds
+  if (Date.now() - row.updated_at > 30000) return null
+  try { return JSON.parse(row.context_json) } catch { return null }
+}
+
+export async function cachedContextUpdate(context: Record<string, any>): Promise<void> {
+  const d = await getDb()
+  d.run(`INSERT OR REPLACE INTO cached_context (id, context_json, updated_at) VALUES (1, ?, ?)`,
+    [JSON.stringify(context), Date.now()])
+}
+
+// ============================================
 // Legacy interface (wraps SQLite)
 // ============================================
 
 export async function autoInjectContext(userMessage: string, agent: string): Promise<string> {
   const _t = Date.now()
-  const ctx = await loadAutoContext()
-  if (!ctx.enabled) return ""
+
+  // Try pre-cached context first (instant, no file I/O)
+  const cached = await cachedContextGet()
+  const ctx = cached as AutoContext | null
+  if (ctx && !ctx.enabled) return ""
+
   const parts: string[] = []
 
   // Current mode/agent awareness
   parts.push(`Current mode: ${agent}`)
 
-  if (ctx.masterPreferences && Object.keys(ctx.masterPreferences).length > 0) {
+  if (ctx?.masterPreferences && Object.keys(ctx.masterPreferences).length > 0) {
     const masterPrefs = Object.entries(ctx.masterPreferences).map(([k, v]) => `- ${k}: ${v}`).join("\n")
     parts.push(`Master's preferences (NEVER violate):\n${masterPrefs}`)
   }
 
-  if (ctx.recentContext) {
+  if (ctx?.recentContext) {
     parts.push(`Recent context:\n${ctx.recentContext}`)
   }
-  if (Object.keys(ctx.userPreferences).length > 0) {
+  if (ctx?.userPreferences && Object.keys(ctx.userPreferences).length > 0) {
     const prefs = Object.entries(ctx.userPreferences).map(([k, v]) => `- ${k}: ${v}`).join("\n")
     parts.push(`User preferences:\n${prefs}`)
   }
-  if (ctx.projectContext) {
+  if (ctx?.projectContext) {
     parts.push(`Project context:\n${ctx.projectContext}`)
   }
-  if (ctx.learnedPatterns.length > 0) {
+  if (ctx?.learnedPatterns && ctx.learnedPatterns.length > 0) {
     parts.push(`Learned patterns:\n${ctx.learnedPatterns.map(p => `- ${p}`).join("\n")}`)
   }
-  if (ctx.sessionHistory.length > 0) {
+  if (ctx?.sessionHistory && ctx.sessionHistory.length > 0) {
     parts.push(`Recent session:\n${ctx.sessionHistory.slice(-8).join("\n")}`)
   }
 
@@ -317,8 +629,12 @@ export async function autoInjectContext(userMessage: string, agent: string): Pro
     console.log(`[autoInjectContext] memory_search ERROR: ${e?.message ?? e}`)
   }
 
-  ctx.lastInjection = Date.now()
-  ctx.injectedCount++
+  // Update cached context for next time
+  if (ctx) {
+    ctx.lastInjection = Date.now()
+    ctx.injectedCount++
+    cachedContextUpdate(ctx).catch(() => {})
+  }
 
   if (parts.length === 0) return ""
   console.log(`[autoInjectContext] total: ${Date.now() - _t}ms, memories: ${memoryCount}, parts: ${parts.length}`)
@@ -364,6 +680,8 @@ export async function autoStoreConversation(
   }
 
   await saveAutoContext(ctx)
+  // Update pre-cached context for instant injection next turn
+  cachedContextUpdate(ctx).catch(() => {})
 }
 
 export async function smartRecall(query: string, limit: number = 15): Promise<string> {
@@ -972,4 +1290,14 @@ export const autoMemory = {
   storeKnowledgeEntity, getKnowledgeEntity, searchKnowledgeEntities,
   storeKnowledgeRelation, getEntityRelations, storeDecision, searchDecisions,
   storeError, searchErrors, storeLearnedPattern, searchPatterns, storeTemporalIndex,
+  // Ring buffer (crash-proof)
+  ringBufferPush, ringBufferGet, ringBufferPrune,
+  // Heartbeat (daemon persistence)
+  heartbeatBeat, heartbeatGetStats, heartbeatUptime,
+  // Cached context (instant injection)
+  cachedContextGet, cachedContextUpdate,
+  // Cursor pagination (new)
+  listMemoriesCursor, searchMemoriesCursor,
+  // Batch operations (new)
+  batchSave, batchSearch,
 }

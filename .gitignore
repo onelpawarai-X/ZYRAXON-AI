@@ -44,9 +44,17 @@ tsconfig.tsbuildinfo
 # Build outputs
 packages/desktop/dist/
 packages/desktop/web/
+packages/app/dist/
 packages/opencode/dist/
 packages/opencode/opencode
 packages/VSCode-win32-x64/
+**/dist/
+
+# Electron output
+out/
+
+# Temp HTML files
+temp_*
 
 # Android build
 packages/mobile/android-automation/app/build/
@@ -91,3 +99,6 @@ temp_*.py
 
 # zyraxon-code-clean (not needed — zyraxon-code is main)
 packages/zyraxon-code-clean/
+
+# Playwright MCP
+.playwright-mcp/

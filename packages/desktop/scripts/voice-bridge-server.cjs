@@ -2,7 +2,6 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
-const { WebSocketServer } = require("ws");
 
 const PORT = 19800;
 const HTML_PATH = path.join(__dirname, "..", "resources", "voice-bridge.html");
@@ -28,8 +27,26 @@ function killPort(port) {
   } catch {}
 }
 
+function setCORS(res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
+const messageQueue = [];
+const waitingPollers = [];
+
+function queueMessage(msg) {
+  if (waitingPollers.length > 0) {
+    const res = waitingPollers.shift();
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify([msg]));
+  } else {
+    messageQueue.push(msg);
+  }
+}
+
 async function main() {
-  // Kill any existing process on our port
   if (isPortInUse(PORT)) {
     console.log(`[VoiceBridge] Port ${PORT} in use, killing existing process...`);
     killPort(PORT);
@@ -41,35 +58,70 @@ async function main() {
     process.exit(1);
   }
 
-  const wss = new WebSocketServer({ noServer: true });
   const server = http.createServer((req, res) => {
+    setCORS(res);
+
+    if (req.method === "OPTIONS") {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
     if (req.url === "/" || req.url === "/voice-bridge.html") {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       res.end(fs.readFileSync(HTML_PATH, "utf8"));
-    } else if (req.url === "/health") {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ ok: true, clients: wss.clients.size }));
-    } else {
-      res.writeHead(404); res.end("Not found");
+      return;
     }
-  });
 
-  server.on("upgrade", (req, socket, head) => {
-    if (req.url === "/") {
-      wss.handleUpgrade(req, socket, head, (ws) => wss.emit("connection", ws, req));
-    } else { socket.destroy(); }
-  });
+    if (req.url === "/health") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ok: true, queued: messageQueue.length, waiting: waitingPollers.length }));
+      return;
+    }
 
-  wss.on("connection", (ws) => {
-    console.log("[OK] Client connected via WebSocket");
-    ws.on("message", (raw) => {
-      try {
-        const d = JSON.parse(raw.toString());
-        if (d.type === "transcript") console.log(`[VOICE] ${d.lang}: "${d.text}" final=${d.final}`);
-        if (d.type === "send-to-chat") console.log(`[SEND] "${d.text}"`);
-      } catch {}
-    });
-    ws.on("close", () => console.log("[--] Client disconnected"));
+    if (req.url === "/api/poll") {
+      if (messageQueue.length > 0) {
+        const msgs = messageQueue.splice(0);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(msgs));
+      } else {
+        waitingPollers.push(res);
+        const timeout = setTimeout(() => {
+          const idx = waitingPollers.indexOf(res);
+          if (idx !== -1) {
+            waitingPollers.splice(idx, 1);
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify([]));
+          }
+        }, 30000);
+        req.on("close", () => {
+          clearTimeout(timeout);
+          const idx = waitingPollers.indexOf(res);
+          if (idx !== -1) waitingPollers.splice(idx, 1);
+        });
+      }
+      return;
+    }
+
+    if (req.url === "/api/message" && req.method === "POST") {
+      let body = "";
+      req.on("data", (c) => { body += c; });
+      req.on("end", () => {
+        try {
+          const msg = JSON.parse(body);
+          console.log(`[MSG] ${msg.type}: ${msg.text || msg.lang || ""}`);
+          queueMessage(msg);
+        } catch (e) {
+          console.log("[MSG] Parse error:", e.message);
+        }
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: true }));
+      });
+      return;
+    }
+
+    res.writeHead(404);
+    res.end("Not found");
   });
 
   await new Promise((resolve) => server.listen(PORT, "127.0.0.1", () => {
@@ -77,8 +129,7 @@ async function main() {
     resolve();
   }));
 
-  console.log("[OK] Voice bridge server ready — waiting for Electron BrowserWindow");
-  console.log("[!!] Server running in background");
+  console.log("[OK] Voice bridge server ready");
 }
 
 main().catch(console.error);

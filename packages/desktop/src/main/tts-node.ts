@@ -76,8 +76,13 @@ function detectLanguage(text: string): string {
   return "en"
 }
 
-const CACHE_DIR = join(tmpdir(), "zyraxon_tts_cache")
-if (!existsSync(CACHE_DIR)) mkdirSync(CACHE_DIR, { recursive: true })
+let CACHE_DIR = ""
+function ensureCacheDir() {
+  if (!CACHE_DIR) {
+    CACHE_DIR = join(tmpdir(), "zyraxon_tts_cache")
+    if (!existsSync(CACHE_DIR)) mkdirSync(CACHE_DIR, { recursive: true })
+  }
+}
 
 const audioCache = new Map<string, Buffer>()
 const MAX_CACHE = 200
@@ -98,6 +103,10 @@ function streamToBuffer(stream: Readable): Promise<Buffer> {
 // Per-voice queue — serialize to avoid contention
 const voiceQueues = new Map<string, Promise<Buffer>>()
 
+// Global lock — only ONE TTS generation at a time across all voices.
+// Prevents overlapping EdgeTTS streams that cause double-speak.
+let globalTtsLock: Promise<Buffer> = Promise.resolve(Buffer.alloc(0))
+
 // Generate TTS using official Edge voice — plain text, no SSML, no custom profiles
 async function tryGenerateVoice(text: string, voice: string): Promise<Buffer> {
   const tts = new MsEdgeTTS()
@@ -110,6 +119,7 @@ async function tryGenerateVoice(text: string, voice: string): Promise<Buffer> {
 }
 
 async function generateTTS(text: string, voice: string, lang: string): Promise<Buffer> {
+  ensureCacheDir()
   const key = cacheKey(text, voice)
   if (audioCache.has(key)) return audioCache.get(key)!
 
@@ -119,7 +129,8 @@ async function generateTTS(text: string, voice: string, lang: string): Promise<B
   const voiceCandidates = [voice]
   if (fallbackVoice !== voice) voiceCandidates.push(fallbackVoice)
 
-  const prev = voiceQueues.get(lang) || Promise.resolve(Buffer.alloc(0))
+  // Chain onto the global lock so only one generation runs at a time
+  const prev = globalTtsLock
   const result = prev.then(async () => {
     for (const v of voiceCandidates) {
       try {
@@ -138,7 +149,8 @@ async function generateTTS(text: string, voice: string, lang: string): Promise<B
     return Buffer.alloc(0)
   })
 
-  voiceQueues.set(lang, result.catch(() => Buffer.alloc(0)))
+  // Update the global lock (catch so a failure doesn't stall the lock forever)
+  globalTtsLock = result.catch(() => Buffer.alloc(0))
   return result
 }
 

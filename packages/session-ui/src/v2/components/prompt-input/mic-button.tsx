@@ -3,7 +3,7 @@ import { IconButton } from "@zyraxon-ai/ui/icon-button"
 import { MenuV2 } from "@zyraxon-ai/ui/v2/menu-v2"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
 
-type VoiceState = "idle" | "listening" | "processing"
+type VoiceState = "idle" | "recording" | "processing"
 
 const VOICE_LANGUAGES: Array<{ code: string; label: string }> = [
   { code: "auto", label: "Auto-Detect" },
@@ -57,14 +57,20 @@ export type MicButtonProps = {
   onLanguageChange?: (lang: string) => void
 }
 
+const isInsideIframe = (() => {
+  try {
+    return window !== window.parent && !!window.parent
+  } catch {
+    return false
+  }
+})()
+
 export function PromptInputV2MicButton(props: MicButtonProps) {
   const [state, setState] = createSignal<VoiceState>("idle")
   const [selectedLang, setSelectedLang] = createSignal(props.language || "auto")
-  const [interim, setInterim] = createSignal("")
-  let recognition: any = null
-  let shouldListen = false
-  let restartTimer: ReturnType<typeof setTimeout> | null = null
-  let voiceUnsub: (() => void) | null = null
+  let finalText = ""
+  let removeVoiceListener: (() => void) | null = null
+  let safetyTimeout: ReturnType<typeof setTimeout> | null = null
 
   createEffect(() => {
     const lang = props.language
@@ -73,146 +79,154 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     }
   })
 
-  const ensureRecognition = () => {
-    if (recognition) return
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SpeechRecognition) {
-      props.onError?.("Speech recognition not supported in this browser")
-      return
-    }
-    recognition = new SpeechRecognition()
-    recognition.continuous = true
-    recognition.interimResults = true
-    recognition.maxAlternatives = 1
-    recognition.onresult = (event: any) => {
-      let finalText = ""
-      let interimText = ""
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript
-        if (event.results[i].isFinal) {
-          finalText += transcript
-        } else {
-          interimText += transcript
-        }
-      }
-      if (finalText) {
-        const lang = event.results[event.resultIndex]?.[0]?.language || selectedLang()
-        props.onTranscript(finalText.trim(), lang)
-        setInterim("")
-      } else if (interimText) {
-        setInterim(interimText)
-      }
-    }
-    recognition.onend = () => {
-      if (shouldListen && state() === "listening") {
-        if (restartTimer) clearTimeout(restartTimer)
-        restartTimer = setTimeout(() => {
-          if (shouldListen && state() === "listening") {
-            try {
-              const lang = selectedLang()
-              recognition.lang = lang === "auto" ? "" : lang
-              recognition.start()
-            } catch {
-              setState("idle")
-              shouldListen = false
-            }
-          }
-        }, 150)
-      } else {
-        setState("idle")
-      }
-    }
-    recognition.onerror = (event: any) => {
-      if (event.error === "aborted") return
-      if (event.error === "no-speech" || event.error === "network") {
-        if (shouldListen && state() === "listening") return
-      }
-      props.onError?.(event.error)
-      setState("idle")
-      shouldListen = false
-    }
+  const clearSafetyTimeout = () => {
+    if (safetyTimeout) { clearTimeout(safetyTimeout); safetyTimeout = null }
   }
 
-  const startListening = () => {
-    const api = (window as any).api
-    if (api?.voiceStartListening) {
-      setState("listening")
-      api.voiceSetLanguage(selectedLang())
-      api.voiceStartListening()
-
-      // Store unsub for cleanup
-      if (voiceUnsub) { voiceUnsub(); voiceUnsub = null }
-      voiceUnsub = api.onVoiceEvent?.((ev: any) => {
-        if (ev.type === "voice-transcript" && ev.isFinal && ev.text) {
-          props.onTranscript(ev.text, ev.lang || selectedLang())
-          setInterim("")
-        } else if (ev.type === "voice-transcript" && !ev.isFinal) {
-          setInterim(ev.text || "")
-        }
-      }) || null
-
-      // Retry if bridge not ready yet (Chrome takes time to connect)
-      setTimeout(() => {
-        if (state() === "listening") {
-          api.voiceSetLanguage(selectedLang())
-          api.voiceStartListening()
-        }
-      }, 1500)
-      return
-    }
-    ensureRecognition()
-    if (!recognition) return
-    shouldListen = true
-    try {
-      const lang = selectedLang()
-      recognition.lang = lang === "auto" ? "" : lang
-      recognition.start()
-      setState("listening")
-    } catch {
-      recognition.stop()
-      setTimeout(() => {
-        if (shouldListen) {
-          try {
-            const lang = selectedLang()
-            recognition.lang = lang === "auto" ? "" : lang
-            recognition.start()
-            setState("listening")
-          } catch {
-            setState("idle")
-            shouldListen = false
-          }
-        }
-      }, 200)
-    }
+  const cleanupListener = () => {
+    if (removeVoiceListener) { removeVoiceListener(); removeVoiceListener = null }
   }
 
-  const stopListening = () => {
-    const api = (window as any).api
-    if (api?.voiceStopListening) {
-      api.voiceStopListening()
-      if (voiceUnsub) { voiceUnsub(); voiceUnsub = null }
-      setState("idle")
-      setInterim("")
-      return
-    }
-    shouldListen = false
-    if (restartTimer) {
-      clearTimeout(restartTimer)
-      restartTimer = null
-    }
-    if (recognition) {
-      try { recognition.stop() } catch {}
+  const finishWithText = () => {
+    if (state() !== "processing" && state() !== "recording") return
+    clearSafetyTimeout()
+    cleanupListener()
+    const text = finalText.trim()
+    finalText = ""
+    if (text) {
+      props.onTranscript(text, selectedLang())
     }
     setState("idle")
-    setInterim("")
+  }
+
+  const registerVoiceListener = () => {
+    cleanupListener()
+    const api = (window as any).api
+    if (!api?.onVoiceEvent) return
+
+    removeVoiceListener = api.onVoiceEvent((event: any) => {
+      if (event.type === "voice-transcript") {
+        if (event.isFinal) {
+          const t = (event.fullText || event.text || "").trim()
+          if (t) finalText = t
+        }
+      } else if (event.type === "voice-mic-state") {
+        if (event.active) {
+          setState("recording")
+          clearSafetyTimeout()
+        } else {
+          finishWithText()
+        }
+      } else if (event.type === "voice-send") {
+        const t = (event.text || "").trim()
+        if (t) {
+          clearSafetyTimeout()
+          props.onTranscript(t, event.lang || selectedLang())
+          setState("idle")
+        }
+      }
+    })
+  }
+
+  const startListening = async () => {
+    finalText = ""
+
+    if (isInsideIframe) {
+      const bridgeId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+
+      const handleMessage = (ev: MessageEvent) => {
+        if (ev.data?.type === "zyraxon-speech-result" && ev.data?.bridgeId === bridgeId) {
+          window.removeEventListener("message", handleMessage)
+          if (ev.data.result) {
+            finalText = ev.data.result
+          }
+          finishWithText()
+        }
+      }
+
+      window.addEventListener("message", handleMessage)
+      removeVoiceListener = () => window.removeEventListener("message", handleMessage)
+
+      window.parent.postMessage(
+        { type: "zyraxon-speech-start", bridgeId, lang: selectedLang() === "auto" ? "" : selectedLang() },
+        "*",
+      )
+
+      setState("recording")
+      safetyTimeout = setTimeout(() => {
+        if (state() === "recording" && !finalText) {
+          setState("idle")
+          cleanupListener()
+          props.onError?.("Speech recognition timeout. Please try again.")
+        }
+      }, 15000)
+
+      return
+    }
+
+    const api = (window as any).api
+    if (!api) {
+      props.onError?.("Voice bridge not available.")
+      return
+    }
+
+    setState("recording")
+    registerVoiceListener()
+
+    const lang = selectedLang()
+    if (lang && lang !== "auto") {
+      try { await api.voiceSetLanguage(lang) } catch {}
+    }
+
+    try {
+      const result = await api.voiceStartListening()
+      if (result === false) {
+        props.onError?.("Voice bridge module not ready. Please restart the app.")
+        setState("idle")
+        cleanupListener()
+      }
+    } catch {
+      props.onError?.("Failed to start voice bridge.")
+      setState("idle")
+      cleanupListener()
+    }
+
+    safetyTimeout = setTimeout(() => {
+      if (state() === "recording" && !finalText) {
+        setState("idle")
+        cleanupListener()
+        props.onError?.("Voice bridge timeout. Make sure ZYRAXON Voice window is open.")
+      }
+    }, 8000)
+  }
+
+  const stopListening = async () => {
+    clearSafetyTimeout()
+    setState("processing")
+
+    if (isInsideIframe) {
+      window.parent.postMessage({ type: "zyraxon-speech-stop" }, "*")
+      safetyTimeout = setTimeout(() => {
+        finishWithText()
+      }, 5000)
+      return
+    }
+
+    const api = (window as any).api
+    if (api) {
+      try { await api.voiceStopListening() } catch {}
+    }
+    safetyTimeout = setTimeout(() => {
+      finishWithText()
+    }, 5000)
   }
 
   const toggleMic = (e: MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    if (state() === "listening") {
+    if (state() === "recording") {
       stopListening()
-    } else {
+    } else if (state() === "idle") {
       startListening()
     }
   }
@@ -221,35 +235,14 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     setSelectedLang(code)
     props.onLanguageChange?.(code)
     const api = (window as any).api
-    if (api?.voiceSetLanguage) {
-      api.voiceSetLanguage(code)
-      if (state() === "listening") {
-        api.voiceStopListening()
-        setTimeout(() => {
-          api.voiceSetLanguage(code)
-          api.voiceStartListening()
-        }, 200)
-      }
-      return
-    }
-    if (recognition && state() === "listening") {
-      recognition.stop()
-      setTimeout(() => {
-        if (shouldListen) {
-          recognition.lang = code === "auto" ? "" : code
-          try { recognition.start() } catch {}
-        }
-      }, 100)
+    if (api && state() === "recording") {
+      api.voiceSetLanguage(code).catch(() => {})
     }
   }
 
   onCleanup(() => {
-    shouldListen = false
-    if (restartTimer) clearTimeout(restartTimer)
-    if (voiceUnsub) { voiceUnsub(); voiceUnsub = null }
-    if (recognition) {
-      try { recognition.stop() } catch {}
-    }
+    clearSafetyTimeout()
+    cleanupListener()
   })
 
   const langLabel = () =>
@@ -287,25 +280,25 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
       <TooltipV2
         placement="top"
         value={
-          state() === "listening"
-            ? `Listening${interim() ? ": " + interim() : ""}...`
+          state() === "recording"
+            ? "Recording... Click to stop"
             : state() === "processing"
               ? "Processing..."
-              : `Mic (${langLabel()})`
+              : `Mic (${langLabel()}) — Click to record`
         }
       >
         <IconButton
           data-action="prompt-mic"
           type="button"
-          disabled={props.disabled}
-          icon={state() === "processing" ? "loader" : state() === "listening" ? "mic-off" : "mic"}
-          variant={state() === "listening" ? "danger" : "ghost-muted"}
+          disabled={props.disabled || state() === "processing"}
+          icon={state() === "processing" ? "loader" : state() === "recording" ? "mic-off" : "mic"}
+          variant={state() === "recording" ? "danger" : "ghost-muted"}
           class={`size-7 rounded-md p-[6px] ${
-            state() === "listening"
+            state() === "recording"
               ? "animate-pulse text-red-500"
               : "text-v2-icon-icon-muted"
           }`}
-          aria-label="Voice input"
+          aria-label={state() === "recording" ? "Stop recording" : "Start recording"}
           onClick={toggleMic}
         />
       </TooltipV2>
