@@ -389,7 +389,7 @@ function DesktopRoot(props: { windowState: DesktopWindowState }) {
     const wslServers = useWslServers()
     const [forceReady, setForceReady] = createSignal(false)
     createEffect(() => {
-      const timer = setTimeout(() => setForceReady(true), 15000)
+      const timer = setTimeout(() => setForceReady(true), 8000)
       onCleanup(() => clearTimeout(timer))
     })
     const ready = createMemo(
