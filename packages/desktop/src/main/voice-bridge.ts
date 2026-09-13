@@ -244,7 +244,12 @@ export async function startVoiceBridge() {
 
 export function stopVoiceBridge() {
   killVoiceChrome()
+  if (chromeProcess) {
+    try { chromeProcess.kill("SIGTERM") } catch {}
+    try { chromeProcess.kill("SIGKILL") } catch {}
+  }
   chromeProcess = null
+  killPort(PORT)
   if (httpServer) { try { httpServer.close() } catch {} httpServer = null }
   stopTTSServer()
 }
