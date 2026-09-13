@@ -213,7 +213,7 @@ function killVoiceChrome() {
         const pid = match[1]
         try {
           const cmdLine = execSync(`wmic process where ProcessId=${pid} get CommandLine /VALUE`, { encoding: "utf8", timeout: 3000 })
-          if (cmdLine.includes("ZYRAXON-Voice")) {
+          if (cmdLine.includes("ZYRAXON-Voice") || cmdLine.includes("ZYRAXON-Voice-Profile") || cmdLine.includes(`127.0.0.1:${PORT}/`)) {
             execSync(`taskkill /F /PID ${pid}`, { encoding: "utf8", timeout: 3000 })
           }
         } catch {}

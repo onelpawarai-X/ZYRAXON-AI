@@ -302,7 +302,10 @@ export const { use: useServerSDK, provider: ServerSDKProvider } = createSimpleCo
 
     return createMemo<ServerSDK>(() => {
       const conn = props.server?.() ?? server.current
-      if (!conn) throw new Error(language.t("error.serverSDK.noServerAvailable"))
+      if (!conn) {
+        console.warn("[ServerSDK] No server available yet, waiting...")
+        throw new Error(language.t("error.serverSDK.noServerAvailable"))
+      }
       return global.ensureServerCtx(conn).sdk
     })
   },
