@@ -244,6 +244,21 @@ const main = Effect.gen(function* () {
 
   app.on("will-quit", () => {
     setAppQuitting()
+    try {
+      const { getVoiceBridgeModule } = require("./voice-bridge-singleton") as typeof import("./voice-bridge-singleton")
+      getVoiceBridgeModule()?.stopVoiceBridge()
+    } catch {}
+  })
+
+  app.on("window-all-closed", () => {
+    try {
+      const { getVoiceBridgeModule } = require("./voice-bridge-singleton") as typeof import("./voice-bridge-singleton")
+      getVoiceBridgeModule()?.stopVoiceBridge()
+    } catch {}
+    if (!isQuitting) {
+      isQuitting = true
+      app.quit()
+    }
   })
 
   app.on("child-process-gone", (_event, details) => {
@@ -261,9 +276,28 @@ const main = Effect.gen(function* () {
   for (const signal of ["SIGINT", "SIGTERM"] as const) {
     process.on(signal, () => {
       setAppQuitting()
+      try {
+        const { getVoiceBridgeModule } = require("./voice-bridge-singleton") as typeof import("./voice-bridge-singleton")
+        getVoiceBridgeModule()?.stopVoiceBridge()
+      } catch {}
       void stopSidecars().finally(() => app.exit(0))
     })
   }
+
+  process.on("exit", () => {
+    try {
+      const { getVoiceBridgeModule } = require("./voice-bridge-singleton") as typeof import("./voice-bridge-singleton")
+      getVoiceBridgeModule()?.stopVoiceBridge()
+    } catch {}
+  })
+
+  process.on("uncaughtException", (error) => {
+    writeLog("main", "uncaught exception", { error: String(error) }, "error")
+    try {
+      const { getVoiceBridgeModule } = require("./voice-bridge-singleton") as typeof import("./voice-bridge-singleton")
+      getVoiceBridgeModule()?.stopVoiceBridge()
+    } catch {}
+  })
 
   const serverReady = Deferred.makeUnsafe<ServerReadyData, unknown>()
 

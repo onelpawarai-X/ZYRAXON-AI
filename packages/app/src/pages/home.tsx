@@ -324,7 +324,7 @@ export function NewHome() {
     return global.ensureServerCtx(conn)
   })
   const focusedSync = () => focusedServerCtx()?.sync ?? sync()
-  const homeSessions = () => focusedSync().homeSessions
+  const homeSessions = () => focusedSync()?.homeSessions ?? { eventsKey: ["home", "events"], indexKey: ["home", "index"], eventSequence: () => 0, complete: () => {} }
   const projects = createMemo(() => focusedServerCtx()?.projects.list() ?? layout.projects.list())
   const recentlyClosed = createMemo(
     () => focusedServerCtx()?.projects.recentlyClosed() ?? layout.projects.recentlyClosed(),
@@ -357,14 +357,21 @@ export function NewHome() {
     }
     return language.t("home.sessions.search.placeholder")
   })
+  const safeHomeSessions = createMemo(() => {
+    try {
+      const s = homeSessions()
+      if (s && s.eventsKey && s.indexKey) return s
+    } catch {}
+    return { eventsKey: ["home", "events"] as const, indexKey: ["home", "index"] as const, eventSequence: () => 0, complete: () => {} }
+  })
   const sessionEventLoad = useQuery(() => ({
-    queryKey: homeSessions().eventsKey,
+    queryKey: safeHomeSessions().eventsKey,
     queryFn: async (): Promise<HomeSessionEvents> => ({ sequence: 0, entries: [] }),
     initialData: { sequence: 0, entries: [] } satisfies HomeSessionEvents,
     enabled: false,
   }))
   const sessionLoad = useQuery(() => ({
-    queryKey: homeSessions().indexKey,
+    queryKey: safeHomeSessions().indexKey,
     enabled: !!focusedServerCtx(),
     queryFn: async ({ signal }) => {
       const ctx = focusedServerCtx()
