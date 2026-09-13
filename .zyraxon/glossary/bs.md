@@ -1,8 +1,8 @@
-# bs Glossary
+﻿# bs Glossary
 
 ## Sources
 
-- PR #12283: https://github.com/onelpawarai/ZYRAXON-AI/pull/12283
+- PR #12283: https://github.com/onelpawarai-X/ZYRAXON-AI/pull/12283
 
 ## Do Not Translate (Locale Additions)
 

@@ -1,4 +1,4 @@
-name: triage
+﻿name: triage
 
 on:
   issues:
@@ -38,7 +38,7 @@ jobs:
 
       - name: Install zyraxon
         if: steps.author.outputs.skip != 'true'
-        run: curl -fsSL https://raw.githubusercontent.com/onelpawarai/ZYRAXON-AI/main/install | bash
+        run: curl -fsSL https://raw.githubusercontent.com/onelpawarai-X/ZYRAXON-AI/main/install | bash
 
       - name: Triage issue
         if: steps.author.outputs.skip != 'true'

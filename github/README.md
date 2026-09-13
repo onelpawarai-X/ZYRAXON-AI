@@ -1,4 +1,4 @@
-# ZYRAXON GitHub Action
+﻿# ZYRAXON GitHub Action
 
 A GitHub Action that integrates [ZYRAXON](https://ZYRAXON.ai) directly into your GitHub workflow.
 
@@ -88,7 +88,7 @@ This will walk you through installing the GitHub app, creating the workflow, and
               persist-credentials: false
 
           - name: Run ZYRAXON
-           uses: onelpawarai/ZYRAXON-AI/github@latest
+           uses: onelpawarai-X/ZYRAXON-AI/github@latest
            env:
              ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -101,7 +101,7 @@ This will walk you through installing the GitHub app, creating the workflow, and
 
 ## Support
 
-This is an early release. If you encounter issues or have feedback, please create an issue at https://github.com/onelpawarai/ZYRAXON-AI/issues.
+This is an early release. If you encounter issues or have feedback, please create an issue at https://github.com/onelpawarai-X/ZYRAXON-AI/issues.
 
 ## Development
 

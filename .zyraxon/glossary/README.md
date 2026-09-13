@@ -1,4 +1,4 @@
-# Locale Glossaries
+﻿# Locale Glossaries
 
 Use this folder for locale-specific translation guidance that supplements `.ZYRAXON/agent/translator.md`.
 
@@ -33,7 +33,7 @@ Prefer guidance that is:
 
 ## Sources
 
-- PR #12345: https://github.com/onelpawarai/ZYRAXON-AI/pull/12345
+- PR #12345: https://github.com/onelpawarai-X/ZYRAXON-AI/pull/12345
 
 ## Do Not Translate (Locale Additions)
 

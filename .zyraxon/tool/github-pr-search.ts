@@ -1,4 +1,4 @@
-/// <reference path="../env.d.ts" />
+﻿/// <reference path="../env.d.ts" />
 import { tool } from "@zyraxon-ai/plugin"
 async function githubFetch(endpoint: string, options: RequestInit = {}) {
   const response = await fetch(`https://api.github.com${endpoint}`, {
@@ -24,7 +24,7 @@ interface PR {
 export default tool({
   description: `Use this tool to search GitHub pull requests by title and description.
 
-This tool searches PRs in the onelpawarai/ZYRAXON-AI repository and returns LLM-friendly results including:
+This tool searches PRs in the onelpawarai-X/ZYRAXON-AI repository and returns LLM-friendly results including:
 - PR number and title
 - Author
 - State (open/closed/merged)

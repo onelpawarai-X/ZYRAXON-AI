@@ -10,6 +10,7 @@ import { SettingsProvidersV2 } from "./providers"
 import { SettingsModelsV2 } from "./models"
 import "./settings-v2.css"
 import { SettingsServersV2 } from "./servers"
+import { SettingsSubscription } from "./settings-subscription"
 import { useDialog } from "@zyraxon-ai/ui/context/dialog"
 
 export const DialogSettings: Component<{
@@ -69,6 +70,16 @@ export const DialogSettings: Component<{
                     </TabsV2.Trigger>
                   </div>
                 </div>
+
+                <div class="flex flex-col gap-1.5">
+                  <TabsV2.SectionTitle>Subscription</TabsV2.SectionTitle>
+                  <div class="flex flex-col gap-1.5 w-full">
+                    <TabsV2.Trigger value="subscription">
+                      <Icon name="crown" />
+                      Plans & Upgrade
+                    </TabsV2.Trigger>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="settings-v2-nav-footer">
@@ -91,6 +102,9 @@ export const DialogSettings: Component<{
         </TabsV2.Content>
         <TabsV2.Content value="models" class="settings-v2-panel">
           <SettingsModelsV2 />
+        </TabsV2.Content>
+        <TabsV2.Content value="subscription" class="settings-v2-panel">
+          <SettingsSubscription />
         </TabsV2.Content>
       </TabsV2>
     </Dialog>

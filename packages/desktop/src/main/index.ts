@@ -325,15 +325,9 @@ const main = Effect.gen(function* () {
 
   const updateTimer = setInterval(() => void updater.check(), 10 * 60 * 1000)
   updateTimer.unref()
-  app.once("will-quit", () => clearInterval(updateTimer))
-  yield* Effect.promise(() => startNetLog()).pipe(
-    Effect.catch((error) =>
-      Effect.sync(() => {
-        logger.warn("failed to start net log", error)
-      }),
-    ),
-  )
 
+  // CRITICAL: Create window FIRST, defer net log (it can hang on some systems)
+  // The window must appear immediately so the renderer can show the splash screen.
   const port = yield* Effect.gen(function* () {
     const fromEnv = process.env.ZYRAXON_PORT
     if (fromEnv) {
@@ -423,6 +417,15 @@ const main = Effect.gen(function* () {
 
   // Do NOT await the fiber — sidecar loads in background while UI is visible
   // yield* Fiber.await(loadingTask)  ← REMOVED: was blocking startup
+
+  // Deferred net log — moved here so it never blocks window creation
+  void (async () => {
+    try {
+      await startNetLog()
+    } catch (e) {
+      logger.warn("failed to start net log", e)
+    }
+  })()
 
   // ─── DEFERRED: All non-critical services (background, non-blocking) ────
   // These run AFTER the UI is visible. None block startup.

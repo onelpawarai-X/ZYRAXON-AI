@@ -52,6 +52,7 @@ import { ModelsProvider } from "@/context/models"
 import { CollabProvider } from "@/context/collab"
 import { NotificationProvider } from "@/context/notification"
 import { PermissionProvider } from "@/context/permission"
+import { SubscriptionProvider } from "@/context/subscription"
 import { usePlatform } from "@/context/platform"
 import { PromptProvider } from "@/context/prompt"
 import { ServerConnection, ServerProvider, serverName, useServer } from "@/context/server"
@@ -401,11 +402,13 @@ export function AppBaseProviders(props: ParentProps<{ locale?: Locale }>) {
             >
               <QueryProvider>
                 <WslServersProvider>
-                  <DialogProvider>
-                    <MarkedProvider>
-                      <FileComponentProvider component={File}>{props.children}</FileComponentProvider>
-                    </MarkedProvider>
-                  </DialogProvider>
+                  <SubscriptionProvider>
+                    <DialogProvider>
+                      <MarkedProvider>
+                        <FileComponentProvider component={File}>{props.children}</FileComponentProvider>
+                      </MarkedProvider>
+                    </DialogProvider>
+                  </SubscriptionProvider>
                 </WslServersProvider>
               </QueryProvider>
             </ErrorBoundary>

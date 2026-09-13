@@ -1,8 +1,8 @@
-# ru Glossary
+﻿# ru Glossary
 
 ## Sources
 
-- PR #9882: https://github.com/onelpawarai/ZYRAXON-AI/pull/9882
+- PR #9882: https://github.com/onelpawarai-X/ZYRAXON-AI/pull/9882
 
 ## Do Not Translate (Locale Additions)
 

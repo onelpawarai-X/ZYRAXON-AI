@@ -1,9 +1,9 @@
-# no Glossary
+﻿# no Glossary
 
 ## Sources
 
-- PR #10018: https://github.com/onelpawarai/ZYRAXON-AI/pull/10018
-- PR #12935: https://github.com/onelpawarai/ZYRAXON-AI/pull/12935
+- PR #10018: https://github.com/onelpawarai-X/ZYRAXON-AI/pull/10018
+- PR #12935: https://github.com/onelpawarai-X/ZYRAXON-AI/pull/12935
 
 ## Do Not Translate (Locale Additions)
 
@@ -20,13 +20,13 @@ These are PR-backed corrections and may evolve.
 | ----------------------------------- | ------------ | ----------------------------- |
 | Save (data persistence action)      | `Lagre`      | Prefer over `Spare`           |
 | Disabled (feature/state)            | `deaktivert` | Prefer over `funksjonshemmet` |
-| API keys                            | `API Nøkler` | Prefer over `API Taster`      |
+| API keys                            | `API NÃ¸kler` | Prefer over `API Taster`      |
 | Cost (noun)                         | `Kostnad`    | Prefer over verb form `Koste` |
 | Show/View (imperative button label) | `Vis`        | Prefer over `Utsikt`          |
 
 ## Guidance
 
-- Prefer natural Norwegian Bokmal (Bokmål) wording over literal translation
+- Prefer natural Norwegian Bokmal (BokmÃ¥l) wording over literal translation
 - Keep tone clear and practical in UI labels
 - Preserve technical artifacts exactly: commands, flags, code, URLs, model IDs, and file paths
 - Keep recurring UI terms consistent once a preferred term is chosen

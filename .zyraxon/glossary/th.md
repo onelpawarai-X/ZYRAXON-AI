@@ -1,9 +1,9 @@
-# th Glossary
+﻿# th Glossary
 
 ## Sources
 
-- PR #10809: https://github.com/onelpawarai/ZYRAXON-AI/pull/10809
-- PR #11496: https://github.com/onelpawarai/ZYRAXON-AI/pull/11496
+- PR #10809: https://github.com/onelpawarai-X/ZYRAXON-AI/pull/10809
+- PR #11496: https://github.com/onelpawarai-X/ZYRAXON-AI/pull/11496
 
 ## Do Not Translate (Locale Additions)
 
@@ -18,8 +18,8 @@ These are PR-backed preferences and may evolve.
 
 | English / Context                     | Preferred             | Notes                                                                            |
 | ------------------------------------- | --------------------- | -------------------------------------------------------------------------------- |
-| Thai language label in language lists | `ไทย`                 | PR #10809 standardized this across locales                                       |
-| Language names in language pickers    | Native names (static) | PR #11496: keep names like `English`, `Deutsch`, `ไทย` consistent across locales |
+| Thai language label in language lists | `à¹„à¸—à¸¢`                 | PR #10809 standardized this across locales                                       |
+| Language names in language pickers    | Native names (static) | PR #11496: keep names like `English`, `Deutsch`, `à¹„à¸—à¸¢` consistent across locales |
 
 ## Guidance
 
@@ -31,4 +31,4 @@ These are PR-backed preferences and may evolve.
 ## Avoid
 
 - Avoid translating language names differently per current locale in language lists
-- Avoid changing `ไทย` to another display form for the Thai language option unless the product standard changes
+- Avoid changing `à¹„à¸—à¸¢` to another display form for the Thai language option unless the product standard changes

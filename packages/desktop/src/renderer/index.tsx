@@ -387,12 +387,18 @@ function DesktopRoot(props: { windowState: DesktopWindowState }) {
 
   function App() {
     const wslServers = useWslServers()
+    const [forceReady, setForceReady] = createSignal(false)
+    createEffect(() => {
+      const timer = setTimeout(() => setForceReady(true), 15000)
+      onCleanup(() => clearTimeout(timer))
+    })
     const ready = createMemo(
       () =>
-        !defaultServer.loading && !sidecar.loading && !windowCount.loading && !locale.loading && !wslServers.isLoading,
+        forceReady() ||
+        (!defaultServer.loading && !sidecar.loading && !windowCount.loading && !locale.loading && !wslServers.isLoading),
     )
     const servers = createMemo(() => {
-      const data = initializationData(sidecar)
+      const data = sidecar()
       const list: ServerConnection.Any[] = []
       if (data) {
         list.push({

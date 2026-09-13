@@ -1,8 +1,8 @@
-# ar Glossary
+﻿# ar Glossary
 
 ## Sources
 
-- PR #9947: https://github.com/onelpawarai/ZYRAXON-AI/pull/9947
+- PR #9947: https://github.com/onelpawarai-X/ZYRAXON-AI/pull/9947
 
 ## Do Not Translate (Locale Additions)
 

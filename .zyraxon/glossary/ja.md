@@ -1,9 +1,9 @@
-# ja Glossary
+﻿# ja Glossary
 
 ## Sources
 
-- PR #9821: https://github.com/onelpawarai/ZYRAXON-AI/pull/9821
-- PR #13160: https://github.com/onelpawarai/ZYRAXON-AI/pull/13160
+- PR #9821: https://github.com/onelpawarai-X/ZYRAXON-AI/pull/9821
+- PR #13160: https://github.com/onelpawarai-X/ZYRAXON-AI/pull/13160
 
 ## Do Not Translate (Locale Additions)
 
@@ -18,8 +18,8 @@ These are PR-backed wording preferences and may evolve.
 
 | English / Context           | Preferred               | Notes                                 |
 | --------------------------- | ----------------------- | ------------------------------------- |
-| WSL integration (UI label)  | `WSL連携`               | PR #13160 prefers this over `WSL統合` |
-| WSL integration description | `WindowsのWSL環境で...` | PR #13160 improved phrasing naturally |
+| WSL integration (UI label)  | `WSLé€£æº`               | PR #13160 prefers this over `WSLçµ±åˆ` |
+| WSL integration description | `Windowsã®WSLç’°å¢ƒã§...` | PR #13160 improved phrasing naturally |
 
 ## Guidance
 
@@ -29,5 +29,5 @@ These are PR-backed wording preferences and may evolve.
 
 ## Avoid
 
-- Avoid `WSL統合` in the WSL integration UI context where `WSL連携` is the reviewed wording
+- Avoid `WSLçµ±åˆ` in the WSL integration UI context where `WSLé€£æº` is the reviewed wording
 - Avoid translating product and protocol names that are fixed identifiers

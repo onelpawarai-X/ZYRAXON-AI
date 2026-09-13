@@ -1,9 +1,9 @@
----
+﻿---
 description: "find issue(s) on github"
 model: ZYRAXON/claude-haiku-4-5
 ---
 
-Search through existing issues in onelpawarai/ZYRAXON-AI using the gh cli to find issues matching this query:
+Search through existing issues in onelpawarai-X/ZYRAXON-AI using the gh cli to find issues matching this query:
 
 $ARGUMENTS
 

@@ -13,7 +13,9 @@ export function DesktopFirstLaunchOnboarding(props: { initialUrl: string; onLoad
   async function runFirstLaunchOnboarding() {
     try {
       await Promise.all(
-        [server.ready.promise, tabs.ready.promise, tabs.recentReady.promise].map((p) => p ?? Promise.resolve()),
+        [server.ready.promise, tabs.ready.promise, tabs.recentReady.promise].map((p) =>
+          p ? Promise.race([p, new Promise<void>((r) => setTimeout(r, 10000))]) : Promise.resolve(),
+        ),
       )
       const existingInstall = await window.api.isOldLayoutEligible()
       settings.general.setOldLayoutEligible(existingInstall)

@@ -1,8 +1,8 @@
-# zh-cn Glossary
+﻿# zh-cn Glossary
 
 ## Sources
 
-- PR #13942: https://github.com/onelpawarai/ZYRAXON-AI/pull/13942
+- PR #13942: https://github.com/onelpawarai-X/ZYRAXON-AI/pull/13942
 
 ## Do Not Translate (Locale Additions)
 
@@ -18,15 +18,15 @@ These are preferred terms for docs/UI prose and may evolve.
 
 | English                 | Preferred | Notes                                       |
 | ----------------------- | --------- | ------------------------------------------- |
-| prompt                  | 提示词    | Keep `--prompt` unchanged in flags/code     |
-| session                 | 会话      |                                             |
-| provider                | 提供商    |                                             |
-| share link / shared URL | 分享链接  | Prefer `分享` for user-facing share actions |
-| headless (server)       | 无界面    | Docs wording                                |
-| authentication          | 认证      | Prefer in auth/OAuth contexts               |
-| cache                   | 缓存      |                                             |
-| keybind / shortcut      | 快捷键    | User-facing docs wording                    |
-| workflow                | 工作流    | e.g. GitHub Actions workflow                |
+| prompt                  | æç¤ºè¯    | Keep `--prompt` unchanged in flags/code     |
+| session                 | ä¼šè¯      |                                             |
+| provider                | æä¾›å•†    |                                             |
+| share link / shared URL | åˆ†äº«é“¾æŽ¥  | Prefer `åˆ†äº«` for user-facing share actions |
+| headless (server)       | æ— ç•Œé¢    | Docs wording                                |
+| authentication          | è®¤è¯      | Prefer in auth/OAuth contexts               |
+| cache                   | ç¼“å­˜      |                                             |
+| keybind / shortcut      | å¿«æ·é”®    | User-facing docs wording                    |
+| workflow                | å·¥ä½œæµ    | e.g. GitHub Actions workflow                |
 
 ## Guidance
 
@@ -34,7 +34,7 @@ These are preferred terms for docs/UI prose and may evolve.
 - Keep the tone direct and friendly (PR #13942 consistently moved wording in this direction)
 - Preserve technical artifacts exactly: commands, flags, code, inline code, URLs, file paths, model IDs
 - Keep enum-like values in English when they are literals (for example, `default`, `json`)
-- Prefer consistent terminology across pages once a term is chosen (`会话`, `提供商`, `提示词`, etc.)
+- Prefer consistent terminology across pages once a term is chosen (`ä¼šè¯`, `æä¾›å•†`, `æç¤ºè¯`, etc.)
 
 ## Avoid
 
