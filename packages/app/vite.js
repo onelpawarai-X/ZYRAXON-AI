@@ -24,6 +24,13 @@ export default [
           alias: {
             "@": fileURLToPath(new URL("./src", import.meta.url)),
           },
+          dedupe: [
+            "@tanstack/query-core",
+            "@tanstack/solid-query",
+            "@tanstack/query-persist-client-core",
+            "@tanstack/solid-query-persist-client",
+            "@tanstack/react-query",
+          ],
         },
         define: {
           "import.meta.env.VITE_ZYRAXON_CHANNEL": JSON.stringify(channel),

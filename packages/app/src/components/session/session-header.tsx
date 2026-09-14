@@ -582,25 +582,21 @@ function SessionHeaderV2Actions(props: { state: SessionHeaderV2ActionsState }) {
           />
         </TooltipV2>
       </Show>
-      <Show when={false}>
-        <TooltipV2
-          class="shrink-0"
-          placement="bottom"
-          value="ZYRAXON Ecosystem"
-        >
-          <IconButtonV2
-            type="button"
-            variant="ghost-muted"
-            size="large"
-            class="!w-9 shrink-0"
-            state={getPreviewActive() ? "pressed" : undefined}
-            onClick={togglePreview}
-            aria-label="Toggle ecosystem"
-            aria-expanded={getPreviewActive()}
-            icon={<IconV2 name="globe" />}
-          />
-        </TooltipV2>
-      </Show>
+      <TooltipV2
+        class="shrink-0"
+        placement="bottom"
+        value="Subscription Plans"
+      >
+        <IconButtonV2
+          type="button"
+          variant="ghost-muted"
+          size="large"
+          class="!w-9 shrink-0"
+          onClick={() => command.trigger("settings.open")}
+          aria-label="Subscription Plans"
+          icon={<IconV2 name="globe" />}
+        />
+      </TooltipV2>
     </div>
   )
 }

@@ -75,7 +75,7 @@ export const DialogSettings: Component<{
                   <TabsV2.SectionTitle>Subscription</TabsV2.SectionTitle>
                   <div class="flex flex-col gap-1.5 w-full">
                     <TabsV2.Trigger value="subscription">
-                      <Icon name="crown" />
+                      <Icon name="settings-gear" />
                       Plans & Upgrade
                     </TabsV2.Trigger>
                   </div>

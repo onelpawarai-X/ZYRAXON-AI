@@ -58,8 +58,6 @@ import { sessionTitle } from "@/utils/session-title"
 import { pathKey } from "@/utils/path-key"
 import { useGlobal } from "@/context/global"
 import { useCommand } from "@/context/command"
-import { useSubscription } from "@/context/subscription"
-import { TIER_ORDER } from "@/context/subscription-types"
 import { Binary } from "@zyraxon-ai/core/util/binary"
 import { ServerRowMenu } from "@/components/server/server-row-menu"
 import { ServerHealthIndicator } from "@/components/server/server-row"
@@ -304,7 +302,6 @@ export function NewHome() {
   const notification = useNotification()
   const marked = useMarked()
   const openSettings = useSettingsCommand()
-  const subscription = useSubscription()
   let focusSessionSearch: (() => void) | undefined
   let sessionViewport: HTMLDivElement | undefined
   const [sessionThumbTrack, setSessionThumbTrack] = createSignal<HTMLDivElement>()
@@ -323,13 +320,17 @@ export function NewHome() {
     if (!conn) return
     return global.ensureServerCtx(conn)
   })
-  const focusedSync = () => focusedServerCtx()?.sync ?? sync()
-  const homeSessions = () => focusedSync()?.homeSessions ?? { eventsKey: ["home", "events"], indexKey: ["home", "index"], eventSequence: () => 0, complete: () => {} }
+  const focusedSync = createMemo(() => focusedServerCtx()?.sync ?? sync())
+  const homeSessions = createMemo(() => {
+    const s = focusedSync()
+    if (!s?.homeSessions) return undefined
+    return s.homeSessions
+  })
   const projects = createMemo(() => focusedServerCtx()?.projects.list() ?? layout.projects.list())
   const recentlyClosed = createMemo(
     () => focusedServerCtx()?.projects.recentlyClosed() ?? layout.projects.recentlyClosed(),
   )
-  const homedir = createMemo(() => focusedSync().data.path.home ?? "")
+  const homedir = createMemo(() => focusedSync()?.data?.path?.home ?? "")
   const selectedProject = createMemo(() => projects().find((project) => project.worktree === selection().directory))
   const newSessionProject = createMemo(
     () =>
@@ -357,51 +358,55 @@ export function NewHome() {
     }
     return language.t("home.sessions.search.placeholder")
   })
-  const safeHomeSessions = createMemo(() => {
-    try {
-      const s = homeSessions()
-      if (s && s.eventsKey && s.indexKey) return s
-    } catch {}
-    return { eventsKey: ["home", "events"] as const, indexKey: ["home", "index"] as const, eventSequence: () => 0, complete: () => {} }
+  const sessionEventLoad = useQuery(() => {
+    const hs = homeSessions()
+    if (!hs) return { queryKey: ["home", "session-events", "pending"] as const, queryFn: async () => ({ sequence: 0, entries: [] } as HomeSessionEvents), initialData: { sequence: 0, entries: [] } as HomeSessionEvents, enabled: false }
+    return {
+      queryKey: hs.eventsKey,
+      queryFn: async (): Promise<HomeSessionEvents> => ({ sequence: 0, entries: [] }),
+      initialData: { sequence: 0, entries: [] } satisfies HomeSessionEvents,
+      enabled: false,
+    }
   })
-  const sessionEventLoad = useQuery(() => ({
-    queryKey: safeHomeSessions().eventsKey,
-    queryFn: async (): Promise<HomeSessionEvents> => ({ sequence: 0, entries: [] }),
-    initialData: { sequence: 0, entries: [] } satisfies HomeSessionEvents,
-    enabled: false,
-  }))
-  const sessionLoad = useQuery(() => ({
-    queryKey: safeHomeSessions().indexKey,
-    enabled: !!focusedServerCtx(),
-    queryFn: async ({ signal }) => {
-      const ctx = focusedServerCtx()
-      if (!ctx) return { sessions: [], eventSequence: 0 }
-      const cache = homeSessions()
-      const eventSequence = cache.eventSequence()
-      const index = await loadHomeSessionIndex(
-        (input, options) => ctx.sdk.client.v2.session.list(input, options),
-        eventSequence,
-        signal,
-      )
-      cache.complete(eventSequence)
-      return index
-    },
-    retry: false,
-    staleTime: 30_000,
-    refetchOnMount: true,
-    refetchOnReconnect: true,
-  }))
+  const sessionLoad = useQuery(() => {
+    const hs = homeSessions()
+    if (!hs) return { queryKey: ["home", "session-index", "pending"] as const, enabled: false, queryFn: async () => ({ sessions: [], eventSequence: 0 }) }
+    return {
+      queryKey: hs.indexKey,
+      enabled: !!focusedServerCtx(),
+      queryFn: async ({ signal }) => {
+        const ctx = focusedServerCtx()
+        if (!ctx) return { sessions: [], eventSequence: 0 }
+        const cache = homeSessions()
+        if (!cache) return { sessions: [], eventSequence: 0 }
+        const eventSequence = cache.eventSequence()
+        const index = await loadHomeSessionIndex(
+          (input, options) => ctx.sdk.client.v2.session.list(input, options),
+          eventSequence,
+          signal,
+        )
+        cache.complete(eventSequence)
+        return index
+      },
+      retry: false,
+      staleTime: 30_000,
+      refetchOnMount: true,
+      refetchOnReconnect: true,
+    }
+  })
 
   const projectByID = createMemo(
     () => new Map(projects().flatMap((project) => (project.id ? [[project.id, project] as const] : []))),
   )
-  const indexedSessions = createMemo(() =>
-    retainHomeSessions(
-      homeSessions().sessions(sessionLoad.data, sessionEventLoad.data),
+  const indexedSessions = createMemo(() => {
+    const hs = homeSessions()
+    if (!hs) return []
+    return retainHomeSessions(
+      hs.sessions(sessionLoad.data, sessionEventLoad.data),
       HOME_SESSION_LIMIT,
       Date.now(),
-    ),
-  )
+    )
+  })
   const allRecords = createMemo(() =>
     buildHomeSessionRecords({
       sessions: indexedSessions,
@@ -1838,7 +1843,6 @@ export function LegacyHome() {
   const global = useGlobal()
   const server = useServer()
   const language = useLanguage()
-  const subscription = useSubscription()
   const homedir = createMemo(() => sync().data.path.home)
   const serverUnreachable = createMemo(() => global.servers.health[server.key]?.healthy === false)
   const recent = createMemo(() => {
@@ -1887,24 +1891,7 @@ export function LegacyHome() {
 
   return (
     <div class="mx-auto mt-55 w-full md:w-auto px-4">
-      <div class="flex items-center gap-3 mb-4">
-        <Logo class="md:w-xl opacity-12" />
-        <Show when={subscription.tier() !== "free"}>
-          <div
-            classList={{
-              "px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider": true,
-              "bg-indigo-500/10 text-indigo-400 ring-1 ring-inset ring-indigo-500/20": subscription.tier() === "pro",
-              "bg-purple-500/10 text-purple-400 ring-1 ring-inset ring-purple-500/20": subscription.tier() === "max",
-              "bg-amber-500/10 text-amber-400 ring-1 ring-inset ring-amber-500/20": subscription.tier() === "ultra",
-            }}
-          >
-            {subscription.plan().name}
-            <Show when={subscription.daysRemaining() !== null}>
-              <span class="ml-1 opacity-60">({subscription.daysRemaining()}d)</span>
-            </Show>
-          </div>
-        </Show>
-      </div>
+      <Logo class="md:w-xl opacity-12" />
       <Button
         size="large"
         variant="ghost"
@@ -1919,21 +1906,6 @@ export function LegacyHome() {
         />
         {server.name}
       </Button>
-      <Show when={subscription.tier() !== "free"}>
-        <div class="mt-2 mx-auto flex items-center gap-2 text-xs text-text-weak">
-          <span class="text-v2-text-text-muted">
-            {subscription.plan().toolCount} tools unlocked
-          </span>
-          <span class="text-v2-border-border-base">·</span>
-          <button
-            type="button"
-            class="text-indigo-400 hover:text-indigo-300 transition-colors"
-            onClick={() => navigate("/settings")}
-          >
-            Manage Plan
-          </button>
-        </div>
-      </Show>
       <Switch>
         <Match when={sync().data.project.length > 0}>
           <div class="mt-20 w-full flex flex-col gap-4">

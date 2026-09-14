@@ -44,7 +44,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       "Browser Automation (1 tab)",
       "Up to 3 Projects",
     ],
-    toolCount: 56,
+    toolCount: 57,
     memoryOptimization: "Basic (100 entries, 10MB cache)",
     maxAgents: 1,
     maxProjects: "3",
@@ -160,13 +160,13 @@ export function hasAccess(currentTier: SubscriptionTier, requiredTier: Subscript
 }
 
 export const SECRET_CODES: Record<string, { tier: SubscriptionTier; durationDays: number | null }> = {
-  "ZYRAXON-PRO-2026": { tier: "pro", durationDays: 15 },
-  "ZYRAXON-PRO-YEAR": { tier: "pro", durationDays: 365 },
-  "ZYRAXON-MAX-2026": { tier: "max", durationDays: 60 },
-  "ZYRAXON-MAX-YEAR": { tier: "max", durationDays: 365 },
-  "ZYRAXON-ULTRA-2026": { tier: "ultra", durationDays: 365 },
-  "ZYRAXON-ULTRA-FULL": { tier: "ultra", durationDays: 3650 },
-  "ZYRAXON-DEV-TEST": { tier: "ultra", durationDays: 30 },
+  "ZYRAXON-PRO-2026": { tier: "pro", durationDays: null },
+  "ZYRAXON-PRO-YEAR": { tier: "pro", durationDays: null },
+  "ZYRAXON-MAX-2026": { tier: "max", durationDays: null },
+  "ZYRAXON-MAX-YEAR": { tier: "max", durationDays: null },
+  "ZYRAXON-ULTRA-2026": { tier: "ultra", durationDays: null },
+  "ZYRAXON-ULTRA-FULL": { tier: "ultra", durationDays: null },
+  "ZYRAXON-DEV-TEST": { tier: "ultra", durationDays: null },
   "ZYRAXON-FOUNDER": { tier: "ultra", durationDays: null },
 }
 
@@ -174,9 +174,9 @@ export function validateSecretCode(code: string): { tier: SubscriptionTier; dura
   const normalized = code.trim().toUpperCase()
   const entry = SECRET_CODES[normalized]
   if (entry) return entry
-  if (normalized.startsWith("ZYRAXON-PRO-")) return { tier: "pro", durationDays: 15 }
-  if (normalized.startsWith("ZYRAXON-MAX-")) return { tier: "max", durationDays: 60 }
-  if (normalized.startsWith("ZYRAXON-ULTRA-")) return { tier: "ultra", durationDays: 365 }
+  if (normalized.startsWith("ZYRAXON-PRO-")) return { tier: "pro", durationDays: null }
+  if (normalized.startsWith("ZYRAXON-MAX-")) return { tier: "max", durationDays: null }
+  if (normalized.startsWith("ZYRAXON-ULTRA-")) return { tier: "ultra", durationDays: null }
   return null
 }
 
@@ -717,6 +717,8 @@ export const TOOL_TIER_MAP: Record<string, SubscriptionTier> = {
   x_guardian_context: "ultra",
   x_guardian_status: "ultra",
   x_guardian_clear: "ultra",
+  // Subscription — always free
+  x_subscription_status: "free",
 }
 
 export function getToolRequiredTier(toolId: string): SubscriptionTier {
@@ -724,7 +726,7 @@ export function getToolRequiredTier(toolId: string): SubscriptionTier {
 }
 
 export const TIER_STATS: Record<SubscriptionTier, { totalTools: number; categories: string[] }> = {
-  free: { totalTools: 56, categories: ["Core AI", "Math", "Science", "Finance", "Data Science", "Security Basics", "Daily Life", "Memory", "Documents", "Tasks", "Captcha"] },
+  free: { totalTools: 57, categories: ["Core AI", "Math", "Science", "Finance", "Data Science", "Security Basics", "Daily Life", "Memory", "Documents", "Tasks", "Captcha", "Subscription"] },
   pro: { totalTools: 113, categories: ["Pro Dev Tools", "Aviation", "Ground Vehicles", "Drones", "Helicopters", "ML & Safety", "Common Sense AI", "Ethics AI", "Creativity"] },
   max: { totalTools: 370, categories: ["Site Tools", "Space", "Medical", "Industrial", "Infrastructure", "Security", "Survey", "Agriculture", "Marine", "Construction", "Physical I/O", "Digital Twin", "Dashboard", "Alerts", "Data Logging", "Remote Control", "Maintenance", "Decision Support", "Authorization", "Extended AI"] },
   ultra: { totalTools: 50, categories: ["Ultra Tools (8)", "Singularity AI (5)", "Guardian System (4)", "Unlimited Everything"] },
