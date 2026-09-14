@@ -2057,7 +2057,7 @@ export type Model = {
     interleaved:
       | boolean
       | {
-          field: "reasoning" | "reasoning_content" | "reasoning_details"
+          field: "reasoning" | "reasoning_content" | "reasoning_text" | string
         }
   }
   cost: {
@@ -2093,7 +2093,7 @@ export type Model = {
     input?: number
     output: number
   }
-  status: "alpha" | "beta" | "deprecated" | "active"
+  status: "alpha" | "beta" | "deprecated" | "active" | "disabled"
   options: {
     [key: string]: unknown
   }

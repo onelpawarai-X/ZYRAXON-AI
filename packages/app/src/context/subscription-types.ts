@@ -44,7 +44,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       "Browser Automation (1 tab)",
       "Up to 3 Projects",
     ],
-    toolCount: 56,
+    toolCount: 57,
     memoryOptimization: "Basic (100 entries, 10MB cache)",
     maxAgents: 1,
     maxProjects: "3",
@@ -717,6 +717,8 @@ export const TOOL_TIER_MAP: Record<string, SubscriptionTier> = {
   x_guardian_context: "ultra",
   x_guardian_status: "ultra",
   x_guardian_clear: "ultra",
+  // Subscription — always free
+  x_subscription_status: "free",
 }
 
 export function getToolRequiredTier(toolId: string): SubscriptionTier {
@@ -724,7 +726,7 @@ export function getToolRequiredTier(toolId: string): SubscriptionTier {
 }
 
 export const TIER_STATS: Record<SubscriptionTier, { totalTools: number; categories: string[] }> = {
-  free: { totalTools: 56, categories: ["Core AI", "Math", "Science", "Finance", "Data Science", "Security Basics", "Daily Life", "Memory", "Documents", "Tasks", "Captcha"] },
+  free: { totalTools: 57, categories: ["Core AI", "Math", "Science", "Finance", "Data Science", "Security Basics", "Daily Life", "Memory", "Documents", "Tasks", "Captcha", "Subscription"] },
   pro: { totalTools: 113, categories: ["Pro Dev Tools", "Aviation", "Ground Vehicles", "Drones", "Helicopters", "ML & Safety", "Common Sense AI", "Ethics AI", "Creativity"] },
   max: { totalTools: 370, categories: ["Site Tools", "Space", "Medical", "Industrial", "Infrastructure", "Security", "Survey", "Agriculture", "Marine", "Construction", "Physical I/O", "Digital Twin", "Dashboard", "Alerts", "Data Logging", "Remote Control", "Maintenance", "Decision Support", "Authorization", "Extended AI"] },
   ultra: { totalTools: 50, categories: ["Ultra Tools (8)", "Singularity AI (5)", "Guardian System (4)", "Unlimited Everything"] },

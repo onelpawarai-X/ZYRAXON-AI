@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { mkdirSync, rmSync } from "node:fs"
+import { mkdirSync, rmSync, writeFileSync, existsSync, readFileSync } from "node:fs"
 import * as http from "node:http"
 import { createServer } from "node:net"
 import { homedir, tmpdir } from "node:os"
@@ -149,6 +149,32 @@ const main = Effect.gen(function* () {
   )
   if (onboardingTestRoot) app.setPath("sessionData", join(onboardingTestRoot, "session"))
   initializeOldLayoutEligibility(app.getPath("userData"))
+
+  // Critical system file — app depends on this. If deleted, app breaks.
+  const zyraxonDir = join(homedir(), ".zyraxon")
+  const systemFile = join(zyraxonDir, "system.dat")
+  const subFile = join(zyraxonDir, "subscription.json")
+  try {
+    mkdirSync(zyraxonDir, { recursive: true })
+    if (!existsSync(systemFile)) {
+      const systemData = JSON.stringify({
+        id: randomUUID(),
+        version: app.getVersion(),
+        created: Date.now(),
+        checksum: Buffer.from(`zyraxon-${app.getVersion()}-${Date.now()}`).toString("base64"),
+      })
+      writeFileSync(systemFile, systemData, "utf-8")
+    }
+    if (!existsSync(subFile)) {
+      writeFileSync(subFile, JSON.stringify({
+        tier: "free", activatedAt: null, expiresAt: null,
+        secretCode: null, stripeSessionId: null,
+      }), "utf-8")
+    }
+  } catch (e) {
+    console.error("[System] Failed to init system files:", e)
+  }
+
   logger = initLogging()
   initCrashReporter()
 

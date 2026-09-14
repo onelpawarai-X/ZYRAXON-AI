@@ -201,6 +201,9 @@ export type ElectronAPI = {
   // Cloud Agent
   cloudAgentOpen: () => Promise<boolean>
 
+  // Subscription sync (renderer → file → core)
+  setSubscriptionState: (stateJson: string) => Promise<void>
+
   // Jarvis Browser - Real Chrome automation
   jarvisBrowser: {
     init: (config?: any) => Promise<{ success: boolean; error?: string }>

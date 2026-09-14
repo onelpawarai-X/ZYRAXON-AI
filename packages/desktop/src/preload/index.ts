@@ -227,6 +227,9 @@ const api: ElectronAPI = {
   // Cloud Agent — opens in separate BrowserWindow (mic works natively)
   cloudAgentOpen: () => ipcRenderer.invoke("cloud-agent:open"),
 
+  // Subscription sync (renderer → file → core reads)
+  setSubscriptionState: (stateJson: string) => ipcRenderer.invoke("set-subscription-state", stateJson),
+
   // Jarvis Browser - Real Chrome automation
   jarvisBrowser: {
     init: (config?: any) => ipcRenderer.invoke("jarvis-browser:init", config),

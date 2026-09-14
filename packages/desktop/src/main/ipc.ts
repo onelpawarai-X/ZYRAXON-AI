@@ -905,3 +905,17 @@ ipcMain.handle("cloud-agent:open", async () => {
   cloudAgentWindow.on("closed", () => { cloudAgentWindow = null })
   return true
 })
+
+// Subscription state sync — writes to ~/.zyraxon/subscription.json for core to read
+ipcMain.handle("set-subscription-state", async (_event, stateJson: string) => {
+  try {
+    const fs = await import("node:fs/promises")
+    const path = await import("node:path")
+    const os = await import("node:os")
+    const dir = path.join(os.homedir(), ".zyraxon")
+    await fs.mkdir(dir, { recursive: true })
+    await fs.writeFile(path.join(dir, "subscription.json"), stateJson, "utf-8")
+  } catch (e) {
+    console.error("[Subscription] Failed to write state file:", e)
+  }
+})
