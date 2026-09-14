@@ -52,7 +52,6 @@ import { ModelsProvider } from "@/context/models"
 import { CollabProvider } from "@/context/collab"
 import { NotificationProvider } from "@/context/notification"
 import { PermissionProvider } from "@/context/permission"
-import { SubscriptionProvider } from "@/context/subscription"
 import { usePlatform } from "@/context/platform"
 import { PromptProvider } from "@/context/prompt"
 import { ServerConnection, ServerProvider, serverName, useServer } from "@/context/server"
@@ -258,18 +257,17 @@ declare global {
   }
 }
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnReconnect: false,
-      refetchOnMount: false,
-      refetchOnWindowFocus: false,
-    },
-  },
-})
-
 function QueryProvider(props: ParentProps) {
-  return <QueryClientProvider client={queryClient}>{props.children}</QueryClientProvider>
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: {
+        refetchOnReconnect: false,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+      },
+    },
+  })
+  return <QueryClientProvider client={client}>{props.children}</QueryClientProvider>
 }
 
 function BodyDesignClass() {
@@ -403,13 +401,11 @@ export function AppBaseProviders(props: ParentProps<{ locale?: Locale }>) {
             >
               <QueryProvider>
                 <WslServersProvider>
-                  <SubscriptionProvider>
-                    <DialogProvider>
-                      <MarkedProvider>
-                        <FileComponentProvider component={File}>{props.children}</FileComponentProvider>
-                      </MarkedProvider>
-                    </DialogProvider>
-                  </SubscriptionProvider>
+                  <DialogProvider>
+                    <MarkedProvider>
+                      <FileComponentProvider component={File}>{props.children}</FileComponentProvider>
+                    </MarkedProvider>
+                  </DialogProvider>
                 </WslServersProvider>
               </QueryProvider>
             </ErrorBoundary>

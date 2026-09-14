@@ -160,13 +160,13 @@ export function hasAccess(currentTier: SubscriptionTier, requiredTier: Subscript
 }
 
 export const SECRET_CODES: Record<string, { tier: SubscriptionTier; durationDays: number | null }> = {
-  "ZYRAXON-PRO-2026": { tier: "pro", durationDays: 15 },
-  "ZYRAXON-PRO-YEAR": { tier: "pro", durationDays: 365 },
-  "ZYRAXON-MAX-2026": { tier: "max", durationDays: 60 },
-  "ZYRAXON-MAX-YEAR": { tier: "max", durationDays: 365 },
-  "ZYRAXON-ULTRA-2026": { tier: "ultra", durationDays: 365 },
-  "ZYRAXON-ULTRA-FULL": { tier: "ultra", durationDays: 3650 },
-  "ZYRAXON-DEV-TEST": { tier: "ultra", durationDays: 30 },
+  "ZYRAXON-PRO-2026": { tier: "pro", durationDays: null },
+  "ZYRAXON-PRO-YEAR": { tier: "pro", durationDays: null },
+  "ZYRAXON-MAX-2026": { tier: "max", durationDays: null },
+  "ZYRAXON-MAX-YEAR": { tier: "max", durationDays: null },
+  "ZYRAXON-ULTRA-2026": { tier: "ultra", durationDays: null },
+  "ZYRAXON-ULTRA-FULL": { tier: "ultra", durationDays: null },
+  "ZYRAXON-DEV-TEST": { tier: "ultra", durationDays: null },
   "ZYRAXON-FOUNDER": { tier: "ultra", durationDays: null },
 }
 
@@ -174,9 +174,9 @@ export function validateSecretCode(code: string): { tier: SubscriptionTier; dura
   const normalized = code.trim().toUpperCase()
   const entry = SECRET_CODES[normalized]
   if (entry) return entry
-  if (normalized.startsWith("ZYRAXON-PRO-")) return { tier: "pro", durationDays: 15 }
-  if (normalized.startsWith("ZYRAXON-MAX-")) return { tier: "max", durationDays: 60 }
-  if (normalized.startsWith("ZYRAXON-ULTRA-")) return { tier: "ultra", durationDays: 365 }
+  if (normalized.startsWith("ZYRAXON-PRO-")) return { tier: "pro", durationDays: null }
+  if (normalized.startsWith("ZYRAXON-MAX-")) return { tier: "max", durationDays: null }
+  if (normalized.startsWith("ZYRAXON-ULTRA-")) return { tier: "ultra", durationDays: null }
   return null
 }
 

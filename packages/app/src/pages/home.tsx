@@ -58,8 +58,6 @@ import { sessionTitle } from "@/utils/session-title"
 import { pathKey } from "@/utils/path-key"
 import { useGlobal } from "@/context/global"
 import { useCommand } from "@/context/command"
-import { useSubscription } from "@/context/subscription"
-import { TIER_ORDER } from "@/context/subscription-types"
 import { Binary } from "@zyraxon-ai/core/util/binary"
 import { ServerRowMenu } from "@/components/server/server-row-menu"
 import { ServerHealthIndicator } from "@/components/server/server-row"
@@ -323,7 +321,7 @@ export function NewHome() {
     return global.ensureServerCtx(conn)
   })
   const focusedSync = () => focusedServerCtx()?.sync ?? sync()
-  const homeSessions = () => focusedSync()?.homeSessions ?? { eventsKey: ["home", "events"], indexKey: ["home", "index"], eventSequence: () => 0, complete: () => {} }
+  const homeSessions = () => focusedSync().homeSessions
   const projects = createMemo(() => focusedServerCtx()?.projects.list() ?? layout.projects.list())
   const recentlyClosed = createMemo(
     () => focusedServerCtx()?.projects.recentlyClosed() ?? layout.projects.recentlyClosed(),
@@ -356,21 +354,14 @@ export function NewHome() {
     }
     return language.t("home.sessions.search.placeholder")
   })
-  const safeHomeSessions = createMemo(() => {
-    try {
-      const s = homeSessions()
-      if (s && s.eventsKey && s.indexKey) return s
-    } catch {}
-    return { eventsKey: ["home", "events"] as const, indexKey: ["home", "index"] as const, eventSequence: () => 0, complete: () => {} }
-  })
   const sessionEventLoad = useQuery(() => ({
-    queryKey: safeHomeSessions().eventsKey,
+    queryKey: homeSessions().eventsKey,
     queryFn: async (): Promise<HomeSessionEvents> => ({ sequence: 0, entries: [] }),
     initialData: { sequence: 0, entries: [] } satisfies HomeSessionEvents,
     enabled: false,
   }))
   const sessionLoad = useQuery(() => ({
-    queryKey: safeHomeSessions().indexKey,
+    queryKey: homeSessions().indexKey,
     enabled: !!focusedServerCtx(),
     queryFn: async ({ signal }) => {
       const ctx = focusedServerCtx()
@@ -1837,7 +1828,6 @@ export function LegacyHome() {
   const global = useGlobal()
   const server = useServer()
   const language = useLanguage()
-  const subscription = useSubscription()
   const homedir = createMemo(() => sync().data.path.home)
   const serverUnreachable = createMemo(() => global.servers.health[server.key]?.healthy === false)
   const recent = createMemo(() => {
@@ -1886,24 +1876,7 @@ export function LegacyHome() {
 
   return (
     <div class="mx-auto mt-55 w-full md:w-auto px-4">
-      <div class="flex items-center gap-3 mb-4">
-        <Logo class="md:w-xl opacity-12" />
-        <Show when={subscription.tier() !== "free"}>
-          <div
-            classList={{
-              "px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider": true,
-              "bg-indigo-500/10 text-indigo-400 ring-1 ring-inset ring-indigo-500/20": subscription.tier() === "pro",
-              "bg-purple-500/10 text-purple-400 ring-1 ring-inset ring-purple-500/20": subscription.tier() === "max",
-              "bg-amber-500/10 text-amber-400 ring-1 ring-inset ring-amber-500/20": subscription.tier() === "ultra",
-            }}
-          >
-            {subscription.plan().name}
-            <Show when={subscription.daysRemaining() !== null}>
-              <span class="ml-1 opacity-60">({subscription.daysRemaining()}d)</span>
-            </Show>
-          </div>
-        </Show>
-      </div>
+      <Logo class="md:w-xl opacity-12" />
       <Button
         size="large"
         variant="ghost"
@@ -1918,21 +1891,6 @@ export function LegacyHome() {
         />
         {server.name}
       </Button>
-      <Show when={subscription.tier() !== "free"}>
-        <div class="mt-2 mx-auto flex items-center gap-2 text-xs text-text-weak">
-          <span class="text-v2-text-text-muted">
-            {subscription.plan().toolCount} tools unlocked
-          </span>
-          <span class="text-v2-border-border-base">·</span>
-          <button
-            type="button"
-            class="text-indigo-400 hover:text-indigo-300 transition-colors"
-            onClick={() => navigate("/settings")}
-          >
-            Manage Plan
-          </button>
-        </div>
-      </Show>
       <Switch>
         <Match when={sync().data.project.length > 0}>
           <div class="mt-20 w-full flex flex-col gap-4">

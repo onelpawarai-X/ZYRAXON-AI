@@ -1,6 +1,16 @@
-import { createSignal, For, Show } from "solid-js"
-import { useSubscription } from "@/context/subscription"
-import { SUBSCRIPTION_PLANS, TIER_ORDER, type SubscriptionTier } from "@/context/subscription-types"
+import { createSignal, createEffect, For, Show } from "solid-js"
+import {
+  loadSubState,
+  activateWithCode,
+  activateTier,
+  resetToFree,
+  getDaysRemaining,
+  openStripeCheckout,
+  TIER_ORDER,
+  SUBSCRIPTION_PLANS,
+  type SubscriptionTier,
+  type SubscriptionState,
+} from "@/utils/subscription-store"
 
 const TIER_COLORS: Record<SubscriptionTier, { bg: string; border: string; text: string; glow: string; btn: string }> = {
   free: { bg: "#1a1a2e", border: "#333366", text: "#8888aa", glow: "transparent", btn: "#333366" },
@@ -10,22 +20,48 @@ const TIER_COLORS: Record<SubscriptionTier, { bg: string; border: string; text: 
 }
 
 const TIER_ICONS: Record<SubscriptionTier, string> = {
-  free: "⚡",
-  pro: "🚀",
-  max: "⭐",
-  ultra: "👑",
+  free: "\u26A1",
+  pro: "\uD83D\uDE80",
+  max: "\u2B50",
+  ultra: "\uD83D\uDC51",
 }
 
 export function SettingsSubscription() {
-  const sub = useSubscription()
+  const [state, setState] = createSignal<SubscriptionState>(loadSubState())
   const [code, setCode] = createSignal("")
-  const [codeMessage, setCodeMessage] = useState("")
+  const [codeMessage, setCodeMessage] = createSignal("")
+  const [showSuccess, setShowSuccess] = createSignal(false)
+
+  const currentTier = (): SubscriptionTier => state().tier
+  const currentPlan = () => SUBSCRIPTION_PLANS[state().tier]
+  const daysRemaining = () => getDaysRemaining(state())
 
   function handleActivateCode() {
-    const result = sub.activateWithCode(code())
+    const result = activateWithCode(code())
     setCodeMessage(result.message)
-    if (result.success) setCode("")
+    setState(result.state)
+    if (result.success) {
+      setCode("")
+      setShowSuccess(true)
+      setTimeout(() => setShowSuccess(false), 3000)
+    }
     setTimeout(() => setCodeMessage(""), 5000)
+  }
+
+  function handleActivateTier(tier: SubscriptionTier) {
+    const newState = activateTier(tier)
+    setState(newState)
+    setShowSuccess(true)
+    setTimeout(() => setShowSuccess(false), 3000)
+  }
+
+  function handleReset() {
+    const newState = resetToFree()
+    setState(newState)
+  }
+
+  function handleStripeClick(tier: SubscriptionTier) {
+    openStripeCheckout(tier)
   }
 
   return (
@@ -35,27 +71,27 @@ export function SettingsSubscription() {
           Subscription Plans
         </h2>
         <p style={{ "font-size": "12px", color: "var(--text-weak)", margin: 0 }}>
-          Choose the plan that fits your needs
+          Choose the plan that fits your needs. Secret codes unlock permanently.
         </p>
       </div>
       <div class="settings-v2-tab-body">
-        <div style={{ "margin-bottom": "20px", padding: "12px 16px", "border-radius": "8px", background: "var(--surface-raised-base)", "border-left": `3px solid ${TIER_COLORS[sub.tier()].btn}` }}>
+        <div style={{ "margin-bottom": "20px", padding: "12px 16px", "border-radius": "8px", background: "var(--surface-raised-base)", "border-left": `3px solid ${TIER_COLORS[currentTier()].btn}` }}>
           <div style={{ "font-size": "13px", "font-weight": "600", color: "var(--text-strong)" }}>
-            Current Plan: {TIER_ICONS[sub.tier()]} {sub.plan().name}
-            <Show when={sub.daysRemaining() !== null}>
+            Current Plan: {TIER_ICONS[currentTier()]} {currentPlan().name}
+            <Show when={daysRemaining() !== null}>
               <span style={{ "font-size": "11px", color: "var(--text-weak)", "margin-left": "8px" }}>
-                {sub.daysRemaining()} days remaining
+                {daysRemaining()} days remaining
+              </span>
+            </Show>
+            <Show when={!daysRemaining() && currentTier() !== "free"}>
+              <span style={{ "font-size": "11px", color: "#00ff88", "margin-left": "8px" }}>
+                Permanent unlock
               </span>
             </Show>
           </div>
           <div style={{ "font-size": "12px", color: "var(--text-weak)", "margin-top": "4px" }}>
-            {sub.plan().toolCount} tools available | {sub.plan().maxAgents} agents | {sub.plan().memoryOptimization}
+            {currentPlan().toolCount} tools | {currentPlan().maxAgents === -1 ? "Unlimited" : currentPlan().maxAgents} agents | {currentPlan().memoryOptimization}
           </div>
-          <Show when={sub.daysRemaining() !== null && sub.daysRemaining()! <= 3}>
-            <div style={{ "font-size": "12px", color: "#ff4444", "margin-top": "6px", "font-weight": "600" }}>
-              ⚠️ Your subscription expires in {sub.daysRemaining()} days!
-            </div>
-          </Show>
         </div>
 
         <div style={{ display: "grid", "grid-template-columns": "repeat(4, 1fr)", gap: "12px", "margin-bottom": "20px" }}>
@@ -63,7 +99,7 @@ export function SettingsSubscription() {
             {(tierId) => {
               const plan = SUBSCRIPTION_PLANS[tierId]
               const colors = TIER_COLORS[tierId]
-              const isCurrent = sub.tier() === tierId
+              const isCurrent = currentTier() === tierId
               return (
                 <div
                   style={{
@@ -109,7 +145,7 @@ export function SettingsSubscription() {
                   <For each={plan.features.slice(0, 6)}>
                     {(f) => (
                       <div style={{ "font-size": "11px", color: "var(--text-weak)", "padding": "2px 0", display: "flex", "align-items": "center", gap: "6px" }}>
-                        <span style={{ color: colors.text }}>✓</span> {f}
+                        <span style={{ color: colors.text }}>{"\u2713"}</span> {f}
                       </div>
                     )}
                   </For>
@@ -120,7 +156,7 @@ export function SettingsSubscription() {
                   </Show>
                   <Show when={!isCurrent && tierId !== "free"}>
                     <button
-                      onClick={() => sub.activateTier(tierId)}
+                      onClick={() => handleActivateTier(tierId)}
                       style={{
                         width: "100%",
                         "margin-top": "10px",
@@ -145,10 +181,28 @@ export function SettingsSubscription() {
                     >
                       Activate {plan.name}
                     </button>
+                    <button
+                      onClick={() => handleStripeClick(tierId)}
+                      style={{
+                        width: "100%",
+                        "margin-top": "6px",
+                        padding: "6px",
+                        "border-radius": "8px",
+                        border: `1px solid ${colors.border}`,
+                        background: colors.btn,
+                        color: "#000",
+                        "font-size": "11px",
+                        "font-weight": "600",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                        opacity: "0.85",
+                      }}
+                    >
+                      Pay with Stripe
+                    </button>
                   </Show>
                   <Show when={isCurrent && tierId === "free"}>
                     <button
-                      onClick={() => sub.activateTier("free")}
                       disabled
                       style={{
                         width: "100%",
@@ -175,17 +229,17 @@ export function SettingsSubscription() {
 
         <div style={{ "margin-bottom": "20px", padding: "16px", "border-radius": "8px", background: "var(--surface-raised-base)", border: "1px solid var(--surface-raised-border)" }}>
           <h3 style={{ "font-size": "14px", "font-weight": "600", color: "var(--text-strong)", margin: "0 0 8px 0" }}>
-            🔑 Secret Code Activation
+            {"\uD83D\uDD11"} Secret Code Activation
           </h3>
           <p style={{ "font-size": "12px", color: "var(--text-weak)", margin: "0 0 10px 0" }}>
-            Enter a secret code to activate a subscription plan without payment
+            Enter a secret code for permanent unlock — no expiry, no limitations
           </p>
           <div style={{ display: "flex", gap: "8px" }}>
             <input
               type="text"
               value={code()}
               onInput={(e) => setCode(e.currentTarget.value)}
-              placeholder="Enter secret code (e.g. ZYRAXON-PRO-2026)"
+              placeholder="Enter secret code (e.g. ZYRAXON-ULTRA-2026)"
               style={{
                 flex: "1",
                 padding: "8px 12px",
@@ -225,22 +279,36 @@ export function SettingsSubscription() {
               {codeMessage()}
             </div>
           </Show>
+          <Show when={showSuccess()}>
+            <div style={{
+              "margin-top": "8px",
+              padding: "6px 10px",
+              "border-radius": "6px",
+              "font-size": "12px",
+              background: "rgba(0,255,136,0.2)",
+              color: "#00ff88",
+              "font-weight": "600",
+            }}>
+              {"\u2705"} Tier upgraded successfully! All {currentPlan().toolCount} tools unlocked.
+            </div>
+          </Show>
         </div>
 
-        <Show when={sub.tier() !== "free"}>
+        <Show when={currentTier() !== "free"}>
           <div style={{ padding: "12px 16px", "border-radius": "8px", background: "var(--surface-raised-base)", border: "1px solid var(--surface-raised-border)", "margin-bottom": "12px" }}>
             <div style={{ "font-size": "12px", color: "var(--text-weak)", "margin-bottom": "6px" }}>Subscription Details</div>
             <div style={{ display: "grid", "grid-template-columns": "1fr 1fr", gap: "8px", "font-size": "12px" }}>
-              <div><span style={{ color: "var(--text-weak)" }}>Plan:</span> <span style={{ color: "var(--text-strong)", "font-weight": "600" }}>{sub.plan().name}</span></div>
-              <div><span style={{ color: "var(--text-weak)" }}>Price:</span> <span style={{ color: "var(--text-strong)" }}>${sub.plan().price}</span></div>
-              <div><span style={{ color: "var(--text-weak)" }}>Tools:</span> <span style={{ color: "var(--text-strong)" }}>{sub.plan().toolCount}</span></div>
-              <div><span style={{ color: "var(--text-weak)" }}>Memory:</span> <span style={{ color: "var(--text-strong)" }}>{sub.plan().memoryOptimization}</span></div>
+              <div><span style={{ color: "var(--text-weak)" }}>Plan:</span> <span style={{ color: "var(--text-strong)", "font-weight": "600" }}>{currentPlan().name}</span></div>
+              <div><span style={{ color: "var(--text-weak)" }}>Price:</span> <span style={{ color: "var(--text-strong)" }}>${currentPlan().price}</span></div>
+              <div><span style={{ color: "var(--text-weak)" }}>Tools:</span> <span style={{ color: "var(--text-strong)" }}>{currentPlan().toolCount}</span></div>
+              <div><span style={{ color: "var(--text-weak)" }}>Memory:</span> <span style={{ color: "var(--text-strong)" }}>{currentPlan().memoryOptimization}</span></div>
+              <div><span style={{ color: "var(--text-weak)" }}>Expiry:</span> <span style={{ color: "var(--text-strong)" }}>{daysRemaining() !== null ? `${daysRemaining()} days` : "Never (permanent)"}</span></div>
             </div>
           </div>
         </Show>
 
         <button
-          onClick={() => sub.resetToFree()}
+          onClick={handleReset}
           style={{
             padding: "6px 12px",
             "border-radius": "6px",
@@ -256,9 +324,4 @@ export function SettingsSubscription() {
       </div>
     </div>
   )
-}
-
-function useState<T>(initial: T): [() => T, (v: T) => void] {
-  const [get, set] = createSignal(initial)
-  return [get, set]
 }
