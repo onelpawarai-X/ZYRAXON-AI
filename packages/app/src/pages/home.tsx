@@ -320,13 +320,17 @@ export function NewHome() {
     if (!conn) return
     return global.ensureServerCtx(conn)
   })
-  const focusedSync = () => focusedServerCtx()?.sync ?? sync()
-  const homeSessions = () => focusedSync().homeSessions
+  const focusedSync = createMemo(() => focusedServerCtx()?.sync ?? sync())
+  const homeSessions = createMemo(() => {
+    const s = focusedSync()
+    if (!s?.homeSessions) return undefined
+    return s.homeSessions
+  })
   const projects = createMemo(() => focusedServerCtx()?.projects.list() ?? layout.projects.list())
   const recentlyClosed = createMemo(
     () => focusedServerCtx()?.projects.recentlyClosed() ?? layout.projects.recentlyClosed(),
   )
-  const homedir = createMemo(() => focusedSync().data.path.home ?? "")
+  const homedir = createMemo(() => focusedSync()?.data?.path?.home ?? "")
   const selectedProject = createMemo(() => projects().find((project) => project.worktree === selection().directory))
   const newSessionProject = createMemo(
     () =>
@@ -354,44 +358,55 @@ export function NewHome() {
     }
     return language.t("home.sessions.search.placeholder")
   })
-  const sessionEventLoad = useQuery(() => ({
-    queryKey: homeSessions().eventsKey,
-    queryFn: async (): Promise<HomeSessionEvents> => ({ sequence: 0, entries: [] }),
-    initialData: { sequence: 0, entries: [] } satisfies HomeSessionEvents,
-    enabled: false,
-  }))
-  const sessionLoad = useQuery(() => ({
-    queryKey: homeSessions().indexKey,
-    enabled: !!focusedServerCtx(),
-    queryFn: async ({ signal }) => {
-      const ctx = focusedServerCtx()
-      if (!ctx) return { sessions: [], eventSequence: 0 }
-      const cache = homeSessions()
-      const eventSequence = cache.eventSequence()
-      const index = await loadHomeSessionIndex(
-        (input, options) => ctx.sdk.client.v2.session.list(input, options),
-        eventSequence,
-        signal,
-      )
-      cache.complete(eventSequence)
-      return index
-    },
-    retry: false,
-    staleTime: 30_000,
-    refetchOnMount: true,
-    refetchOnReconnect: true,
-  }))
+  const sessionEventLoad = useQuery(() => {
+    const hs = homeSessions()
+    if (!hs) return { queryKey: ["home", "session-events", "pending"] as const, queryFn: async () => ({ sequence: 0, entries: [] } as HomeSessionEvents), initialData: { sequence: 0, entries: [] } as HomeSessionEvents, enabled: false }
+    return {
+      queryKey: hs.eventsKey,
+      queryFn: async (): Promise<HomeSessionEvents> => ({ sequence: 0, entries: [] }),
+      initialData: { sequence: 0, entries: [] } satisfies HomeSessionEvents,
+      enabled: false,
+    }
+  })
+  const sessionLoad = useQuery(() => {
+    const hs = homeSessions()
+    if (!hs) return { queryKey: ["home", "session-index", "pending"] as const, enabled: false, queryFn: async () => ({ sessions: [], eventSequence: 0 }) }
+    return {
+      queryKey: hs.indexKey,
+      enabled: !!focusedServerCtx(),
+      queryFn: async ({ signal }) => {
+        const ctx = focusedServerCtx()
+        if (!ctx) return { sessions: [], eventSequence: 0 }
+        const cache = homeSessions()
+        if (!cache) return { sessions: [], eventSequence: 0 }
+        const eventSequence = cache.eventSequence()
+        const index = await loadHomeSessionIndex(
+          (input, options) => ctx.sdk.client.v2.session.list(input, options),
+          eventSequence,
+          signal,
+        )
+        cache.complete(eventSequence)
+        return index
+      },
+      retry: false,
+      staleTime: 30_000,
+      refetchOnMount: true,
+      refetchOnReconnect: true,
+    }
+  })
 
   const projectByID = createMemo(
     () => new Map(projects().flatMap((project) => (project.id ? [[project.id, project] as const] : []))),
   )
-  const indexedSessions = createMemo(() =>
-    retainHomeSessions(
-      homeSessions().sessions(sessionLoad.data, sessionEventLoad.data),
+  const indexedSessions = createMemo(() => {
+    const hs = homeSessions()
+    if (!hs) return []
+    return retainHomeSessions(
+      hs.sessions(sessionLoad.data, sessionEventLoad.data),
       HOME_SESSION_LIMIT,
       Date.now(),
-    ),
-  )
+    )
+  })
   const allRecords = createMemo(() =>
     buildHomeSessionRecords({
       sessions: indexedSessions,
