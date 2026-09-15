@@ -1,7 +1,0 @@
-{
-  "maxReviewers": 2,
-  "requiredOrgs": ["Zyraxon"],
-  "skipAlreadyAssignedPR": true,
-  "skipAlreadyMentionedPR": true,
-  "skipCollaboratorPR": true
-}
