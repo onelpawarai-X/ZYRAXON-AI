@@ -320,7 +320,7 @@ export function NewHome() {
     if (!conn) return
     return global.ensureServerCtx(conn)
   })
-  const focusedSync = createMemo(() => focusedServerCtx()?.sync)
+  const focusedSync = createMemo(() => focusedServerCtx()?.sync ?? sync())
   const homeSessions = createMemo(() => {
     const s = focusedSync()
     if (!s?.homeSessions) return undefined
@@ -441,8 +441,8 @@ export function NewHome() {
               .sync(record.session.id)
               .then(() => {
                 return Promise.all(
-                  (ctx.sync.session?.data?.message?.[record.session.id] ?? []).flatMap((message) =>
-                    (ctx.sync.session?.data?.part?.[message.id] ?? []).flatMap((part) => {
+                  (ctx.sync.session.data.message[record.session.id] ?? []).flatMap((message) =>
+                    (ctx.sync.session.data.part[message.id] ?? []).flatMap((part) => {
                       if (part.type !== "text" || !part.text) return []
                       return preloadMarkdown(part.text, part.id, marked)
                     }),
@@ -562,7 +562,7 @@ export function NewHome() {
     // Fallback: use the home directory from server sync when no projects exist
     if (conn) {
       const ctx = global.ensureServerCtx(conn)
-      const homeDir = ctx.sync?.data?.path?.home
+      const homeDir = ctx.sync.data.path.home
       if (homeDir) {
         openProjectNewSession(conn, homeDir)
       }
@@ -867,8 +867,8 @@ function HomeProjectColumn(props: {
               size="large"
               class="titlebar-icon [&_[data-slot=icon-svg]]:text-v2-icon-icon-muted"
               icon={<IconV2 name="folder-add-left" />}
-              disabled={!global.servers.list()[0] || global.servers.health[ServerConnection.key(global.servers.list()[0]!)]?.healthy === false}
-              onClick={() => { const s = global.servers.list()[0]; if (s) props.chooseProject(s) }}
+              disabled={global.servers.health[ServerConnection.key(global.servers.list()[0]!)]?.healthy === false}
+              onClick={() => props.chooseProject(global.servers.list()[0]!)}
               aria-label={props.language.t("home.project.add")}
             />
           </TooltipV2>
@@ -882,23 +882,17 @@ function HomeProjectColumn(props: {
               <Show
                 when={props.projects.length > 0}
                 fallback={
-                  <Show when={global.servers.list()[0]} keyed>
-                    {(firstServer) => (
-                      <HomeProjectEmpty
-                        server={firstServer}
-                        recentlyClosed={props.recentlyClosed}
-                        homedir={props.homedir}
-                        chooseProject={props.chooseProject}
-                        openRecentProject={props.openRecentProject}
-                        language={props.language}
-                      />
-                    )}
-                  </Show>
+                  <HomeProjectEmpty
+                    server={global.servers.list()[0]!}
+                    recentlyClosed={props.recentlyClosed}
+                    homedir={props.homedir}
+                    chooseProject={props.chooseProject}
+                    openRecentProject={props.openRecentProject}
+                    language={props.language}
+                  />
                 }
               >
-                <Show when={global.servers.list()[0]} keyed>
-                  {(firstServer) => <HomeProjectList {...props} server={firstServer} />}
-                </Show>
+                <HomeProjectList {...props} server={global.servers.list()[0]!} />
               </Show>
             </div>
           }
@@ -1232,10 +1226,7 @@ function HomeProjectEmpty(props: {
   language: ReturnType<typeof useLanguage>
 }) {
   const global = useGlobal()
-  const unreachable = () => {
-    if (!props.server) return false
-    return global.servers.health[ServerConnection.key(props.server)]?.healthy === false
-  }
+  const unreachable = () => global.servers.health[ServerConnection.key(props.server)]?.healthy === false
   return (
     <div class="flex min-w-0 flex-col gap-1">
       <button
@@ -1276,10 +1267,7 @@ function HomeRecentlyClosedRow(props: {
   language: ReturnType<typeof useLanguage>
 }) {
   const global = useGlobal()
-  const unreachable = () => {
-    if (!props.server) return false
-    return global.servers.health[ServerConnection.key(props.server)]?.healthy === false
-  }
+  const unreachable = () => global.servers.health[ServerConnection.key(props.server)]?.healthy === false
   const path = () => {
     const home = props.homedir
     const worktree = props.project.worktree
@@ -1316,10 +1304,7 @@ function HomeProjectRow(props: {
 }) {
   const global = useGlobal()
   const platform = usePlatform()
-  const serverUnreachable = () => {
-    if (!props.server) return false
-    return global.servers.health[ServerConnection.key(props.server)]?.healthy === false
-  }
+  const serverUnreachable = () => global.servers.health[ServerConnection.key(props.server)]?.healthy === false
   const [state, setState] = createStore({ menuOpen: false })
   const canRevealInFileManager = () =>
     platform.platform === "desktop" && !!platform.openPath && ServerConnection.local(props.server)
@@ -1858,11 +1843,11 @@ export function LegacyHome() {
   const global = useGlobal()
   const server = useServer()
   const language = useLanguage()
-  const homedir = createMemo(() => sync()?.data?.path?.home ?? "")
+  const homedir = createMemo(() => sync().data.path.home)
   const serverUnreachable = createMemo(() => global.servers.health[server.key]?.healthy === false)
   const recent = createMemo(() => {
-    return (sync()?.data?.project ?? [])
-      .slice()
+    return sync()
+      .data.project.slice()
       .sort((a, b) => (b.time.updated ?? b.time.created) - (a.time.updated ?? a.time.created))
       .slice(0, 5)
   })
@@ -1922,7 +1907,7 @@ export function LegacyHome() {
         {server.name}
       </Button>
       <Switch>
-        <Match when={(sync()?.data?.project ?? []).length > 0}>
+        <Match when={sync().data.project.length > 0}>
           <div class="mt-20 w-full flex flex-col gap-4">
             <div class="flex gap-2 items-center justify-between pl-3">
               <div class="text-14-medium text-text-strong">{language.t("home.recentProjects")}</div>

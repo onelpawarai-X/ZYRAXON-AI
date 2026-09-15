@@ -532,7 +532,7 @@ export default function LegacyLayout(props: ParentProps) {
     const id = child.project
     if (!id) return
 
-    const meta = serverSync()?.data?.project?.find((p) => p.id === id)
+    const meta = serverSync().data.project.find((p) => p.id === id)
     const root = meta?.worktree
     if (!root) return
 
@@ -1139,7 +1139,7 @@ export default function LegacyLayout(props: ParentProps) {
     const id = child.project
     if (!id) return directory
 
-    const meta = serverSync()?.data?.project?.find((item) => item.id === id)
+    const meta = serverSync().data.project.find((item) => item.id === id)
     return meta?.worktree ?? directory
   }
 
@@ -1973,7 +1973,7 @@ export default function LegacyLayout(props: ParentProps) {
       if (!item) return false
       return item.vcs === "git" || layout.sidebar.workspaces(item.worktree)()
     })
-    const homedir = createMemo(() => serverSync()?.data?.path?.home ?? "")
+    const homedir = createMemo(() => serverSync().data.path.home)
 
     return (
       <div
