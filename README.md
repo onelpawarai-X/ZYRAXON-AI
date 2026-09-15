@@ -1,116 +1,168 @@
-<p align="center">
-  <picture>
-    <source srcset="packages/console/app/src/asset/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
-    <source srcset="packages/console/app/src/asset/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
-    <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="ZYRAXON" width="140">
-  </picture>
+<div align="center">
+
+<img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=900&size=32&duration=3000&pause=1000&color=00D4FF&center=true&vCenter=true&multiline=true&repeat=true&width=800&height=120&lines=%E2%9A%A1+What+if+your+AI+could+DO+everything%3F+%F0%9F%A4%A0;Not+just+talk.+But+build.+Code.+Deploy.+Think.+Act." alt="Typing SVG" />
+
+<br/>
+
+<picture>
+  <source srcset="packages/console/app/src/asset/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
+  <source srcset="packages/console/app/src/asset/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
+  <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="ZYRAXON" width="180">
+</picture>
+
+<h1 style="font-family: Orbitron; letter-spacing: 4px; color: #00D4FF;">ZYRAXON AI</h1>
+
+<p style="font-size: 18px; color: #8B949E;">
+  <em>All in one. Anything. Nothing is impossible.</em>
 </p>
 
-<h1 align="center">ZYRAXON-AI</h1>
+<a href="https://zyraxonai.lovable.app"><img alt="ZYRAXON AI" src="https://img.shields.io/badge/ZYRAXON_AI-live-00D4FF?style=for-the-badge&logo=googlechrome&logoColor=white" /></a>
+<a href="https://zyraxon-pro.ai.studio"><img alt="ZYRAXON Pro" src="https://img.shields.io/badge/Cloud_Agent-online-FF6B35?style=for-the-badge&logo=cloudflare&logoColor=white" /></a>
+<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><img alt="Version" src="https://img.shields.io/badge/Version-19.0.2-blue?style=for-the-badge&logo=github" /></a>
+<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/onelpawarai-X/ZYRAXON-AI?style=for-the-badge&color=yellow" /></a>
+<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/onelpawarai-X/ZYRAXON-AI/total?style=for-the-badge&color=purple" /></a>
+<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-BSL_1.1-green?style=for-the-badge" /></a>
 
-<p align="center">
-  <strong>All in one. Anything. Nothing is impossible.</strong>
-</p>
+<br/>
 
-<p align="center">
-  <a href="https://zyraxonai.lovable.app"><img alt="ZYRAXON AI" src="https://img.shields.io/badge/ZYRAXON_AI-zyraxonai.lovable.app-00f5ff?style=for-the-badge&logo=googlechrome&logoColor=white" /></a>
-  <a href="https://zyraxon-pro.ai.studio"><img alt="ZYRAXON Pro" src="https://img.shields.io/badge/ZYRAXON_Pro-zyraxon--pro.ai.studio-ff6b00?style=for-the-badge&logo=cloudflare&logoColor=white" /></a>
-  <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><img alt="Version" src="https://img.shields.io/badge/Version-19.0.2-blue?style=for-the-badge" /></a>
-  <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/onelpawarai-X/ZYRAXON-AI?style=for-the-badge&color=yellow" /></a>
-  <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/issues"><img alt="Issues" src="https://img.shields.io/github/issues/onelpawarai-X/ZYRAXON-AI?style=for-the-badge&color=red" /></a>
-  <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-BSL%201.1-green?style=for-the-badge" /></a>
-  <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/onelpawarai-X/ZYRAXON-AI/total?style=for-the-badge&color=purple" /></a>
-  <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/network/members"><img alt="Forks" src="https://img.shields.io/github/forks/onelpawarai-X/ZYRAXON-AI?style=for-the-badge&color=cyan" /></a>
-</p>
+<a href="https://zyraxonai.lovable.app">Website</a> · <a href="https://zyraxon-pro.ai.studio">Cloud Agent</a> · <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases">Download</a> · <a href="https://youtube.com/@zyraxon-aix">YouTube</a>
 
-<p align="center">
-  <a href="https://zyraxonai.lovable.app"><strong>Main Website</strong></a> &nbsp;|&nbsp;
-  <a href="https://zyraxon-pro.ai.studio"><strong>Cloud Agent</strong></a> &nbsp;|&nbsp;
-  <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><strong>Download</strong></a> &nbsp;|&nbsp;
-  <a href="https://youtube.com/@zyraxon-aix"><strong>YouTube</strong></a>
-</p>
+<br/>
 
-<p align="center">
-  <strong>Desktop AI agent that actually does things. Not a chatbot — an action-bot.</strong><br>
-  Reads your files. Writes your code. Runs your commands. Builds your projects. Deploys your apps.<br>
-  <strong>9 Agent Modes</strong> · <strong>500+ Tools</strong> · <strong>Eternal Memory</strong> · <strong>Self-Healing</strong> · <strong>Voice Bridge</strong> · <strong>Self-Evolution</strong>
-</p>
+![Profile Views](https://komarev.com/ghpvc/?username=onelpawarai-X&color=00D4FF&style=for-the-badge&label=BUILDERS)
+
+</div>
 
 ---
 
-## What is ZYRAXON-AI?
+<br/>
 
-ZYRAXON-AI is an open-source desktop AI agent built on **Electron + SolidJS + Bun**. Unlike chatbots that just *talk*, ZYRAXON **takes action** — it has full access to your filesystem, terminal, browser, and more. Runs 100% locally on your machine.
+<div align="center">
 
----
+## *"A chatbot talks. ZYRAXON acts."*
 
-## Features at a Glance
+<br/>
 
-| Feature | Details |
-|---------|---------|
-| **Agent Modes** | Build, Plan, Beast, PRO, APEX PREDATOR, DARK EMPEROR, Vision, Pro Builder, General |
-| **Total Tools** | 366+ (31 core + 335 domain-specific) |
-| **Memory** | Eternal — SQLite WAL, ring buffer, 50K+ entries, survives reset |
-| **Self-Healing** | Auto-installs missing tools and MCP servers |
-| **Self-Evolution** | Installs its own tools at runtime |
-| **Voice** | Chrome SpeechRecognition input + Edge Neural TTS output |
-| **Screen Vision** | Real-time screen capture, frame memory, scene analysis |
-| **Monaco AI** | Double-click in editor to trigger AI code generation |
-| **Code Guardian** | Real-time error detection with auto-fix suggestions |
-| **Providers** | 25+ AI providers (OpenAI, Anthropic, Google, Azure, xAI, Mistral...) |
-| **Zero Refusal** | DARK EMPEROR mode never says "I can't" |
+**9 Agent Modes** · **552+ Tools** · **Eternal Memory** · **Self-Healing** · **Voice Bridge** · **Self-Evolution**
+
+</div>
+
+<br/>
 
 ---
 
-## Download
+## What is ZYRAXON AI?
 
-Download the latest release from **[Releases](https://github.com/onelpawarai-X/ZYRAXON-AI/releases)**:
+ZYRAXON is not a chatbot. It's a **desktop AI agent** that reads your files, writes your code, runs your commands, builds your projects, deploys your apps, and **evolves itself** — all while you watch. Built on **Electron + SolidJS + Bun**, it runs 100% locally on your machine. No cloud dependency. No data leaves your computer.
 
-| Platform | File | Arch |
-|----------|------|:----:|
-| Windows | `ZYRAXON Dev-win-installer.exe` | x64 |
-| Linux | `zyraxon-desktop-linux-amd64.deb` | x64 |
-| Linux | `zyraxon-desktop-linux-x86_64.AppImage` | x64 |
-| Linux | `zyraxon-linux-x64.tar.gz` | x64 |
-| Linux | `zyraxon-linux-arm64.tar.gz` | arm64 |
+**The question at the top isn't rhetorical.** What if your AI could truly do everything? That's what we're building.
 
 ---
 
-## Agent Modes
+<br/>
 
-| Mode | Power | Description |
-|------|:-----:|-------------|
-| **Build** | ★★★ | Full file system + persistent memory. The reliable workhorse. |
+<div align="center">
+
+### THE 9 MODES OF POWER
+
+</div>
+
+<br/>
+
+| Mode | Power | What It Unlocks |
+|:-----|:-----:|:----------------|
+| **Build** | ★★★ | Full filesystem + persistent memory. The reliable workhorse. |
 | **Plan** | ★★☆ | Read-only strategic analysis. Plans before action. |
 | **Beast** | ★★★★ | Mission Control (3-level subagents) + Self-Evolution + Subagent Army |
 | **PRO** | ★★★★ | Unlimited memory + auto screen vision + Self-Healing |
-| **APEX PREDATOR** | ★★★★★ | Omega Command Center + Eternal Memory + Annihilation Engine + Predator's Intuition |
-| **DARK EMPEROR** | ★★★★★ | Supreme Sovereignty + 10 powers + 8 exclusive ULTRA tools. Zero Refusal. |
+| **APEX PREDATOR** | ★★★★★ | Omega Command Center + Eternal Memory + Annihilation Engine |
+| **DARK EMPEROR** | ★★★★★ | Supreme Sovereignty + 8 ULTRA tools. **Zero Refusal.** |
 | **Vision** | ★★★ | AI's Eyes — real-time screen streaming, frame memory, scene analysis |
 | **Pro Builder** | ★★★★ | Website genesis from natural language. Auto-deploys to GitHub Pages. |
 | **General** | ★★☆ | Subagent for delegated tasks. |
 
-### DARK EMPEROR — 8 Exclusive ULTRA Tools
+<br/>
 
-| Tool | What It Does |
-|------|-------------|
-| ultraCodeGen | Code generation with Vector3/Matrix math, DirectedGraph analysis, Shannon entropy |
-| ultraAutoDeploy | One-command cloud deploy with DeploymentGraph DAG, RollbackPlanner |
-| ultraSecuritySweep | Full security audit — Miller-Rabin, Pollard-Rho, RSA attacks, NIST SP 800-22 |
-| ultraPerformance | Performance engine — ANOVA, OLS regression, Grubbs test, Holt-Winters |
-| ultraRefactor | AI refactoring — CategoryTheory, DesignPatternDetector, DependencyAnalyzer |
-| ultraTestGen | Test generation — Pairwise NIST ACTS, MutationTesting, FormalVerifier |
-| ultraDocGen | Auto-documentation with API reference extraction |
-| ultraDebug | Advanced debugging engine with stack trace analysis |
+### DARK EMPEROR — 8 ULTRA Tools
+
+<table>
+<tr>
+<td>
+
+**ultraCodeGen**
+Code generation with Vector3/Matrix math, DirectedGraph analysis, Shannon entropy
+
+</td>
+<td>
+
+**ultraAutoDeploy**
+One-command cloud deploy with DeploymentGraph DAG, RollbackPlanner
+
+</td>
+</tr>
+<tr>
+<td>
+
+**ultraSecuritySweep**
+Full security audit — Miller-Rabin, Pollard-Rho, RSA attacks, NIST SP 800-22
+
+</td>
+<td>
+
+**ultraPerformance**
+Performance engine — ANOVA, OLS regression, Grubbs test, Holt-Winters
+
+</td>
+</tr>
+<tr>
+<td>
+
+**ultraRefactor**
+AI refactoring — CategoryTheory, DesignPatternDetector, DependencyAnalyzer
+
+</td>
+<td>
+
+**ultraTestGen**
+Test generation — Pairwise NIST ACTS, MutationTesting, FormalVerifier
+
+</td>
+</tr>
+<tr>
+<td>
+
+**ultraDocGen**
+Auto-documentation with API reference extraction
+
+</td>
+<td>
+
+**ultraDebug**
+Advanced debugging engine with stack trace analysis
+
+</td>
+</tr>
+</table>
 
 ---
 
-## 366+ Tools — 30+ Categories
+<br/>
 
-### Core Tools (31)
+<div align="center">
 
+### 552+ TOOLS ACROSS 30+ DOMAINS
+
+</div>
+
+<br/>
+
+<table>
+<tr>
+<td width="50%">
+
+#### Core Engine (31)
 | Tool | Purpose |
-|------|---------|
+|:-----|:--------|
 | shell | Execute terminal commands |
 | read | Read files |
 | write | Write files |
@@ -123,135 +175,165 @@ Download the latest release from **[Releases](https://github.com/onelpawarai-X/Z
 | todo | Task management |
 | skill | AI skill management |
 | memory | Persistent memory |
-| self_evolve | Self-evolution |
-| screen_vision | Screen capture |
-| api_tester | API testing |
-| code_analyzer | Code analysis |
-| system_info | System information |
-| site_create | Website creation |
-| site_publish | Deploy to GitHub Pages |
-| site_unpublish | Undeploy |
-| site_domain | Custom domain setup |
-| site_preview | Live preview |
-| media_fetch | Media download |
-| svg_generate | SVG generation |
-| github_connect | GitHub integration |
+| self\_evolve | Self-evolution |
+| screen\_vision | Screen capture |
+| api\_tester | API testing |
+| code\_analyzer | Code analysis |
+| system\_info | System information |
+| site\_create | Website creation |
+| site\_publish | Deploy to GitHub Pages |
+| site\_domain | Custom domain |
+| media\_fetch | Media download |
+| svg\_generate | SVG generation |
+| github\_connect | GitHub integration |
 | patch | Apply patches |
 | question | Ask user |
-| execute | Code mode (experimental) |
-| lsp | Language server (experimental) |
-| plan | Plan mode (experimental) |
+| execute | Code mode |
+| lsp | Language server |
+| plan | Plan mode |
 | invalid | Fallback handler |
 
-### Domain-Specific Tools (335)
+</td>
+<td width="50%">
 
-| Category | Count | Capabilities |
-|----------|:-----:|-------------|
-| Aviation | 24 | ATC, weather METAR, NOTAM, runway, TCAS, cabin, engine |
-| Ground (Autonomous) | 18 | V2X, pedestrian, traffic, driver monitoring, road, collision |
-| Drone / UAV | 21 | Swarm, delivery, spray, SAR, geofence, wind, obstacle |
-| Space | 22 | Launch, ground station, stage recovery, payload, deorbit, constellation |
-| Helicopter / VTOL | 19 | Rotor, hover, external load, autorotation, weather compensation |
-| Medical | 9 | Vital signs, drug interaction, patient monitor |
-| Industrial | 15 | PLC, SCADA, CNC, robotic arm, conveyor |
-| Infrastructure | 15 | Power grid, water, HVAC, fire suppression, railway |
-| Security | 15 | Surveillance, access control, intrusion, cyber, encryption |
-| Survey | 14 | LiDAR, GPS-RTK, total station, drone mapper, seismic |
-| Agriculture | 15 | Soil, crop, irrigation, pest, harvest |
-| Marine | 15 | Sonar, navigation, hull, anchor, ballast |
-| Construction | 15 | Excavator, crane, concrete, survey drone, bulldozer |
-| Physical Interface | 8 | Arduino, Raspberry Pi, CAN bus, UART, I2C, SPI, ADC, PWM |
-| Sensors | 8 | LiDAR, camera, radar, IMU, ultrasonic, thermal, accelerometer |
-| SDR (Radio) | 7 | SDR receiver, FM, WiFi, Bluetooth, LoRa, GPS, signal |
-| Safety | 7 | Failsafe, watchdog, emergency shutdown, FMEA, interlock |
-| Machine Learning | 6 | Vision, NLP, prediction, classification, anomaly, reinforcement |
-| Digital Twin | 5 | Twin manager, physics engine, scenario, state sync |
-| Dashboard | 5 | Manager, chart, status monitor, stream, widgets |
-| Alerts | 4 | Manager, notification, escalation, anomaly |
-| Data Logger | 5 | Time series, events, audit, export, storage |
-| Remote Control | 6 | WebSocket, REST, auth, session, protocol, heartbeat |
-| Predictive Maintenance | 6 | Failure predictor, scheduler, spare parts, vibration, oil, thermal |
-| Decision Support | 6 | Engine, scenario, risk, tradeoff, tree, causal |
-| Authorization | 6 | RBAC, auth, policy, access log, token, certificate |
-| Common Sense | 6 | Reasoning, causal, world model, context, analogy, spatial |
-| Ethics | 5 | Framework, bias, fairness, transparency, safety |
-| Creativity | 5 | Idea generator, innovation, design thinking, pattern, constraint |
-| Extended Math | 38 | Matrix, calculus, statistics, number theory, geometry, combinatorics |
-| Extended Physics | 38 | Classical, thermo, EM, relativity, waves + all subtopics |
-| Extended Chemistry | 22 | Stoichiometry, gas laws, acid-base, biochemistry |
-| Extended Biology | 12 | Genetics, ecology, Michaelis-Menten, Hill equation |
-| Extended Engineering | 41 | Civil, mechanical, electrical — Mohr's circle, torsion, power factor |
-| Extended Finance | 23 | Calculations, annuity, dividend, beta |
-| Extended Data Science | 36 | Standardize, gradient descent, confusion matrix, TF-IDF, Monte Carlo |
-| Extended Security | 19 | Firewall, malware, port scan |
-| Extended Daily Life | 37 | Savings, pace, aspect ratio, color, wind chill |
-| Vehicles | 56 | Drone, car, boat, rocket, satellite, fleet control |
-| Universal Command | 5 | Natural language command across all domains |
-| Daily Tasks | 5 | Create, list, delete, toggle, run scheduled tasks |
-| Captcha | 4 | Detect, click, solve, input |
-| Memory System | 7 | Create, read, update, append, delete, search, view |
-| Documents | 5 | Read, create, edit, markdown-to-html, word count |
-| Skill Creator | 3 | Create, list, delete AI skills |
-| Subscription | 1 | AI checks its own tier status |
+#### Domain Tools (521)
+| Category | Count |
+|:---------|:-----:|
+| Aviation | 24 |
+| Ground (Autonomous) | 18 |
+| Drone / UAV | 21 |
+| Space | 22 |
+| Helicopter / VTOL | 19 |
+| Medical | 9 |
+| Industrial | 15 |
+| Infrastructure | 15 |
+| Security | 15 |
+| Survey | 14 |
+| Agriculture | 15 |
+| Marine | 15 |
+| Construction | 15 |
+| Physical Interface | 8 |
+| Sensors | 8 |
+| SDR (Radio) | 7 |
+| Safety | 7 |
+| Machine Learning | 6 |
+| Digital Twin | 5 |
+| Dashboard | 5 |
+| Alerts | 4 |
+| Data Logger | 5 |
+| Remote Control | 6 |
+| Predictive Maint. | 6 |
+| Decision Support | 6 |
+| Authorization | 6 |
+| Common Sense | 6 |
+| Ethics | 5 |
+| Creativity | 5 |
+| Vehicles | 56 |
+| Extended Math | 38 |
+| Extended Physics | 38 |
+| Extended Chemistry | 22 |
+| Extended Biology | 12 |
+| Extended Engineering | 41 |
+| Extended Finance | 23 |
+| Extended Data Science | 36 |
+| Extended Security | 19 |
+| Extended Daily Life | 37 |
 
----
-
-## Voice Bridge
-
-| Component | Port | Tech |
-|-----------|------|------|
-| Voice Input | 19800 | Chrome SpeechRecognition API |
-| TTS Output | 19810 | Edge Neural voices (tts-node.js) |
-| Communication | IPC | Bidirectional: App ↔ Voice HTML |
-
-**Flow:** Mic button → Chrome opens voice-bridge.html → SpeechRecognition captures speech → Transcript to AI → Response spoken via Edge TTS.
+</td>
+</tr>
+</table>
 
 ---
 
-## Monaco AI Assistant
+<br/>
 
-1. Double-click in the editor (or select text)
-2. A floating AI button appears
-3. Click it — AI generates complete code with live streaming
-4. Supports: English, Bengali, Arabic, Japanese, Chinese, Russian, Korean, Hindi
+<div align="center">
+
+### WHAT MAKES ZYRAXON DIFFERENT
+
+</div>
+
+<br/>
+
+<table>
+<tr>
+<td width="33%" align="center">
+
+#### Voice Bridge
+
+| Component | Tech |
+|:----------|:-----|
+| Input | Chrome SpeechRecognition |
+| Output | Edge Neural TTS |
+| Port | 19800 / 19810 |
+| Comm | Bidirectional IPC |
+
+Mic → Chrome → SpeechRecognition → AI → Edge TTS → You hear it.
+
+</td>
+<td width="34%" align="center">
+
+#### Monaco AI Editor
+
+1. **Double-click** in the editor
+2. Floating AI button appears
+3. Click — AI generates code with live streaming
+4. Supports: EN, BN, AR, JA, ZH, RU, KO, HI
+
+</td>
+<td width="33%" align="center">
+
+#### Self-Healing
+
+1. You ask for something
+2. Missing tool detected
+3. ZYRAXON searches online
+4. Installs MCP/npm/Python
+5. Uses it immediately
+6. **Zero failures**
+
+</td>
+</tr>
+</table>
 
 ---
 
-## Self-Healing
+<br/>
 
-If a tool is missing, ZYRAXON installs it automatically:
+<div align="center">
 
-1. You ask for something requiring a missing tool
-2. ZYRAXON searches for it online
-3. Installs the MCP server, npm package, or Python script
-4. Configures and uses it immediately
-5. **Result: Zero failures due to missing capabilities**
+### ETERNAL MEMORY
 
----
+</div>
 
-## Memory System
+<br/>
 
-| Feature | Implementation |
-|---------|---------------|
-| Storage | SQLite with WAL mode, 8 compound indexes |
-| Pagination | Cursor-based — O(1) performance |
+| Layer | What It Does |
+|:------|:-------------|
+| SQLite WAL | Persistent storage with 8 compound indexes |
 | Ring Buffer | Last 50 conversation pairs, crash-resilient |
-| Batch Ops | Bulk insert/update for high throughput |
+| Brain Daemon | Runs every 1 second, tails opencode.db |
+| permanent\_brain.json | Live brain state |
+| full\_chat\_history.txt | Static cache (85,000+ lines) |
 | Compression | Automatic at 50K+ entries |
-| Persistence | Survives laptop reset via Task Scheduler |
+| Reset Survives | Task Scheduler on boot |
 
-**Architecture:**
-- `brain_daemon.py` — runs every 1 second, tails opencode.db
-- `permanent_brain.json` — live brain state
-- `full_chat_history.txt` — static cache (85,000+ lines)
-- `log.jsonl` — ring buffer
+**It remembers everything. Forever.**
 
 ---
 
-## ZYRAXON vs. The World
+<br/>
+
+<div align="center">
+
+### ZYRAXON vs THE WORLD
+
+</div>
+
+<br/>
 
 | Capability | **ZYRAXON** | Cursor | Copilot | Devin | OpenHands |
-|------------|:-----------:|:------:|:-------:|:-----:|:---------:|
+|:-----------|:-----------:|:------:|:-------:|:-----:|:---------:|
 | Desktop App | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Embedded VS Code Editor | ✅ | ✅ | ✅ | ❌ | ❌ |
 | 9 Agent Modes | ✅ | ❌ | ❌ | ❌ | ❌ |
@@ -261,7 +343,7 @@ If a tool is missing, ZYRAXON installs it automatically:
 | Desktop Automation | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Screen Vision | ✅ | ❌ | ❌ | ⚠️ | ❌ |
 | Voice Communication | ✅ | ❌ | ❌ | ❌ | ❌ |
-| 366+ Tools Built-in | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
+| 552+ Tools Built-in | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
 | 25+ AI Providers | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
 | Free & Open Source | ✅ | ❌ | ❌ | ❌ | ✅ |
 
@@ -269,32 +351,101 @@ If a tool is missing, ZYRAXON installs it automatically:
 
 ---
 
-## Tech Stack
+<br/>
 
-| Layer | Tech |
-|-------|------|
-| Runtime | Bun |
-| Desktop | Electron 42 + electron-vite |
-| UI | SolidJS + TailwindCSS |
-| Database | SQLite (drizzle-orm) with WAL |
-| Build | electron-builder |
-| Language | TypeScript |
-| LLM Runtime | AI SDK (Vercel) |
-| Voice | Chrome SpeechRecognition + Edge Neural TTS |
-| Browser | Playwright (Chromium) |
+<div align="center">
+
+### SUBSCRIPTION SYSTEM
+
+</div>
+
+<br/>
+
+| Tier | Price | Tools | Features |
+|:-----|:------|:-----:|:---------|
+| **Free** | $0 / forever | 57 | Core tools + basic AI |
+| **Pro** | $5 / 15 days | 113 | + Screen Vision, Self-Healing, Memory |
+| **Max** | $15 / 2 months | 370 | + All domain tools, DARK EMPEROR, ULTRA |
+| **Ultra** | $99 / year | 552+ | Everything. Forever. |
+
+**Secret codes** unlock permanent access. No server. No internet. Pure local.
 
 ---
 
-## Build from Source
+<br/>
 
-### Prerequisites
+<div align="center">
 
-- **[Bun](https://bun.sh)** 1.3.14+
-- **[Node.js](https://nodejs.org/)** 22+
-- **[npm](https://www.npmjs.com/)** (for editor build)
-- **[Git](https://git-scm.com/)**
+### TECH STACK
 
-### One Command Build
+</div>
+
+<br/>
+
+<table>
+<tr>
+<td width="50%">
+
+| Layer | Tech |
+|:------|:-----|
+| Runtime | Bun 1.3.14+ |
+| Desktop | Electron 42 + electron-vite |
+| UI | SolidJS + TailwindCSS |
+| Database | SQLite (drizzle-orm) WAL |
+| Build | electron-builder |
+| Language | TypeScript |
+| LLM Runtime | AI SDK (Vercel) |
+
+</td>
+<td width="50%">
+
+| Layer | Tech |
+|:------|:-----|
+| Voice Input | Chrome SpeechRecognition |
+| Voice Output | Edge Neural TTS |
+| Browser | Playwright (Chromium) |
+| Providers | 25+ (OpenAI, Anthropic, Google, Azure, xAI, Mistral...) |
+| Memory | SQLite WAL + Ring Buffer + Brain Daemon |
+| Subagents | 3-level deep Mission Control |
+| Package Manager | bun (not npm) |
+
+</td>
+</tr>
+</table>
+
+---
+
+<br/>
+
+<div align="center">
+
+### DOWNLOAD
+
+</div>
+
+<br/>
+
+| Platform | File | Arch |
+|:---------|:-----|:----:|
+| Windows | `ZYRAXON Dev-win-installer.exe` | x64 |
+| Linux | `zyraxon-desktop-linux-amd64.deb` | x64 |
+| Linux | `zyraxon-desktop-linux-x86_64.AppImage` | x64 |
+| Linux | `zyraxon-linux-x64.tar.gz` | x64 |
+| Linux | `zyraxon-linux-arm64.tar.gz` | arm64 |
+
+Download from **[Releases](https://github.com/onelpawarai-X/ZYRAXON-AI/releases)**
+
+---
+
+<br/>
+
+<div align="center">
+
+### BUILD FROM SOURCE
+
+</div>
+
+<br/>
 
 ```bash
 git clone https://github.com/onelpawarai-X/ZYRAXON-AI.git
@@ -305,7 +456,8 @@ bun run zyraxon:full:linux  # Linux
 bun run zyraxon:full:mac    # macOS
 ```
 
-### Step-by-Step Build
+<details>
+<summary>Step-by-step build</summary>
 
 ```bash
 # Step 1: Core (AI engine)
@@ -315,7 +467,7 @@ bun run --cwd packages/zyraxon script/build.ts --single --skip-install
 bun run --cwd packages/zyraxon script/build-node.ts
 
 # Step 3: Web UI
-bun run --cwd packages/app build
+NODE_OPTIONS="--max-old-space-size=16384" bun run --cwd packages/app build
 
 # Step 4: Electron shell
 bun run --cwd packages/desktop build
@@ -324,11 +476,17 @@ bun run --cwd packages/desktop build
 bun run --cwd packages/desktop package:win
 ```
 
-> **Note:** App build may need `NODE_OPTIONS="--max-old-space-size=16384"` for limited RAM.
+</details>
 
 ---
 
-## Project Structure
+<br/>
+
+<div align="center">
+
+### PROJECT STRUCTURE
+
+</div>
 
 ```
 ZYRAXON-AI/
@@ -338,24 +496,27 @@ ZYRAXON-AI/
 │   │   │   ├── agent/    # 9 agent modes
 │   │   │   ├── mcp/      # MCP servers + tools
 │   │   │   ├── tool/     # Core tools
-│   │   │   ├── x/        # 335+ domain tools
+│   │   │   ├── x/        # 521+ domain tools
 │   │   │   ├── session/  # LLM streaming
 │   │   │   ├── screen/   # Vision system
 │   │   │   └── memory/   # Eternal memory
-│   │   └── script/       # Build scripts
 │   ├── desktop/          # Electron app
 │   ├── app/              # SolidJS UI
 │   ├── ui/               # Shared components
 │   ├── core/             # Database, utilities
 │   ├── llm/              # 25+ provider routing
 │   └── session-ui/       # Session UI
-├── .gitignore
-└── README.md
 ```
 
 ---
 
-## Contributing
+<br/>
+
+<div align="center">
+
+### CONTRIBUTING
+
+</div>
 
 1. **Fork** the repo
 2. **Clone**: `git clone https://github.com/onelpawarai-X/ZYRAXON-AI.git`
@@ -368,15 +529,43 @@ ZYRAXON-AI/
 
 ---
 
-## License
+<br/>
 
-[Business Source License 1.1 (BSL 1.1)](./LICENSE) — Free for non-commercial use. Commercial use requires a paid license. Converts to Apache 2.0 on 2030-07-21.
+<div align="center">
+
+### ECOSYSTEM
+
+</div>
+
+| Project | Description |
+|:--------|:------------|
+| [ZYRAXON AI](https://github.com/onelpawarai-X/ZYRAXON-AI) | Desktop AI agent — the main project |
+| [Myra Agent](https://github.com/onelpawarai-X/Myra-Agent) | Android voice assistant |
+| [Zyraxon Code](https://github.com/onelpawarai-X/Zyraxon-Code) | AI-powered code editor (Monaco fork) |
+| [ZYRAXON Website](https://zyraxonai.lovable.app) | Main website |
+| [Cloud Agent](https://zyraxon-pro.ai.studio) | Cloud-based agent interface |
 
 ---
 
-<p align="center">
-  <strong>Built with obsession. Powered by AI.</strong><br><br>
-  <a href="https://github.com/onelpawarai-X/ZYRAXON-AI">
-    <img alt="ZYRAXON" src="https://img.shields.io/badge/ZYRAXON-All_in_one._Anything._Nothing_is_impossible-blue?style=for-the-badge&logo=github" />
-  </a>
-</p>
+<br/>
+
+<div align="center">
+
+### LICENSE
+
+**Business Source License 1.1 (BSL 1.1)**
+
+Free for non-commercial use. Commercial use requires a paid license.
+Converts to Apache 2.0 on 2030-07-21.
+
+</div>
+
+---
+
+<br/>
+
+<div align="center">
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0D1117,50:00D4FF,100:FF6B35&height=120&section=footer&text=ZYRAXON+AI&fontSize=24&fontColor=00D4FF&fontAlignY=35&descAlign=85&descSize=12&animation=fadeIn" alt="footer" />
+
+</div>
