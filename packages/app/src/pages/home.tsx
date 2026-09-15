@@ -320,7 +320,7 @@ export function NewHome() {
     if (!conn) return
     return global.ensureServerCtx(conn)
   })
-  const focusedSync = createMemo(() => focusedServerCtx()?.sync ?? sync())
+  const focusedSync = createMemo(() => focusedServerCtx()?.sync)
   const homeSessions = createMemo(() => {
     const s = focusedSync()
     if (!s?.homeSessions) return undefined
