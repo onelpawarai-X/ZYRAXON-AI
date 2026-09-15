@@ -33,7 +33,7 @@
 <p align="center">
   <strong>Desktop AI agent that actually does things. Not a chatbot — an action-bot.</strong><br>
   Reads your files. Writes your code. Runs your commands. Builds your projects. Deploys your apps.<br>
-  <strong>9 Agent Modes</strong> · <strong>366+ Tools</strong> · <strong>Eternal Memory</strong> · <strong>Self-Healing</strong> · <strong>Voice Bridge</strong> · <strong>Self-Evolution</strong>
+  <strong>9 Agent Modes</strong> · <strong>500+ Tools</strong> · <strong>Eternal Memory</strong> · <strong>Self-Healing</strong> · <strong>Voice Bridge</strong> · <strong>Self-Evolution</strong>
 </p>
 
 ---
