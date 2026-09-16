@@ -3,6 +3,7 @@ import { batch, createEffect, createMemo, onCleanup, onMount, type Accessor } fr
 import { useLocation } from "@solidjs/router"
 import { createSimpleContext } from "@zyraxon-ai/ui/context"
 import { makeEventListener } from "@solid-primitives/event-listener"
+import { zlog, zlogError } from "@/utils/crash-log"
 import { useServerSync } from "./server-sync"
 import { useServerSDK } from "./server-sdk"
 import { RECENTLY_CLOSED_DISPLAY_LIMIT, ServerConnection, useServer } from "./server"
@@ -159,9 +160,13 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
   name: "Layout",
   gate: false,
   init: () => {
+    zlog("LayoutProvider", "init started")
     const serverSdk = useServerSDK()
+    zlog("LayoutProvider", "serverSdk loaded")
     const serverSync = useServerSync()
+    zlog("LayoutProvider", "serverSync loaded")
     const server = useServer()
+    zlog("LayoutProvider", "server loaded", { key: server.key })
     const tabs = useTabs()
     const platform = usePlatform()
     const location = useLocation()

@@ -9,11 +9,14 @@ import { createServerSyncContext } from "./server-sync"
 import { getOwner } from "solid-js/web"
 import { QueryClient } from "@tanstack/solid-query"
 import type { ServerScope } from "@/utils/server-scope"
+import { zlog, zlogError } from "@/utils/crash-log"
 
 export const { use: useGlobal, provider: GlobalProvider } = createSimpleContext({
   name: "Global",
   init: () => {
+    zlog("GlobalProvider", "init started")
     const server = useServer()
+    zlog("GlobalProvider", "server loaded", { key: server.key, listCount: server.list.length })
     const serverHealth = useServerHealth(
       () => server.list,
       () => true,

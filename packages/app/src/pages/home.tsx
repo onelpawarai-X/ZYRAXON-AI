@@ -74,6 +74,7 @@ import {
   retainHomeSessions,
   type HomeSessionEvents,
 } from "@/context/global-sync/home-session-index"
+import { zlog, zlogError, zlogSection } from "@/utils/crash-log"
 
 const HOME_SESSION_LIMIT = 64
 const HOME_SESSION_HEADER_STICKY_TOP = 12
@@ -288,20 +289,26 @@ function isBackgroundOpen(event: MouseEvent) {
 type OpenSessionOptions = { background?: boolean }
 
 export function NewHome() {
+  zlogSection("HOME: NewHome() START")
   const layout = useLayout()
+  zlog("HOME", "layout loaded", { hasLayout: !!layout })
   const platform = usePlatform()
+  zlog("HOME", "platform loaded", { hasPlatform: !!platform })
   const pickDirectory = useDirectoryPicker()
   const dialog = useDialog()
   const navigate = useNavigate()
   const server = useServer()
+  zlog("HOME", "server loaded", { key: server.key, hasCurrent: !!server.current, serverType: server.current?.type })
   const language = useLanguage()
   const global = useGlobal()
+  zlog("HOME", "global loaded", { hasGlobal: !!global })
   const tabs = useTabs()
   const command = useCommand()
   const notification = useNotification()
   const marked = useMarked()
   const openSettings = useSettingsCommand()
   const sync = useServerSync()
+  zlog("HOME", "sync loaded", { hasSync: !!sync })
   let focusSessionSearch: (() => void) | undefined
   let sessionViewport: HTMLDivElement | undefined
   const [sessionThumbTrack, setSessionThumbTrack] = createSignal<HTMLDivElement>()
@@ -311,16 +318,25 @@ export function NewHome() {
     searchFocused: false,
   })
   const selection = layout.home.selection
+  zlog("HOME", "selection", { selection: selection() })
 
   const focusedServer = createMemo(
     () => global.servers.list().find((conn) => ServerConnection.key(conn) === selection().server) ?? server.current,
   )
+  zlog("HOME", "focusedServer created")
   const focusedServerCtx = createMemo(() => {
     const conn = focusedServer()
     if (!conn) return
     return global.ensureServerCtx(conn)
   })
-  const focusedSync = () => focusedServerCtx()?.sync ?? sync()
+  zlog("HOME", "focusedServerCtx created")
+  const focusedSync = () => {
+    const ctx = focusedServerCtx()
+    const fallback = sync()
+    zlog("HOME", "focusedSync called", { hasCtx: !!ctx, hasFallback: !!fallback, hasSyncData: !!fallback?.data })
+    return ctx?.sync ?? fallback
+  }
+  zlog("HOME", "focusedSync created")
   const homeSessions = createMemo(() => {
     const s = focusedSync()
     if (!s?.homeSessions) return undefined
@@ -330,7 +346,17 @@ export function NewHome() {
   const recentlyClosed = createMemo(
     () => focusedServerCtx()?.projects.recentlyClosed() ?? layout.projects.recentlyClosed(),
   )
-  const homedir = createMemo(() => focusedSync()?.data?.path?.home ?? "")
+  const homedir = createMemo(() => {
+    const s = focusedSync()
+    zlog("HOME", "homedir evaluating", {
+      hasSync: !!s,
+      hasData: !!s?.data,
+      hasPath: !!s?.data?.path,
+      home: s?.data?.path?.home,
+    })
+    return s?.data?.path?.home ?? ""
+  })
+  zlog("HOME", "homedir created")
   const selectedProject = createMemo(() => projects().find((project) => project.worktree === selection().directory))
   const newSessionProject = createMemo(
     () =>

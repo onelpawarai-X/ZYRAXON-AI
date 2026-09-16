@@ -446,13 +446,23 @@ const main = Effect.gen(function* () {
     const { listener, health } = yield* Effect.promise(() =>
       spawnLocalServer(hostname, port, password, {
         userDataPath: app.getPath("userData"),
-        onStdout: (message) => writeLog("server", "stdout", { message }),
-        onStderr: (message) => writeLog("server", "stderr", { message }, "warn"),
-        onExit: (code) => writeLog("utility", "sidecar exited", { code }, "warn"),
+        onStdout: (message) => {
+          console.log("[Main] Server stdout:", message)
+          writeLog("server", "stdout", { message })
+        },
+        onStderr: (message) => {
+          console.error("[Main] Server stderr:", message)
+          writeLog("server", "stderr", { message }, "warn")
+        },
+        onExit: (code) => {
+          console.error("[Main] Server exited with code:", code)
+          writeLog("utility", "sidecar exited", { code }, "warn")
+        },
       }),
     )
     server = listener
     setDefaultServerUrl(url)
+    logger.log("sidecar spawned successfully, resolving server ready")
     yield* Deferred.succeed(serverReady, {
       url,
       username: "zyraxon",
@@ -463,10 +473,12 @@ const main = Effect.gen(function* () {
       void wslServers.initialize().catch((error) => logger.error("wsl server initialization failed", error))
     }
 
+    logger.log("waiting for sidecar health check")
     yield* Effect.promise(() => health.wait).pipe(
       Effect.timeout("30 seconds"),
       Effect.catch((e) =>
         Effect.sync(() => {
+          console.error("[Main] Sidecar health check failed:", e.toString())
           logger.error("sidecar health check failed", e.toString())
         }),
       ),

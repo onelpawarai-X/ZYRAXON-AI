@@ -3,6 +3,7 @@ import { type Accessor, batch, createMemo } from "solid-js"
 import { createStore, type SetStoreFunction, type Store } from "solid-js/store"
 import { Persist, persisted } from "@/utils/persist"
 import { pathKey } from "@/utils/path-key"
+import { zlog, zlogError } from "@/utils/crash-log"
 import { ServerScope } from "@/utils/server-scope"
 
 type StoredProject = { worktree: string; expanded: boolean }
@@ -260,6 +261,7 @@ export const { use: useServer, provider: ServerProvider } = createSimpleContext(
     canonicalLocalServer?: ServerConnection.Key
     servers?: Array<ServerConnection.Any>
   }) => {
+    zlog("ServerProvider", "init started", { defaultServer: props.defaultServer, serverCount: props.servers?.length })
     const [store, setStore, _, ready] = persisted(
       {
         ...Persist.global("server", ["server.v3"]),
@@ -330,7 +332,9 @@ export const { use: useServer, provider: ServerProvider } = createSimpleContext(
     const current: Accessor<ServerConnection.Any | undefined> = createMemo(
       () => allServers().find((s) => ServerConnection.key(s) === state.active) ?? allServers()[0],
     )
+    zlog("ServerProvider", "current memo created", { active: state.active, allServersCount: allServers().length })
     const isLocal = createMemo(() => ServerConnection.local(current()))
+    zlog("ServerProvider", "init complete", { hasCurrent: !!current(), key: state.active })
 
     return {
       ready: isReady,

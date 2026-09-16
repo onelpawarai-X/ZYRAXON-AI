@@ -29,6 +29,7 @@ import { availableStartupServer, readyWslConnections } from "./wsl/connections"
 import "./styles.css"
 import { Splash } from "@zyraxon-ai/ui/logo"
 import { useTheme } from "@zyraxon-ai/ui/theme/context"
+import { zlog, zlogError, zlogSection } from "@zyraxon-ai/app/utils/crash-log"
 
 const root = document.getElementById("root")
 if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
@@ -384,12 +385,21 @@ function DesktopRoot(props: { windowState: DesktopWindowState }) {
   }
 
   function App() {
+    zlogSection("DESKTOP-APP: App() started")
     const wslServers = useWslServers()
+    zlog("DESKTOP", "wslServers loaded", { isLoading: wslServers.isLoading, data: !!wslServers.data })
     const ready = createMemo(
       () => !defaultServer.loading && !sidecar.loading && !locale.loading && !wslServers.isLoading,
     )
+    zlog("DESKTOP", "ready memo", {
+      defaultServerLoading: defaultServer.loading,
+      sidecarLoading: sidecar.loading,
+      localeLoading: locale.loading,
+      wslLoading: wslServers.isLoading,
+    })
     const servers = createMemo(() => {
       const data = initializationData(sidecar)
+      zlog("DESKTOP", "initializationData(sidecar)", { hasData: !!data, url: data?.url })
       const list: ServerConnection.Any[] = []
       if (data) {
         list.push({
@@ -406,13 +416,22 @@ function DesktopRoot(props: { windowState: DesktopWindowState }) {
       list.push(...readyWslConnections(wslServers.data))
       return list
     })
+    zlog("DESKTOP", "servers memo resolved", { count: servers().length })
     const effectiveDefaultServer = createMemo(() =>
       ServerConnection.Key.make(availableStartupServer(defaultServer.latest, wslServers.data)),
     )
+    zlog("DESKTOP", "effectiveDefaultServer created", {
+      serverKey: effectiveDefaultServer(),
+      ready: ready(),
+    })
     return (
       <Show when={ready()} fallback={<LoadingSplash />}>
         <Show when={effectiveDefaultServer()} keyed>
-          {(key) => (
+          {(key) => {
+            zlogSection("DESKTOP: AppInterface RENDERING")
+            zlog("DESKTOP", "AppInterface key", { key })
+            zlog("DESKTOP", "AppInterface servers", { count: servers().length, servers: servers().map(s => s.displayName) })
+            return (
             <AppInterface
               defaultServer={key}
               servers={servers()}
@@ -427,7 +446,8 @@ function DesktopRoot(props: { windowState: DesktopWindowState }) {
             >
               <Inner />
             </AppInterface>
-          )}
+            )
+          }}
         </Show>
       </Show>
     )
@@ -448,6 +468,17 @@ function DesktopRoot(props: { windowState: DesktopWindowState }) {
     </PlatformProvider>
   )
 }
+
+zlogSection("DESKTOP: GLOBAL ERROR HANDLERS SETUP")
+window.onerror = (message, source, lineno, colno, error) => {
+  zlogError("GLOBAL", "window.onerror", { message, source, lineno, colno, error: error?.message, stack: error?.stack })
+}
+window.addEventListener("unhandledrejection", (e) => {
+  zlogError("GLOBAL", "unhandledrejection", { reason: String(e.reason), type: e.type })
+})
+window.addEventListener("error", (e) => {
+  zlogError("GLOBAL", "window.error event", { message: e.message, filename: e.filename, lineno: e.lineno, colno: e.colno })
+})
 
 render(() => {
   const [windowState] = createResource(async () => {

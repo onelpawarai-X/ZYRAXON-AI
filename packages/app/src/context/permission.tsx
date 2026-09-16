@@ -3,6 +3,7 @@ import { createStore, produce } from "solid-js/store"
 import { createSimpleContext } from "@zyraxon-ai/ui/context"
 import type { PermissionRequest } from "@zyraxon-ai/sdk/v2/client"
 import { Persist, persisted } from "@/utils/persist"
+import { zlog } from "@/utils/crash-log"
 import type { ServerSDK } from "@/context/server-sdk"
 import type { ServerSync } from "./server-sync"
 import { useParams, useSearchParams } from "@solidjs/router"
@@ -55,6 +56,7 @@ export const { use: usePermission, provider: PermissionProvider } = createSimple
   name: "Permission",
   gate: false,
   init: () => {
+    zlog("PermissionProvider", "init started")
     const params = useParams<{ serverKey?: string; dir?: string; id?: string }>()
     const [search] = useSearchParams<{ draftId?: string }>()
     const global = useGlobal()

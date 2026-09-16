@@ -43,6 +43,7 @@ import { useGlobal } from "./global"
 import { ServerConnection, useServer } from "./server"
 import { retry } from "@zyraxon-ai/core/util/retry"
 import type { ServerScope } from "@/utils/server-scope"
+import { zlog, zlogError } from "@/utils/crash-log"
 import { createHomeSessionIndexCache } from "./global-sync/home-session-index"
 import { persisted } from "@/utils/persist"
 import { toggleMcp } from "./global-sync/mcp"
@@ -542,13 +543,26 @@ export const { use: useServerSync, provider: ServerSyncProvider } = createSimple
   // Returns an accessor so the resolved server can change reactively without
   // re-instantiating the subtree (mirrors useServerSDK).
   init: (props: { server?: Accessor<ServerConnection.Any | undefined> }) => {
+    zlog("ServerSyncProvider", "init started", { hasCustomServer: !!props.server })
     const global = useGlobal()
     const language = useLanguage()
     const server = useServer()
+    zlog("ServerSyncProvider", "server context loaded", {
+      serverCurrent: !!server.current,
+      serverKey: server.key,
+    })
 
     return createMemo<ServerSync>(() => {
       const conn = props.server?.() ?? server.current
-      if (!conn) throw new Error(language.t("error.serverSDK.noServerAvailable"))
+      zlog("ServerSyncProvider", "createMemo evaluating", { hasConn: !!conn })
+      if (!conn) {
+        zlogError("ServerSyncProvider", "NO SERVER AVAILABLE - THROWING", {
+          serverCurrent: server.current,
+          serverKey: server.key,
+        })
+        throw new Error(language.t("error.serverSDK.noServerAvailable"))
+      }
+      zlog("ServerSyncProvider", "ensuring server ctx", { type: conn.type })
       return global.ensureServerCtx(conn).sync
     })
   },

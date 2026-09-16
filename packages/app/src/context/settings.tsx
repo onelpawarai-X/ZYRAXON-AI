@@ -3,6 +3,7 @@ import { createEffect, createMemo, createSignal, onCleanup } from "solid-js"
 import { createSimpleContext } from "@zyraxon-ai/ui/context"
 import { persisted } from "@/utils/persist"
 import { usePlatform } from "@/context/platform"
+import { zlog } from "@/utils/crash-log"
 
 export interface NotificationSettings {
   agent: boolean
@@ -226,6 +227,7 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
   name: "Settings",
   gate: false,
   init: () => {
+    zlog("SettingsProvider", "init started")
     const platform = usePlatform()
     const [store, setStore, _, ready] = persisted("settings.v3", createStore<Settings>(defaultSettings))
     const [launch, setLaunch, , launchReady] = persisted(

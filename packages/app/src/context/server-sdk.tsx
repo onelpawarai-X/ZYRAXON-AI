@@ -3,6 +3,7 @@ import { createSimpleContext } from "@zyraxon-ai/ui/context"
 import { createGlobalEmitter } from "@solid-primitives/event-bus"
 import { makeEventListener } from "@solid-primitives/event-listener"
 import { type Accessor, batch, createMemo, onCleanup, onMount } from "solid-js"
+import { zlog, zlogError } from "@/utils/crash-log"
 import { createSdkForServer } from "@/utils/server"
 import { useLanguage } from "./language"
 import { usePlatform } from "./platform"
@@ -296,16 +297,24 @@ export const { use: useServerSDK, provider: ServerSDKProvider } = createSimpleCo
   // Returns an accessor so the resolved server can change reactively (e.g. a
   // /new-session draft retargeting its server) without re-instantiating the subtree.
   init: (props: { server?: Accessor<ServerConnection.Any | undefined> }) => {
+    zlog("ServerSDKProvider", "init started", { hasCustomServer: !!props.server })
     const global = useGlobal()
     const language = useLanguage()
     const server = useServer()
+    zlog("ServerSDKProvider", "server context loaded", {
+      serverCurrent: !!server.current,
+      serverKey: server.key,
+    })
 
     return createMemo<ServerSDK>(() => {
       const conn = props.server?.() ?? server.current
+      zlog("ServerSDKProvider", "createMemo evaluating", { hasConn: !!conn })
       if (!conn) {
         console.warn("[ServerSDK] No server available yet, waiting...")
+        zlogError("ServerSDKProvider", "NO SERVER AVAILABLE", { serverCurrent: server.current })
         throw new Error(language.t("error.serverSDK.noServerAvailable"))
       }
+      zlog("ServerSDKProvider", "ensuring server ctx", { type: conn.type })
       return global.ensureServerCtx(conn).sdk
     })
   },
