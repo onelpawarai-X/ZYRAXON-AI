@@ -537,7 +537,7 @@ function ConnectionError(props: { onRetry?: () => void; onServerSelected?: (key:
 function ServerKey(props: ParentProps) {
   const server = useServer()
   return (
-    <Show when={server.key} keyed>
+    <Show when={server.key && server.current} keyed>
       {props.children}
     </Show>
   )
