@@ -3,26 +3,22 @@ let _path: any = null
 
 function getFs() {
   if (_fs === null) {
-    try {
-      _fs = window.require("fs")
-    } catch {}
+    try { _fs = window.require("fs") } catch {}
   }
   return _fs
 }
 
 function getPath() {
   if (_path === null) {
-    try {
-      _path = window.require("path")
-    } catch {}
+    try { _path = window.require("path") } catch {}
   }
   return _path
 }
 
 function getLogFile(): string {
-  const path = getPath()
-  if (!path) return ""
-  return path.join(process.env.USERPROFILE || process.env.HOME || "", ".zyraxon", "log", "zyraxon.log")
+  const p = getPath()
+  if (!p) return ""
+  return p.join(process.env.USERPROFILE || process.env.HOME || "", ".zyraxon", "log", "zyraxon.log")
 }
 
 function writeLog(level: string, source: string, msg: string, data?: any) {
@@ -38,7 +34,6 @@ function writeLog(level: string, source: string, msg: string, data?: any) {
       fs.appendFileSync(getLogFile(), line, "utf-8")
     } catch {}
   }
-  // Also console
   if (level === "ERROR") {
     console.error(`[ZLOG] [${source}] ${msg}`, data ?? "")
   } else {

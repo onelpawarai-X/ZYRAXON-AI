@@ -29,7 +29,7 @@ import { availableStartupServer, readyWslConnections } from "./wsl/connections"
 import "./styles.css"
 import { Splash } from "@zyraxon-ai/ui/logo"
 import { useTheme } from "@zyraxon-ai/ui/theme/context"
-import { zlog, zlogError, zlogSection } from "@zyraxon-ai/app/utils/crash-log"
+import { zlog, zlogError, zlogSection } from "./crash-log"
 
 const root = document.getElementById("root")
 if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
