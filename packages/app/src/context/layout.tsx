@@ -451,10 +451,9 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
     function enrich(project: { worktree: string; expanded: boolean }) {
       const [childStore] = serverSync().child(project.worktree, { bootstrap: false })
       const projectID = childStore.project
-      const syncData = serverSync()?.data
       const metadata = projectID
-        ? syncData?.project.find((x) => x.id === projectID)
-        : syncData?.project.find((x) => x.worktree === project.worktree)
+        ? serverSync().data.project.find((x) => x.id === projectID)
+        : serverSync().data.project.find((x) => x.worktree === project.worktree)
 
       // Preserve local icon override from per-workspace localStorage cache (childStore.icon).
       // Without this, different subdirectories of the same git repo would share the same
@@ -468,9 +467,7 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
 
     const roots = createMemo(() => {
       const map = new Map<string, string>()
-      const syncData = serverSync()?.data
-      if (!syncData) return map
-      for (const project of syncData.project) {
+      for (const project of serverSync().data.project) {
         const sandboxes = project.sandboxes ?? []
         for (const sandbox of sandboxes) {
           map.set(sandbox, project.worktree)
@@ -631,9 +628,7 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
       projects: {
         list,
         recentlyClosed: createMemo(() => {
-          const syncData = serverSync()?.data
-          if (!syncData) return []
-          const known = new Set(syncData.project.map((project) => pathKey(project.worktree)))
+          const known = new Set(serverSync().data.project.map((project) => pathKey(project.worktree)))
           return server.projects
             .recentlyClosed()
             .filter((worktree) => known.has(pathKey(worktree)))

@@ -301,6 +301,7 @@ export function NewHome() {
   const notification = useNotification()
   const marked = useMarked()
   const openSettings = useSettingsCommand()
+  const sync = useServerSync()
   let focusSessionSearch: (() => void) | undefined
   let sessionViewport: HTMLDivElement | undefined
   const [sessionThumbTrack, setSessionThumbTrack] = createSignal<HTMLDivElement>()
@@ -319,7 +320,7 @@ export function NewHome() {
     if (!conn) return
     return global.ensureServerCtx(conn)
   })
-  const focusedSync = createMemo(() => focusedServerCtx()?.sync)
+  const focusedSync = () => focusedServerCtx()?.sync ?? sync()
   const homeSessions = createMemo(() => {
     const s = focusedSync()
     if (!s?.homeSessions) return undefined
@@ -329,7 +330,7 @@ export function NewHome() {
   const recentlyClosed = createMemo(
     () => focusedServerCtx()?.projects.recentlyClosed() ?? layout.projects.recentlyClosed(),
   )
-  const homedir = createMemo(() => focusedSync()?.data?.path?.home ?? "")
+  const homedir = createMemo(() => focusedSync().data.path.home ?? "")
   const selectedProject = createMemo(() => projects().find((project) => project.worktree === selection().directory))
   const newSessionProject = createMemo(
     () =>

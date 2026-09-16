@@ -546,12 +546,9 @@ export const { use: useServerSync, provider: ServerSyncProvider } = createSimple
     const language = useLanguage()
     const server = useServer()
 
-    return createMemo<ServerSync>((prev) => {
+    return createMemo<ServerSync>(() => {
       const conn = props.server?.() ?? server.current
-      if (!conn) {
-        if (prev) return prev
-        throw new Error(language.t("error.serverSDK.noServerAvailable"))
-      }
+      if (!conn) throw new Error(language.t("error.serverSDK.noServerAvailable"))
       return global.ensureServerCtx(conn).sync
     })
   },
