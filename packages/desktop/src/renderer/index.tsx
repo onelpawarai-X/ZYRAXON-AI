@@ -1,4 +1,4 @@
-// @refresh reload
+﻿// @refresh reload
 
 import {
   ACCEPTED_FILE_EXTENSIONS,
@@ -29,7 +29,10 @@ import { availableStartupServer, readyWslConnections } from "./wsl/connections"
 import "./styles.css"
 import { Splash } from "@zyraxon-ai/ui/logo"
 import { useTheme } from "@zyraxon-ai/ui/theme/context"
-import { zlog, zlogError, zlogSection } from "./crash-log"
+
+const zlog = (..._args: any[]) => {}
+const zlogError = (..._args: any[]) => {}
+const zlogSection = (..._args: any[]) => {}
 
 const root = document.getElementById("root")
 if (import.meta.env.DEV && !(root instanceof HTMLElement)) {

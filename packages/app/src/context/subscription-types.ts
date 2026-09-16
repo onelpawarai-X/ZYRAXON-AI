@@ -44,7 +44,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       "Browser Automation (1 tab)",
       "Up to 3 Projects",
     ],
-    toolCount: 57,
+    toolCount: 121,
     memoryOptimization: "Basic (100 entries, 10MB cache)",
     maxAgents: 1,
     maxProjects: "3",
@@ -73,7 +73,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       "Multi-Agent (up to 3 agents)",
       "Priority Processing",
     ],
-    toolCount: 113,
+    toolCount: 200,
     memoryOptimization: "Pro (500 entries, 50MB cache)",
     maxAgents: 3,
     maxProjects: "Unlimited",
@@ -112,7 +112,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       "Site Creation & Publishing",
       "Memory (2000 entries, 200MB cache)",
     ],
-    toolCount: 370,
+    toolCount: 284,
     memoryOptimization: "Max (2000 entries, 200MB cache)",
     maxAgents: 8,
     maxProjects: "Unlimited + Team",
@@ -146,7 +146,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       "Dedicated Agent Instances",
       "Exclusive Tools & Integrations",
     ],
-    toolCount: 50,
+    toolCount: 23,
     memoryOptimization: "Ultra (10000 entries, 1GB cache)",
     maxAgents: -1,
     maxProjects: "Unlimited + Team + Enterprise",
@@ -719,15 +719,203 @@ export const TOOL_TIER_MAP: Record<string, SubscriptionTier> = {
   x_guardian_clear: "ultra",
   // Subscription — always free
   x_subscription_status: "free",
+
+  // ═══════════════════════════════════════════════════════════════
+  // MISSING TOOLS — Vehicle systems (Pro tier)
+  // ═══════════════════════════════════════════════════════════════
+  x_veh_car_connect: "pro",
+  x_veh_car_disconnect: "pro",
+  x_veh_car_speed: "pro",
+  x_veh_car_rpm: "pro",
+  x_veh_car_fuel: "pro",
+  x_veh_car_lights: "pro",
+  x_veh_car_lock: "pro",
+  x_veh_car_unlock: "pro",
+  x_veh_car_horn: "pro",
+  x_veh_car_climate: "pro",
+  x_veh_car_start: "pro",
+  x_veh_car_stop: "pro",
+  x_veh_car_dtcs: "pro",
+  x_veh_car_clear_dtcs: "pro",
+  x_veh_drone_connect: "pro",
+  x_veh_drone_arm: "pro",
+  x_veh_drone_disarm: "pro",
+  x_veh_drone_takeoff: "pro",
+  x_veh_drone_land: "pro",
+  x_veh_drone_fly_to: "pro",
+  x_veh_drone_mode: "pro",
+  x_veh_drone_speed: "pro",
+  x_veh_drone_attitude: "pro",
+  x_veh_drone_waypoints: "pro",
+  x_veh_drone_geofence: "pro",
+  x_veh_drone_rtl: "pro",
+  x_veh_drone_emergency: "pro",
+  x_veh_boat_connect: "pro",
+  x_veh_boat_heading: "pro",
+  x_veh_boat_throttle: "pro",
+  x_veh_boat_navigate: "pro",
+  x_veh_boat_emergency: "pro",
+  x_veh_rocket_connect: "pro",
+  x_veh_rocket_launch: "pro",
+  x_veh_rocket_abort: "pro",
+  x_veh_rocket_engine: "pro",
+  x_veh_rocket_stage: "pro",
+  x_veh_rocket_payload: "pro",
+  x_veh_rocket_fairing: "pro",
+  x_veh_rocket_countdown: "pro",
+  x_veh_rocket_throttle: "pro",
+  x_veh_rocket_trajectory: "pro",
+  x_veh_sat_connect: "pro",
+  x_veh_sat_orbit: "pro",
+  x_veh_sat_attitude: "pro",
+  x_veh_sat_camera: "pro",
+  x_veh_sat_antenna: "pro",
+  x_veh_sat_solar: "pro",
+  x_veh_sat_thruster: "pro",
+  x_veh_sat_deorbit: "pro",
+  x_veh_sat_safemode: "pro",
+  x_veh_fleet_telemetry: "pro",
+  x_veh_fleet_create_car: "pro",
+  x_veh_fleet_create_drone: "pro",
+  x_veh_fleet_create_rocket: "pro",
+  x_veh_fleet_disconnect: "pro",
+  x_veh_fleet_emergency_stop: "pro",
+
+  // ═══════════════════════════════════════════════════════════════
+  // MISSING TOOLS — Engineering (Max tier)
+  // ═══════════════════════════════════════════════════════════════
+  x_eng_beam: "max",
+  x_eng_stress: "max",
+  x_eng_strain: "max",
+  x_eng_torsion: "max",
+  x_eng_buckling: "max",
+  x_eng_mohrs_circle: "max",
+  x_eng_thermal_stress: "max",
+  x_eng_concrete_mix: "max",
+  x_eng_gear: "max",
+  x_eng_motor: "max",
+  x_eng_transformer: "max",
+  x_eng_three_phase: "max",
+  x_eng_power_factor: "max",
+  x_eng_impedance: "max",
+  x_eng_resonance: "max",
+  x_eng_vibration: "max",
+  x_eng_filter_design: "max",
+  x_eng_circuit: "max",
+  x_eng_flow_rate: "max",
+  x_eng_pipe_flow: "max",
+  x_eng_reynolds: "max",
+  x_eng_heat_exchanger: "max",
+  x_eng_battery: "max",
+
+  // ═══════════════════════════════════════════════════════════════
+  // MISSING TOOLS — Data Science (Pro tier)
+  // ═══════════════════════════════════════════════════════════════
+  x_ds_confusion_matrix: "pro",
+  x_ds_gradient_descent: "pro",
+  x_ds_monte_carlo: "pro",
+  x_ds_multi_regression: "pro",
+  x_ds_standardize: "pro",
+  x_ds_tfidf: "pro",
+
+  // ═══════════════════════════════════════════════════════════════
+  // MISSING TOOLS — Science (Free tier)
+  // ═══════════════════════════════════════════════════════════════
+  x_acid_ph_strong: "free",
+  x_acid_ph_weak: "free",
+  x_acid_titration: "free",
+  x_chem_limiting_reagent: "free",
+  x_chem_percent_composition: "free",
+  x_bio_hill_equation: "free",
+  x_bio_michaelis_menten: "free",
+  x_bio_shannon_index: "free",
+  x_bio_simpson_index: "free",
+
+  // ═══════════════════════════════════════════════════════════════
+  // MISSING TOOLS — Finance (Pro tier)
+  // ═══════════════════════════════════════════════════════════════
+  x_fin_annuity: "pro",
+  x_fin_beta: "pro",
+  x_fin_dividend_discount: "pro",
+
+  // ═══════════════════════════════════════════════════════════════
+  // MISSING TOOLS — Daily Life (Free tier)
+  // ═══════════════════════════════════════════════════════════════
+  x_life_aspect_ratio: "free",
+  x_life_color: "free",
+  x_life_pace: "free",
+  x_life_pixel_rem: "free",
+  x_life_savings_goal: "free",
+  x_life_wind_chill: "free",
+
+  // ═══════════════════════════════════════════════════════════════
+  // MISSING TOOLS — Security (Max tier)
+  // ═══════════════════════════════════════════════════════════════
+  x_sec_firewall: "max",
+  x_sec_malware_sig: "max",
+  x_sec_port_scan: "max",
+
+  // ═══════════════════════════════════════════════════════════════
+  // MISSING TOOLS — UCE / Universal Command (Ultra tier)
+  // ═══════════════════════════════════════════════════════════════
+  x_uce_context: "ultra",
+  x_uce_register_device: "ultra",
+
+  // ═══════════════════════════════════════════════════════════════
+  // CDP BROWSER TOOLS (9) — Max tier
+  // ═══════════════════════════════════════════════════════════════
+  x_cdp_connect: "max",
+  x_cdp_navigate: "max",
+  x_cdp_screenshot: "max",
+  x_cdp_click: "max",
+  x_cdp_type: "max",
+  x_cdp_scroll: "max",
+  x_cdp_evaluate: "max",
+  x_cdp_list_tabs: "max",
+  x_cdp_disconnect: "max",
+
+  // ═══════════════════════════════════════════════════════════════
+  // COMPUTER CONTROL TOOLS (9) — Max tier
+  // ═══════════════════════════════════════════════════════════════
+  x_comp_screenshot: "max",
+  x_comp_click_at: "max",
+  x_comp_type_text: "max",
+  x_comp_key_press: "max",
+  x_comp_scroll: "max",
+  x_comp_move_mouse: "max",
+  x_comp_drag: "max",
+  x_comp_open_app: "max",
+  x_comp_list_windows: "max",
+
+  // ═══════════════════════════════════════════════════════════════
+  // MULTI-STEP PLANNING (3) — Pro tier
+  // ═══════════════════════════════════════════════════════════════
+  x_plan_create: "pro",
+  x_plan_execute: "pro",
+  x_plan_status: "pro",
+
+  // ═══════════════════════════════════════════════════════════════
+  // MEDIA TOOLS (4) — Pro tier
+  // ═══════════════════════════════════════════════════════════════
+  x_media_image_edit: "pro",
+  x_media_video_process: "pro",
+  x_media_data_extract: "pro",
+  x_media_ocr: "pro",
+
+  // ═══════════════════════════════════════════════════════════════
+  // SELF-IMPROVEMENT (2) — Ultra tier
+  // ═══════════════════════════════════════════════════════════════
+  x_learn_from_task: "ultra",
+  x_behavior_rules: "ultra",
 }
 
 export function getToolRequiredTier(toolId: string): SubscriptionTier {
-  return TOOL_TIER_MAP[toolId] ?? "free"
+  return TOOL_TIER_MAP[toolId] ?? "ultra"
 }
 
 export const TIER_STATS: Record<SubscriptionTier, { totalTools: number; categories: string[] }> = {
-  free: { totalTools: 57, categories: ["Core AI", "Math", "Science", "Finance", "Data Science", "Security Basics", "Daily Life", "Memory", "Documents", "Tasks", "Captcha", "Subscription"] },
-  pro: { totalTools: 113, categories: ["Pro Dev Tools", "Aviation", "Ground Vehicles", "Drones", "Helicopters", "ML & Safety", "Common Sense AI", "Ethics AI", "Creativity"] },
-  max: { totalTools: 370, categories: ["Site Tools", "Space", "Medical", "Industrial", "Infrastructure", "Security", "Survey", "Agriculture", "Marine", "Construction", "Physical I/O", "Digital Twin", "Dashboard", "Alerts", "Data Logging", "Remote Control", "Maintenance", "Decision Support", "Authorization", "Extended AI"] },
-  ultra: { totalTools: 50, categories: ["Ultra Tools (8)", "Singularity AI (5)", "Guardian System (4)", "Unlimited Everything"] },
+  free: { totalTools: 121, categories: ["Core AI", "Math", "Science", "Finance", "Data Science", "Security Basics", "Daily Life", "Memory", "Documents", "Tasks", "Captcha", "Subscription", "Acid/Base", "Chemistry", "Biology", "Life Tools"] },
+  pro: { totalTools: 200, categories: ["Everything in Free", "Aviation", "Ground Vehicles", "Drones", "Helicopters", "ML & Safety", "Common Sense & Ethics", "Creativity", "Data Science Advanced", "Finance Advanced", "Vehicle Systems", "Planning", "Media Processing", "OCR"] },
+  max: { totalTools: 284, categories: ["Everything in Pro", "Space", "Industrial", "Infrastructure", "Security", "Survey", "Agriculture", "Marine", "Construction", "Physical Interface", "SDR", "Digital Twin", "Dashboard", "Alert", "Data Logger", "Remote Control", "Predictive Maintenance", "Decision Support", "Authorization", "Extended AI", "Engineering", "Advanced Security", "CDP Browser", "Computer Control"] },
+  ultra: { totalTools: 23, categories: ["Everything in Max", "Singularity", "Guardian", "Universal Command Engine", "Ultra Tools", "Self-Improvement"] },
 }

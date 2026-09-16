@@ -1,4 +1,4 @@
-import "@/index.css"
+﻿import "@/index.css"
 import * as Sentry from "@sentry/solid"
 import { I18nProvider } from "@zyraxon-ai/ui/context"
 import { DialogProvider } from "@zyraxon-ai/ui/context/dialog"
@@ -97,7 +97,7 @@ const SessionRoute = () => {
   }
 
   // When the new layout is enabled, the legacy new-session route (/:dir/session with no id)
-  // is replaced by a draft at /new-session?draftId=…
+  // is replaced by a draft at /new-session?draftId=ΓÇª
   createEffect(() => {
     if (!settings.general.newLayoutDesigns()) return
     if (params.id || search.draftId) return

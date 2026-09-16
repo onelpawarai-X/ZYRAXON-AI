@@ -1,4 +1,4 @@
-import { createContext, createMemo, Show, useContext, type ParentProps, type Accessor } from "solid-js"
+﻿import { createContext, createMemo, Show, useContext, type ParentProps, type Accessor } from "solid-js"
 
 export function createSimpleContext<T, Props extends Record<string, any>>(
   input: {
@@ -37,7 +37,7 @@ export function createSimpleContext<T, Props extends Record<string, any>>(
     use() {
       const value = useContext(ctx)
       if (!value) {
-        console.error(`[CRASH-LOG] [createSimpleContext] [${input.name}] use() CONTEXT IS NULL — provider missing!`)
+        console.error(`[CRASH-LOG] [createSimpleContext] [${input.name}] use() CONTEXT IS NULL ΓÇö provider missing!`)
         throw new Error(`${input.name} context must be used within a context provider`)
       }
       return value

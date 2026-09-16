@@ -1,4 +1,4 @@
-export function initializationData<A>(state: (() => A | undefined) & { error: unknown }) {
+﻿export function initializationData<A>(state: (() => A | undefined) & { error: unknown }) {
   console.log("[ZLOG] [initialization] checking state:", { hasError: state.error !== undefined, loading: state.loading })
   if (state.error !== undefined) {
     console.error("[ZLOG] [initialization] SIDECAR ERROR:", state.error)
