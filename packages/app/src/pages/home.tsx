@@ -846,7 +846,11 @@ function HomeProjectColumn(props: {
     { initialValue: _state },
   )
 
+  const firstServer = () => global.servers.list()[0]
+
   return (
+    <Show when={firstServer()} keyed>
+      {(server) => (
     <aside
       class="mt-6 flex min-h-0 min-w-0 flex-col gap-4 overflow-hidden lg:sticky lg:top-14 lg:mt-14 lg:h-[calc(100cqh-56px)] lg:self-start lg:pt-[52px]"
       aria-label={props.language.t("home.projects")}
@@ -867,8 +871,8 @@ function HomeProjectColumn(props: {
               size="large"
               class="titlebar-icon [&_[data-slot=icon-svg]]:text-v2-icon-icon-muted"
               icon={<IconV2 name="folder-add-left" />}
-              disabled={global.servers.health[ServerConnection.key(global.servers.list()[0]!)]?.healthy === false}
-              onClick={() => props.chooseProject(global.servers.list()[0]!)}
+              disabled={global.servers.health[ServerConnection.key(server)]?.healthy === false}
+              onClick={() => props.chooseProject(server)}
               aria-label={props.language.t("home.project.add")}
             />
           </TooltipV2>
@@ -883,7 +887,7 @@ function HomeProjectColumn(props: {
                 when={props.projects.length > 0}
                 fallback={
                   <HomeProjectEmpty
-                    server={global.servers.list()[0]!}
+                    server={server}
                     recentlyClosed={props.recentlyClosed}
                     homedir={props.homedir}
                     chooseProject={props.chooseProject}
@@ -892,7 +896,7 @@ function HomeProjectColumn(props: {
                   />
                 }
               >
-                <HomeProjectList {...props} server={global.servers.list()[0]!} />
+                <HomeProjectList {...props} server={server} />
               </Show>
             </div>
           }
@@ -938,6 +942,8 @@ function HomeProjectColumn(props: {
         language={props.language}
       />
     </aside>
+      )}
+    </Show>
   )
 }
 
