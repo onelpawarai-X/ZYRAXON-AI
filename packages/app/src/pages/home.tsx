@@ -288,7 +288,6 @@ function isBackgroundOpen(event: MouseEvent) {
 type OpenSessionOptions = { background?: boolean }
 
 export function NewHome() {
-  const sync = useServerSync()
   const layout = useLayout()
   const platform = usePlatform()
   const pickDirectory = useDirectoryPicker()
@@ -320,7 +319,7 @@ export function NewHome() {
     if (!conn) return
     return global.ensureServerCtx(conn)
   })
-  const focusedSync = createMemo(() => focusedServerCtx()?.sync ?? sync())
+  const focusedSync = createMemo(() => focusedServerCtx()?.sync)
   const homeSessions = createMemo(() => {
     const s = focusedSync()
     if (!s?.homeSessions) return undefined
