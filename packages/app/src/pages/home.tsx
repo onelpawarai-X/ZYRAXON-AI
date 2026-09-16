@@ -330,7 +330,7 @@ export function NewHome() {
   const recentlyClosed = createMemo(
     () => focusedServerCtx()?.projects.recentlyClosed() ?? layout.projects.recentlyClosed(),
   )
-  const homedir = createMemo(() => focusedSync().data.path.home ?? "")
+  const homedir = createMemo(() => focusedSync()?.data?.path?.home ?? "")
   const selectedProject = createMemo(() => projects().find((project) => project.worktree === selection().directory))
   const newSessionProject = createMemo(
     () =>

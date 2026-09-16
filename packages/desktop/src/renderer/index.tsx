@@ -19,10 +19,10 @@ import * as Sentry from "@sentry/solid"
 import type { AsyncStorage } from "@solid-primitives/storage"
 import { createMemoryHistory, MemoryRouter, type BaseRouterProps } from "@solidjs/router"
 import { createEffect, createMemo, createResource, createSignal, onCleanup, onMount, Show } from "solid-js"
+import { initializationData } from "./initialization"
 import { render } from "solid-js/web"
 import pkg from "../../package.json"
 import { initI18n, t } from "./i18n"
-import { initializationData, initializationReady } from "./initialization"
 import { DesktopFirstLaunchOnboarding } from "./onboarding"
 import { resetZoom, setPinchZoomEnabled, webviewZoom, zoomIn, zoomOut } from "./webview-zoom"
 import { availableStartupServer, readyWslConnections } from "./wsl/connections"
@@ -343,8 +343,6 @@ function DesktopRoot(props: { windowState: DesktopWindowState }) {
     return next satisfies Locale
   }
 
-  const [windowCount] = createResource(() => window.api.getWindowCount())
-
   // Fetch sidecar credentials (available immediately, before health check)
   const [sidecar] = createResource(() => window.api.awaitInitialization())
 
@@ -387,18 +385,11 @@ function DesktopRoot(props: { windowState: DesktopWindowState }) {
 
   function App() {
     const wslServers = useWslServers()
-    const [forceReady, setForceReady] = createSignal(false)
-    createEffect(() => {
-      const timer = setTimeout(() => setForceReady(true), 8000)
-      onCleanup(() => clearTimeout(timer))
-    })
     const ready = createMemo(
-      () =>
-        forceReady() ||
-        (!defaultServer.loading && !sidecar.loading && !windowCount.loading && !locale.loading && !wslServers.isLoading),
+      () => !defaultServer.loading && !sidecar.loading && !locale.loading && !wslServers.isLoading,
     )
     const servers = createMemo(() => {
-      const data = sidecar()
+      const data = initializationData(sidecar)
       const list: ServerConnection.Any[] = []
       if (data) {
         list.push({
