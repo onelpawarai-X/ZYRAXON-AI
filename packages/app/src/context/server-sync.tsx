@@ -546,9 +546,12 @@ export const { use: useServerSync, provider: ServerSyncProvider } = createSimple
     const language = useLanguage()
     const server = useServer()
 
-    return createMemo<ServerSync | undefined>(() => {
+    return createMemo<ServerSync>((prev) => {
       const conn = props.server?.() ?? server.current
-      if (!conn) return undefined
+      if (!conn) {
+        if (prev) return prev
+        throw new Error(language.t("error.serverSDK.noServerAvailable"))
+      }
       return global.ensureServerCtx(conn).sync
     })
   },
@@ -556,5 +559,5 @@ export const { use: useServerSync, provider: ServerSyncProvider } = createSimple
 
 export function useQueryOptions() {
   const sync = useServerSync()
-  return createMemo(() => sync()?.queryOptions)
+  return createMemo(() => sync().queryOptions)
 }

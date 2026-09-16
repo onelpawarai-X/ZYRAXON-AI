@@ -449,13 +449,12 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
     }
 
     function enrich(project: { worktree: string; expanded: boolean }) {
-      const sync = serverSync()
-      if (!sync) return { ...project }
-      const [childStore] = sync.child(project.worktree, { bootstrap: false })
+      const [childStore] = serverSync().child(project.worktree, { bootstrap: false })
       const projectID = childStore.project
+      const syncData = serverSync()?.data
       const metadata = projectID
-        ? sync.data?.project?.find((x) => x.id === projectID)
-        : sync.data?.project?.find((x) => x.worktree === project.worktree)
+        ? syncData?.project.find((x) => x.id === projectID)
+        : syncData?.project.find((x) => x.worktree === project.worktree)
 
       // Preserve local icon override from per-workspace localStorage cache (childStore.icon).
       // Without this, different subdirectories of the same git repo would share the same
@@ -469,9 +468,9 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
 
     const roots = createMemo(() => {
       const map = new Map<string, string>()
-      const sync = serverSync()
-      if (!sync?.data?.project) return map
-      for (const project of sync.data.project) {
+      const syncData = serverSync()?.data
+      if (!syncData) return map
+      for (const project of syncData.project) {
         const sandboxes = project.sandboxes ?? []
         for (const sandbox of sandboxes) {
           map.set(sandbox, project.worktree)
@@ -537,7 +536,7 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
     createEffect(() => {
       const projects = enriched()
       if (projects.length === 0) return
-      if (!serverSync()?.ready) return
+      if (!serverSync().ready) return
 
       for (const project of projects) {
         if (!project.id) continue
@@ -632,9 +631,9 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
       projects: {
         list,
         recentlyClosed: createMemo(() => {
-          const sync = serverSync()
-          if (!sync?.data?.project) return []
-          const known = new Set(sync.data.project.map((project) => pathKey(project.worktree)))
+          const syncData = serverSync()?.data
+          if (!syncData) return []
+          const known = new Set(syncData.project.map((project) => pathKey(project.worktree)))
           return server.projects
             .recentlyClosed()
             .filter((worktree) => known.has(pathKey(worktree)))

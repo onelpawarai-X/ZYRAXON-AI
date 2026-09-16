@@ -320,7 +320,7 @@ export function NewHome() {
     if (!conn) return
     return global.ensureServerCtx(conn)
   })
-  const focusedSync = createMemo(() => focusedServerCtx()?.sync)
+  const focusedSync = createMemo(() => focusedServerCtx()?.sync ?? sync())
   const homeSessions = createMemo(() => {
     const s = focusedSync()
     if (!s?.homeSessions) return undefined
@@ -441,8 +441,8 @@ export function NewHome() {
               .sync(record.session.id)
               .then(() => {
                 return Promise.all(
-                  (ctx.sync.session?.data?.message?.[record.session.id] ?? []).flatMap((message) =>
-                    (ctx.sync.session?.data?.part?.[message.id] ?? []).flatMap((part) => {
+                  (ctx.sync.session.data.message[record.session.id] ?? []).flatMap((message) =>
+                    (ctx.sync.session.data.part[message.id] ?? []).flatMap((part) => {
                       if (part.type !== "text" || !part.text) return []
                       return preloadMarkdown(part.text, part.id, marked)
                     }),
@@ -562,7 +562,7 @@ export function NewHome() {
     // Fallback: use the home directory from server sync when no projects exist
     if (conn) {
       const ctx = global.ensureServerCtx(conn)
-      const homeDir = ctx.sync?.data?.path?.home
+      const homeDir = ctx.sync.data.path.home
       if (homeDir) {
         openProjectNewSession(conn, homeDir)
       }
@@ -846,7 +846,11 @@ function HomeProjectColumn(props: {
     { initialValue: _state },
   )
 
+  const firstServer = () => global.servers.list()[0]
+
   return (
+    <Show when={firstServer()} keyed>
+      {(server) => (
     <aside
       class="mt-6 flex min-h-0 min-w-0 flex-col gap-4 overflow-hidden lg:sticky lg:top-14 lg:mt-14 lg:h-[calc(100cqh-56px)] lg:self-start lg:pt-[52px]"
       aria-label={props.language.t("home.projects")}
@@ -867,8 +871,8 @@ function HomeProjectColumn(props: {
               size="large"
               class="titlebar-icon [&_[data-slot=icon-svg]]:text-v2-icon-icon-muted"
               icon={<IconV2 name="folder-add-left" />}
-              disabled={!global.servers.list()[0] || global.servers.health[ServerConnection.key(global.servers.list()[0]!)]?.healthy === false}
-              onClick={() => { const s = global.servers.list()[0]; if (s) props.chooseProject(s) }}
+              disabled={global.servers.health[ServerConnection.key(server)]?.healthy === false}
+              onClick={() => props.chooseProject(server)}
               aria-label={props.language.t("home.project.add")}
             />
           </TooltipV2>
@@ -882,23 +886,17 @@ function HomeProjectColumn(props: {
               <Show
                 when={props.projects.length > 0}
                 fallback={
-                  <Show when={global.servers.list()[0]} keyed>
-                    {(firstServer) => (
-                      <HomeProjectEmpty
-                        server={firstServer}
-                        recentlyClosed={props.recentlyClosed}
-                        homedir={props.homedir}
-                        chooseProject={props.chooseProject}
-                        openRecentProject={props.openRecentProject}
-                        language={props.language}
-                      />
-                    )}
-                  </Show>
+                  <HomeProjectEmpty
+                    server={server}
+                    recentlyClosed={props.recentlyClosed}
+                    homedir={props.homedir}
+                    chooseProject={props.chooseProject}
+                    openRecentProject={props.openRecentProject}
+                    language={props.language}
+                  />
                 }
               >
-                <Show when={global.servers.list()[0]} keyed>
-                  {(firstServer) => <HomeProjectList {...props} server={firstServer} />}
-                </Show>
+                <HomeProjectList {...props} server={server} />
               </Show>
             </div>
           }
@@ -944,6 +942,8 @@ function HomeProjectColumn(props: {
         language={props.language}
       />
     </aside>
+      )}
+    </Show>
   )
 }
 
@@ -955,6 +955,7 @@ function HomeUtilityNav(props: {
 }) {
   const navigate = useNavigate()
   const [showCloudAgent, setShowCloudAgent] = createSignal(false)
+  const [showMarketplace, setShowMarketplace] = createSignal(false)
   return (
     <div class={`${props.class ?? ""} min-w-0 flex-col gap-1 pr-3`}>
       <button
@@ -970,7 +971,17 @@ function HomeUtilityNav(props: {
       <button
         type="button"
         class={`${HOME_PROJECT_NAV_ROW} h-10 rounded-[8px] text-v2-text-text-faint [&>[data-slot=icon-svg]]:text-v2-icon-icon-muted`}
-        onClick={() => navigate("/ecosystem")}
+        onClick={() => setShowMarketplace(true)}
+      >
+        <span class="flex items-center gap-2">
+          <IconV2 name="globe" size="small" />
+          <span class={HOME_PROJECT_NAV_LABEL}>Marketplace</span>
+        </span>
+      </button>
+      <button
+        type="button"
+        class={`${HOME_PROJECT_NAV_ROW} h-10 rounded-[8px] text-v2-text-text-faint [&>[data-slot=icon-svg]]:text-v2-icon-icon-muted`}
+        onClick={() => setShowMarketplace(true)}
       >
         <span class="flex items-center gap-2">
           <IconV2 name="globe" size="small" />
@@ -998,6 +1009,7 @@ function HomeUtilityNav(props: {
         </span>
       </button>
       <CloudAgentDialog show={showCloudAgent()} onClose={() => setShowCloudAgent(false)} />
+      <MarketplaceDialog show={showMarketplace()} onClose={() => setShowMarketplace(false)} />
     </div>
   )
 }
@@ -1087,6 +1099,41 @@ function CloudAgentDialog(props: { show: boolean; onClose: () => void }) {
           class="h-full w-full flex-1 border-0"
           allow="clipboard-read; clipboard-write; microphone"
           title="Cloud Agent"
+        />
+      </div>
+    </div>
+  )
+}
+
+function MarketplaceDialog(props: { show: boolean; onClose: () => void }) {
+  return (
+    <div
+      class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      style={{ display: props.show ? "flex" : "none" }}
+      onClick={props.onClose}
+    >
+      <div
+        class="relative flex h-[85vh] w-[90vw] max-w-[1200px] flex-col overflow-hidden rounded-xl border border-v2-border-border-base bg-v2-background-bg-base shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div class="flex items-center justify-between border-b border-v2-border-border-base px-4 py-3">
+          <div class="flex items-center gap-2">
+            <IconV2 name="globe" size="small" class="text-v2-icon-icon-muted" />
+            <span class="text-sm font-medium text-v2-text-text-base">ZYRAXON Marketplace</span>
+          </div>
+          <button
+            type="button"
+            class="flex h-7 w-7 items-center justify-center rounded-md text-v2-text-text-muted hover:bg-v2-overlay-simple-overlay-hover"
+            onClick={props.onClose}
+          >
+            <IconV2 name="close" size="small" />
+          </button>
+        </div>
+        <iframe
+          src="https://agent-ecosystem-hub.lovable.app"
+          class="h-full w-full flex-1 border-0"
+          allow="clipboard-read; clipboard-write"
+          title="ZYRAXON Marketplace"
         />
       </div>
     </div>
@@ -1232,10 +1279,7 @@ function HomeProjectEmpty(props: {
   language: ReturnType<typeof useLanguage>
 }) {
   const global = useGlobal()
-  const unreachable = () => {
-    if (!props.server) return false
-    return global.servers.health[ServerConnection.key(props.server)]?.healthy === false
-  }
+  const unreachable = () => global.servers.health[ServerConnection.key(props.server)]?.healthy === false
   return (
     <div class="flex min-w-0 flex-col gap-1">
       <button
@@ -1276,10 +1320,7 @@ function HomeRecentlyClosedRow(props: {
   language: ReturnType<typeof useLanguage>
 }) {
   const global = useGlobal()
-  const unreachable = () => {
-    if (!props.server) return false
-    return global.servers.health[ServerConnection.key(props.server)]?.healthy === false
-  }
+  const unreachable = () => global.servers.health[ServerConnection.key(props.server)]?.healthy === false
   const path = () => {
     const home = props.homedir
     const worktree = props.project.worktree
@@ -1316,10 +1357,7 @@ function HomeProjectRow(props: {
 }) {
   const global = useGlobal()
   const platform = usePlatform()
-  const serverUnreachable = () => {
-    if (!props.server) return false
-    return global.servers.health[ServerConnection.key(props.server)]?.healthy === false
-  }
+  const serverUnreachable = () => global.servers.health[ServerConnection.key(props.server)]?.healthy === false
   const [state, setState] = createStore({ menuOpen: false })
   const canRevealInFileManager = () =>
     platform.platform === "desktop" && !!platform.openPath && ServerConnection.local(props.server)
@@ -1858,11 +1896,11 @@ export function LegacyHome() {
   const global = useGlobal()
   const server = useServer()
   const language = useLanguage()
-  const homedir = createMemo(() => sync()?.data?.path?.home ?? "")
+  const homedir = createMemo(() => sync().data.path.home)
   const serverUnreachable = createMemo(() => global.servers.health[server.key]?.healthy === false)
   const recent = createMemo(() => {
-    return (sync()?.data?.project ?? [])
-      .slice()
+    return sync()
+      .data.project.slice()
       .sort((a, b) => (b.time.updated ?? b.time.created) - (a.time.updated ?? a.time.created))
       .slice(0, 5)
   })
@@ -1922,7 +1960,7 @@ export function LegacyHome() {
         {server.name}
       </Button>
       <Switch>
-        <Match when={(sync()?.data?.project ?? []).length > 0}>
+        <Match when={sync().data.project.length > 0}>
           <div class="mt-20 w-full flex flex-col gap-4">
             <div class="flex gap-2 items-center justify-between pl-3">
               <div class="text-14-medium text-text-strong">{language.t("home.recentProjects")}</div>

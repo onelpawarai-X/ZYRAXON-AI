@@ -76,6 +76,11 @@ function asset(v: GalleryVersion | undefined, type: string): string | null {
   return f?.source ?? null
 }
 
+function openEditorInstall(extension: VSExtension): void {
+  const protocolUrl = `zyraxon://install/extension/${encodeURIComponent(extension.id)}`
+  window.location.href = protocolUrl
+}
+
 function prop(v: GalleryVersion | undefined, key: string): string | null {
   return v?.properties?.find((p) => p.key === key)?.value ?? null
 }
@@ -424,7 +429,8 @@ const Detail: Component<{ id: string; onBack: () => void }> = (props) => {
           setInstallError(result.error || "Installation failed — check that ZYRAXON is running in the desktop app")
         }
       } else {
-        setInstallError("Extension manager not available. Please restart ZYRAXON and try again.")
+          openEditorInstall(ext()!)
+          setInstallError("ZYRAXON Code is not connected. Install or open ZYRAXON Code, then retry. You can also download the VSIX below.")
       }
     } catch (err: any) {
       setInstallError(err.message || "Installation failed")
