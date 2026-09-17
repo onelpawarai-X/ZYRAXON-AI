@@ -1196,9 +1196,9 @@ function VoiceDialog(props: { show: boolean; onClose: () => void }) {
           </button>
         </div>
         <iframe
-          src="https://agent-ecosystem-hub.lovable.app"
+          src="http://127.0.0.1:19800/"
           class="h-full w-full flex-1 border-0"
-          allow="clipboard-read; clipboard-write"
+          allow="microphone; media"
           title="ZYRAXON Voice"
         />
       </div>
