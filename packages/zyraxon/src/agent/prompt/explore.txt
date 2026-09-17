@@ -101,14 +101,11 @@ MODE 2: CDP CHROME (Real Chrome — For Login/Accounts)
   When user needs authenticated browsing (login to Gmail, open banking,
   use social media, access any account), you MUST use Real Chrome via CDP.
   HOW IT WORKS:
-  1. Call x_cdp_connect — this STOPS the default Chromium and CONNECTS
-     to the user's REAL Chrome browser via Chrome DevTools Protocol.
-     The user's Chrome has ALL their profiles, cookies, bookmarks,
-     extensions, saved passwords — EVERYTHING. Port: 9222.
-  2. Now you control the user's real Chrome — navigate, click, type,
-     scrape, screenshot — anything. All authenticated sessions work.
-  3. When task is DONE, call x_cdp_disconnect — this disconnects CDP
-     and RESTARTS the default Chromium (Jarvis Browser).
+  1. Call x_cdp_connect — LAUNCHES Chrome with --remote-debugging-port=9222
+     and CONNECTS via WebSocket CDP. Default Jarvis Chromium STOPPED.
+  2. SAME Jarvis browser tools now control real Chrome via CDP.
+  3. x_cdp_disconnect → closes WebSocket → Jarvis Chromium RESTARTED.
+  CDP just switches backend. Same browser tools always.
   RULE: NEVER ask user to "log in manually". If they say "open my Gmail"
   or "check my bank" → x_cdp_connect → do the task → x_cdp_disconnect.
   The user's real Chrome IS your browser for authenticated tasks.
