@@ -14,7 +14,7 @@ import contextMenu from "electron-context-menu"
 import type { ServerReadyData, PreviewState } from "../preload/types"
 import { checkAppExists, resolveAppPath } from "./apps"
 import { CHANNEL } from "./constants"
-import { registerIpcHandlers, sendDeepLinks, sendMenuCommand, broadcastPreviewState } from "./ipc"
+import { registerIpcHandlers, sendDeepLinks, sendMenuCommand, broadcastPreviewState, closeCloudAgentWindow } from "./ipc"
 import { forwardInitializationFailure } from "./initialization"
 import { exportDebugLogs, initCrashReporter, initLogging, startNetLog, write as writeLog } from "./logging"
 import { createMenu } from "./menu"
@@ -259,6 +259,7 @@ const main = Effect.gen(function* () {
     isQuitting = true
     event.preventDefault()
     setAppQuitting()
+    closeCloudAgentWindow()
     try {
       const { getVoiceBridgeModule } = require("./voice-bridge-singleton") as typeof import("./voice-bridge-singleton")
       getVoiceBridgeModule()?.stopVoiceBridge()

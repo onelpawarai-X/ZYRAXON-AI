@@ -472,6 +472,18 @@ export function MessageTimeline(props: {
       if (part.type === "text" && "text" in part) text += (part as any).text
     }
     text = stripThinkingBlocks(text)
+    // Strip reasoning/review blocks that aren't meant to be spoken
+    text = text.replace(/\[REVIEW\][\s\S]*?\[\/REVIEW\]/gi, "")
+    text = text.replace(/\[TOOL_CALL\][\s\S]*?\[\/TOOL_CALL\]/gi, "")
+    text = text.replace(/\[THINKING\][\s\S]*?\[\/THINKING\]/gi, "")
+    text = text.replace(/\[INTERNAL\][\s\S]*?\[\/INTERNAL\]/gi, "")
+    // Strip markdown code fences
+    text = text.replace(/```[\s\S]*?```/g, "")
+    text = text.replace(/`[^`\n]+`/g, "")
+    // Strip tool use/result tags (already in stripThinkingBlocks but double-safe)
+    text = text.replace(/<tool_use>[\s\S]*?<\/tool_use>/gi, "")
+    text = text.replace(/<tool_result>[\s\S]*?<\/tool_result>/gi, "")
+    text = text.replace(/\{[^{}]*"tool"[\s\S]*?\}/g, "")
     text = text.replace(/\n{3,}/g, "\n\n").trim()
     return text
   }
@@ -559,6 +571,10 @@ export function MessageTimeline(props: {
   const mountedMessageIDs = new Set<string>()
   let mountedSnapshotDone = false
   let ttsProcessingGuard = false
+  // Track which messages are actively being processed to prevent re-entry
+  const ttsActiveProcessing = new Set<string>()
+  // Track last TTS chunk per message to prevent duplicate sends across retries
+  const ttsLastChunkHash = new Map<string, string>()
 
   function processTTSForMessages() {
     if (ttsProcessingGuard) return
@@ -588,6 +604,8 @@ export function MessageTimeline(props: {
         if (msg.role !== "assistant") continue
         if (mountedMessageIDs.has(msg.id)) continue
         if (ttsSpokenIds.has(msg.id)) continue
+        // Prevent re-entry for the same message across rapid polling cycles
+        if (ttsActiveProcessing.has(msg.id)) continue
 
         const isActive = typeof msg.time?.completed !== "number"
         const fullText = extractTTSText(msg.id)
@@ -597,12 +615,19 @@ export function MessageTimeline(props: {
         const textHash = contentHash(fullText)
         if (ttsSpokenContentHashes.has(textHash)) continue
 
+        // Chunk-level dedup: skip if the last chunk sent for this message matches
+        const lastChunk = ttsLastChunkHash.get(msg.id) || ""
+        if (lastChunk && lastChunk === textHash) continue
+
         const alreadySent = ttsSentText.get(msg.id) || ""
 
         if (isActive) {
+          // Mark as actively processing to prevent re-entry
+          ttsActiveProcessing.add(msg.id)
+
           // ACTIVE message: send each complete sentence immediately
           const unsentText = fullText.slice(alreadySent.length)
-          if (unsentText.length < 1) continue
+          if (unsentText.length < 1) { ttsActiveProcessing.delete(msg.id); continue }
 
           // Find best sentence/phrase break point
           const sentenceEnders = ["।", "॥", ".", "!", "?", "\n"]
@@ -633,10 +658,14 @@ export function MessageTimeline(props: {
 
           if (chunk.length >= 3) {
             ttsSentText.set(msg.id, alreadySent + chunk)
+            ttsLastChunkHash.set(msg.id, textHash)
             sendTTSText(chunk)
           }
+          // Release processing flag after a short delay to allow next cycle to check
+          setTimeout(() => ttsActiveProcessing.delete(msg.id), 2000)
         } else {
           // COMPLETED message: send remaining in large sentence-level chunks
+          ttsActiveProcessing.delete(msg.id)
           ttsSpokenIds.add(msg.id)
           ttsSpokenContentHashes.add(textHash)
           persistSpokenIds()
@@ -689,10 +718,10 @@ export function MessageTimeline(props: {
     }
   ))
 
-  // EFFECT 2: Polling — every 500ms for real-time TTS detection
+  // EFFECT 2: Polling — every 200ms for real-time TTS streaming
   const ttsPollInterval = setInterval(() => {
     processTTSForMessages()
-  }, 500)
+  }, 200)
 
   // Listen for TTS stop events (when user sends a new message)
   const handleTTSStop = () => stopAllTTS()
