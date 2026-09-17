@@ -861,6 +861,13 @@ ipcMain.handle("daily-tasks:run", async (_event: IpcMainInvokeEvent, task: any) 
 
 let cloudAgentWindow: BrowserWindow | null = null
 
+export function closeCloudAgentWindow() {
+  if (cloudAgentWindow && !cloudAgentWindow.isDestroyed()) {
+    cloudAgentWindow.destroy()
+    cloudAgentWindow = null
+  }
+}
+
 ipcMain.handle("cloud-agent:open", async () => {
   if (cloudAgentWindow && !cloudAgentWindow.isDestroyed()) {
     cloudAgentWindow.focus()
@@ -903,6 +910,11 @@ ipcMain.handle("cloud-agent:open", async () => {
   cloudAgentWindow.setMenu(null)
   await cloudAgentWindow.loadURL("https://zyraxon-pro.ai.studio/")
   cloudAgentWindow.on("closed", () => { cloudAgentWindow = null })
+  // Inject speech bridge so Web Speech API works in the cloud agent window
+  try {
+    const { injectCloudAgentSpeechBridge } = await import("./windows")
+    injectCloudAgentSpeechBridge(cloudAgentWindow)
+  } catch {}
   return true
 })
 

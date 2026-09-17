@@ -13,6 +13,7 @@ import { createStore } from "solid-js/store"
 import { createMediaQuery } from "@solid-primitives/media"
 import { Portal } from "solid-js/web"
 import { useCommand } from "@/context/command"
+import { useSettingsDialog } from "@/components/settings-dialog"
 import { useLanguage } from "@/context/language"
 import { useLayout } from "@/context/layout"
 import { usePlatform } from "@/context/platform"
@@ -150,6 +151,7 @@ export function SessionHeader() {
   const terminal = useTerminal()
   const { params, view } = useSessionLayout()
   const navigate = useNavigate()
+  const openSettings = useSettingsDialog()
 
   const projectDirectory = createMemo(() => decode64(params.dir) ?? "")
   const project = createMemo(() => {
@@ -592,7 +594,7 @@ function SessionHeaderV2Actions(props: { state: SessionHeaderV2ActionsState }) {
           variant="ghost-muted"
           size="large"
           class="!w-9 shrink-0"
-          onClick={() => command.trigger("settings.open")}
+          onClick={() => openSettings()}
           aria-label="Subscription Plans"
           icon={<IconV2 name="globe" />}
         />

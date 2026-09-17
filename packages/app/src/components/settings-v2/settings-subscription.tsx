@@ -3,7 +3,6 @@ import {
   loadSubState,
   activateWithCode,
   activateTier,
-  activateTierWithDuration,
   resetToFree,
   lockSubscription,
   getDaysRemaining,
@@ -17,18 +16,11 @@ import {
   type SubscriptionState,
 } from "@/utils/subscription-store"
 
-const TIER_GLASS: Record<SubscriptionTier, { accent: string; glow: string; gradient: string; icon: string }> = {
-  free: { accent: "#64748b", glow: "rgba(100,116,139,0.15)", gradient: "from-slate-500/10 to-slate-600/5", icon: "⚡" },
-  pro: { accent: "#00ff88", glow: "rgba(0,255,136,0.2)", gradient: "from-emerald-500/10 to-cyan-500/5", icon: "🚀" },
-  max: { accent: "#a78bfa", glow: "rgba(167,139,250,0.2)", gradient: "from-violet-500/10 to-purple-500/5", icon: "⭐" },
-  ultra: { accent: "#fb923c", glow: "rgba(251,146,60,0.2)", gradient: "from-orange-500/10 to-amber-500/5", icon: "👑" },
-}
-
-const TIER_ADMIN_COLORS: Record<SubscriptionTier, { bg: string; border: string; text: string; glow: string; btn: string }> = {
-  free: { bg: "#1a1a2e", border: "#333366", text: "#8888aa", glow: "transparent", btn: "#333366" },
-  pro: { bg: "#0d2818", border: "#00ff88", text: "#00ff88", glow: "rgba(0,255,136,0.3)", btn: "#00ff88" },
-  max: { bg: "#1a0d28", border: "#8b5cf6", text: "#8b5cf6", glow: "rgba(139,92,246,0.3)", btn: "#8b5cf6" },
-  ultra: { bg: "#281a0d", border: "#ff6b00", text: "#ff6b00", glow: "rgba(255,107,0,0.3)", btn: "#ff6b00" },
+const TIER_COLORS: Record<SubscriptionTier, string> = {
+  free: "#64748b",
+  pro: "#00ff88",
+  max: "#a78bfa",
+  ultra: "#fb923c",
 }
 
 const TIER_DURATION: Record<string, { label: string; price: number }> = {
@@ -42,7 +34,6 @@ export function SettingsSubscription() {
   const [code, setCode] = createSignal("")
   const [codeMessage, setCodeMessage] = createSignal("")
   const [showSuccess, setShowSuccess] = createSignal(false)
-  const [activePayTier, setActivePayTier] = createSignal<SubscriptionTier | null>(null)
 
   const [zyOpen, setZyOpen] = createSignal(false)
   const [zyInput, setZyInput] = createSignal("")
@@ -55,8 +46,10 @@ export function SettingsSubscription() {
   const daysRemaining = () => getDaysRemaining(state())
 
   function handleZySubmit() {
-    if (zyInput().trim().toUpperCase() === "X") {
-      setZyOpen(true)
+    if (zyInput().trim().toUpperCase() === "ZYRAXON") {
+      setAdminUnlocked(true)
+      setAdminOpen(true)
+      setZyOpen(false)
       setZyInput("")
     }
   }
@@ -114,43 +107,43 @@ export function SettingsSubscription() {
       <div class="flex items-center justify-between">
         <div>
           <h2 class="text-lg font-bold text-[var(--text-strong)]">Subscription Plans</h2>
-          <p class="text-xs text-[var(--text-weak)] mt-1">Choose the plan that fits your needs. Secret codes unlock permanently.</p>
+          <p class="text-xs text-[var(--text-weak)] mt-1">Choose the plan that fits your needs.</p>
         </div>
         <div class="relative">
           <button
             onClick={() => { if (!zyOpen()) setZyInput(""); setZyOpen(!zyOpen()) }}
-            class="px-2.5 py-1 rounded-md text-[11px] font-bold tracking-widest transition-all duration-200"
+            class="px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-wider transition-all duration-200"
             classList={{
               "bg-orange-500 text-black": zyOpen(),
               "bg-white/5 text-white/40 border border-white/10 hover:bg-white/10 hover:text-white/60": !zyOpen(),
             }}
           >
-            ZY
+            ADMIN
           </button>
           <Show when={zyOpen()}>
-            <div class="absolute top-full right-0 mt-2 w-56 rounded-xl p-2.5 z-50"
+            <div class="absolute top-full right-0 mt-2 w-64 rounded-xl p-3 z-50"
               style={{
-                "background": "rgba(15,15,30,0.95)",
-                "backdrop-filter": "blur(20px)",
-                "border": "1px solid rgba(255,255,255,0.08)",
-                "box-shadow": "0 8px 32px rgba(0,0,0,0.5)",
+                "background": "rgba(15,15,30,0.97)",
+                "backdrop-filter": "blur(24px)",
+                "border": "1px solid rgba(255,255,255,0.1)",
+                "box-shadow": "0 12px 40px rgba(0,0,0,0.6)",
               }}>
-              <div class="text-[10px] text-white/30 mb-1.5">Enter access code:</div>
-              <div class="flex gap-1.5">
+              <div class="text-[11px] text-white/50 mb-2 font-medium">Enter admin access code</div>
+              <div class="flex gap-2">
                 <input
-                  type="text"
+                  type="password"
                   value={zyInput()}
                   onInput={(e) => setZyInput(e.currentTarget.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") handleZySubmit() }}
-                  placeholder="Type X"
+                  placeholder="Access code"
                   autofocus
-                  class="flex-1 px-2 py-1.5 rounded-md text-xs font-mono bg-black/40 text-emerald-400 border border-white/10 focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20"
+                  class="flex-1 px-3 py-2 rounded-lg text-xs font-mono bg-black/40 text-white border border-white/10 focus:outline-none focus:border-white/30 placeholder:text-white/20"
                 />
                 <button
                   onClick={handleZySubmit}
-                  class="px-3 py-1.5 rounded-md text-[11px] font-semibold bg-emerald-500 text-black hover:bg-emerald-400 transition-colors"
+                  class="px-4 py-2 rounded-lg text-[11px] font-bold bg-white/10 text-white hover:bg-white/20 transition-colors"
                 >
-                  Send
+                  Unlock
                 </button>
               </div>
             </div>
@@ -160,37 +153,34 @@ export function SettingsSubscription() {
 
       {/* Admin Panel */}
       <Show when={zyOpen() && adminOpen()}>
-        <div class="rounded-xl p-3.5 border border-violet-500/30"
+        <div class="rounded-xl p-4 border border-white/10"
           style={{
-            "background": "linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.05))",
-            "backdrop-filter": "blur(20px)",
-            "box-shadow": "0 0 24px rgba(139,92,246,0.1)",
+            "background": "rgba(255,255,255,0.03)",
+            "backdrop-filter": "blur(16px)",
           }}>
-          <div class="text-xs font-bold text-violet-400 mb-2 flex items-center gap-1.5">
-            ⚙️ Admin Control Panel
-          </div>
+          <div class="text-xs font-bold text-white/70 mb-2">Admin Control Panel</div>
           <p class="text-[11px] text-white/40 mb-2">Type tier name + Enter to activate. Type LOCK to disable.</p>
-          <div class="flex gap-1.5 mb-2">
+          <div class="flex gap-2 mb-2">
             <input
               type="text"
               value={adminTier()}
               onInput={(e) => setAdminTier(e.currentTarget.value)}
               onKeyDown={(e) => { if (e.key === "Enter") handleAdminUnlock() }}
               placeholder="UNLOCK / PRO / MAX / ULTRA / LOCK"
-              class="flex-1 px-2 py-1.5 rounded-md text-xs font-mono bg-black/40 text-emerald-400 border border-violet-500/30 focus:outline-none focus:border-violet-500/60 placeholder:text-white/20"
+              class="flex-1 px-3 py-2 rounded-lg text-xs font-mono bg-black/40 text-white border border-white/10 focus:outline-none focus:border-white/30 placeholder:text-white/20"
             />
             <button
               onClick={handleAdminUnlock}
-              class="px-3 py-1.5 rounded-md text-[11px] font-semibold bg-violet-500 text-white hover:bg-violet-400 transition-colors"
+              class="px-4 py-2 rounded-lg text-[11px] font-bold bg-white/10 text-white hover:bg-white/20 transition-colors"
             >
               Set
             </button>
           </div>
           <Show when={adminMsg()}>
-            <div class="px-2.5 py-1.5 rounded-md text-[11px]"
+            <div class="px-3 py-1.5 rounded-lg text-xs"
               classList={{
                 "bg-red-500/15 text-red-400": adminMsg().includes("locked") || adminMsg().includes("Lock"),
-                "bg-emerald-500/15 text-emerald-400": !adminMsg().includes("locked") && !adminMsg().includes("Lock"),
+                "bg-white/10 text-white/70": !adminMsg().includes("locked") && !adminMsg().includes("Lock"),
               }}>
               {adminMsg()}
             </div>
@@ -201,16 +191,16 @@ export function SettingsSubscription() {
       {/* Current Plan Badge */}
       <div class="rounded-xl p-4 border border-white/5"
         style={{
-          "background": `linear-gradient(135deg, ${TIER_GLASS[currentTier()].glow}, transparent)`,
-          "backdrop-filter": "blur(20px)",
+          "background": `linear-gradient(135deg, ${TIER_COLORS[currentTier()]}08, transparent)`,
         }}>
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl"
+          <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
             style={{
-              "background": `linear-gradient(135deg, ${TIER_GLASS[currentTier()].accent}22, ${TIER_GLASS[currentTier()].accent}11)`,
-              "border": `1px solid ${TIER_GLASS[currentTier()].accent}33`,
+              "background": `${TIER_COLORS[currentTier()]}15`,
+              "color": TIER_COLORS[currentTier()],
+              "border": `1px solid ${TIER_COLORS[currentTier()]}25`,
             }}>
-            {TIER_GLASS[currentTier()].icon}
+            {currentPlan().name[0]}
           </div>
           <div class="flex-1">
             <div class="text-sm font-bold text-[var(--text-strong)]">
@@ -234,29 +224,24 @@ export function SettingsSubscription() {
         <For each={TIER_ORDER}>
           {(tierId) => {
             const plan = SUBSCRIPTION_PLANS[tierId]
-            const glass = TIER_GLASS[tierId]
+            const color = TIER_COLORS[tierId]
             const isCurrent = currentTier() === tierId
             return (
               <div
                 class="relative rounded-2xl p-4 transition-all duration-300 flex flex-col"
                 style={{
-                  "background": isCurrent
-                    ? `linear-gradient(145deg, ${glass.accent}12, ${glass.accent}06)`
-                    : "rgba(255,255,255,0.02)",
-                  "border": `1px solid ${isCurrent ? `${glass.accent}40` : "rgba(255,255,255,0.05)"}`,
-                  "backdrop-filter": "blur(16px)",
-                  "box-shadow": isCurrent ? `0 0 30px ${glass.glow}, inset 0 1px 0 ${glass.accent}15` : "none",
+                  "background": isCurrent ? `${color}08` : "rgba(255,255,255,0.02)",
+                  "border": `1px solid ${isCurrent ? `${color}30` : "rgba(255,255,255,0.05)"}`,
                 }}
               >
                 <Show when={isCurrent}>
                   <div class="absolute -top-2.5 left-4 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider text-black"
-                    style={{ background: glass.accent }}>
+                    style={{ background: color }}>
                     Current
                   </div>
                 </Show>
 
-                <div class="text-2xl mb-1">{glass.icon}</div>
-                <div class="text-base font-bold mb-1" style={{ color: glass.accent }}>{plan.name}</div>
+                <div class="text-base font-bold mb-1" style={{ color: color }}>{plan.name}</div>
                 <div class="text-xl font-extrabold text-[var(--text-strong)] mb-1">
                   ${plan.price}
                   <span class="text-[11px] font-normal text-[var(--text-weak)] ml-1">
@@ -272,7 +257,7 @@ export function SettingsSubscription() {
                   <For each={plan.features.slice(0, 5)}>
                     {(f) => (
                       <div class="text-[11px] text-[var(--text-weak)] py-0.5 flex items-center gap-1.5">
-                        <span style={{ color: glass.accent }}>✓</span> {f}
+                        <span style={{ color: color }}>{">"}</span> {f}
                       </div>
                     )}
                   </For>
@@ -289,9 +274,8 @@ export function SettingsSubscription() {
                       onClick={() => handleStripePay(tierId)}
                       class="w-full py-2.5 rounded-lg text-[12px] font-bold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                       style={{
-                        "background": `linear-gradient(135deg, ${glass.accent}dd, ${glass.accent}99)`,
+                        "background": color,
                         "color": "#000",
-                        "box-shadow": `0 2px 12px ${glass.glow}`,
                       }}
                     >
                       Upgrade to {plan.name} — ${TIER_DURATION[tierId]?.price ?? plan.price}/{TIER_DURATION[tierId]?.label ?? "month"}
@@ -317,46 +301,38 @@ export function SettingsSubscription() {
       <div class="rounded-xl p-4"
         style={{
           "background": "rgba(255,255,255,0.02)",
-          "backdrop-filter": "blur(16px)",
           "border": "1px solid rgba(255,255,255,0.05)",
         }}>
-        <div class="flex items-center gap-2 mb-2">
-          <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm bg-amber-500/10 border border-amber-500/20">
-            🔑
-          </div>
-          <div>
-            <h3 class="text-sm font-bold text-[var(--text-strong)]">Secret Code Activation</h3>
-            <p class="text-[11px] text-[var(--text-weak)]">Enter a secret code for permanent unlock — no expiry, no limitations</p>
-          </div>
-        </div>
-        <div class="flex gap-2 mt-3">
+        <h3 class="text-sm font-bold text-[var(--text-strong)] mb-1">Secret Code Activation</h3>
+        <p class="text-[11px] text-[var(--text-weak)] mb-3">Enter a secret code for permanent unlock — no expiry, no limitations</p>
+        <div class="flex gap-2">
           <input
             type="text"
             value={code()}
             onInput={(e) => setCode(e.currentTarget.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleActivateCode() }}
             placeholder="ZYRAXON-ULTRA-2026"
-            class="flex-1 px-3 py-2 rounded-lg text-xs font-mono bg-black/30 text-[var(--text-strong)] border border-white/10 focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20"
+            class="flex-1 px-3 py-2 rounded-lg text-xs font-mono bg-black/30 text-[var(--text-strong)] border border-white/10 focus:outline-none focus:border-white/30 placeholder:text-white/20"
           />
           <button
             onClick={handleActivateCode}
-            class="px-4 py-2 rounded-lg text-xs font-bold bg-emerald-500 text-black hover:bg-emerald-400 transition-colors"
+            class="px-4 py-2 rounded-lg text-xs font-bold bg-white/10 text-white hover:bg-white/20 transition-colors"
           >
             Activate
           </button>
         </div>
         <Show when={codeMessage()}>
-          <div class="mt-2 px-3 py-1.5 rounded-md text-xs"
+          <div class="mt-2 px-3 py-1.5 rounded-lg text-xs"
             classList={{
               "bg-red-500/15 text-red-400": codeMessage().includes("Invalid") || codeMessage().includes("not configured"),
-              "bg-emerald-500/15 text-emerald-400": !codeMessage().includes("Invalid") && !codeMessage().includes("not configured"),
+              "bg-white/10 text-white/70": !codeMessage().includes("Invalid") && !codeMessage().includes("not configured"),
             }}>
             {codeMessage()}
           </div>
         </Show>
         <Show when={showSuccess()}>
-          <div class="mt-2 px-3 py-1.5 rounded-md text-xs bg-emerald-500/20 text-emerald-400 font-semibold">
-            ✅ Tier upgraded! All {currentPlan().toolCount} tools unlocked.
+          <div class="mt-2 px-3 py-1.5 rounded-lg text-xs bg-emerald-500/20 text-emerald-400 font-semibold">
+            Tier upgraded! All {currentPlan().toolCount} tools unlocked.
           </div>
         </Show>
       </div>
@@ -366,7 +342,6 @@ export function SettingsSubscription() {
         <div class="rounded-xl p-4"
           style={{
             "background": "rgba(255,255,255,0.02)",
-            "backdrop-filter": "blur(16px)",
             "border": "1px solid rgba(255,255,255,0.05)",
           }}>
           <div class="text-xs text-[var(--text-weak)] mb-2">Subscription Details</div>

@@ -573,7 +573,7 @@ function upsertKeyValue(obj: Record<string, any>, keyToChange: string, value: an
   obj[keyToChange] = value
 }
 
-function injectCloudAgentSpeechBridge(win: BrowserWindow) {
+export function injectCloudAgentSpeechBridge(win: BrowserWindow) {
   // This function injects a SpeechRecognition polyfill into the Cloud Agent iframe.
   // Root cause: Electron's Chromium disables Web Speech API (SpeechRecognition) in
   // cross-origin iframes. Permission is granted but the speech recognition service
