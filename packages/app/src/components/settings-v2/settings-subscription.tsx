@@ -31,11 +31,11 @@ const TIER_ADMIN_COLORS: Record<SubscriptionTier, { bg: string; border: string; 
   ultra: { bg: "#281a0d", border: "#ff6b00", text: "#ff6b00", glow: "rgba(255,107,0,0.3)", btn: "#ff6b00" },
 }
 
-const DURATIONS: { label: string; days: number }[] = [
-  { label: "15 Days", days: 15 },
-  { label: "2 Months", days: 60 },
-  { label: "1 Year", days: 365 },
-]
+const TIER_DURATION: Record<string, { label: string; price: number }> = {
+  pro: { label: "15 Days", price: 5 },
+  max: { label: "2 Months", price: 15 },
+  ultra: { label: "1 Year", price: 99 },
+}
 
 export function SettingsSubscription() {
   const [state, setState] = createSignal<SubscriptionState>(loadSubState())
@@ -284,22 +284,18 @@ export function SettingsSubscription() {
                 </div>
 
                 <Show when={!isCurrent && tierId !== "free"}>
-                  <div class="mt-3 space-y-1.5">
-                    <For each={DURATIONS}>
-                      {(dur) => (
-                        <button
-                          onClick={() => handleStripePay(tierId)}
-                          class="w-full py-2 rounded-lg text-[11px] font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-                          style={{
-                            "background": `linear-gradient(135deg, ${glass.accent}dd, ${glass.accent}99)`,
-                            "color": "#000",
-                            "box-shadow": `0 2px 8px ${glass.glow}`,
-                          }}
-                        >
-                          Pay ${plan.price} ({dur.label})
-                        </button>
-                      )}
-                    </For>
+                  <div class="mt-3">
+                    <button
+                      onClick={() => handleStripePay(tierId)}
+                      class="w-full py-2.5 rounded-lg text-[12px] font-bold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                      style={{
+                        "background": `linear-gradient(135deg, ${glass.accent}dd, ${glass.accent}99)`,
+                        "color": "#000",
+                        "box-shadow": `0 2px 12px ${glass.glow}`,
+                      }}
+                    >
+                      Upgrade to {plan.name} — ${TIER_DURATION[tierId]?.price ?? plan.price}/{TIER_DURATION[tierId]?.label ?? "month"}
+                    </button>
                   </div>
                 </Show>
 

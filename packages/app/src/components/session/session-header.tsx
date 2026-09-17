@@ -18,7 +18,6 @@ import { useLayout } from "@/context/layout"
 import { usePlatform } from "@/context/platform"
 import { useServer } from "@/context/server"
 import { useSettings } from "@/context/settings"
-import { useSettingsDialog } from "@/components/settings-dialog"
 import { useNavigate } from "@solidjs/router"
 import { useSync } from "@/context/sync"
 import { useTerminal } from "@/context/terminal"
@@ -149,7 +148,6 @@ export function SessionHeader() {
   const settings = useSettings()
   const sync = useSync()
   const terminal = useTerminal()
-  const openSubscriptionSettings = useSettingsDialog("subscription")
   const { params, view } = useSessionLayout()
   const navigate = useNavigate()
 
@@ -594,7 +592,7 @@ function SessionHeaderV2Actions(props: { state: SessionHeaderV2ActionsState }) {
           variant="ghost-muted"
           size="large"
           class="!w-9 shrink-0"
-          onClick={() => openSubscriptionSettings()}
+          onClick={() => command.trigger("settings.open")}
           aria-label="Subscription Plans"
           icon={<IconV2 name="globe" />}
         />

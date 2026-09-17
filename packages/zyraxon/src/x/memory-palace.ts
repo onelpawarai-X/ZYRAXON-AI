@@ -49,6 +49,10 @@ const PALACE_DB = path.join(PALACE_DIR, "memory_palace.db")
 let db: DB | null = null
 let dbInitPromise: Promise<void> | null = null
 
+function qget(d: DB, sql: string, ...params: any[]): any {
+  try { const rows = d.query(sql).all(...params) as any[]; return rows.length > 0 ? rows[0] : undefined } catch { return undefined }
+}
+
 async function getDb(): Promise<DB> {
   if (db) return db
   if (!dbInitPromise) dbInitPromise = initDb()
@@ -122,14 +126,14 @@ export class MemoryPalace {
         [id, type, JSON.stringify(content), JSON.stringify(tags)])
     } catch {}
     // Evict if over limit
-    const count = (d.query(`SELECT COUNT(*) as c FROM palace_nodes`).get() as any)?.c || 0
+    const count = qget(d, `SELECT COUNT(*) as c FROM palace_nodes`)?.c || 0
     if (count > this.maxNodes) this.evictSync(d)
     return id
   }
 
   async retrieve(id: string): Promise<MemoryNode | null> {
     const d = await getDb()
-    const row = d.query(`SELECT * FROM palace_nodes WHERE id = ?`).get(id) as any
+    const row = qget(d, `SELECT * FROM palace_nodes WHERE id = ?`, id)
     if (!row) return null
     d.run(`UPDATE palace_nodes SET access_count = access_count + 1, last_accessed = ?, decay = MIN(1.0, decay + 0.1) WHERE id = ?`,
       [Date.now(), id])
@@ -174,8 +178,8 @@ export class MemoryPalace {
 
   async connect(id1: string, id2: string): Promise<void> {
     const d = await getDb()
-    const n1 = d.query(`SELECT connections FROM palace_nodes WHERE id = ?`).get(id1) as any
-    const n2 = d.query(`SELECT connections FROM palace_nodes WHERE id = ?`).get(id2) as any
+    const n1 = qget(d, `SELECT connections FROM palace_nodes WHERE id = ?`, id1)
+    const n2 = qget(d, `SELECT connections FROM palace_nodes WHERE id = ?`, id2)
     if (!n1 || !n2) return
     const conns1: string[] = (() => { try { return JSON.parse(n1.connections) } catch { return [] } })()
     const conns2: string[] = (() => { try { return JSON.parse(n2.connections) } catch { return [] } })()
@@ -187,7 +191,7 @@ export class MemoryPalace {
 
   async forget(id: string): Promise<boolean> {
     const d = await getDb()
-    const row = d.query(`SELECT id FROM palace_nodes WHERE id = ?`).get(id)
+    const row = qget(d, `SELECT id FROM palace_nodes WHERE id = ?`, id)
     if (!row) return false
     d.run(`DELETE FROM palace_nodes WHERE id = ?`, [id])
     try { d.run(`DELETE FROM palace_fts WHERE id = ?`, [id]) } catch {}
@@ -204,7 +208,7 @@ export class MemoryPalace {
 
   async getStats(): Promise<MemoryStats> {
     const d = await getDb()
-    const total = (d.query(`SELECT COUNT(*) as c FROM palace_nodes`).get() as any)?.c || 0
+    const total = qget(d, `SELECT COUNT(*) as c FROM palace_nodes`)?.c || 0
     const typeRows = d.query(`SELECT type, COUNT(*) as c FROM palace_nodes GROUP BY type`).all() as any[]
     const byType: Record<string, number> = {}
     let totalConnections = 0
@@ -215,9 +219,9 @@ export class MemoryPalace {
     for (const r of connRows) {
       try { totalConnections += JSON.parse(r.connections).length } catch {}
     }
-    const avg = (d.query(`SELECT AVG(importance) as avg FROM palace_nodes`).get() as any)?.avg || 0
-    const oldest = (d.query(`SELECT MIN(created) as t FROM palace_nodes`).get() as any)?.t || Date.now()
-    const newest = (d.query(`SELECT MAX(created) as t FROM palace_nodes`).get() as any)?.t || Date.now()
+    const avg = qget(d, `SELECT AVG(importance) as avg FROM palace_nodes`)?.avg || 0
+    const oldest = qget(d, `SELECT MIN(created) as t FROM palace_nodes`)?.t || Date.now()
+    const newest = qget(d, `SELECT MAX(created) as t FROM palace_nodes`)?.t || Date.now()
     return {
       totalNodes: total, byType,
       avgImportance: Math.round(avg * 10) / 10,

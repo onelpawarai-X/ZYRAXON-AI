@@ -16,6 +16,11 @@ const DB_PATH = path.join(MEMORY_DIR, "infinite_memory.db")
 const RECENT_BUFFER_SIZE = 10
 const MAX_CONTEXT_MEMORIES = 25
 
+// SAFE: .get() fails in compiled binary — use .all()[0] instead
+function qget(d: DB, sql: string, ...params: any[]): any {
+  try { const rows = d.query(sql).all(...params) as any[]; return rows.length > 0 ? rows[0] : undefined } catch { return undefined }
+}
+
 async function getDb(): Promise<DB> {
   if (db) return db
   if (!dbInitPromise) {
@@ -307,7 +312,7 @@ export async function storeConversationTurn(params: {
 }): Promise<void> {
   const d = await getDb()
   const id = `conv_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
-  const maxTurn = d.query(`SELECT COALESCE(MAX(turn_index), -1) as mx FROM conversations WHERE session_id = ?`).get(params.sessionId) as any
+  const maxTurn = qget(d, `SELECT COALESCE(MAX(turn_index), -1) as mx FROM conversations WHERE session_id = ?`, params.sessionId)
   const turnIndex = (maxTurn?.mx ?? -1) + 1
   d.run(`INSERT INTO conversations (id, session_id, role, content, agent, model, timestamp, turn_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [id, params.sessionId, params.role, params.content, params.agent || '', params.model || '', Date.now(), turnIndex])
@@ -495,13 +500,13 @@ export async function getMemoryStatsDetailed(): Promise<{
   bufferSize: number
 }> {
   const d = await getDb()
-  const memCount = (d.query(`SELECT COUNT(*) as c FROM memories`).get() as any)?.c || 0
-  const convCount = (d.query(`SELECT COUNT(DISTINCT session_id) as c FROM conversations`).get() as any)?.c || 0
-  const turnCount = (d.query(`SELECT COUNT(*) as c FROM conversations`).get() as any)?.c || 0
-  const oldest = (d.query(`SELECT MIN(timestamp) as t FROM memories`).get() as any)?.t
-  const newest = (d.query(`SELECT MAX(timestamp) as t FROM memories`).get() as any)?.t
+  const memCount = qget(d, `SELECT COUNT(*) as c FROM memories`)?.c || 0
+  const convCount = qget(d, `SELECT COUNT(DISTINCT session_id) as c FROM conversations`)?.c || 0
+  const turnCount = qget(d, `SELECT COUNT(*) as c FROM conversations`)?.c || 0
+  const oldest = qget(d, `SELECT MIN(timestamp) as t FROM memories`)?.t
+  const newest = qget(d, `SELECT MAX(timestamp) as t FROM memories`)?.t
   const cats = d.query(`SELECT category, COUNT(*) as c FROM memories GROUP BY category ORDER BY c DESC`).all() as any[]
-  const bufSize = (d.query(`SELECT COUNT(*) as c FROM context_buffer`).get() as any)?.c || 0
+  const bufSize = qget(d, `SELECT COUNT(*) as c FROM context_buffer`)?.c || 0
   const topCats: Record<string, number> = {}
   for (const r of cats) topCats[r.category] = r.c
   return {
@@ -526,7 +531,7 @@ export async function ringBufferPush(params: {
     [params.sessionId, params.role, params.content, params.agent || '', params.model || '', Date.now()])
   // Auto-eviction handled by trg_ring_buffer_evict trigger
   // Global prune if total rows exceed 10x max (safety net)
-  const total = (d.query(`SELECT COUNT(*) as c FROM ring_buffer`).get() as any)?.c || 0
+  const total = qget(d, `SELECT COUNT(*) as c FROM ring_buffer`)?.c || 0
   if (total > RING_BUFFER_MAX * 10) {
     d.run(`DELETE FROM ring_buffer WHERE id NOT IN (
       SELECT id FROM ring_buffer ORDER BY timestamp DESC LIMIT ?
@@ -545,9 +550,9 @@ export async function ringBufferGet(sessionId: string, count: number = 10): Prom
 export async function ringBufferPrune(olderThanMs: number = 86400000): Promise<number> {
   const d = await getDb()
   const cutoff = Date.now() - olderThanMs
-  const before = (d.query(`SELECT COUNT(*) as c FROM ring_buffer`).get() as any)?.c || 0
+  const before = qget(d, `SELECT COUNT(*) as c FROM ring_buffer`)?.c || 0
   d.run(`DELETE FROM ring_buffer WHERE timestamp < ?`, [cutoff])
-  const after = (d.query(`SELECT COUNT(*) as c FROM ring_buffer`).get() as any)?.c || 0
+  const after = qget(d, `SELECT COUNT(*) as c FROM ring_buffer`)?.c || 0
   return before - after
 }
 
@@ -566,7 +571,7 @@ export async function heartbeatGetStats(): Promise<{
   isAlive: boolean; ageMs: number
 } | null> {
   const d = await getDb()
-  const row = d.query(`SELECT * FROM memory_heartbeat WHERE id = 1`).get() as any
+  const row = qget(d, `SELECT * FROM memory_heartbeat WHERE id = 1`)
   if (!row) return null
   const now = Date.now()
   return {
@@ -591,7 +596,7 @@ export async function heartbeatUptime(): Promise<number> {
 
 export async function cachedContextGet(): Promise<Record<string, any> | null> {
   const d = await getDb()
-  const row = d.query(`SELECT context_json, updated_at FROM cached_context WHERE id = 1`).get() as any
+  const row = qget(d, `SELECT context_json, updated_at FROM cached_context WHERE id = 1`)
   if (!row) return null
   // Cache valid for 30 seconds
   if (Date.now() - row.updated_at > 30000) return null
@@ -852,8 +857,8 @@ export async function getMemoryStats(): Promise<{
 }> {
   try {
     const d = await getDb()
-    const total = (d.query(`SELECT COUNT(*) as c FROM memories`).get() as any)?.c || 0
-    const compressed = (d.query(`SELECT COUNT(*) as c FROM memories WHERE compressed=1`).get() as any)?.c || 0
+    const total = qget(d, `SELECT COUNT(*) as c FROM memories`)?.c || 0
+    const compressed = qget(d, `SELECT COUNT(*) as c FROM memories WHERE compressed=1`)?.c || 0
     const catRows = d.query(`SELECT category, COUNT(*) as c FROM memories GROUP BY category`).all() as any[]
     const categories: Record<string, number> = {}
     for (const r of catRows) categories[r.category] = r.c
@@ -863,8 +868,8 @@ export async function getMemoryStats(): Promise<{
       try { for (const t of JSON.parse(r.tags)) tagCounts[t] = (tagCounts[t] || 0) + 1 } catch {}
     }
     const topTags = Object.entries(tagCounts).map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count).slice(0, 20)
-    const oldest = (d.query(`SELECT MIN(timestamp) as t FROM memories`).get() as any)?.t
-    const newest = (d.query(`SELECT MAX(timestamp) as t FROM memories`).get() as any)?.t
+    const oldest = qget(d, `SELECT MIN(timestamp) as t FROM memories`)?.t
+    const newest = qget(d, `SELECT MAX(timestamp) as t FROM memories`)?.t
     return { total, compressed, categories, topTags, oldestMemory: oldest ? new Date(oldest).toISOString() : "none", newestMemory: newest ? new Date(newest).toISOString() : "none" }
   } catch {
     return { total: 0, compressed: 0, categories: {}, topTags: [], oldestMemory: "none", newestMemory: "none" }
@@ -929,7 +934,7 @@ export async function storeKnowledgeEntity(params: {
 
 export async function getKnowledgeEntity(id: string): Promise<KnowledgeEntity | null> {
   const d = await getDb()
-  const row = d.query(`SELECT * FROM knowledge_entity WHERE id = ?`).get(id) as any
+  const row = qget(d, `SELECT * FROM knowledge_entity WHERE id = ?`, id)
   if (!row) return null
   d.run(`UPDATE knowledge_entity SET access_count = access_count + 1, time_last_accessed = ? WHERE id = ?`, [Date.now(), id])
   return {
@@ -1010,7 +1015,7 @@ export async function storeError(params: {
 }): Promise<string> {
   const d = await getDb()
   const now = Date.now()
-  const existing = d.query(`SELECT id, occurrence_count FROM error_record WHERE error_type = ? AND error_message = ?`).get(params.errorType, params.errorMessage) as any
+  const existing = qget(d, `SELECT id, occurrence_count FROM error_record WHERE error_type = ? AND error_message = ?`, params.errorType, params.errorMessage)
   if (existing) {
     d.run(`UPDATE error_record SET occurrence_count = occurrence_count + 1, time_last_seen = ?, fix_applied = COALESCE(?, fix_applied), fix_session_id = COALESCE(?, fix_session_id) WHERE id = ?`,
       [now, params.fixApplied || null, params.fixSessionId || null, existing.id])
@@ -1051,7 +1056,7 @@ export async function storeLearnedPattern(params: {
 }): Promise<string> {
   const d = await getDb()
   const now = Date.now()
-  const existing = d.query(`SELECT id, frequency FROM learned_pattern WHERE pattern_type = ? AND description = ?`).get(params.patternType, params.description) as any
+  const existing = qget(d, `SELECT id, frequency FROM learned_pattern WHERE pattern_type = ? AND description = ?`, params.patternType, params.description)
   if (existing) {
     d.run(`UPDATE learned_pattern SET frequency = frequency + 1, time_last_seen = ?, confidence_score = MAX(confidence_score, ?) WHERE id = ?`,
       [now, params.confidenceScore ?? 5, existing.id])
