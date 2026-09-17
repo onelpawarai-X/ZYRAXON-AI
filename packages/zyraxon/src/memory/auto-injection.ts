@@ -88,7 +88,41 @@ async function initDb(): Promise<void> {
   db.run(`CREATE INDEX IF NOT EXISTS idx_memories_project_ts ON memories(project_id, timestamp DESC)`)
   db.run(`CREATE INDEX IF NOT EXISTS idx_memories_session_ts ON memories(session_id, timestamp DESC)`)
   db.run(`CREATE INDEX IF NOT EXISTS idx_conv_session_turn ON conversations(session_id, turn_index DESC)`)
+  db.run(`CREATE TABLE IF NOT EXISTS error_record (
+    id TEXT PRIMARY KEY,
+    error_type TEXT NOT NULL,
+    error_message TEXT NOT NULL,
+    stack_trace TEXT DEFAULT '',
+    fix_applied TEXT DEFAULT '',
+    fix_session_id TEXT DEFAULT '',
+    occurrence_count INTEGER NOT NULL DEFAULT 1,
+    severity TEXT NOT NULL DEFAULT 'error',
+    time_first_seen INTEGER NOT NULL,
+    time_last_seen INTEGER NOT NULL
+  )`)
   db.run(`CREATE INDEX IF NOT EXISTS idx_error_type_msg ON error_record(error_type, error_message)`)
+  db.run(`CREATE TABLE IF NOT EXISTS learned_pattern (
+    id TEXT PRIMARY KEY,
+    pattern_type TEXT NOT NULL,
+    description TEXT NOT NULL,
+    frequency INTEGER NOT NULL DEFAULT 1,
+    confidence_score REAL NOT NULL DEFAULT 0.5,
+    example_sessions TEXT DEFAULT '[]',
+    time_created INTEGER NOT NULL,
+    time_last_seen INTEGER NOT NULL
+  )`)
+  db.run(`CREATE TABLE IF NOT EXISTS knowledge_entity (
+    id TEXT PRIMARY KEY,
+    entity_type TEXT NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    importance INTEGER NOT NULL DEFAULT 5,
+    access_count INTEGER NOT NULL DEFAULT 0,
+    metadata TEXT DEFAULT '{}',
+    time_created INTEGER NOT NULL,
+    time_updated INTEGER NOT NULL,
+    time_last_accessed INTEGER NOT NULL
+  )`)
   db.run(`CREATE INDEX IF NOT EXISTS idx_pattern_type ON learned_pattern(pattern_type, frequency DESC)`)
   db.run(`CREATE INDEX IF NOT EXISTS idx_knowledge_type_name ON knowledge_entity(entity_type, name)`)
 

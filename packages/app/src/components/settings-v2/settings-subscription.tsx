@@ -17,18 +17,18 @@ import {
   type SubscriptionState,
 } from "@/utils/subscription-store"
 
-const TIER_COLORS: Record<SubscriptionTier, { bg: string; border: string; text: string; glow: string; btn: string }> = {
+const TIER_GLASS: Record<SubscriptionTier, { accent: string; glow: string; gradient: string; icon: string }> = {
+  free: { accent: "#64748b", glow: "rgba(100,116,139,0.15)", gradient: "from-slate-500/10 to-slate-600/5", icon: "⚡" },
+  pro: { accent: "#00ff88", glow: "rgba(0,255,136,0.2)", gradient: "from-emerald-500/10 to-cyan-500/5", icon: "🚀" },
+  max: { accent: "#a78bfa", glow: "rgba(167,139,250,0.2)", gradient: "from-violet-500/10 to-purple-500/5", icon: "⭐" },
+  ultra: { accent: "#fb923c", glow: "rgba(251,146,60,0.2)", gradient: "from-orange-500/10 to-amber-500/5", icon: "👑" },
+}
+
+const TIER_ADMIN_COLORS: Record<SubscriptionTier, { bg: string; border: string; text: string; glow: string; btn: string }> = {
   free: { bg: "#1a1a2e", border: "#333366", text: "#8888aa", glow: "transparent", btn: "#333366" },
   pro: { bg: "#0d2818", border: "#00ff88", text: "#00ff88", glow: "rgba(0,255,136,0.3)", btn: "#00ff88" },
   max: { bg: "#1a0d28", border: "#8b5cf6", text: "#8b5cf6", glow: "rgba(139,92,246,0.3)", btn: "#8b5cf6" },
   ultra: { bg: "#281a0d", border: "#ff6b00", text: "#ff6b00", glow: "rgba(255,107,0,0.3)", btn: "#ff6b00" },
-}
-
-const TIER_ICONS: Record<SubscriptionTier, string> = {
-  free: "\u26A1",
-  pro: "\uD83D\uDE80",
-  max: "\u2B50",
-  ultra: "\uD83D\uDC51",
 }
 
 const DURATIONS: { label: string; days: number }[] = [
@@ -42,6 +42,7 @@ export function SettingsSubscription() {
   const [code, setCode] = createSignal("")
   const [codeMessage, setCodeMessage] = createSignal("")
   const [showSuccess, setShowSuccess] = createSignal(false)
+  const [activePayTier, setActivePayTier] = createSignal<SubscriptionTier | null>(null)
 
   const [zyOpen, setZyOpen] = createSignal(false)
   const [zyInput, setZyInput] = createSignal("")
@@ -61,42 +62,23 @@ export function SettingsSubscription() {
   }
 
   function handleAdminUnlock() {
-    const input = adminTier().trim().toUpperCase()
-    if (input === "UNLOCK" || input === "ALL") {
+    const tier = adminTier().trim().toLowerCase()
+    if (tier === "unlock") {
       setAdminUnlocked(true)
-      setAdminMsg("Admin mode activated! Select any tier below.")
-      setAdminTier("")
-      setTimeout(() => setAdminMsg(""), 3000)
-      return
-    }
-    if (input === "LOCK" || input === "RESET") {
-      const newState = resetToFree()
+      setAdminOpen(true)
+      setAdminMsg("Admin panel unlocked!")
+    } else if (tier === "lock") {
+      const newState = lockSubscription()
       setState(newState)
-      setAdminUnlocked(false)
-      setAdminMsg("All subscriptions locked. Reset to Free.")
-      setAdminTier("")
-      setTimeout(() => setAdminMsg(""), 3000)
-      return
-    }
-    if (input === "FREE") {
-      const newState = resetToFree()
+      setAdminMsg("All subscriptions locked to Free!")
+    } else if (["pro", "max", "ultra"].includes(tier)) {
+      const newState = activateTier(tier as SubscriptionTier)
       setState(newState)
-      setAdminMsg("Reset to Free tier!")
-      setAdminTier("")
-      setTimeout(() => setAdminMsg(""), 3000)
-      return
+      setAdminMsg(`${SUBSCRIPTION_PLANS[tier as SubscriptionTier].name} activated!`)
+    } else {
+      setAdminMsg("Invalid. Use: UNLOCK, PRO, MAX, ULTRA, LOCK")
     }
-    const tier = input.toLowerCase() as SubscriptionTier
-    if (["pro", "max", "ultra"].includes(tier)) {
-      const newState = activateTier(tier)
-      setState(newState)
-      setAdminUnlocked(true)
-      setAdminMsg(`${SUBSCRIPTION_PLANS[tier].name} activated permanently!`)
-      setAdminTier("")
-      setTimeout(() => setAdminMsg(""), 3000)
-      return
-    }
-    setAdminMsg("Type: UNLOCK, FREE, PRO, MAX, ULTRA, or LOCK")
+    setAdminTier("")
     setTimeout(() => setAdminMsg(""), 3000)
   }
 
@@ -121,68 +103,40 @@ export function SettingsSubscription() {
     }
   }
 
-  function handleLockTier(tier: SubscriptionTier) {
-    const newState = lockSubscription()
-    setState(newState)
-    setAdminMsg(`Subscription locked. Reset to Free.`)
-    setTimeout(() => setAdminMsg(""), 3000)
-  }
-
   function handleReset() {
     const newState = resetToFree()
     setState(newState)
   }
 
   return (
-    <div class="settings-v2-tab-header" style={{ "margin-top": "16px" }}>
-      <div style={{ "padding-bottom": "12px", display: "flex", "align-items": "center", "justify-content": "space-between" }}>
+    <div class="mt-4 space-y-5">
+      {/* Header */}
+      <div class="flex items-center justify-between">
         <div>
-          <h2 style={{ "font-size": "18px", "font-weight": "700", color: "var(--text-strong)", margin: "0 0 4px 0" }}>
-            Subscription Plans
-          </h2>
-          <p style={{ "font-size": "12px", color: "var(--text-weak)", margin: 0 }}>
-            Choose the plan that fits your needs. Secret codes unlock permanently.
-          </p>
+          <h2 class="text-lg font-bold text-[var(--text-strong)]">Subscription Plans</h2>
+          <p class="text-xs text-[var(--text-weak)] mt-1">Choose the plan that fits your needs. Secret codes unlock permanently.</p>
         </div>
-        <div style={{ position: "relative" }}>
+        <div class="relative">
           <button
-            onClick={() => {
-              if (!zyOpen()) {
-                setZyInput("")
-              }
-              setZyOpen(!zyOpen())
-            }}
-            style={{
-              padding: "4px 10px",
-              "border-radius": "6px",
-              border: "1px solid #444",
-              background: zyOpen() ? "#ff6b00" : "#222",
-              color: zyOpen() ? "#000" : "#666",
-              "font-size": "11px",
-              "font-weight": "700",
-              cursor: "pointer",
-              "letter-spacing": "1px",
+            onClick={() => { if (!zyOpen()) setZyInput(""); setZyOpen(!zyOpen()) }}
+            class="px-2.5 py-1 rounded-md text-[11px] font-bold tracking-widest transition-all duration-200"
+            classList={{
+              "bg-orange-500 text-black": zyOpen(),
+              "bg-white/5 text-white/40 border border-white/10 hover:bg-white/10 hover:text-white/60": !zyOpen(),
             }}
           >
             ZY
           </button>
           <Show when={zyOpen()}>
-            <div style={{
-              position: "absolute",
-              top: "110%",
-              right: 0,
-              background: "#1a1a2e",
-              border: "1px solid #333",
-              "border-radius": "8px",
-              padding: "10px",
-              width: "220px",
-              "z-index": 100,
-              "box-shadow": "0 8px 32px rgba(0,0,0,0.6)",
-            }}>
-              <div style={{ "font-size": "10px", color: "#666", "margin-bottom": "6px" }}>
-                Enter access code:
-              </div>
-              <div style={{ display: "flex", gap: "6px" }}>
+            <div class="absolute top-full right-0 mt-2 w-56 rounded-xl p-2.5 z-50"
+              style={{
+                "background": "rgba(15,15,30,0.95)",
+                "backdrop-filter": "blur(20px)",
+                "border": "1px solid rgba(255,255,255,0.08)",
+                "box-shadow": "0 8px 32px rgba(0,0,0,0.5)",
+              }}>
+              <div class="text-[10px] text-white/30 mb-1.5">Enter access code:</div>
+              <div class="flex gap-1.5">
                 <input
                   type="text"
                   value={zyInput()}
@@ -190,29 +144,11 @@ export function SettingsSubscription() {
                   onKeyDown={(e) => { if (e.key === "Enter") handleZySubmit() }}
                   placeholder="Type X"
                   autofocus
-                  style={{
-                    flex: 1,
-                    padding: "6px 8px",
-                    "border-radius": "6px",
-                    border: "1px solid #444",
-                    background: "#111",
-                    color: "#00ff88",
-                    "font-size": "12px",
-                    "font-family": "monospace",
-                  }}
+                  class="flex-1 px-2 py-1.5 rounded-md text-xs font-mono bg-black/40 text-emerald-400 border border-white/10 focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20"
                 />
                 <button
                   onClick={handleZySubmit}
-                  style={{
-                    padding: "6px 12px",
-                    "border-radius": "6px",
-                    border: "none",
-                    background: "#00ff88",
-                    color: "#000",
-                    "font-size": "11px",
-                    "font-weight": "600",
-                    cursor: "pointer",
-                  }}
+                  class="px-3 py-1.5 rounded-md text-[11px] font-semibold bg-emerald-500 text-black hover:bg-emerald-400 transition-colors"
                 >
                   Send
                 </button>
@@ -222,371 +158,240 @@ export function SettingsSubscription() {
         </div>
       </div>
 
+      {/* Admin Panel */}
       <Show when={zyOpen() && adminOpen()}>
-        <div style={{
-          "margin-bottom": "16px",
-          padding: "14px",
-          "border-radius": "10px",
-          background: "linear-gradient(135deg, #1a0d28, #0d1a28)",
-          border: "1px solid #8b5cf6",
-          "box-shadow": "0 0 20px rgba(139,92,246,0.2)",
-        }}>
-          <div style={{ "font-size": "12px", "font-weight": "700", color: "#8b5cf6", "margin-bottom": "8px", display: "flex", "align-items": "center", gap: "6px" }}>
-            {"\u2699\uFE0F"} Admin Control Panel
+        <div class="rounded-xl p-3.5 border border-violet-500/30"
+          style={{
+            "background": "linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.05))",
+            "backdrop-filter": "blur(20px)",
+            "box-shadow": "0 0 24px rgba(139,92,246,0.1)",
+          }}>
+          <div class="text-xs font-bold text-violet-400 mb-2 flex items-center gap-1.5">
+            ⚙️ Admin Control Panel
           </div>
-          <p style={{ "font-size": "11px", color: "#888", "margin-bottom": "8px" }}>
-            Type tier name + Enter to activate. Type LOCK to disable.
-          </p>
-          <div style={{ display: "flex", gap: "6px", "margin-bottom": "8px" }}>
+          <p class="text-[11px] text-white/40 mb-2">Type tier name + Enter to activate. Type LOCK to disable.</p>
+          <div class="flex gap-1.5 mb-2">
             <input
               type="text"
               value={adminTier()}
               onInput={(e) => setAdminTier(e.currentTarget.value)}
               onKeyDown={(e) => { if (e.key === "Enter") handleAdminUnlock() }}
               placeholder="UNLOCK / PRO / MAX / ULTRA / LOCK"
-              style={{
-                flex: 1,
-                padding: "6px 8px",
-                "border-radius": "6px",
-                border: "1px solid #8b5cf6",
-                background: "#111",
-                color: "#00ff88",
-                "font-size": "12px",
-                "font-family": "monospace",
-              }}
+              class="flex-1 px-2 py-1.5 rounded-md text-xs font-mono bg-black/40 text-emerald-400 border border-violet-500/30 focus:outline-none focus:border-violet-500/60 placeholder:text-white/20"
             />
             <button
               onClick={handleAdminUnlock}
-              style={{
-                padding: "6px 12px",
-                "border-radius": "6px",
-                border: "none",
-                background: "#8b5cf6",
-                color: "#fff",
-                "font-size": "11px",
-                "font-weight": "600",
-                cursor: "pointer",
-              }}
+              class="px-3 py-1.5 rounded-md text-[11px] font-semibold bg-violet-500 text-white hover:bg-violet-400 transition-colors"
             >
               Set
             </button>
           </div>
           <Show when={adminMsg()}>
-            <div style={{
-              padding: "6px 10px",
-              "border-radius": "6px",
-              "font-size": "11px",
-              background: adminMsg().includes("locked") || adminMsg().includes("Lock") ? "rgba(255,68,68,0.15)" : "rgba(0,255,136,0.15)",
-              color: adminMsg().includes("locked") || adminMsg().includes("Lock") ? "#ff4444" : "#00ff88",
-            }}>
+            <div class="px-2.5 py-1.5 rounded-md text-[11px]"
+              classList={{
+                "bg-red-500/15 text-red-400": adminMsg().includes("locked") || adminMsg().includes("Lock"),
+                "bg-emerald-500/15 text-emerald-400": !adminMsg().includes("locked") && !adminMsg().includes("Lock"),
+              }}>
               {adminMsg()}
             </div>
           </Show>
-          <div style={{ display: "grid", "grid-template-columns": "repeat(4, 1fr)", gap: "6px", "margin-top": "10px" }}>
-            <For each={["pro", "max", "ultra"] as SubscriptionTier[]}>
-              {(tier) => {
-                const colors = TIER_COLORS[tier]
-                const plan = SUBSCRIPTION_PLANS[tier]
-                const isActive = currentTier() === tier
-                return (
-                  <button
-                    onClick={() => {
-                      const newState = activateTier(tier)
-                      setState(newState)
-                      setAdminMsg(`${plan.name} activated permanently!`)
-                      setTimeout(() => setAdminMsg(""), 2000)
-                    }}
-                    style={{
-                      padding: "8px 4px",
-                      "border-radius": "6px",
-                      border: `1px solid ${isActive ? colors.border : "#333"}`,
-                      background: isActive ? colors.bg : "transparent",
-                      color: colors.text,
-                      "font-size": "10px",
-                      "font-weight": "600",
-                      cursor: "pointer",
-                      "text-align": "center",
-                    }}
-                  >
-                    {TIER_ICONS[tier]} {plan.name}
-                    <Show when={isActive}>
-                      <div style={{ "font-size": "8px", color: "#00ff88", "margin-top": "2px" }}>ACTIVE</div>
-                    </Show>
-                  </button>
-                )
-              }}
-            </For>
-            <button
-              onClick={() => {
-                const newState = resetToFree()
-                setState(newState)
-                setAdminMsg("Reset to Free!")
-                setTimeout(() => setAdminMsg(""), 2000)
-              }}
-              style={{
-                padding: "8px 4px",
-                "border-radius": "6px",
-                border: "1px solid #333",
-                background: "transparent",
-                color: "#ff4444",
-                "font-size": "10px",
-                "font-weight": "600",
-                cursor: "pointer",
-                "text-align": "center",
-              }}
-            >
-              {"\uD83D\uDD12"} Lock All
-            </button>
-          </div>
         </div>
       </Show>
 
-      <div class="settings-v2-tab-body">
-        <div style={{
-          "margin-bottom": "20px",
-          padding: "12px 16px",
-          "border-radius": "8px",
-          background: "var(--surface-raised-base)",
-          "border-left": `3px solid ${TIER_COLORS[currentTier()].btn}`,
+      {/* Current Plan Badge */}
+      <div class="rounded-xl p-4 border border-white/5"
+        style={{
+          "background": `linear-gradient(135deg, ${TIER_GLASS[currentTier()].glow}, transparent)`,
+          "backdrop-filter": "blur(20px)",
         }}>
-          <div style={{ "font-size": "13px", "font-weight": "600", color: "var(--text-strong)" }}>
-            Current Plan: {TIER_ICONS[currentTier()]} {currentPlan().name}
-            <Show when={daysRemaining() !== null}>
-              <span style={{ "font-size": "11px", color: "var(--text-weak)", "margin-left": "8px" }}>
-                {daysRemaining()} days remaining
-              </span>
-            </Show>
-            <Show when={!daysRemaining() && currentTier() !== "free"}>
-              <span style={{ "font-size": "11px", color: "#00ff88", "margin-left": "8px" }}>
-                Permanent unlock
-              </span>
-            </Show>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl"
+            style={{
+              "background": `linear-gradient(135deg, ${TIER_GLASS[currentTier()].accent}22, ${TIER_GLASS[currentTier()].accent}11)`,
+              "border": `1px solid ${TIER_GLASS[currentTier()].accent}33`,
+            }}>
+            {TIER_GLASS[currentTier()].icon}
           </div>
-          <div style={{ "font-size": "12px", color: "var(--text-weak)", "margin-top": "4px" }}>
-            {currentPlan().toolCount} tools | {currentPlan().maxAgents === -1 ? "Unlimited" : currentPlan().maxAgents} agents | {currentPlan().memoryOptimization}
+          <div class="flex-1">
+            <div class="text-sm font-bold text-[var(--text-strong)]">
+              Current Plan: {currentPlan().name}
+              <Show when={daysRemaining() !== null}>
+                <span class="text-[11px] text-[var(--text-weak)] ml-2 font-normal">{daysRemaining()} days remaining</span>
+              </Show>
+              <Show when={!daysRemaining() && currentTier() !== "free"}>
+                <span class="text-[11px] text-emerald-400 ml-2 font-normal">Permanent unlock</span>
+              </Show>
+            </div>
+            <div class="text-xs text-[var(--text-weak)] mt-0.5">
+              {currentPlan().toolCount} tools · {currentPlan().maxAgents === -1 ? "Unlimited" : currentPlan().maxAgents} agents · {currentPlan().memoryOptimization}
+            </div>
           </div>
         </div>
+      </div>
 
-        <div style={{ display: "grid", "grid-template-columns": "repeat(4, 1fr)", gap: "12px", "margin-bottom": "20px" }}>
-          <For each={TIER_ORDER}>
-            {(tierId) => {
-              const plan = SUBSCRIPTION_PLANS[tierId]
-              const colors = TIER_COLORS[tierId]
-              const isCurrent = currentTier() === tierId
-              return (
-                <div
-                  style={{
-                    "background": colors.bg,
-                    "border": `1px solid ${isCurrent ? colors.border : "#2a2a3e"}`,
-                    "border-radius": "12px",
-                    "padding": "16px",
-                    "position": "relative",
-                    "box-shadow": isCurrent ? `0 0 20px ${colors.glow}` : "none",
-                    "transition": "all 0.3s ease",
-                  }}
-                >
-                  <Show when={isCurrent}>
-                    <div style={{
-                      position: "absolute",
-                      top: "-8px",
-                      right: "-8px",
-                      background: colors.btn,
-                      color: "#000",
-                      "font-size": "9px",
-                      "font-weight": "700",
-                      padding: "2px 8px",
-                      "border-radius": "10px",
-                      "text-transform": "uppercase",
-                    }}>Current</div>
-                  </Show>
-                  <div style={{ "font-size": "24px", "margin-bottom": "4px" }}>{TIER_ICONS[tierId]}</div>
-                  <div style={{ "font-size": "16px", "font-weight": "700", color: colors.text, "margin-bottom": "4px" }}>
-                    {plan.name}
+      {/* Pricing Cards */}
+      <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <For each={TIER_ORDER}>
+          {(tierId) => {
+            const plan = SUBSCRIPTION_PLANS[tierId]
+            const glass = TIER_GLASS[tierId]
+            const isCurrent = currentTier() === tierId
+            return (
+              <div
+                class="relative rounded-2xl p-4 transition-all duration-300 flex flex-col"
+                style={{
+                  "background": isCurrent
+                    ? `linear-gradient(145deg, ${glass.accent}12, ${glass.accent}06)`
+                    : "rgba(255,255,255,0.02)",
+                  "border": `1px solid ${isCurrent ? `${glass.accent}40` : "rgba(255,255,255,0.05)"}`,
+                  "backdrop-filter": "blur(16px)",
+                  "box-shadow": isCurrent ? `0 0 30px ${glass.glow}, inset 0 1px 0 ${glass.accent}15` : "none",
+                }}
+              >
+                <Show when={isCurrent}>
+                  <div class="absolute -top-2.5 left-4 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider text-black"
+                    style={{ background: glass.accent }}>
+                    Current
                   </div>
-                  <div style={{ "font-size": "22px", "font-weight": "800", color: "var(--text-strong)", "margin-bottom": "8px" }}>
-                    ${plan.price}
-                    <span style={{ "font-size": "12px", "font-weight": "400", color: "var(--text-weak)" }}>
-                      {tierId === "free" ? " /forever" : tierId === "pro" ? " /15 days" : tierId === "max" ? " /2 months" : " /year"}
-                    </span>
-                  </div>
-                  <div style={{ "font-size": "11px", color: "var(--text-weak)", "margin-bottom": "8px" }}>
-                    {plan.description}
-                  </div>
-                  <div style={{ "font-size": "11px", color: "var(--text-weak)", "margin-bottom": "8px" }}>
-                    {plan.toolCount} tools | {plan.maxAgents === -1 ? "Unlimited" : plan.maxAgents} agents
-                  </div>
-                  <For each={plan.features.slice(0, 6)}>
+                </Show>
+
+                <div class="text-2xl mb-1">{glass.icon}</div>
+                <div class="text-base font-bold mb-1" style={{ color: glass.accent }}>{plan.name}</div>
+                <div class="text-xl font-extrabold text-[var(--text-strong)] mb-1">
+                  ${plan.price}
+                  <span class="text-[11px] font-normal text-[var(--text-weak)] ml-1">
+                    {tierId === "free" ? "/forever" : tierId === "pro" ? "/15 days" : tierId === "max" ? "/2 months" : "/year"}
+                  </span>
+                </div>
+                <div class="text-[11px] text-[var(--text-weak)] mb-2">{plan.description}</div>
+                <div class="text-[11px] text-[var(--text-weak)] mb-2">
+                  {plan.toolCount} tools · {plan.maxAgents === -1 ? "Unlimited" : plan.maxAgents} agents
+                </div>
+
+                <div class="flex-1">
+                  <For each={plan.features.slice(0, 5)}>
                     {(f) => (
-                      <div style={{ "font-size": "11px", color: "var(--text-weak)", "padding": "2px 0", display: "flex", "align-items": "center", gap: "6px" }}>
-                        <span style={{ color: colors.text }}>{"\u2713"}</span> {f}
+                      <div class="text-[11px] text-[var(--text-weak)] py-0.5 flex items-center gap-1.5">
+                        <span style={{ color: glass.accent }}>✓</span> {f}
                       </div>
                     )}
                   </For>
-                  <Show when={plan.features.length > 6}>
-                    <div style={{ "font-size": "10px", color: "var(--text-weak)", "margin-top": "4px" }}>
-                      +{plan.features.length - 6} more features
+                  <Show when={plan.features.length > 5}>
+                    <div class="text-[10px] text-[var(--text-weak)] mt-1 opacity-60">
+                      +{plan.features.length - 5} more features
                     </div>
                   </Show>
-                  <Show when={!isCurrent && tierId !== "free"}>
+                </div>
+
+                <Show when={!isCurrent && tierId !== "free"}>
+                  <div class="mt-3 space-y-1.5">
                     <For each={DURATIONS}>
                       {(dur) => (
                         <button
                           onClick={() => handleStripePay(tierId)}
+                          class="w-full py-2 rounded-lg text-[11px] font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                           style={{
-                            width: "100%",
-                            "margin-top": "6px",
-                            padding: "6px",
-                            "border-radius": "6px",
-                            border: `1px solid ${colors.border}`,
-                            background: colors.btn,
-                            color: "#000",
-                            "font-size": "11px",
-                            "font-weight": "600",
-                            cursor: "pointer",
-                            transition: "all 0.2s",
-                            opacity: "0.85",
+                            "background": `linear-gradient(135deg, ${glass.accent}dd, ${glass.accent}99)`,
+                            "color": "#000",
+                            "box-shadow": `0 2px 8px ${glass.glow}`,
                           }}
                         >
                           Pay ${plan.price} ({dur.label})
                         </button>
                       )}
                     </For>
-                  </Show>
-                  <Show when={isCurrent && tierId === "free"}>
-                    <button
-                      disabled
-                      style={{
-                        width: "100%",
-                        "margin-top": "10px",
-                        padding: "8px",
-                        "border-radius": "8px",
-                        border: `1px solid ${colors.border}`,
-                        background: "transparent",
-                        color: colors.text,
-                        "font-size": "12px",
-                        "font-weight": "600",
-                        cursor: "default",
-                        opacity: "0.5",
-                      }}
-                    >
-                      Active Plan
-                    </button>
-                  </Show>
-                </div>
-              )
-            }}
-          </For>
-        </div>
+                  </div>
+                </Show>
 
-        <div style={{
-          "margin-bottom": "20px",
-          padding: "16px",
-          "border-radius": "8px",
-          background: "var(--surface-raised-base)",
-          border: "1px solid var(--surface-raised-border)",
+                <Show when={isCurrent && tierId === "free"}>
+                  <button
+                    disabled
+                    class="w-full mt-3 py-2 rounded-lg text-xs font-semibold border border-white/10 text-white/30 cursor-default"
+                  >
+                    Active Plan
+                  </button>
+                </Show>
+              </div>
+            )
+          }}
+        </For>
+      </div>
+
+      {/* Secret Code Activation */}
+      <div class="rounded-xl p-4"
+        style={{
+          "background": "rgba(255,255,255,0.02)",
+          "backdrop-filter": "blur(16px)",
+          "border": "1px solid rgba(255,255,255,0.05)",
         }}>
-          <h3 style={{ "font-size": "14px", "font-weight": "600", color: "var(--text-strong)", margin: "0 0 8px 0" }}>
-            {"\uD83D\uDD11"} Secret Code Activation
-          </h3>
-          <p style={{ "font-size": "12px", color: "var(--text-weak)", margin: "0 0 10px 0" }}>
-            Enter a secret code for permanent unlock — no expiry, no limitations
-          </p>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <input
-              type="text"
-              value={code()}
-              onInput={(e) => setCode(e.currentTarget.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleActivateCode() }}
-              placeholder="ZYRAXON-ULTRA-2026"
-              style={{
-                flex: "1",
-                padding: "8px 12px",
-                "border-radius": "8px",
-                border: "1px solid var(--surface-raised-border)",
-                background: "var(--surface-base)",
-                color: "var(--text-strong)",
-                "font-size": "12px",
-                "font-family": "monospace",
-              }}
-            />
-            <button
-              onClick={handleActivateCode}
-              style={{
-                padding: "8px 16px",
-                "border-radius": "8px",
-                border: "none",
-                background: "#00ff88",
-                color: "#000",
-                "font-size": "12px",
-                "font-weight": "600",
-                cursor: "pointer",
-              }}
-            >
-              Activate
-            </button>
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm bg-amber-500/10 border border-amber-500/20">
+            🔑
           </div>
-          <Show when={codeMessage()}>
-            <div style={{
-              "margin-top": "8px",
-              padding: "6px 10px",
-              "border-radius": "6px",
-              "font-size": "12px",
-              background: codeMessage().includes("Invalid") || codeMessage().includes("not configured") ? "rgba(255,68,68,0.15)" : "rgba(0,255,136,0.15)",
-              color: codeMessage().includes("Invalid") || codeMessage().includes("not configured") ? "#ff4444" : "#00ff88",
-            }}>
-              {codeMessage()}
-            </div>
-          </Show>
-          <Show when={showSuccess()}>
-            <div style={{
-              "margin-top": "8px",
-              padding: "6px 10px",
-              "border-radius": "6px",
-              "font-size": "12px",
-              background: "rgba(0,255,136,0.2)",
-              color: "#00ff88",
-              "font-weight": "600",
-            }}>
-              {"\u2705"} Tier upgraded! All {currentPlan().toolCount} tools unlocked.
-            </div>
-          </Show>
+          <div>
+            <h3 class="text-sm font-bold text-[var(--text-strong)]">Secret Code Activation</h3>
+            <p class="text-[11px] text-[var(--text-weak)]">Enter a secret code for permanent unlock — no expiry, no limitations</p>
+          </div>
         </div>
-
-        <Show when={currentTier() !== "free"}>
-          <div style={{
-            padding: "12px 16px",
-            "border-radius": "8px",
-            background: "var(--surface-raised-base)",
-            border: "1px solid var(--surface-raised-border)",
-            "margin-bottom": "12px",
-          }}>
-            <div style={{ "font-size": "12px", color: "var(--text-weak)", "margin-bottom": "6px" }}>Subscription Details</div>
-            <div style={{ display: "grid", "grid-template-columns": "1fr 1fr", gap: "8px", "font-size": "12px" }}>
-              <div><span style={{ color: "var(--text-weak)" }}>Plan:</span> <span style={{ color: "var(--text-strong)", "font-weight": "600" }}>{currentPlan().name}</span></div>
-              <div><span style={{ color: "var(--text-weak)" }}>Price:</span> <span style={{ color: "var(--text-strong)" }}>${currentPlan().price}</span></div>
-              <div><span style={{ color: "var(--text-weak)" }}>Tools:</span> <span style={{ color: "var(--text-strong)" }}>{currentPlan().toolCount}</span></div>
-              <div><span style={{ color: "var(--text-weak)" }}>Memory:</span> <span style={{ color: "var(--text-strong)" }}>{currentPlan().memoryOptimization}</span></div>
-              <div><span style={{ color: "var(--text-weak)" }}>Expiry:</span> <span style={{ color: "var(--text-strong)" }}>{daysRemaining() !== null ? `${daysRemaining()} days` : "Never (permanent)"}</span></div>
-              <div><span style={{ color: "var(--text-weak)" }}>Type:</span> <span style={{ color: "var(--text-strong)" }}>{state().secretCode ? "Secret Code" : state().stripeSessionId ? "Stripe" : "Free"}</span></div>
-            </div>
+        <div class="flex gap-2 mt-3">
+          <input
+            type="text"
+            value={code()}
+            onInput={(e) => setCode(e.currentTarget.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleActivateCode() }}
+            placeholder="ZYRAXON-ULTRA-2026"
+            class="flex-1 px-3 py-2 rounded-lg text-xs font-mono bg-black/30 text-[var(--text-strong)] border border-white/10 focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20"
+          />
+          <button
+            onClick={handleActivateCode}
+            class="px-4 py-2 rounded-lg text-xs font-bold bg-emerald-500 text-black hover:bg-emerald-400 transition-colors"
+          >
+            Activate
+          </button>
+        </div>
+        <Show when={codeMessage()}>
+          <div class="mt-2 px-3 py-1.5 rounded-md text-xs"
+            classList={{
+              "bg-red-500/15 text-red-400": codeMessage().includes("Invalid") || codeMessage().includes("not configured"),
+              "bg-emerald-500/15 text-emerald-400": !codeMessage().includes("Invalid") && !codeMessage().includes("not configured"),
+            }}>
+            {codeMessage()}
           </div>
         </Show>
-
-        <button
-          onClick={handleReset}
-          style={{
-            padding: "6px 12px",
-            "border-radius": "6px",
-            border: "1px solid #333",
-            background: "transparent",
-            color: "#666",
-            "font-size": "11px",
-            cursor: "pointer",
-          }}
-        >
-          Reset to Free
-        </button>
+        <Show when={showSuccess()}>
+          <div class="mt-2 px-3 py-1.5 rounded-md text-xs bg-emerald-500/20 text-emerald-400 font-semibold">
+            ✅ Tier upgraded! All {currentPlan().toolCount} tools unlocked.
+          </div>
+        </Show>
       </div>
+
+      {/* Subscription Details */}
+      <Show when={currentTier() !== "free"}>
+        <div class="rounded-xl p-4"
+          style={{
+            "background": "rgba(255,255,255,0.02)",
+            "backdrop-filter": "blur(16px)",
+            "border": "1px solid rgba(255,255,255,0.05)",
+          }}>
+          <div class="text-xs text-[var(--text-weak)] mb-2">Subscription Details</div>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div><span class="text-[var(--text-weak)]">Plan: </span><span class="text-[var(--text-strong)] font-semibold">{currentPlan().name}</span></div>
+            <div><span class="text-[var(--text-weak)]">Price: </span><span class="text-[var(--text-strong)]">${currentPlan().price}</span></div>
+            <div><span class="text-[var(--text-weak)]">Tools: </span><span class="text-[var(--text-strong)]">{currentPlan().toolCount}</span></div>
+            <div><span class="text-[var(--text-weak)]">Memory: </span><span class="text-[var(--text-strong)]">{currentPlan().memoryOptimization}</span></div>
+            <div><span class="text-[var(--text-weak)]">Expiry: </span><span class="text-[var(--text-strong)]">{daysRemaining() !== null ? `${daysRemaining()} days` : "Never (permanent)"}</span></div>
+            <div><span class="text-[var(--text-weak)]">Type: </span><span class="text-[var(--text-strong)]">{state().secretCode ? "Secret Code" : state().stripeSessionId ? "Stripe" : "Free"}</span></div>
+          </div>
+        </div>
+      </Show>
+
+      {/* Reset */}
+      <button
+        onClick={handleReset}
+        class="w-full py-2 rounded-lg text-[11px] text-white/30 border border-white/5 hover:bg-white/5 hover:text-white/50 transition-all"
+      >
+        Reset to Free
+      </button>
     </div>
   )
 }

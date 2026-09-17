@@ -15,6 +15,7 @@ import {
   startTransition,
   Switch,
 } from "solid-js"
+import { Portal } from "solid-js/web"
 import { makeEventListener } from "@solid-primitives/event-listener"
 import { createStore, produce } from "solid-js/store"
 import { useQuery } from "@tanstack/solid-query"
@@ -1034,8 +1035,10 @@ function HomeUtilityNav(props: {
           <span class={HOME_PROJECT_NAV_LABEL}>{props.language.t("sidebar.help")}</span>
         </span>
       </button>
-      <CloudAgentDialog show={showCloudAgent()} onClose={() => setShowCloudAgent(false)} />
-      <MarketplaceDialog show={showMarketplace()} onClose={() => setShowMarketplace(false)} />
+      <Portal>
+        <CloudAgentDialog show={showCloudAgent()} onClose={() => setShowCloudAgent(false)} />
+        <MarketplaceDialog show={showMarketplace()} onClose={() => setShowMarketplace(false)} />
+      </Portal>
     </div>
   )
 }
