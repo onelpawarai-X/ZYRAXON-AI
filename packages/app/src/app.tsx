@@ -8,7 +8,6 @@ import { File } from "@zyraxon-ai/session-ui/file"
 import { Font } from "@zyraxon-ai/ui/font"
 import { Splash } from "@zyraxon-ai/ui/logo"
 import { ThemeProvider } from "@zyraxon-ai/ui/theme/context"
-import { zlog, zlogError, zlogSection } from "@/utils/crash-log"
 import { MetaProvider } from "@solidjs/meta"
 import {
   type BaseRouterProps,
@@ -170,7 +169,6 @@ function LegacyTargetSessionRedirect() {
 // Wraps the non-draft routes. They are gated on (and keyed to) the globally selected
 // server via ServerKey, then provide the server-scoped shell for that server.
 function SelectedServerProviders(props: ParentProps) {
-  zlog("APP/SelectedServerProviders", "rendering")
   return (
     <ServerKey>
       <ServerSDKProvider>
@@ -344,7 +342,6 @@ type ServerScopedShellProps = ParentProps<{
 }>
 
 function ServerScopedProviders(props: ServerScopedShellProps) {
-  zlog("APP/ServerScopedProviders", "rendering", { hasDirectory: !!props.directory })
   return (
     <LayoutProvider>
       <CollabProvider>
@@ -364,7 +361,6 @@ function LegacyServerScopedShell(props: ServerScopedShellProps) {
 }
 
 function NewAppLayout(props: ParentProps<{ serverScoped?: JSX.Element }>) {
-  zlog("APP/NewAppLayout", "rendering")
   return (
     <SelectedServerProviders>
       <ServerScopedProviders serverScoped={props.serverScoped}>
@@ -421,17 +417,17 @@ export function AppBaseProviders(props: ParentProps<{ locale?: Locale }>) {
 }
 
 function ConnectionGate(props: ParentProps<{ disableHealthCheck?: boolean; startup?: Promise<void> }>) {
-  zlog("APP/ConnectionGate", "rendering", { disableHealthCheck: props.disableHealthCheck })
   const server = useServer()
   const checkServerHealth = useCheckServerHealth()
-  zlog("APP/ConnectionGate", "server.current", {
-    hasCurrent: !!server.current,
-    key: server.key,
-    serverType: server.current?.type,
-    url: "http" in (server.current || {}) ? (server.current as any).http?.url : undefined,
-  })
 
   const [checkMode, setCheckMode] = createSignal<"blocking" | "background">("blocking")
+
+  // SAFETY: Maximum splash duration. No matter what happens, splash goes away after 15s.
+  const [maxSplashExpired, setMaxSplashExpired] = createSignal(false)
+  createEffect(() => {
+    const timer = setTimeout(() => setMaxSplashExpired(true), 15_000)
+    onCleanup(() => clearTimeout(timer))
+  })
 
   // performs repeated health check with a grace period for
   // non-http connections, otherwise fails instantly
@@ -439,8 +435,12 @@ function ConnectionGate(props: ParentProps<{ disableHealthCheck?: boolean; start
     props.disableHealthCheck
       ? true
       : Effect.gen(function* () {
-          if (!server.current) return true
-          const { http, type } = server.current
+          const { http, type } = server.current ?? {}
+          if (!http) {
+            // No server yet — wait briefly then consider it passed (sidecar may still be loading)
+            yield* Effect.promise(() => new Promise((r) => setTimeout(r, 2000)))
+            return true
+          }
 
           while (true) {
             const res = yield* Effect.promise(() => checkServerHealth(http))
@@ -454,17 +454,20 @@ function ConnectionGate(props: ParentProps<{ disableHealthCheck?: boolean; start
         ),
   )
   const checking = createMemo(
-    () => checkMode() === "blocking" && ["unresolved", "pending"].includes(startupHealthCheck.state),
+    () => !maxSplashExpired() && checkMode() === "blocking" && ["unresolved", "pending"].includes(startupHealthCheck.state),
   )
   const [startup] = createResource(async () => {
     if (!props.startup) return true
-    await props.startup.catch((error) => {
-      console.error("[startup] startup gate failed", error)
-    })
+    await Promise.race([
+      props.startup.catch((error) => {
+        console.error("[startup] startup gate failed", error)
+      }),
+      new Promise<void>((r) => setTimeout(r, 12_000)),
+    ])
     return true
   })
   const startupChecking = createMemo(
-    () => startupHealthCheck.latest === true && ["unresolved", "pending"].includes(startup.state),
+    () => !maxSplashExpired() && startupHealthCheck.latest === true && ["unresolved", "pending"].includes(startup.state),
   )
   const loading = createMemo(() => checking() || startupChecking())
 
@@ -547,7 +550,6 @@ function ConnectionError(props: { onRetry?: () => void; onServerSelected?: (key:
 
 function ServerKey(props: ParentProps) {
   const server = useServer()
-  zlog("APP/ServerKey", "rendering", { key: server.key, active: server.current ? "yes" : "no" })
   return (
     <Show when={server.key} keyed>
       {props.children}
@@ -565,12 +567,6 @@ export function AppInterface(props: {
   startup?: Promise<void>
   serverScoped?: JSX.Element
 }) {
-  zlogSection("APP: AppInterface RENDERED")
-  zlog("APP/AppInterface", "props", {
-    defaultServer: props.defaultServer,
-    serverCount: props.servers?.length,
-    disableHealthCheck: props.disableHealthCheck,
-  })
   // The visual new layout lives in the router root so it remains mounted across
   // route changes. Draft and session routes override only their server-bound data
   // providers beneath it.

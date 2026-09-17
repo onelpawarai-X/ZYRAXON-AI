@@ -3,7 +3,6 @@ import { batch, createEffect, createMemo, onCleanup, onMount, type Accessor } fr
 import { useLocation } from "@solidjs/router"
 import { createSimpleContext } from "@zyraxon-ai/ui/context"
 import { makeEventListener } from "@solid-primitives/event-listener"
-import { zlog, zlogError } from "@/utils/crash-log"
 import { useServerSync } from "./server-sync"
 import { useServerSDK } from "./server-sdk"
 import { RECENTLY_CLOSED_DISPLAY_LIMIT, ServerConnection, useServer } from "./server"
@@ -160,13 +159,9 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
   name: "Layout",
   gate: false,
   init: () => {
-    zlog("LayoutProvider", "init started")
     const serverSdk = useServerSDK()
-    zlog("LayoutProvider", "serverSdk loaded")
     const serverSync = useServerSync()
-    zlog("LayoutProvider", "serverSync loaded")
     const server = useServer()
-    zlog("LayoutProvider", "server loaded", { key: server.key })
     const tabs = useTabs()
     const platform = usePlatform()
     const location = useLocation()
@@ -456,9 +451,10 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
     function enrich(project: { worktree: string; expanded: boolean }) {
       const [childStore] = serverSync().child(project.worktree, { bootstrap: false })
       const projectID = childStore.project
+      const syncData = serverSync()?.data
       const metadata = projectID
-        ? serverSync().data.project.find((x) => x.id === projectID)
-        : serverSync().data.project.find((x) => x.worktree === project.worktree)
+        ? syncData?.project.find((x) => x.id === projectID)
+        : syncData?.project.find((x) => x.worktree === project.worktree)
 
       // Preserve local icon override from per-workspace localStorage cache (childStore.icon).
       // Without this, different subdirectories of the same git repo would share the same
@@ -472,7 +468,9 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
 
     const roots = createMemo(() => {
       const map = new Map<string, string>()
-      for (const project of serverSync().data.project) {
+      const syncData = serverSync()?.data
+      if (!syncData) return map
+      for (const project of syncData.project) {
         const sandboxes = project.sandboxes ?? []
         for (const sandbox of sandboxes) {
           map.set(sandbox, project.worktree)
@@ -633,7 +631,9 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
       projects: {
         list,
         recentlyClosed: createMemo(() => {
-          const known = new Set(serverSync().data.project.map((project) => pathKey(project.worktree)))
+          const syncData = serverSync()?.data
+          if (!syncData) return []
+          const known = new Set(syncData.project.map((project) => pathKey(project.worktree)))
           return server.projects
             .recentlyClosed()
             .filter((worktree) => known.has(pathKey(worktree)))

@@ -467,8 +467,8 @@ export function NewHome() {
               .sync(record.session.id)
               .then(() => {
                 return Promise.all(
-                  (ctx.sync.session.data.message[record.session.id] ?? []).flatMap((message) =>
-                    (ctx.sync.session.data.part[message.id] ?? []).flatMap((part) => {
+                  (ctx.sync.session?.data?.message?.[record.session.id] ?? []).flatMap((message) =>
+                    (ctx.sync.session?.data?.part?.[message.id] ?? []).flatMap((part) => {
                       if (part.type !== "text" || !part.text) return []
                       return preloadMarkdown(part.text, part.id, marked)
                     }),
@@ -588,7 +588,7 @@ export function NewHome() {
     // Fallback: use the home directory from server sync when no projects exist
     if (conn) {
       const ctx = global.ensureServerCtx(conn)
-      const homeDir = ctx.sync.data.path.home
+      const homeDir = ctx?.sync?.data?.path?.home
       if (homeDir) {
         openProjectNewSession(conn, homeDir)
       }
@@ -1922,11 +1922,11 @@ export function LegacyHome() {
   const global = useGlobal()
   const server = useServer()
   const language = useLanguage()
-  const homedir = createMemo(() => sync().data.path.home)
+  const homedir = createMemo(() => sync()?.data?.path?.home ?? "")
   const serverUnreachable = createMemo(() => global.servers.health[server.key]?.healthy === false)
   const recent = createMemo(() => {
-    return sync()
-      .data.project.slice()
+    return (sync()?.data?.project ?? [])
+      .slice()
       .sort((a, b) => (b.time.updated ?? b.time.created) - (a.time.updated ?? a.time.created))
       .slice(0, 5)
   })
@@ -1986,7 +1986,7 @@ export function LegacyHome() {
         {server.name}
       </Button>
       <Switch>
-        <Match when={sync().data.project.length > 0}>
+        <Match when={(sync()?.data?.project?.length ?? 0) > 0}>
           <div class="mt-20 w-full flex flex-col gap-4">
             <div class="flex gap-2 items-center justify-between pl-3">
               <div class="text-14-medium text-text-strong">{language.t("home.recentProjects")}</div>
@@ -2019,7 +2019,7 @@ export function LegacyHome() {
             </ul>
           </div>
         </Match>
-        <Match when={!sync().ready}>
+        <Match when={!sync()?.ready}>
           <div class="mt-30 mx-auto flex flex-col items-center gap-3">
             <div class="text-12-regular text-text-weak">{language.t("common.loading")}</div>
             <Button class="px-3" disabled={serverUnreachable()} onClick={chooseProject}>

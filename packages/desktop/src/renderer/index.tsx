@@ -19,20 +19,16 @@ import * as Sentry from "@sentry/solid"
 import type { AsyncStorage } from "@solid-primitives/storage"
 import { createMemoryHistory, MemoryRouter, type BaseRouterProps } from "@solidjs/router"
 import { createEffect, createMemo, createResource, createSignal, onCleanup, onMount, Show } from "solid-js"
-import { initializationData } from "./initialization"
 import { render } from "solid-js/web"
 import pkg from "../../package.json"
 import { initI18n, t } from "./i18n"
+import { initializationData, initializationReady } from "./initialization"
 import { DesktopFirstLaunchOnboarding } from "./onboarding"
 import { resetZoom, setPinchZoomEnabled, webviewZoom, zoomIn, zoomOut } from "./webview-zoom"
 import { availableStartupServer, readyWslConnections } from "./wsl/connections"
 import "./styles.css"
 import { Splash } from "@zyraxon-ai/ui/logo"
 import { useTheme } from "@zyraxon-ai/ui/theme/context"
-
-const zlog = (..._args: any[]) => {}
-const zlogError = (..._args: any[]) => {}
-const zlogSection = (..._args: any[]) => {}
 
 const root = document.getElementById("root")
 if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
@@ -347,6 +343,8 @@ function DesktopRoot(props: { windowState: DesktopWindowState }) {
     return next satisfies Locale
   }
 
+  const [windowCount] = createResource(() => window.api.getWindowCount())
+
   // Fetch sidecar credentials (available immediately, before health check)
   const [sidecar] = createResource(() => window.api.awaitInitialization())
 
@@ -388,21 +386,19 @@ function DesktopRoot(props: { windowState: DesktopWindowState }) {
   }
 
   function App() {
-    zlogSection("DESKTOP-APP: App() started")
     const wslServers = useWslServers()
-    zlog("DESKTOP", "wslServers loaded", { isLoading: wslServers.isLoading, data: !!wslServers.data })
-    const ready = createMemo(
-      () => !defaultServer.loading && !sidecar.loading && !locale.loading && !wslServers.isLoading,
-    )
-    zlog("DESKTOP", "ready memo", {
-      defaultServerLoading: defaultServer.loading,
-      sidecarLoading: sidecar.loading,
-      localeLoading: locale.loading,
-      wslLoading: wslServers.isLoading,
+    const [forceReady, setForceReady] = createSignal(false)
+    createEffect(() => {
+      const timer = setTimeout(() => setForceReady(true), 8000)
+      onCleanup(() => clearTimeout(timer))
     })
+    const ready = createMemo(
+      () =>
+        forceReady() ||
+        (!defaultServer.loading && !sidecar.loading && !windowCount.loading && !locale.loading && !wslServers.isLoading),
+    )
     const servers = createMemo(() => {
-      const data = initializationData(sidecar)
-      zlog("DESKTOP", "initializationData(sidecar)", { hasData: !!data, url: data?.url })
+      const data = sidecar()
       const list: ServerConnection.Any[] = []
       if (data) {
         list.push({
@@ -419,22 +415,13 @@ function DesktopRoot(props: { windowState: DesktopWindowState }) {
       list.push(...readyWslConnections(wslServers.data))
       return list
     })
-    zlog("DESKTOP", "servers memo resolved", { count: servers().length })
     const effectiveDefaultServer = createMemo(() =>
       ServerConnection.Key.make(availableStartupServer(defaultServer.latest, wslServers.data)),
     )
-    zlog("DESKTOP", "effectiveDefaultServer created", {
-      serverKey: effectiveDefaultServer(),
-      ready: ready(),
-    })
     return (
       <Show when={ready()} fallback={<LoadingSplash />}>
         <Show when={effectiveDefaultServer()} keyed>
-          {(key) => {
-            zlogSection("DESKTOP: AppInterface RENDERING")
-            zlog("DESKTOP", "AppInterface key", { key })
-            zlog("DESKTOP", "AppInterface servers", { count: servers().length, servers: servers().map(s => s.displayName) })
-            return (
+          {(key) => (
             <AppInterface
               defaultServer={key}
               servers={servers()}
@@ -449,8 +436,7 @@ function DesktopRoot(props: { windowState: DesktopWindowState }) {
             >
               <Inner />
             </AppInterface>
-            )
-          }}
+          )}
         </Show>
       </Show>
     )
@@ -471,17 +457,6 @@ function DesktopRoot(props: { windowState: DesktopWindowState }) {
     </PlatformProvider>
   )
 }
-
-zlogSection("DESKTOP: GLOBAL ERROR HANDLERS SETUP")
-window.onerror = (message, source, lineno, colno, error) => {
-  zlogError("GLOBAL", "window.onerror", { message, source, lineno, colno, error: error?.message, stack: error?.stack })
-}
-window.addEventListener("unhandledrejection", (e) => {
-  zlogError("GLOBAL", "unhandledrejection", { reason: String(e.reason), type: e.type })
-})
-window.addEventListener("error", (e) => {
-  zlogError("GLOBAL", "window.error event", { message: e.message, filename: e.filename, lineno: e.lineno, colno: e.colno })
-})
 
 render(() => {
   const [windowState] = createResource(async () => {

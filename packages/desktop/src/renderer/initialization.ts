@@ -1,12 +1,6 @@
 ﻿export function initializationData<A>(state: (() => A | undefined) & { error: unknown }) {
-  console.log("[ZLOG] [initialization] checking state:", { hasError: state.error !== undefined, loading: state.loading })
-  if (state.error !== undefined) {
-    console.error("[ZLOG] [initialization] SIDECAR ERROR:", state.error)
-    throw markLocalServerStartup(state.error)
-  }
-  const data = state()
-  console.log("[ZLOG] [initialization] data resolved:", { hasData: !!data })
-  return data
+  if (state.error !== undefined) throw markLocalServerStartup(state.error)
+  return state()
 }
 
 function markLocalServerStartup(error: unknown) {
