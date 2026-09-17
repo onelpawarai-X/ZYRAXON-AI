@@ -1436,7 +1436,7 @@ const layer = Layer.effect(
               .map((p) => p.text)
               .join("\n") ?? ""
             const _tAutoCtx = Date.now()
-            const autoCtx = yield* Effect.promise(() => autoInjectContext(lastUserText, lastUser.agent))
+            const autoCtx = yield* Effect.promise(() => autoInjectContext(lastUserText, lastUser.agent, sessionID))
             yield* Effect.logInfo("loop_timing", { "session.id": sessionID, step, op: "autoInjectContext", ms: Date.now() - _tAutoCtx })
             if (autoCtx) system.push(autoCtx)
 
