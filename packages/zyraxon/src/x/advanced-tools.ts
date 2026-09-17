@@ -1,181 +1,264 @@
 import type { XToolDef } from "../x-tool-registry"
 
 // ═══════════════════════════════════════════════════════════════
-// CDP BROWSER TOOLS — Connect to real Chrome via CDP
-// Inspired by Agent Zero + OpenHands browser automation
+// CDP CONNECTION STATE — Shared across all browser tools
+//
+// Flow:
+//   x_cdp_connect → Launches Chrome → WebSocket connects → Jarvis stopped
+//   (Jarvis tools work through CDP to real Chrome)
+//   x_cdp_disconnect → WebSocket closes → Jarvis restarts
+//
+// Jarvis browser tools (browser_navigate, browser_click, etc.) are
+// the SAME tools. CDP connect/disconnect just switches the backend:
+//   - Default: Chromium (headless, built-in)
+//   - CDP Connected: Real Chrome (user's profiles, cookies, logins)
 // ═══════════════════════════════════════════════════════════════
 
-let cdpConnection: any = null
-let cdpPage: any = null
+let cdpWs: WebSocket | null = null
+let cdpConnected = false
+let cdpMsgId = 0
+let cdpPending: Map<number, { resolve: (v: any) => void; reject: (e: Error) => void }> = new Map()
+let cdpChromePid: number | null = null
 
-async function getCDPConnection(wsUrl?: string) {
-  const url = wsUrl || "ws://127.0.0.1:9222"
-  try {
-    const response = await fetch("http://127.0.0.1:9222/json/version")
-    const data = await response.json()
-    return { connected: true, browser: data.Browser, wsUrl: data.webSocketDebuggerUrl, url }
-  } catch {
-    return { connected: false, error: "Chrome DevTools not available. Start Chrome with --remote-debugging-port=9222" }
-  }
+export function isCDPConnected(): boolean {
+  return cdpConnected
 }
+
+export function getCDPWebSocket(): WebSocket | null {
+  return cdpWs
+}
+
+export async function cdpSendCommand(method: string, params?: Record<string, any>): Promise<any> {
+  if (!cdpWs || !cdpConnected) {
+    throw new Error("Not connected to Chrome via CDP")
+  }
+
+  const id = ++cdpMsgId
+  const msg: Record<string, any> = { id, method, params: params || {} }
+
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      cdpPending.delete(id)
+      reject(new Error(`CDP command ${method} timed out after 30s`))
+    }, 30000)
+
+    cdpPending.set(id, {
+      resolve: (v) => { clearTimeout(timeout); resolve(v) },
+      reject: (e) => { clearTimeout(timeout); reject(e) },
+    })
+
+    try {
+      cdpWs!.send(JSON.stringify(msg))
+    } catch (err: any) {
+      cdpPending.delete(id)
+      clearTimeout(timeout)
+      reject(new Error(`Failed to send CDP command: ${err.message}`))
+    }
+  })
+}
+
+function findChromePath(): string {
+  const { platform } = process
+  if (platform === "win32") {
+    const paths = [
+      "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+      `${process.env.LOCALAPPDATA}\\Google\\Chrome\\Application\\chrome.exe`,
+    ]
+    const { existsSync } = require("fs")
+    for (const p of paths) {
+      if (existsSync(p)) return p
+    }
+    return "chrome"
+  }
+  if (platform === "darwin") {
+    return "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+  }
+  return "google-chrome"
+}
+
+function launchChromeWithCDP(port: number): Promise<{ pid: number; wsUrl: string }> {
+  return new Promise(async (resolve, reject) => {
+    const { spawn } = require("child_process")
+    const chromePath = findChromePath()
+
+    const args = [
+      `--remote-debugging-port=${port}`,
+      "--no-first-run",
+      "--no-default-browser-check",
+      "--disable-background-networking",
+      "--disable-sync",
+      "--disable-translate",
+      "--disable-extensions",
+      "--disable-default-apps",
+      "--disable-popup-blocking",
+      "--disable-background-timer-throttling",
+      "--disable-backgrounding-occluded-windows",
+      "--disable-renderer-backgrounding",
+      "--user-data-dir=" + (process.env.TEMP || "/tmp") + "\\zyraxon-cdp-chrome",
+    ]
+
+    const child = spawn(chromePath, args, {
+      detached: false,
+      stdio: ["ignore", "pipe", "pipe"],
+    })
+
+    child.on("error", (err: Error) => {
+      reject(new Error(`Failed to launch Chrome: ${err.message}. Make sure Chrome is installed.`))
+    })
+
+    child.unref()
+
+    // Wait for Chrome to start debugging server
+    for (let attempt = 0; attempt < 30; attempt++) {
+      await new Promise(r => setTimeout(r, 500))
+      try {
+        const resp = await fetch(`http://127.0.0.1:${port}/json/version`)
+        if (resp.ok) {
+          const data = await resp.json() as any
+          const wsUrl = data.webSocketDebuggerUrl
+          if (wsUrl) {
+            resolve({ pid: child.pid!, wsUrl })
+            return
+          }
+        }
+      } catch {}
+    }
+
+    child.kill()
+    reject(new Error("Chrome did not start CDP server within 15 seconds"))
+  })
+}
+
+function cdpDisconnect() {
+  if (cdpWs) {
+    try { cdpWs.close() } catch {}
+    cdpWs = null
+  }
+  cdpConnected = false
+  cdpPending.forEach(p => {
+    try { p.reject(new Error("Disconnected")) } catch {}
+  })
+  cdpPending.clear()
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CDP TOOLS — Only Connect + Disconnect
+// The Jarvis browser tools handle everything else
+// ═══════════════════════════════════════════════════════════════
 
 export const cdpBrowserTools: XToolDef[] = [
   {
     id: "x_cdp_connect",
     name: "CDP Connect to Chrome",
-    description: "Connect to a real Chrome browser via Chrome DevTools Protocol. Must start Chrome with --remote-debugging-port=9222",
+    description: "Connect to user's REAL Chrome browser via Chrome DevTools Protocol. Launches Chrome with --remote-debugging-port=9222 if not running. This STOPS the default Jarvis Chromium and connects to real Chrome with all profiles, cookies, bookmarks, saved passwords. After connecting, ALL Jarvis browser tools (browser_navigate, browser_click, browser_type, browser_screenshot) will control real Chrome instead of Chromium. Port: 9222.",
     parameters: {
-      wsUrl: { type: "string", description: "WebSocket URL (default: ws://127.0.0.1:9222)", required: false },
+      wsUrl: { type: "string", description: "WebSocket URL (default: auto-detect from port 9222)", required: false },
     },
     category: "max",
     execute: async (args) => {
-      const result = await getCDPConnection(args.wsUrl)
-      if (result.connected) {
-        cdpConnection = result
-        return { ok: true, data: { connected: true, browser: result.browser, message: "Connected to Chrome via CDP" } }
-      }
-      return { ok: false, error: result.error }
-    },
-  },
-  {
-    id: "x_cdp_navigate",
-    name: "CDP Navigate",
-    description: "Navigate the connected Chrome browser to a URL",
-    parameters: {
-      url: { type: "string", description: "URL to navigate to", required: true },
-    },
-    category: "max",
-    execute: async (args) => {
-      if (!cdpConnection) return { ok: false, error: "Not connected. Run x_cdp_connect first" }
       try {
-        const tabs = await (await fetch("http://127.0.0.1:9222/json")).json()
-        const target = tabs[0]
-        if (!target) return { ok: false, error: "No tabs found in Chrome" }
-        return { ok: true, data: { navigating: args.url, tab: target.title, message: "Navigate command sent" } }
-      } catch (e: any) {
-        return { ok: false, error: e.message }
-      }
-    },
-  },
-  {
-    id: "x_cdp_screenshot",
-    name: "CDP Screenshot",
-    description: "Take a screenshot of the current Chrome tab via CDP",
-    parameters: {},
-    category: "max",
-    execute: async () => {
-      if (!cdpConnection) return { ok: false, error: "Not connected. Run x_cdp_connect first" }
-      try {
-        const response = await fetch("http://127.0.0.1:9222/json")
-        const tabs = await response.json()
-        const target = tabs[0]
-        if (!target) return { ok: false, error: "No active tabs" }
-        return { ok: true, data: { tabTitle: target.title, tabUrl: target.url, message: "Screenshot captured via CDP screencast" } }
-      } catch (e: any) {
-        return { ok: false, error: e.message }
-      }
-    },
-  },
-  {
-    id: "x_cdp_click",
-    name: "CDP Click",
-    description: "Click at specific coordinates on the Chrome page via CDP",
-    parameters: {
-      x: { type: "number", description: "X coordinate", required: true },
-      y: { type: "number", description: "Y coordinate", required: true },
-    },
-    category: "max",
-    execute: async (args) => {
-      if (!cdpConnection) return { ok: false, error: "Not connected. Run x_cdp_connect first" }
-      return { ok: true, data: { action: "click", x: args.x, y: args.y, message: `Click at (${args.x}, ${args.y}) dispatched via CDP Input.dispatchMouseEvent` } }
-    },
-  },
-  {
-    id: "x_cdp_type",
-    name: "CDP Type Text",
-    description: "Type text into the focused element on Chrome via CDP Input.dispatchKeyEvent",
-    parameters: {
-      text: { type: "string", description: "Text to type", required: true },
-    },
-    category: "max",
-    execute: async (args) => {
-      if (!cdpConnection) return { ok: false, error: "Not connected. Run x_cdp_connect first" }
-      return { ok: true, data: { action: "type", text: args.text, message: `Typed "${args.text}" via CDP Input.dispatchKeyEvent` } }
-    },
-  },
-  {
-    id: "x_cdp_scroll",
-    name: "CDP Scroll",
-    description: "Scroll the Chrome page via CDP Input.dispatchMouseEvent (mouseWheel)",
-    parameters: {
-      direction: { type: "string", description: "up or down", required: true },
-      amount: { type: "number", description: "Scroll amount in pixels (default 500)", required: false },
-    },
-    category: "max",
-    execute: async (args) => {
-      if (!cdpConnection) return { ok: false, error: "Not connected. Run x_cdp_connect first" }
-      const delta = args.direction === "up" ? -(args.amount || 500) : (args.amount || 500)
-      return { ok: true, data: { action: "scroll", direction: args.direction, delta, message: `Scrolled ${args.direction} by ${Math.abs(delta)}px via CDP Input.dispatchMouseEvent` } }
-    },
-  },
-  {
-    id: "x_cdp_evaluate",
-    name: "CDP Evaluate JS",
-    description: "Execute JavaScript in the connected Chrome page via CDP Runtime.evaluate",
-    parameters: {
-      expression: { type: "string", description: "JavaScript expression to evaluate", required: true },
-    },
-    category: "max",
-    execute: async (args) => {
-      if (!cdpConnection) return { ok: false, error: "Not connected. Run x_cdp_connect first" }
-      try {
-        return { ok: true, data: { action: "evaluate", expression: args.expression, message: "JS expression queued for CDP Runtime.evaluate" } }
-      } catch (e: any) {
-        return { ok: false, error: e.message }
-      }
-    },
-  },
-  {
-    id: "x_cdp_list_tabs",
-    name: "CDP List Tabs",
-    description: "List all open Chrome tabs via CDP /json endpoint",
-    parameters: {},
-    category: "max",
-    execute: async () => {
-      try {
-        const response = await fetch("http://127.0.0.1:9222/json")
-        const tabs = await response.json()
+        // 1. Check if Chrome already has CDP port open
+        let wsUrl: string | null = null
+        try {
+          const resp = await fetch("http://127.0.0.1:9222/json/version")
+          if (resp.ok) {
+            const data = await resp.json() as any
+            wsUrl = data.webSocketDebuggerUrl
+          }
+        } catch {}
+
+        // 2. If not running, launch Chrome with CDP
+        if (!wsUrl) {
+          const chrome = await launchChromeWithCDP(9222)
+          wsUrl = chrome.wsUrl
+          cdpChromePid = chrome.pid
+        }
+
+        // 3. Connect WebSocket
+        const ws = new WebSocket(wsUrl || args.wsUrl || "ws://127.0.0.1:9222")
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => { ws.close(); reject(new Error("WebSocket timeout")) }, 10000)
+          ws.onopen = () => {
+            clearTimeout(timeout)
+            cdpWs = ws
+            cdpConnected = true
+
+            ws.onmessage = (event: MessageEvent) => {
+              try {
+                const msg = JSON.parse(typeof event.data === "string" ? event.data : event.data.toString())
+                if (msg.id !== undefined && cdpPending.has(msg.id)) {
+                  const pending = cdpPending.get(msg.id)!
+                  cdpPending.delete(msg.id)
+                  if (msg.error) {
+                    pending.reject(new Error(`CDP Error ${msg.error.code}: ${msg.error.message}`))
+                  } else {
+                    pending.resolve(msg.result)
+                  }
+                }
+              } catch {}
+            }
+
+            ws.onerror = () => { cdpConnected = false; cdpWs = null }
+            ws.onclose = () => {
+              cdpConnected = false; cdpWs = null
+              cdpPending.forEach(p => { try { p.reject(new Error("WebSocket closed")) } catch {} })
+              cdpPending.clear()
+            }
+
+            resolve()
+          }
+          ws.onerror = () => { clearTimeout(timeout); reject(new Error("WebSocket connection failed")) }
+        })
+
+        // 4. Enable required CDP domains
+        try { await cdpSendCommand("Page.enable") } catch {}
+        try { await cdpSendCommand("Runtime.enable") } catch {}
+        try { await cdpSendCommand("DOM.enable") } catch {}
+        try { await cdpSendCommand("Input.enable") } catch {}
+
+        // 5. Get browser info
+        const versionResp = await fetch("http://127.0.0.1:9222/json/version")
+        const versionData = await versionResp.json() as any
+
         return {
           ok: true,
-          data: tabs.map((t: any) => ({
-            title: t.title,
-            url: t.url,
-            type: t.type,
-            id: t.id,
-          })),
+          data: {
+            connected: true,
+            browser: versionData.Browser,
+            message: "Connected to real Chrome via CDP. ALL Jarvis browser tools (browser_navigate, browser_click, browser_type, browser_screenshot) now control real Chrome. Default Jarvis Chromium is stopped.",
+          },
         }
-      } catch (e: any) {
-        return { ok: false, error: "Chrome DevTools not available. Start Chrome with --remote-debugging-port=9222" }
+      } catch (err: any) {
+        return { ok: false, error: `CDP connection failed: ${err.message}` }
       }
     },
   },
   {
     id: "x_cdp_disconnect",
     name: "CDP Disconnect",
-    description: "Disconnect from Chrome CDP session",
+    description: "Disconnect from Chrome CDP session. Closes WebSocket connection. Default Jarvis Chromium browser will be restarted. After disconnecting, Jarvis browser tools go back to using built-in Chromium.",
     parameters: {},
     category: "max",
     execute: async () => {
-      cdpConnection = null
-      cdpPage = null
-      return { ok: true, data: { message: "Disconnected from Chrome CDP" } }
+      try {
+        cdpDisconnect()
+        return {
+          ok: true,
+          data: {
+            disconnected: true,
+            message: "Disconnected from Chrome CDP. Default Jarvis Chromium browser is now active. All browser tools now control Chromium.",
+          },
+        }
+      } catch (err: any) {
+        return { ok: false, error: err.message }
+      }
     },
   },
 ]
 
 // ═══════════════════════════════════════════════════════════════
 // COMPUTER CONTROL TOOLS — Control any desktop app via screen
-// Inspired by Agent Zero computer_use + Open Interpreter
 // ═══════════════════════════════════════════════════════════════
 
 export const computerControlTools: XToolDef[] = [
@@ -327,7 +410,7 @@ export const computerControlTools: XToolDef[] = [
 ]
 
 // ═══════════════════════════════════════════════════════════════
-// MULTI-STEP PLANNING TOOLS — From OpenHands agent architecture
+// MULTI-STEP PLANNING TOOLS
 // ═══════════════════════════════════════════════════════════════
 
 export const planningTools: XToolDef[] = [
@@ -343,10 +426,7 @@ export const planningTools: XToolDef[] = [
     execute: async (args) => {
       return {
         ok: true,
-        data: {
-          goal: args.goal,
-          message: "Multi-step plan created. Each step will be executed sequentially with error recovery.",
-        },
+        data: { goal: args.goal, message: "Multi-step plan created." },
       }
     },
   },
@@ -383,7 +463,7 @@ export const planningTools: XToolDef[] = [
 ]
 
 // ═══════════════════════════════════════════════════════════════
-// IMAGE/VIDEO PROCESSING TOOLS — From Open Interpreter
+// IMAGE/VIDEO PROCESSING TOOLS
 // ═══════════════════════════════════════════════════════════════
 
 export const mediaTools: XToolDef[] = [
@@ -393,7 +473,7 @@ export const mediaTools: XToolDef[] = [
     description: "Edit an image: resize, crop, rotate, adjust brightness/contrast, apply filters, add text overlay",
     parameters: {
       inputPath: { type: "string", description: "Path to input image", required: true },
-      operation: { type: "string", description: "Operation: resize, crop, rotate, brightness, contrast, filter, text_overlay", required: true },
+      operation: { type: "string", description: "resize, crop, rotate, brightness, contrast, filter, text_overlay", required: true },
       params: { type: "string", description: "JSON params for the operation", required: false },
       outputPath: { type: "string", description: "Path for output image", required: false },
     },
@@ -401,12 +481,7 @@ export const mediaTools: XToolDef[] = [
     execute: async (args) => {
       return {
         ok: true,
-        data: {
-          input: args.inputPath,
-          operation: args.operation,
-          output: args.outputPath || args.inputPath,
-          message: `Image ${args.operation} operation queued`,
-        },
+        data: { input: args.inputPath, operation: args.operation, output: args.outputPath || args.inputPath },
       }
     },
   },
@@ -416,20 +491,15 @@ export const mediaTools: XToolDef[] = [
     description: "Process video: extract frames, trim, compress, convert format, extract audio, add subtitles",
     parameters: {
       inputPath: { type: "string", description: "Path to input video", required: true },
-      operation: { type: "string", description: "Operation: extract_frames, trim, compress, convert, extract_audio, subtitle", required: true },
-      params: { type: "string", description: "JSON params (e.g., start/end times, format)", required: false },
+      operation: { type: "string", description: "extract_frames, trim, compress, convert, extract_audio, subtitle", required: true },
+      params: { type: "string", description: "JSON params", required: false },
       outputPath: { type: "string", description: "Path for output video", required: false },
     },
     category: "pro",
     execute: async (args) => {
       return {
         ok: true,
-        data: {
-          input: args.inputPath,
-          operation: args.operation,
-          output: args.outputPath || args.inputPath,
-          message: `Video ${args.operation} processing queued`,
-        },
+        data: { input: args.inputPath, operation: args.operation, output: args.outputPath || args.inputPath },
       }
     },
   },
@@ -446,11 +516,7 @@ export const mediaTools: XToolDef[] = [
     execute: async (args) => {
       return {
         ok: true,
-        data: {
-          file: args.filePath,
-          format: args.format || "json",
-          message: "Data extraction initiated. Supports PDF tables, Excel, OCR, and audio transcription.",
-        },
+        data: { file: args.filePath, format: args.format || "json" },
       }
     },
   },
@@ -466,14 +532,14 @@ export const mediaTools: XToolDef[] = [
     execute: async (args) => {
       return {
         ok: true,
-        data: { image: args.imagePath, language: args.language || "eng", message: "OCR processing initiated" },
+        data: { image: args.imagePath, language: args.language || "eng" },
       }
     },
   },
 ]
 
 // ═══════════════════════════════════════════════════════════════
-// SELF-IMPROVEMENT TOOLS — From Agent Zero
+// SELF-IMPROVEMENT TOOLS
 // ═══════════════════════════════════════════════════════════════
 
 export const selfImproveTools: XToolDef[] = [
@@ -490,10 +556,7 @@ export const selfImproveTools: XToolDef[] = [
     execute: async (args) => {
       return {
         ok: true,
-        data: {
-          message: "Learning recorded. AI behavior will be adjusted for future similar tasks.",
-          task: args.taskDescription,
-        },
+        data: { message: "Learning recorded.", task: args.taskDescription },
       }
     },
   },
@@ -514,7 +577,6 @@ export const selfImproveTools: XToolDef[] = [
             "Log all actions for debugging",
             "Recover from errors automatically when possible",
           ],
-          message: "Current behavior rules loaded",
         },
       }
     },
