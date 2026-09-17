@@ -630,13 +630,13 @@ function Routes(props: { serverScoped?: JSX.Element }) {
             <>
               <Route path="/" component={LegacyHome} />
               <Route path="/server/:serverKey/session/:id" component={LegacyTargetSessionRoute} />
+              <Route path="/:dir" component={DirectoryLayout}>
+                <Route path="/" component={() => <Navigate href="session" />} />
+                <Route path="/session/:id?" component={SessionRoute} />
+              </Route>
             </>
           }
         </Show>
-        <Route path="/:dir" component={DirectoryLayout}>
-          <Route path="/" component={() => <Navigate href="session" />} />
-          <Route path="/session/:id?" component={SessionRoute} />
-        </Route>
       </Route>
       <Show when={settings.general.newLayoutDesigns()}>
         <Route path="/" component={NewHome} />

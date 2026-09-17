@@ -436,15 +436,17 @@ const main = Effect.gen(function* () {
   }
 
   // Fork sidecar loading — does NOT block UI
-  const loadingTask = yield* Effect.gen(function* () {
-    logger.log("sidecar connection started", { url })
+  // NOTE: Effect.forkChild does NOT run the child fiber in this environment.
+  // Using plain async/await instead to ensure sidecar actually spawns.
+  void (async () => {
+    try {
+      logger.log("sidecar connection started", { url })
 
-    ensureLoopbackNoProxy()
-    useEnvProxy()
+      ensureLoopbackNoProxy()
+      useEnvProxy()
 
-    logger.log("spawning sidecar", { url })
-    const { listener, health } = yield* Effect.promise(() =>
-      spawnLocalServer(hostname, port, password, {
+      logger.log("spawning sidecar", { url })
+      const { listener, health } = await spawnLocalServer(hostname, port, password, {
         userDataPath: app.getPath("userData"),
         onStdout: (message) => {
           console.log("[Main] Server stdout:", message)
@@ -458,37 +460,29 @@ const main = Effect.gen(function* () {
           console.error("[Main] Server exited with code:", code)
           writeLog("utility", "sidecar exited", { code }, "warn")
         },
-      }),
-    )
-    server = listener
-    setDefaultServerUrl(url)
-    logger.log("sidecar spawned successfully, resolving server ready")
-    yield* Deferred.succeed(serverReady, {
-      url,
-      username: "zyraxon",
-      password,
-    })
+      })
+      server = listener
+      setDefaultServerUrl(url)
+      logger.log("sidecar spawned successfully, resolving server ready")
+      Effect.runSync(Deferred.succeed(serverReady, { url, username: "zyraxon", password } as ServerReadyData))
 
-    if (process.platform === "win32") {
-      void wslServers.initialize().catch((error) => logger.error("wsl server initialization failed", error))
+      if (process.platform === "win32") {
+        void wslServers.initialize().catch((error) => logger.error("wsl server initialization failed", error))
+      }
+
+      logger.log("waiting for sidecar health check")
+      await health.wait.catch((e) => {
+        console.error("[Main] Sidecar health check failed:", String(e))
+        logger.error("sidecar health check failed", String(e))
+      })
+
+      logger.log("loading task finished")
+    } catch (error) {
+      console.error("[Main] Sidecar failed to start:", error)
+      logger.error("sidecar failed to start", String(error))
+      Effect.runSync(Deferred.fail(serverReady, error))
     }
-
-    logger.log("waiting for sidecar health check")
-    yield* Effect.promise(() => health.wait).pipe(
-      Effect.timeout("30 seconds"),
-      Effect.catch((e) =>
-        Effect.sync(() => {
-          console.error("[Main] Sidecar health check failed:", e.toString())
-          logger.error("sidecar health check failed", e.toString())
-        }),
-      ),
-    )
-
-    logger.log("loading task finished")
-  }).pipe(forwardInitializationFailure(serverReady), Effect.forkChild)
-
-  // Do NOT await the fiber — sidecar loads in background while UI is visible
-  // yield* Fiber.await(loadingTask)  ← REMOVED: was blocking startup
+  })()
 
   // Deferred net log — moved here so it never blocks window creation
   void (async () => {
