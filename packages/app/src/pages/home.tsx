@@ -74,6 +74,7 @@ import {
   retainHomeSessions,
   type HomeSessionEvents,
 } from "@/context/global-sync/home-session-index"
+import { zlog, zlogError, zlogSection } from "@/utils/crash-log"
 
 const HOME_SESSION_LIMIT = 64
 const HOME_SESSION_HEADER_STICKY_TOP = 12
@@ -288,20 +289,26 @@ function isBackgroundOpen(event: MouseEvent) {
 type OpenSessionOptions = { background?: boolean }
 
 export function NewHome() {
+  zlogSection("HOME: NewHome() START")
   const layout = useLayout()
+  zlog("HOME", "layout loaded", { hasLayout: !!layout })
   const platform = usePlatform()
+  zlog("HOME", "platform loaded", { hasPlatform: !!platform })
   const pickDirectory = useDirectoryPicker()
   const dialog = useDialog()
   const navigate = useNavigate()
   const server = useServer()
+  zlog("HOME", "server loaded", { key: server.key, hasCurrent: !!server.current, serverType: server.current?.type })
   const language = useLanguage()
   const global = useGlobal()
+  zlog("HOME", "global loaded", { hasGlobal: !!global })
   const tabs = useTabs()
   const command = useCommand()
   const notification = useNotification()
   const marked = useMarked()
   const openSettings = useSettingsCommand()
   const sync = useServerSync()
+  zlog("HOME", "sync loaded", { hasSync: !!sync })
   let focusSessionSearch: (() => void) | undefined
   let sessionViewport: HTMLDivElement | undefined
   const [sessionThumbTrack, setSessionThumbTrack] = createSignal<HTMLDivElement>()
@@ -311,16 +318,25 @@ export function NewHome() {
     searchFocused: false,
   })
   const selection = layout.home.selection
+  zlog("HOME", "selection", { selection: selection() })
 
   const focusedServer = createMemo(
     () => global.servers.list().find((conn) => ServerConnection.key(conn) === selection().server) ?? server.current,
   )
+  zlog("HOME", "focusedServer created")
   const focusedServerCtx = createMemo(() => {
     const conn = focusedServer()
     if (!conn) return
     return global.ensureServerCtx(conn)
   })
-  const focusedSync = () => focusedServerCtx()?.sync ?? sync()
+  zlog("HOME", "focusedServerCtx created")
+  const focusedSync = () => {
+    const ctx = focusedServerCtx()
+    const fallback = sync()
+    zlog("HOME", "focusedSync called", { hasCtx: !!ctx, hasFallback: !!fallback, hasSyncData: !!fallback?.data })
+    return ctx?.sync ?? fallback
+  }
+  zlog("HOME", "focusedSync created")
   const homeSessions = createMemo(() => {
     const s = focusedSync()
     if (!s?.homeSessions) return undefined
@@ -330,7 +346,17 @@ export function NewHome() {
   const recentlyClosed = createMemo(
     () => focusedServerCtx()?.projects.recentlyClosed() ?? layout.projects.recentlyClosed(),
   )
-  const homedir = createMemo(() => focusedSync()?.data?.path?.home ?? "")
+  const homedir = createMemo(() => {
+    const s = focusedSync()
+    zlog("HOME", "homedir evaluating", {
+      hasSync: !!s,
+      hasData: !!s?.data,
+      hasPath: !!s?.data?.path,
+      home: s?.data?.path?.home,
+    })
+    return s?.data?.path?.home ?? ""
+  })
+  zlog("HOME", "homedir created")
   const selectedProject = createMemo(() => projects().find((project) => project.worktree === selection().directory))
   const newSessionProject = createMemo(
     () =>
@@ -441,8 +467,8 @@ export function NewHome() {
               .sync(record.session.id)
               .then(() => {
                 return Promise.all(
-                  (ctx.sync.session.data.message[record.session.id] ?? []).flatMap((message) =>
-                    (ctx.sync.session.data.part[message.id] ?? []).flatMap((part) => {
+                  (ctx.sync.session?.data?.message?.[record.session.id] ?? []).flatMap((message) =>
+                    (ctx.sync.session?.data?.part?.[message.id] ?? []).flatMap((part) => {
                       if (part.type !== "text" || !part.text) return []
                       return preloadMarkdown(part.text, part.id, marked)
                     }),
@@ -562,7 +588,7 @@ export function NewHome() {
     // Fallback: use the home directory from server sync when no projects exist
     if (conn) {
       const ctx = global.ensureServerCtx(conn)
-      const homeDir = ctx.sync.data.path.home
+      const homeDir = ctx?.sync?.data?.path?.home
       if (homeDir) {
         openProjectNewSession(conn, homeDir)
       }
@@ -1896,11 +1922,11 @@ export function LegacyHome() {
   const global = useGlobal()
   const server = useServer()
   const language = useLanguage()
-  const homedir = createMemo(() => sync().data.path.home)
+  const homedir = createMemo(() => sync()?.data?.path?.home ?? "")
   const serverUnreachable = createMemo(() => global.servers.health[server.key]?.healthy === false)
   const recent = createMemo(() => {
-    return sync()
-      .data.project.slice()
+    return (sync()?.data?.project ?? [])
+      .slice()
       .sort((a, b) => (b.time.updated ?? b.time.created) - (a.time.updated ?? a.time.created))
       .slice(0, 5)
   })
@@ -1960,7 +1986,7 @@ export function LegacyHome() {
         {server.name}
       </Button>
       <Switch>
-        <Match when={sync().data.project.length > 0}>
+        <Match when={(sync()?.data?.project?.length ?? 0) > 0}>
           <div class="mt-20 w-full flex flex-col gap-4">
             <div class="flex gap-2 items-center justify-between pl-3">
               <div class="text-14-medium text-text-strong">{language.t("home.recentProjects")}</div>
@@ -1993,7 +2019,7 @@ export function LegacyHome() {
             </ul>
           </div>
         </Match>
-        <Match when={!sync().ready}>
+        <Match when={!sync()?.ready}>
           <div class="mt-30 mx-auto flex flex-col items-center gap-3">
             <div class="text-12-regular text-text-weak">{language.t("common.loading")}</div>
             <Button class="px-3" disabled={serverUnreachable()} onClick={chooseProject}>

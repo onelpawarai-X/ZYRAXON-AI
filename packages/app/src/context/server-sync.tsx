@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   Config,
   McpResource,
   ZyraxonClient,
@@ -546,9 +546,12 @@ export const { use: useServerSync, provider: ServerSyncProvider } = createSimple
     const language = useLanguage()
     const server = useServer()
 
-    return createMemo<ServerSync>(() => {
+    return createMemo<ServerSync>((prev) => {
       const conn = props.server?.() ?? server.current
-      if (!conn) throw new Error(language.t("error.serverSDK.noServerAvailable"))
+      if (!conn) {
+        if (prev) return prev
+        throw new Error(language.t("error.serverSDK.noServerAvailable"))
+      }
       return global.ensureServerCtx(conn).sync
     })
   },

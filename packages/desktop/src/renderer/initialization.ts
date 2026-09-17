@@ -1,4 +1,4 @@
-export function initializationData<A>(state: (() => A | undefined) & { error: unknown }) {
+﻿export function initializationData<A>(state: (() => A | undefined) & { error: unknown }) {
   if (state.error !== undefined) throw markLocalServerStartup(state.error)
   return state()
 }

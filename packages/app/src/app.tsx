@@ -1,4 +1,4 @@
-import "@/index.css"
+﻿import "@/index.css"
 import * as Sentry from "@sentry/solid"
 import { I18nProvider } from "@zyraxon-ai/ui/context"
 import { DialogProvider } from "@zyraxon-ai/ui/context/dialog"
@@ -96,7 +96,7 @@ const SessionRoute = () => {
   }
 
   // When the new layout is enabled, the legacy new-session route (/:dir/session with no id)
-  // is replaced by a draft at /new-session?draftId=…
+  // is replaced by a draft at /new-session?draftId=ΓÇª
   createEffect(() => {
     if (!settings.general.newLayoutDesigns()) return
     if (params.id || search.draftId) return
@@ -422,14 +422,25 @@ function ConnectionGate(props: ParentProps<{ disableHealthCheck?: boolean; start
 
   const [checkMode, setCheckMode] = createSignal<"blocking" | "background">("blocking")
 
+  // SAFETY: Maximum splash duration. No matter what happens, splash goes away after 15s.
+  const [maxSplashExpired, setMaxSplashExpired] = createSignal(false)
+  createEffect(() => {
+    const timer = setTimeout(() => setMaxSplashExpired(true), 15_000)
+    onCleanup(() => clearTimeout(timer))
+  })
+
   // performs repeated health check with a grace period for
   // non-http connections, otherwise fails instantly
   const [startupHealthCheck, healthCheckActions] = createResource(() =>
     props.disableHealthCheck
       ? true
       : Effect.gen(function* () {
-          if (!server.current) return true
-          const { http, type } = server.current
+          const { http, type } = server.current ?? {}
+          if (!http) {
+            // No server yet — wait briefly then consider it passed (sidecar may still be loading)
+            yield* Effect.promise(() => new Promise((r) => setTimeout(r, 2000)))
+            return true
+          }
 
           while (true) {
             const res = yield* Effect.promise(() => checkServerHealth(http))
@@ -443,17 +454,20 @@ function ConnectionGate(props: ParentProps<{ disableHealthCheck?: boolean; start
         ),
   )
   const checking = createMemo(
-    () => checkMode() === "blocking" && ["unresolved", "pending"].includes(startupHealthCheck.state),
+    () => !maxSplashExpired() && checkMode() === "blocking" && ["unresolved", "pending"].includes(startupHealthCheck.state),
   )
   const [startup] = createResource(async () => {
     if (!props.startup) return true
-    await props.startup.catch((error) => {
-      console.error("[startup] startup gate failed", error)
-    })
+    await Promise.race([
+      props.startup.catch((error) => {
+        console.error("[startup] startup gate failed", error)
+      }),
+      new Promise<void>((r) => setTimeout(r, 12_000)),
+    ])
     return true
   })
   const startupChecking = createMemo(
-    () => startupHealthCheck.latest === true && ["unresolved", "pending"].includes(startup.state),
+    () => !maxSplashExpired() && startupHealthCheck.latest === true && ["unresolved", "pending"].includes(startup.state),
   )
   const loading = createMemo(() => checking() || startupChecking())
 

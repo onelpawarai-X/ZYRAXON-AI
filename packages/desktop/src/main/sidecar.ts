@@ -50,10 +50,18 @@ parentPort.on("message", (event) => {
 
 async function start(command: StartCommand) {
   try {
+    console.log("[Sidecar] Starting server with config:", {
+      hostname: command.hostname,
+      port: command.port,
+      userDataPath: command.userDataPath
+    })
+
     prepareSidecarEnv(command.password, command.userDataPath)
     ensureLoopbackNoProxy()
     useSystemCertificates()
     useEnvProxy()
+
+    console.log("[Sidecar] Environment prepared, loading server bundle...")
 
     // Load the pre-built server bundle from the output directory at runtime.
     // The server bundle uses ESM with top-level await, so we MUST use import()
@@ -64,7 +72,13 @@ async function start(command: StartCommand) {
     const __filename = fileURLToPath(import.meta.url)
     const __dirname = dirname(__filename)
     const serverUrl = new URL("./chunks/zyraxon-server.js", import.meta.url).href
+
+    console.log("[Sidecar] Server bundle URL:", serverUrl)
+    console.log("[Sidecar] Importing server bundle...")
+
     const { Server } = await import(serverUrl)
+
+    console.log("[Sidecar] Server bundle imported successfully, starting listener...")
 
     listener = await Server.listen({
       port: command.port,
@@ -73,8 +87,11 @@ async function start(command: StartCommand) {
       password: command.password,
       cors: ["oc://renderer"],
     })
+
+    console.log("[Sidecar] Server listener started successfully, sending ready message")
     parentPort.postMessage({ type: "ready" })
   } catch (error) {
+    console.error("[Sidecar] Failed to start server:", error)
     parentPort.postMessage({ type: "error", error: serializeError(error) })
     setImmediate(() => process.exit(1))
   }

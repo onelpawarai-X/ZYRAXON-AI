@@ -59,6 +59,8 @@ export async function spawnLocalServer(
   options: SpawnLocalServerOptions,
 ) {
   const sidecar = join(dirname(fileURLToPath(import.meta.url)), "sidecar.js")
+  console.log("[Server] Spawning sidecar process:", sidecar)
+
   const child = utilityProcess.fork(sidecar, [], {
     cwd: process.cwd(),
     env: createSidecarEnv(),
@@ -70,20 +72,35 @@ export async function spawnLocalServer(
 
   const onProcessGone = (_event: unknown, details: Details) => {
     if (details.type !== "Utility" || details.name !== SIDECAR_SERVICE_NAME) return
-    options.onStderr?.(`utility process gone reason=${details.reason} exitCode=${details.exitCode}`)
+    const errorMsg = `utility process gone reason=${details.reason} exitCode=${details.exitCode}`
+    console.error("[Server] Process gone:", errorMsg)
+    options.onStderr?.(errorMsg)
   }
 
   app.on("child-process-gone", onProcessGone)
   child.once("exit", (code) => {
     exited = true
     app.off("child-process-gone", onProcessGone)
+    console.log("[Server] Sidecar process exited with code:", code)
     options.onExit?.(code)
     exit.resolve(code)
   })
-  child.on("error", (error) => options.onStderr?.(`utility process error: ${serializeError(error).message}`))
+  child.on("error", (error) => {
+    const errorMsg = `utility process error: ${serializeError(error).message}`
+    console.error("[Server] Process error:", errorMsg)
+    options.onStderr?.(errorMsg)
+  })
 
-  child.stdout?.on("data", (chunk: Buffer) => options.onStdout?.(chunk.toString("utf8").trimEnd()))
-  child.stderr?.on("data", (chunk: Buffer) => options.onStderr?.(chunk.toString("utf8").trimEnd()))
+  child.stdout?.on("data", (chunk: Buffer) => {
+    const msg = chunk.toString("utf8").trimEnd()
+    console.log("[Server] STDOUT:", msg)
+    options.onStdout?.(msg)
+  })
+  child.stderr?.on("data", (chunk: Buffer) => {
+    const msg = chunk.toString("utf8").trimEnd()
+    console.error("[Server] STDERR:", msg)
+    options.onStderr?.(msg)
+  })
 
   await new Promise<void>((resolve, reject) => {
     let done = false
@@ -92,6 +109,7 @@ export async function spawnLocalServer(
     const fail = (error: Error) => {
       if (done) return
       done = true
+      console.error("[Server] Sidecar startup failed:", error.message)
       cleanup()
       reject(error)
     }
@@ -99,24 +117,31 @@ export async function spawnLocalServer(
     const refreshTimeout = () => {
       clearTimeout(timeout)
       timeout = setTimeout(() => {
-        fail(new Error(`Sidecar did not become ready within ${SIDECAR_START_STALL_TIMEOUT}ms: ${sidecar}`))
+        const timeoutError = new Error(`Sidecar did not become ready within ${SIDECAR_START_STALL_TIMEOUT}ms: ${sidecar}`)
+        console.error("[Server] Startup timeout:", timeoutError.message)
+        fail(timeoutError)
       }, SIDECAR_START_STALL_TIMEOUT)
     }
 
     const onMessage = (message: SidecarMessage) => {
+      console.log("[Server] Received message from sidecar:", message.type)
       if (message.type === "ready") {
         if (done) return
         done = true
+        console.log("[Server] Sidecar is ready")
         cleanup()
         resolve()
         return
       }
       if (message.type === "error") {
+        console.error("[Server] Sidecar error:", message.error.message)
         fail(Object.assign(new Error(message.error.message), { stack: message.error.stack }))
       }
     }
     const onExit = (code: number) => {
-      fail(new Error(`Sidecar exited before ready with code ${code}`))
+      const exitError = new Error(`Sidecar exited before ready with code ${code}`)
+      console.error("[Server] Sidecar exited early:", exitError.message)
+      fail(exitError)
     }
     const cleanup = () => {
       clearTimeout(timeout)
@@ -127,6 +152,8 @@ export async function spawnLocalServer(
     child.on("message", onMessage)
     child.on("exit", onExit)
     refreshTimeout()
+
+    console.log("[Server] Sending start command to sidecar")
     child.postMessage({
       type: "start",
       hostname,
@@ -135,22 +162,32 @@ export async function spawnLocalServer(
       userDataPath: options.userDataPath,
     })
   }).catch((error) => {
+    console.error("[Server] Spawn failed, killing sidecar:", error.message)
     if (!exited) child.kill()
     throw error
   })
 
   const wait = (async () => {
     const url = `http://${hostname}:${port}`
+    console.log("[Server] Starting health check for:", url)
     let healthy = false
     const gone = exit.promise.then((code) => {
       if (healthy) return
-      throw new Error(`Sidecar exited before health check passed with code ${code}`)
+      const healthError = new Error(`Sidecar exited before health check passed with code ${code}`)
+      console.error("[Server] Health check failed:", healthError.message)
+      throw healthError
     })
 
     const ready = async () => {
+      let attempts = 0
       while (true) {
+        attempts++
+        if (attempts % 10 === 0) {
+          console.log(`[Server] Health check attempt ${attempts}...`)
+        }
         await new Promise((resolve) => setTimeout(resolve, 100))
         if (await checkHealth(url, password)) {
+          console.log("[Server] Health check passed after", attempts, "attempts")
           healthy = true
           return
         }
@@ -167,11 +204,15 @@ export async function spawnLocalServer(
       stop: () => {
         if (stopping) return stopping
         if (exited) return Promise.resolve()
+        console.log("[Server] Stopping sidecar...")
         child.postMessage({ type: "stop" })
         stopping = Promise.race([
           exit.promise.then(() => undefined),
           delay(SIDECAR_STOP_TIMEOUT).then(() => {
-            if (!exited) child.kill()
+            if (!exited) {
+              console.log("[Server] Force killing sidecar due to timeout")
+              child.kill()
+            }
           }),
         ])
         return stopping

@@ -1,4 +1,4 @@
-import type { Event } from "@zyraxon-ai/sdk/v2/client"
+﻿import type { Event } from "@zyraxon-ai/sdk/v2/client"
 import { createSimpleContext } from "@zyraxon-ai/ui/context"
 import { createGlobalEmitter } from "@solid-primitives/event-bus"
 import { makeEventListener } from "@solid-primitives/event-listener"
@@ -300,9 +300,10 @@ export const { use: useServerSDK, provider: ServerSDKProvider } = createSimpleCo
     const language = useLanguage()
     const server = useServer()
 
-    return createMemo<ServerSDK>(() => {
+    return createMemo<ServerSDK>((prev) => {
       const conn = props.server?.() ?? server.current
       if (!conn) {
+        if (prev) return prev
         console.warn("[ServerSDK] No server available yet, waiting...")
         throw new Error(language.t("error.serverSDK.noServerAvailable"))
       }

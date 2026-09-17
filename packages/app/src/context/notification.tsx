@@ -3,6 +3,7 @@ import { type Accessor, batch, createEffect, createMemo, createRoot, getOwner, o
 import { useParams, useSearchParams } from "@solidjs/router"
 import { createSimpleContext } from "@zyraxon-ai/ui/context"
 import type { ServerSDK } from "./server-sdk"
+import { zlog } from "@/utils/crash-log"
 import type { ServerSync } from "./server-sync"
 import { usePlatform } from "@/context/platform"
 import { useLanguage } from "@/context/language"
@@ -113,6 +114,7 @@ export const { use: useNotification, provider: NotificationProvider } = createSi
   name: "Notification",
   gate: false,
   init: () => {
+    zlog("NotificationProvider", "init started")
     const params = useParams<{ serverKey?: string; dir?: string; id?: string }>()
     const [search] = useSearchParams<{ draftId?: string }>()
     const global = useGlobal()

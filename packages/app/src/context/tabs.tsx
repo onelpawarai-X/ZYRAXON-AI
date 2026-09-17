@@ -3,6 +3,7 @@ import { createSimpleContext } from "@zyraxon-ai/ui/context"
 import { createStore, produce } from "solid-js/store"
 import { Persist, persisted, removePersisted, draftPersistedKeys } from "@/utils/persist"
 import { ServerConnection, useServer } from "./server"
+import { zlog } from "@/utils/crash-log"
 import { createEffect, getOwner, onCleanup, startTransition } from "solid-js"
 import { useLocation, useNavigate, useParams } from "@solidjs/router"
 import { usePlatform } from "./platform"
@@ -53,7 +54,9 @@ export const { use: useTabs, provider: TabsProvider } = createSimpleContext({
   name: "Tabs",
   gate: false,
   init: () => {
+    zlog("TabsProvider", "init started")
     const server = useServer()
+    zlog("TabsProvider", "server loaded", { key: server.key })
     const platform = usePlatform()
     const fallback = server.key
     const [store, setStore, _, ready] = persisted(
