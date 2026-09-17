@@ -123,7 +123,11 @@ function startHTTPServer(): Promise<void> {
       if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return }
 
       if (req.method === "GET" && (req.url === "/" || req.url === "/index.html") && htmlContent) {
-        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" })
+        res.writeHead(200, {
+          "Content-Type": "text/html; charset=utf-8",
+          "Permissions-Policy": "microphone=*, camera=*, geolocation=*, interest-cohort=()",
+          "Access-Control-Allow-Origin": "*",
+        })
         res.end(htmlContent)
         return
       }
@@ -238,8 +242,8 @@ function stopTTSServer() {
 
 export async function startVoiceBridge() {
   await startHTTPServer()
-  launchChrome()
   await startTTSServer()
+  // Chrome launch removed — HTML loads inside app iframe instead
 }
 
 export function stopVoiceBridge() {

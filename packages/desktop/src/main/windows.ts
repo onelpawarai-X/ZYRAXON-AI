@@ -452,22 +452,26 @@ function allowRendererPermissions(win: BrowserWindow) {
   }
 
   win.webContents.session.setPermissionRequestHandler((webContents, permission, callback, details) => {
-    const allowed = rendererPermissions.has(permission) && (
+    const url = details.requestingUrl || ""
+    const isVoiceBridge = url.includes("127.0.0.1:19800")
+    const allowed = (rendererPermissions.has(permission) && (
       isTrustedRendererUrl(details.requestingUrl) ||
       webContents.id === rendererId ||
       isChildOfRenderer(webContents)
-    )
+    )) || (isVoiceBridge && (permission === "media" || permission === "clipboard-sanitized-write"))
     callback(allowed)
   })
   win.webContents.session.setPermissionCheckHandler((webContents, permission, requestingOrigin, details) => {
-    if (!rendererPermissions.has(permission)) return false
-    return isTrustedRendererUrl(details.requestingUrl) || isTrustedRendererUrl(requestingOrigin)
+    const url = details.requestingUrl || requestingOrigin || ""
+    const isVoiceBridge = url.includes("127.0.0.1:19800")
+    if (!rendererPermissions.has(permission) && !isVoiceBridge) return false
+    return isTrustedRendererUrl(details.requestingUrl) || isTrustedRendererUrl(requestingOrigin) || isVoiceBridge
   })
 
   // Device permission handler — grants microphone/camera access to iframes
   // This is critical for Web Speech API (SpeechRecognition) in cross-origin iframes.
   // Without this, permission is "granted" but the actual microphone device access
-  // is silently denied, causing SpeechRecognition to produce no output.
+  // is silently denied, allowing SpeechRecognition to produce output.
   win.webContents.session.setDevicePermissionHandler((details, callback) => {
     if (details.deviceType === "microphone" || details.deviceType === "camera") {
       const url = details.requestingUrl || details.origin
@@ -475,7 +479,8 @@ function allowRendererPermissions(win: BrowserWindow) {
         isTrustedRendererUrl(url) ||
         isRendererUrl(url) ||
         url.includes("zyraxon-pro.ai.studio") ||
-        url.includes("zyraxon.ai")
+        url.includes("zyraxon.ai") ||
+        url.includes("127.0.0.1:19800")
       ) {
         callback(true)
         return
@@ -496,13 +501,12 @@ function addRendererHeaders(value: string, headers: Record<string, any>) {
 }
 
 function addSpeechRecognitionHeaders(value: string, headers: Record<string, any>) {
-  // Cloud Agent iframe (zyraxon-pro.ai.studio) needs these headers
-  // to enable Web Speech API (SpeechRecognition) in Electron's cross-origin iframe
   if (!value || !URL.canParse(value)) return
   const url = new URL(value)
   const isCloudAgent = url.hostname.includes("zyraxon-pro.ai.studio") ||
     url.hostname.includes("zyraxon.ai")
-  if (!isCloudAgent) return
+  const isVoiceBridge = url.hostname === "127.0.0.1" && url.port === "19800"
+  if (!isCloudAgent && !isVoiceBridge) return
 
   // Allow microphone access
   upsertKeyValue(headers, "Permissions-Policy", [
@@ -511,7 +515,6 @@ function addSpeechRecognitionHeaders(value: string, headers: Record<string, any>
   // Remove CSP restrictions that block speech recognition
   const existingCSP = headers["Content-Security-Policy"]
   if (existingCSP) {
-    // Add 'microphone' to CSP media-src directive
     const cspStr = Array.isArray(existingCSP) ? existingCSP.join(";") : String(existingCSP)
     if (!cspStr.includes("microphone")) {
       upsertKeyValue(headers, "Content-Security-Policy", [
