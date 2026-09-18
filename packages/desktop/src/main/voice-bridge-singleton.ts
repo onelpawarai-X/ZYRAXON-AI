@@ -10,6 +10,7 @@ import type {
   setVoiceGender as SetVoiceGender,
   setVoiceListening as SetVoiceListening,
   stopVoiceBridge as StopVoiceBridge,
+  findChromePath as FindChromePath,
 } from "./voice-bridge"
 
 // The actual module reference — set once by index.ts on startup

@@ -133,13 +133,40 @@ export function getCurrentTier(): SubscriptionTier {
 
 export function openStripeCheckout(tier: SubscriptionTier): void {
   const plan = SUBSCRIPTION_PLANS[tier]
-  const stripeUrl = `https://checkout.stripe.com/pay/${plan.name.toUpperCase()}-${plan.price}`
-  window.open(stripeUrl, "_blank")
+  // Stripe Payment Links — configure these in your Stripe Dashboard
+  // Go to https://dashboard.stripe.com/payment-links to create links
+  const paymentLinks: Record<SubscriptionTier, string> = {
+    free: "",
+    pro: import.meta.env.VITE_STRIPE_PRO_LINK || `https://buy.stripe.com/your-pro-link`,
+    max: import.meta.env.VITE_STRIPE_MAX_LINK || `https://buy.stripe.com/your-max-link`,
+    ultra: import.meta.env.VITE_STRIPE_ULTRA_LINK || `https://buy.stripe.com/your-ultra-link`,
+  }
+  const link = paymentLinks[tier]
+  if (link && !link.includes("your-")) {
+    window.open(link, "_blank")
+  } else {
+    // Fallback: show instructions to configure Stripe
+    alert(
+      `Stripe Payment Link not configured for ${plan.name} tier.\n\n` +
+      `To set up Stripe payments:\n` +
+      `1. Go to https://dashboard.stripe.com/payment-links\n` +
+      `2. Create a payment link for $${plan.price} (${plan.durationDays || "permanent"})\n` +
+      `3. Add the link to your .env file:\n` +
+      `   VITE_STRIPE_${tier.toUpperCase()}_LINK=your-link-here\n` +
+      `4. Restart the app`
+    )
+  }
 }
 
 export function isStripeReady(): boolean {
-  const key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
-  return !!key && key.startsWith("pk_") && !key.includes("placeholder")
+  // Check if ANY Stripe payment link is configured
+  const proLink = import.meta.env.VITE_STRIPE_PRO_LINK
+  const maxLink = import.meta.env.VITE_STRIPE_MAX_LINK
+  const ultraLink = import.meta.env.VITE_STRIPE_ULTRA_LINK
+  const hasLinks = (proLink && !proLink.includes("your-")) ||
+    (maxLink && !maxLink.includes("your-")) ||
+    (ultraLink && !ultraLink.includes("your-"))
+  return hasLinks
 }
 
 export function lockSubscription(): SubscriptionState {

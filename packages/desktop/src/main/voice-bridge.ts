@@ -15,11 +15,24 @@ let pendingListening = false
 let htmlContent: string | null = null
 let pendingCommands: any[] = []
 
-export function setRendererCallback(cb: (data: any) => void) { rendererCallback = cb }
+let transcriptBuffer: Array<{ text: string; lang: string; timestamp: number }> = []
+let accumulatedTranscript = ""
+const MAX_BUFFER_SIZE = 100
 
-function sendToVoice(data: any) {
-  pendingCommands.push(data)
+export function getAccumulatedTranscript(): string {
+  return accumulatedTranscript
 }
+
+export function clearAccumulatedTranscript(): void {
+  accumulatedTranscript = ""
+  transcriptBuffer = []
+}
+
+export function getTranscriptBuffer(): Array<{ text: string; lang: string; timestamp: number }> {
+  return [...transcriptBuffer]
+}
+
+export function setRendererCallback(cb: (data: any) => void) { rendererCallback = cb }
 
 function broadcastState() {
   pendingCommands.push({
@@ -64,8 +77,23 @@ function handleMessage(raw: string) {
       return
     }
     if (data.type === "ping") return
-    if (data.type === "transcript") rendererCallback?.({ type: "voice-transcript", text: data.text, fullText: data.fullText, isFinal: data.final, lang: data.lang })
-    else if (data.type === "send-to-chat") rendererCallback?.({ type: "voice-send", text: data.text, lang: data.lang })
+    if (data.type === "transcript") {
+      if (data.text && data.text.trim()) {
+        const entry = { text: data.text.trim(), lang: data.lang || currentLanguage, timestamp: Date.now() }
+        transcriptBuffer.push(entry)
+        if (transcriptBuffer.length > MAX_BUFFER_SIZE) {
+          transcriptBuffer = transcriptBuffer.slice(-MAX_BUFFER_SIZE)
+        }
+        accumulatedTranscript += (accumulatedTranscript ? " " : "") + data.text.trim()
+      }
+      rendererCallback?.({ type: "voice-transcript", text: data.text, fullText: data.fullText, isFinal: data.final, lang: data.lang })
+    }
+    else if (data.type === "send-to-chat") {
+      if (data.text && data.text.trim()) {
+        accumulatedTranscript += (accumulatedTranscript ? " " : "") + data.text.trim()
+      }
+      rendererCallback?.({ type: "voice-send", text: data.text, lang: data.lang })
+    }
     else if (data.type === "language-changed") { currentLanguage = data.lang; rendererCallback?.({ type: "voice-language", lang: data.lang }) }
     else if (data.type === "voice-changed") { currentVoiceGender = data.gender; rendererCallback?.({ type: "voice-gender", gender: data.gender }) }
     else if (data.type === "mic-state") rendererCallback?.({ type: "voice-mic-state", active: data.active })
@@ -81,16 +109,31 @@ function findHTMLPath(): string | null {
   return candidates.find((p) => existsSync(p)) || null
 }
 
-function findChrome(): string | null {
+export function findChromePath(): string | null {
   const pf = process.env["PROGRAMFILES"] || ""
   const pf86 = process.env["PROGRAMFILES(X86)"] || ""
   const local = process.env["LOCALAPPDATA"] || ""
+  const rimraf = process.env["PROGRAMFILES"] || ""
+
   const candidates = [
     pf ? join(pf, "Google", "Chrome", "Application", "chrome.exe") : null,
     pf86 ? join(pf86, "Google", "Chrome", "Application", "chrome.exe") : null,
     local ? join(local, "Google", "Chrome", "Application", "chrome.exe") : null,
+    rimraf ? join(rimraf, "Google", "Chrome", "Application", "chrome.exe") : null,
   ].filter(Boolean) as string[]
-  return candidates.find((p) => existsSync(p)) || null
+
+  for (const p of candidates) {
+    if (existsSync(p)) return p
+  }
+
+  try {
+    const where = execSync("where chrome.exe", { encoding: "utf8", timeout: 3000 }).trim()
+    if (where && existsSync(where.split("\n")[0].trim())) {
+      return where.split("\n")[0].trim()
+    }
+  } catch {}
+
+  return null
 }
 
 function killPort(port: number) {
@@ -176,10 +219,10 @@ function startHTTPServer(): Promise<void> {
 }
 
 function launchChrome() {
-  const chromePath = findChrome()
+  const chromePath = findChromePath()
   if (!chromePath) {
-    console.log("[VoiceBridge] Chrome not found")
-    return
+    console.log("[VoiceBridge] Chrome not found — voice bridge will run in app iframe")
+    return false
   }
 
   const args = [
@@ -202,9 +245,11 @@ function launchChrome() {
       console.log("[VoiceBridge] Chrome exited")
       chromeProcess = null
     })
-    console.log("[VoiceBridge] Chrome launched")
+    console.log("[VoiceBridge] Chrome launched:", chromePath)
+    return true
   } catch (e) {
     console.log("[VoiceBridge] Failed to launch Chrome:", e)
+    return false
   }
 }
 
@@ -243,7 +288,12 @@ function stopTTSServer() {
 export async function startVoiceBridge() {
   await startHTTPServer()
   await startTTSServer()
-  // Chrome launch removed — HTML loads inside app iframe instead
+  const launched = launchChrome()
+  if (launched) {
+    console.log("[VoiceBridge] Voice bridge running via Chrome")
+  } else {
+    console.log("[VoiceBridge] Chrome not found — voice bridge HTTP server running on port", PORT, "(use app iframe)")
+  }
 }
 
 export function stopVoiceBridge() {

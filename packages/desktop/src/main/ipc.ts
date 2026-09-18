@@ -419,6 +419,21 @@ export function registerIpcHandlers(deps: Deps) {
     return true
   })
 
+  // Voice transcript persistence — accumulate across navigation
+  ipcMain.handle("voice-get-accumulated-transcript", () => {
+    const vb = getVoiceBridgeModule()
+    return vb ? vb.getAccumulatedTranscript() : ""
+  })
+  ipcMain.handle("voice-clear-accumulated-transcript", () => {
+    const vb = getVoiceBridgeModule()
+    if (vb) vb.clearAccumulatedTranscript()
+    return true
+  })
+  ipcMain.handle("voice-get-transcript-buffer", () => {
+    const vb = getVoiceBridgeModule()
+    return vb ? vb.getTranscriptBuffer() : []
+  })
+
   // TTS restart — called from renderer when server is down
   ipcMain.handle("tts-restart", async () => {
     try {
@@ -860,15 +875,48 @@ ipcMain.handle("daily-tasks:run", async (_event: IpcMainInvokeEvent, task: any) 
 })
 
 let cloudAgentWindow: BrowserWindow | null = null
+let cloudAgentChromeProcess: import("child_process").ChildProcess | null = null
 
 export function closeCloudAgentWindow() {
   if (cloudAgentWindow && !cloudAgentWindow.isDestroyed()) {
     cloudAgentWindow.destroy()
     cloudAgentWindow = null
   }
+  if (cloudAgentChromeProcess) {
+    try { cloudAgentChromeProcess.kill() } catch {}
+    cloudAgentChromeProcess = null
+  }
 }
 
 ipcMain.handle("cloud-agent:open", async () => {
+  const CLOUD_AGENT_URL = "https://zyraxon-pro.ai.studio/"
+
+  // Try to open in system Chrome browser for full mic + speech support
+  try {
+    const { findChromePath } = await import("./voice-bridge")
+    const chromePath = findChromePath()
+    if (chromePath) {
+      const { spawn } = await import("child_process")
+      const profileDir = join(process.env.TEMP || "", "ZYRAXON-CloudAgent-Profile")
+      const args = [
+        `--user-data-dir=${profileDir}`,
+        "--no-first-run",
+        "--no-default-browser-check",
+        "--disable-popup-blocking",
+        CLOUD_AGENT_URL,
+      ]
+      cloudAgentChromeProcess = spawn(chromePath, args, { detached: true, stdio: "ignore" })
+      cloudAgentChromeProcess.unref()
+      cloudAgentChromeProcess.on("error", (e: any) => console.log("[CloudAgent] Chrome error:", e.message))
+      cloudAgentChromeProcess.on("exit", () => { cloudAgentChromeProcess = null })
+      console.log("[CloudAgent] Opened in Chrome:", chromePath)
+      return true
+    }
+  } catch (e) {
+    console.log("[CloudAgent] Chrome launch failed, falling back to Electron window:", e)
+  }
+
+  // Fallback: Electron BrowserWindow if Chrome not found
   if (cloudAgentWindow && !cloudAgentWindow.isDestroyed()) {
     cloudAgentWindow.focus()
     return true
@@ -884,7 +932,6 @@ ipcMain.handle("cloud-agent:open", async () => {
       sandbox: true,
     },
   })
-  // Grant microphone/camera permissions for speech recognition
   cloudAgentWindow.webContents.session.setPermissionRequestHandler((_wc, permission, callback) => {
     const allowed = permission === "media" || permission === "clipboard-sanitized-write" || permission === "notifications"
     callback(allowed)
@@ -896,7 +943,6 @@ ipcMain.handle("cloud-agent:open", async () => {
     }
     return false
   })
-  // Device permission handler for microphone access
   cloudAgentWindow.webContents.session.setDevicePermissionHandler((details, callback) => {
     if (details.deviceType === "microphone" || details.deviceType === "camera") {
       const url = details.requestingUrl || details.origin
@@ -908,9 +954,8 @@ ipcMain.handle("cloud-agent:open", async () => {
     callback(false)
   })
   cloudAgentWindow.setMenu(null)
-  await cloudAgentWindow.loadURL("https://zyraxon-pro.ai.studio/")
+  await cloudAgentWindow.loadURL(CLOUD_AGENT_URL)
   cloudAgentWindow.on("closed", () => { cloudAgentWindow = null })
-  // Inject speech bridge so Web Speech API works in the cloud agent window
   try {
     const { injectCloudAgentSpeechBridge } = await import("./windows")
     injectCloudAgentSpeechBridge(cloudAgentWindow)

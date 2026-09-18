@@ -170,6 +170,9 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
       return
     }
 
+    // Clear any previously accumulated transcript before starting fresh
+    try { await api.voiceClearAccumulatedTranscript?.() } catch {}
+
     setState("recording")
     registerVoiceListener()
 
@@ -215,6 +218,17 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     const api = (window as any).api
     if (api) {
       try { await api.voiceStopListening() } catch {}
+      // Get accumulated transcript from buffer as fallback
+      if (!finalText) {
+        try {
+          const accumulated = await api.voiceGetAccumulatedTranscript?.()
+          if (accumulated && accumulated.trim()) {
+            finalText = accumulated.trim()
+          }
+        } catch {}
+      }
+      // Clear buffer after retrieving
+      try { await api.voiceClearAccumulatedTranscript?.() } catch {}
     }
     safetyTimeout = setTimeout(() => {
       finishWithText()

@@ -166,6 +166,9 @@ export type ElectronAPI = {
   onVoiceTTSError: (callback: (error: string) => void) => () => void
   removeVoiceTTSAudioListener: () => void
   voiceSetGender: (gender: string) => Promise<void>
+  voiceGetAccumulatedTranscript: () => Promise<string>
+  voiceClearAccumulatedTranscript: () => Promise<void>
+  voiceGetTranscriptBuffer: () => Promise<Array<{ text: string; lang: string; timestamp: number }>>
 
   youtubeStreamStart: (config: StreamConfig) => Promise<StreamState>
   youtubeStreamStop: () => Promise<StreamState>
