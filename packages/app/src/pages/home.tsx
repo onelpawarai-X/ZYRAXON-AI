@@ -359,11 +359,19 @@ export function NewHome() {
   })
   zlog("HOME", "homedir created")
   const selectedProject = createMemo(() => projects().find((project) => project.worktree === selection().directory))
+
+  // Default project — always exists so users can create sessions without adding a project first
+  const DEFAULT_PROJECT: LocalProject = {
+    worktree: "/workspace",
+    expanded: true,
+    name: "Default Project",
+  }
   const newSessionProject = createMemo(
     () =>
       selectedProject() ??
       projects().find((project) => project.worktree === focusedServerCtx()?.projects.last()) ??
-      projects()[0],
+      projects()[0] ??
+      DEFAULT_PROJECT,
   )
   const directories = (project: LocalProject) => [project.worktree, ...(project.sandboxes ?? [])]
   const projectDirectories = createMemo(() => {
@@ -592,7 +600,10 @@ export function NewHome() {
       const homeDir = ctx?.sync?.data?.path?.home
       if (homeDir) {
         openProjectNewSession(conn, homeDir)
+        return
       }
+      // Use default project directory so sessions always work
+      openProjectNewSession(conn, "/workspace")
     }
   }
 
@@ -760,8 +771,8 @@ export function NewHome() {
                 onClose={closeSearch}
                 onSelect={selectSearchSession}
               />
-              <Show when={groups().length > 0 && newSessionProject()}>
-                <div class="pointer-events-none absolute right-0 top-[84px] z-20 flex lg:top-[108px]">
+              {/* Always show "New session" button — default project ensures it works */}
+              <div class="pointer-events-none absolute right-0 top-[84px] z-20 flex lg:top-[108px]">
                   <ButtonV2
                     data-action="home-new-session"
                     variant="ghost-muted"
@@ -773,7 +784,6 @@ export function NewHome() {
                     {language.t("command.session.new")}
                   </ButtonV2>
                 </div>
-              </Show>
             </div>
             {/* Sticky chrome for the portaled session scrollbar — matches old sessions ScrollView bounds */}
             <div class="pointer-events-none sticky top-[84px] z-40 h-0 -mr-3 lg:top-[108px]">
@@ -913,14 +923,30 @@ function HomeProjectColumn(props: {
               <Show
                 when={props.projects.length > 0}
                 fallback={
-                  <HomeProjectEmpty
-                    server={server}
-                    recentlyClosed={props.recentlyClosed}
-                    homedir={props.homedir}
-                    chooseProject={props.chooseProject}
-                    openRecentProject={props.openRecentProject}
-                    language={props.language}
-                  />
+                  <div class="flex min-w-0 flex-col gap-1 pr-3">
+                    {/* Default Project — always visible */}
+                    <button
+                      type="button"
+                      data-action="home-default-project"
+                      class={`${HOME_PROJECT_NAV_ROW} data-[selected]:bg-v2-background-bg-layer-03 data-[selected]:text-v2-text-text-base`}
+                      onClick={() => {
+                        props.openNewSession(server, "/workspace")
+                      }}
+                    >
+                      <IconV2 name="folder" size="small" class="text-v2-icon-icon-muted" />
+                      <span class={HOME_PROJECT_NAV_LABEL}>Default Project</span>
+                    </button>
+                    <button
+                      type="button"
+                      data-action="home-add-project-row"
+                      class={`${HOME_PROJECT_NAV_ROW} disabled:opacity-60 [&>[data-slot=icon-svg]]:text-v2-icon-icon-muted`}
+                      disabled={global.servers.health[ServerConnection.key(server)]?.healthy === false}
+                      onClick={() => props.chooseProject(server)}
+                    >
+                      <IconV2 name="folder-add-left" size="small" />
+                      <span class={HOME_PROJECT_NAV_LABEL}>{props.language.t("home.project.add")}</span>
+                    </button>
+                  </div>
                 }
               >
                 <HomeProjectList {...props} server={server} />
