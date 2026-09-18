@@ -983,7 +983,6 @@ function HomeUtilityNav(props: {
   const navigate = useNavigate()
   const [showCloudAgent, setShowCloudAgent] = createSignal(false)
   const [showMarketplace, setShowMarketplace] = createSignal(false)
-  const [showVoice, setShowVoice] = createSignal(false)
   return (
     <div class={`${props.class ?? ""} min-w-0 flex-col gap-1 pr-3`}>
       <button
@@ -1009,16 +1008,6 @@ function HomeUtilityNav(props: {
       <button
         type="button"
         class={`${HOME_PROJECT_NAV_ROW} h-10 rounded-[8px] text-v2-text-text-faint [&>[data-slot=icon-svg]]:text-v2-icon-icon-muted`}
-        onClick={() => setShowVoice(true)}
-      >
-        <span class="flex items-center gap-2">
-          <IconV2 name="mic" size="small" />
-          <span class={HOME_PROJECT_NAV_LABEL}>Voice</span>
-        </span>
-      </button>
-      <button
-        type="button"
-        class={`${HOME_PROJECT_NAV_ROW} h-10 rounded-[8px] text-v2-text-text-faint [&>[data-slot=icon-svg]]:text-v2-icon-icon-muted`}
         onClick={props.openSettings}
       >
         <span class="flex items-center gap-2">
@@ -1039,7 +1028,6 @@ function HomeUtilityNav(props: {
       <Portal>
         <CloudAgentDialog show={showCloudAgent()} onClose={() => setShowCloudAgent(false)} />
         <MarketplaceDialog show={showMarketplace()} onClose={() => setShowMarketplace(false)} />
-        <VoiceDialog show={showVoice()} onClose={() => setShowVoice(false)} />
       </Portal>
     </div>
   )
@@ -1113,41 +1101,6 @@ function MarketplaceDialog(props: { show: boolean; onClose: () => void }) {
           class="h-full w-full flex-1 border-0"
           allow="clipboard-read; clipboard-write"
           title="ZYRAXON Marketplace"
-        />
-      </div>
-    </div>
-  )
-}
-
-function VoiceDialog(props: { show: boolean; onClose: () => void }) {
-  return (
-    <div
-      class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-      style={{ display: props.show ? "flex" : "none" }}
-      onClick={props.onClose}
-    >
-      <div
-        class="relative flex h-[85vh] w-[90vw] max-w-[1200px] flex-col overflow-hidden rounded-xl border border-v2-border-border-base bg-v2-background-bg-base shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div class="flex items-center justify-between border-b border-v2-border-border-base px-4 py-3">
-          <div class="flex items-center gap-2">
-            <IconV2 name="mic" size="small" class="text-v2-icon-icon-muted" />
-            <span class="text-sm font-medium text-v2-text-text-base">ZYRAXON Voice</span>
-          </div>
-          <button
-            type="button"
-            class="flex h-7 w-7 items-center justify-center rounded-md text-v2-text-text-muted hover:bg-v2-overlay-simple-overlay-hover"
-            onClick={props.onClose}
-          >
-            <IconV2 name="close" size="small" />
-          </button>
-        </div>
-        <iframe
-          src="http://127.0.0.1:19800/"
-          class="h-full w-full flex-1 border-0"
-          allow="microphone; media"
-          title="ZYRAXON Voice"
         />
       </div>
     </div>
