@@ -1,4 +1,4 @@
-{
+﻿{
   "$schema": "https://json.schemastore.org/package.json",
   "name": "@zyraxon-ai/sdk-next",
   "version": "19.0.5",
@@ -30,3 +30,4 @@
     "@typescript/native-preview": "7.0.0-dev.20251207.1"
   }
 }
+

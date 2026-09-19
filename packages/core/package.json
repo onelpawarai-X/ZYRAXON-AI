@@ -1,4 +1,4 @@
-{
+﻿{
   "$schema": "https://json.schemastore.org/package.json",
   "version": "19.0.5",
   "name": "@zyraxon-ai/core",
@@ -101,3 +101,4 @@
     "typescript": "5.8.2"
   }
 }
+

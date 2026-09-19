@@ -1,10 +1,10 @@
-{
+﻿{
   "$schema": "https://json.schemastore.org/package.json",
   "name": "@zyraxon-ai/schema",
   "version": "19.0.5",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE",
-  "description": "ZYRAXON AI Schema definitions — Effect-TS schemas for the ZYRAXON protocol",
+  "description": "ZYRAXON AI Schema definitions â€” Effect-TS schemas for the ZYRAXON protocol",
   "homepage": "https://zyraxonai.lovable.app",
   "repository": {
     "type": "git",
@@ -43,3 +43,4 @@
     "typescript": "5.8.2"
   }
 }
+
