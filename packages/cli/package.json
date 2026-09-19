@@ -3,7 +3,7 @@
   "name": "@zyraxon-ai/cli",
   "version": "19.0.0",
   "type": "module",
-  "license": "BSL-1.1",
+  "license": "SEE LICENSE IN LICENSE",
   "bin": {
     "lildax": "./bin/lildax.cjs"
   },

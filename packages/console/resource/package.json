@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "@zyraxon-ai/console-resource",
-  "license": "BSL-1.1",
+  "license": "SEE LICENSE IN LICENSE",
   "dependencies": {
     "@cloudflare/workers-types": "catalog:"
   },

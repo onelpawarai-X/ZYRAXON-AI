@@ -5,10 +5,13 @@
     "outDir": "dist",
     "module": "nodenext",
     "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
     "moduleResolution": "nodenext",
     "lib": ["es2022", "dom", "dom.iterable"],
-    "composite": true,
-    "rootDir": "src"
+    "rootDir": "src",
+    "skipLibCheck": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "script"]
 }

@@ -1,9 +1,17 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "@zyraxon-ai/sdk-next",
-  "private": true,
+  "version": "19.0.5",
   "type": "module",
-  "license": "BSL-1.1",
+  "license": "SEE LICENSE IN LICENSE",
+  "description": "Next-generation ZYRAXON AI SDK built with Effect-TS",
+  "homepage": "https://zyraxonai.lovable.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/onelpawarai-X/ZYRAXON-AI.git",
+    "directory": "packages/sdk-next"
+  },
+  "author": "OMG / Lx Sayidi <sayidilx@gmail.com>",
   "exports": {
     ".": "./src/index.ts"
   },
@@ -12,14 +20,13 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
-    "@zyraxon-ai/client": "workspace:*",
-    "@zyraxon-ai/core": "workspace:*",
-    "@zyraxon-ai/server": "workspace:*",
-    "effect": "catalog:"
+    "@zyraxon-ai/client": "^19.0.5",
+    "@zyraxon-ai/server": "^19.0.5",
+    "effect": "4.0.0-beta.83"
   },
   "devDependencies": {
-    "@tsconfig/bun": "catalog:",
-    "@types/bun": "catalog:",
-    "@typescript/native-preview": "catalog:"
+    "@tsconfig/bun": "1.0.9",
+    "@types/bun": "1.3.13",
+    "@typescript/native-preview": "7.0.0-dev.20251207.1"
   }
 }

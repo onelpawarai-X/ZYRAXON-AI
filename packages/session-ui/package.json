@@ -3,7 +3,7 @@
   "version": "19.0.0",
   "private": true,
   "type": "module",
-  "license": "BSL-1.1",
+  "license": "SEE LICENSE IN LICENSE",
   "exports": {
     "./*": "./src/components/*.tsx",
     "./session-diff": "./src/components/session-diff.ts",

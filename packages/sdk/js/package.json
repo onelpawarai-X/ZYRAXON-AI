@@ -1,36 +1,84 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "@zyraxon-ai/sdk",
-  "version": "19.0.0",
+  "version": "19.0.5",
   "type": "module",
-  "license": "BSL-1.1",
+  "license": "SEE LICENSE IN LICENSE",
+  "description": "Official JavaScript/TypeScript SDK for ZYRAXON AI — Build AI-powered applications with ease",
+  "homepage": "https://zyraxonai.lovable.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/onelpawarai-X/ZYRAXON-AI.git",
+    "directory": "packages/sdk/js"
+  },
+  "bugs": {
+    "url": "https://github.com/onelpawarai-X/ZYRAXON-AI/issues"
+  },
+  "author": "OMG / Lx Sayidi <sayidilx@gmail.com>",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "test": "bun test",
     "typecheck": "tsgo --noEmit",
-    "build": "bun ./script/build.ts"
+    "build": "tsc --project tsconfig.json",
+    "prepublishOnly": "npm run build"
   },
   "exports": {
-    ".": "./src/index.ts",
-    "./client": "./src/client.ts",
-    "./server": "./src/server.ts",
-    "./v2": "./src/v2/index.ts",
-    "./v2/client": "./src/v2/client.ts",
-    "./v2/gen/client": "./src/v2/gen/client/index.ts",
-    "./v2/server": "./src/v2/server.ts",
-    "./v2/types": "./src/v2/gen/types.gen.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./v2": {
+      "types": "./dist/v2/index.d.ts",
+      "default": "./dist/v2/index.js"
+    },
+    "./v2/client": {
+      "types": "./dist/v2/client.d.ts",
+      "default": "./dist/v2/client.js"
+    },
+    "./v2/gen/client": {
+      "types": "./dist/v2/gen/client/index.d.ts",
+      "default": "./dist/v2/gen/client/index.js"
+    },
+    "./v2/server": {
+      "types": "./dist/v2/server.d.ts",
+      "default": "./dist/v2/server.js"
+    },
+    "./v2/types": {
+      "types": "./dist/v2/gen/types.gen.d.ts",
+      "default": "./dist/v2/gen/types.gen.js"
+    }
   },
   "files": [
     "dist"
   ],
+  "keywords": [
+    "zyraxon",
+    "ai",
+    "sdk",
+    "llm",
+    "chatbot",
+    "artificial-intelligence",
+    "typescript",
+    "javascript"
+  ],
   "devDependencies": {
     "@hey-api/openapi-ts": "0.90.10",
-    "@tsconfig/node22": "catalog:",
-    "@types/cross-spawn": "catalog:",
-    "@types/node": "catalog:",
-    "@typescript/native-preview": "catalog:",
-    "typescript": "catalog:"
+    "@tsconfig/node22": "22.0.2",
+    "@types/cross-spawn": "6.0.6",
+    "@types/node": "24.12.2",
+    "@typescript/native-preview": "7.0.0-dev.20251207.1",
+    "typescript": "5.8.2"
   },
   "dependencies": {
-    "cross-spawn": "catalog:"
+    "cross-spawn": "^7.0.3"
   }
 }

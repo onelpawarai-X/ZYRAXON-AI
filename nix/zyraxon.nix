@@ -101,8 +101,8 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   meta = {
     description = "The open source coding agent";
-    homepage = "https://zyraxon.ai";
-    license = lib.licenses.mit;
+    homepage = "https://zyraxonai.lovable.app";
+    license = lib.licenses.free;  # ZSL-X: Free for all uses including commercial
     mainProgram = "zyraxon";
     inherit (node_modules.meta) platforms;
   };

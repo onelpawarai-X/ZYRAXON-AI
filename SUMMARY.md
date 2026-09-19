@@ -2,10 +2,10 @@
 
 ## Project Overview
 - **Name**: ZYRAXON-AI
-- **Version**: 1.17.0
-- **License**: BSL-1.1
-- **Repository**: https://github.com/onelpawarai/ZYRAXON-AI
-- **Description**: AI-powered autonomous agent with 224+ control system tools, YouTube streaming, self-healing, and cross-platform support
+- **Version**: 19.0.2
+- **License**: ZSL-X (Zyraxon Sovereign License — X Edition)
+- **Repository**: https://github.com/onelpawarai-X/ZYRAXON-AI
+- **Description**: AI-powered autonomous agent with 552+ control system tools, YouTube streaming, self-healing, and cross-platform support
 
 ## Directory Structure
 

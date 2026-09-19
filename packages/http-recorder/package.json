@@ -1,54 +1,33 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "version": "19.0.0",
+  "version": "19.0.5",
   "name": "@zyraxon-ai/http-recorder",
   "description": "Record and replay Effect HTTP client traffic with deterministic cassettes",
   "type": "module",
-  "license": "BSL-1.1",
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://zyraxonai.lovable.app",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/onelpawarai/ZYRAXON-AI.git",
+    "url": "https://github.com/onelpawarai-X/ZYRAXON-AI.git",
     "directory": "packages/http-recorder"
   },
-  "homepage": "https://github.com/onelpawarai/ZYRAXON-AI/tree/dev/packages/http-recorder",
-  "bugs": "https://github.com/onelpawarai/ZYRAXON-AI/issues",
-  "keywords": [
-    "effect",
-    "http",
-    "recording",
-    "replay",
-    "testing",
-    "vcr"
-  ],
-  "engines": {
-    "node": ">=22"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "scripts": {
-    "test": "bun test --timeout 30000 --only-failures",
-    "typecheck": "tsgo --noEmit",
-    "build": "bun ./script/build.ts",
-    "verify:package": "bun ./script/verify-package.ts"
-  },
+  "author": "OMG / Lx Sayidi <sayidilx@gmail.com>",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./internal": "./src/internal.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./internal": {
+      "types": "./dist/internal.d.ts",
+      "default": "./dist/internal.js"
+    }
   },
-  "files": [
-    "dist",
-    "README.md",
-    "CHANGELOG.md",
-    "LICENSE"
-  ],
-  "devDependencies": {
-    "@tsconfig/node22": "catalog:",
-    "@types/bun": "catalog:",
-    "@types/node": "catalog:",
-    "@typescript/native-preview": "catalog:",
-    "effect": "catalog:",
-    "typescript": "catalog:"
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@effect/platform-node": "4.0.0-beta.83",
@@ -56,5 +35,13 @@
   },
   "peerDependencies": {
     "effect": "4.0.0-beta.83"
+  },
+  "devDependencies": {
+    "@tsconfig/node22": "22.0.2",
+    "@types/bun": "1.3.13",
+    "@types/node": "24.12.2",
+    "@typescript/native-preview": "7.0.0-dev.20251207.1",
+    "effect": "4.0.0-beta.83",
+    "typescript": "5.8.2"
   }
 }

@@ -1,22 +1,36 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "version": "19.0.0",
+  "version": "19.0.5",
   "name": "@zyraxon-ai/effect-sqlite-node",
   "type": "module",
-  "license": "BSL-1.1",
-  "private": true,
-  "scripts": {
-    "typecheck": "tsgo --noEmit"
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://zyraxonai.lovable.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/onelpawarai-X/ZYRAXON-AI.git",
+    "directory": "packages/effect-sqlite-node"
   },
+  "author": "OMG / Lx Sayidi <sayidilx@gmail.com>",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
-  "devDependencies": {
-    "@tsconfig/bun": "catalog:",
-    "@types/node": "catalog:",
-    "@typescript/native-preview": "catalog:"
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "effect": "catalog:"
+    "effect": "4.0.0-beta.83"
+  },
+  "devDependencies": {
+    "@tsconfig/bun": "1.0.9",
+    "@types/node": "24.12.2",
+    "@typescript/native-preview": "7.0.0-dev.20251207.1",
+    "typescript": "5.8.2"
   }
 }

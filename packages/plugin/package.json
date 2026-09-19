@@ -1,9 +1,17 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "@zyraxon-ai/plugin",
-  "version": "19.0.0",
+  "version": "19.0.5",
   "type": "module",
-  "license": "BSL-1.1",
+  "license": "SEE LICENSE IN LICENSE",
+  "description": "ZYRAXON AI Plugin System — extend ZYRAXON with custom tools and integrations",
+  "homepage": "https://zyraxonai.lovable.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/onelpawarai-X/ZYRAXON-AI.git",
+    "directory": "packages/plugin"
+  },
+  "author": "OMG / Lx Sayidi <sayidilx@gmail.com>",
   "scripts": {
     "typecheck": "tsgo --noEmit",
     "build": "tsc"
@@ -22,9 +30,9 @@
   ],
   "dependencies": {
     "@ai-sdk/provider": "3.0.8",
-    "@zyraxon-ai/sdk": "workspace:*",
-    "effect": "catalog:",
-    "zod": "catalog:"
+    "@zyraxon-ai/sdk": "^19.0.5",
+    "effect": "4.0.0-beta.83",
+    "zod": "4.1.8"
   },
   "peerDependencies": {
     "@opentui/core": ">=0.4.5",
@@ -32,23 +40,17 @@
     "@opentui/solid": ">=0.4.5"
   },
   "peerDependenciesMeta": {
-    "@opentui/core": {
-      "optional": true
-    },
-    "@opentui/keymap": {
-      "optional": true
-    },
-    "@opentui/solid": {
-      "optional": true
-    }
+    "@opentui/core": { "optional": true },
+    "@opentui/keymap": { "optional": true },
+    "@opentui/solid": { "optional": true }
   },
   "devDependencies": {
-    "@opentui/core": "catalog:",
-    "@opentui/keymap": "catalog:",
-    "@opentui/solid": "catalog:",
-    "@tsconfig/node22": "catalog:",
-    "@types/node": "catalog:",
-    "typescript": "catalog:",
-    "@typescript/native-preview": "catalog:"
+    "@opentui/core": "0.4.5",
+    "@opentui/keymap": "0.4.5",
+    "@opentui/solid": "0.4.5",
+    "@tsconfig/node22": "22.0.2",
+    "@types/node": "24.12.2",
+    "typescript": "5.8.2",
+    "@typescript/native-preview": "7.0.0-dev.20251207.1"
   }
 }

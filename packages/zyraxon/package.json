@@ -3,7 +3,7 @@
   "version": "19.0.2",
   "name": "zyraxon",
   "type": "module",
-  "license": "BSL-1.1",
+  "license": "SEE LICENSE IN LICENSE",
   "private": true,
   "scripts": {
     "typecheck": "tsgo --noEmit",
