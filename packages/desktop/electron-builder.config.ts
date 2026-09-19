@@ -24,17 +24,36 @@ async function signWindows(configuration: { path: string }) {
   )
 }
 
-function copyJarvisNodeModules(configuration: { appOutDir: string }) {
-  const src = path.join(packageDir, "resources", "jarvis-browser", "node_modules")
-  const dst = path.join(configuration.appOutDir, "resources", "jarvis-browser", "node_modules")
-  if (existsSync(src)) {
-    cpSync(src, dst, { recursive: true })
-    console.log("[afterPack] Copied jarvis-browser node_modules to", dst)
+function copyMcpBundles(configuration: { appOutDir: string }) {
+  const resourcesDst = path.join(configuration.appOutDir, "resources")
+
+  // Copy jarvis-browser node_modules
+  const jarvisSrc = path.join(packageDir, "resources", "jarvis-browser", "node_modules")
+  const jarvisDst = path.join(resourcesDst, "jarvis-browser", "node_modules")
+  if (existsSync(jarvisSrc)) {
+    cpSync(jarvisSrc, jarvisDst, { recursive: true })
+    console.log("[afterPack] Copied jarvis-browser node_modules to", jarvisDst)
+  }
+
+  // Copy nuphus-mcp bundle (build script creates this)
+  const nuphusSrc = path.join(packageDir, "resources", "nuphus-mcp")
+  const nuphusDst = path.join(resourcesDst, "nuphus-mcp")
+  if (existsSync(nuphusSrc)) {
+    cpSync(nuphusSrc, nuphusDst, { recursive: true })
+    console.log("[afterPack] Copied nuphus-mcp to", nuphusDst)
+  }
+
+  // Copy zyraxon-cross-mcp-v2 bundle (build script creates this)
+  const crossV2Src = path.join(packageDir, "resources", "zyraxon-cross-mcp-v2")
+  const crossV2Dst = path.join(resourcesDst, "zyraxon-cross-mcp-v2")
+  if (existsSync(crossV2Src)) {
+    cpSync(crossV2Src, crossV2Dst, { recursive: true })
+    console.log("[afterPack] Copied zyraxon-cross-mcp-v2 to", crossV2Dst)
   }
 }
 
 const afterPack = (context: { appOutDir: string }) => {
-  copyJarvisNodeModules(context)
+  copyMcpBundles(context)
 }
 
 const channel = (() => {
@@ -71,6 +90,8 @@ const getBase = (appId: string): Configuration => ({
     "node_modules/playwright/**",
     "node_modules/chromium-bidi/**",
     "jarvis-browser/**",
+    "nuphus-mcp/**",
+    "zyraxon-cross-mcp-v2/**",
   ],
   extraResources: [
     {
@@ -110,6 +131,16 @@ const getBase = (appId: string): Configuration => ({
       from: "resources/jarvis-browser",
       to: "jarvis-browser",
       filter: ["package.json", "node_modules/**/*"],
+    },
+    {
+      from: "resources/nuphus-mcp",
+      to: "nuphus-mcp",
+      filter: ["*.cjs", "*.js", "*.json", "*.md"],
+    },
+    {
+      from: "resources/zyraxon-cross-mcp-v2",
+      to: "zyraxon-cross-mcp-v2",
+      filter: ["*.py", "*.cjs", "*.js", "*.json", "*.md", "libs/**/*"],
     },
     {
       from: "assets/videos",

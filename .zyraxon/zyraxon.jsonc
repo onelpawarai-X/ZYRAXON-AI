@@ -11,8 +11,25 @@
   "mcp": {
     "jarvis-browser": {
       "type": "local",
-      "command": ["node", "packages/desktop/resources/jarvis-browser-mcp.cjs", "--headless", "--browser", "chrome", "--no-sandbox"],
-      "cwd": "."
+      "command": ["node", "__RESOURCES_PATH__/jarvis-browser-mcp.cjs", "--headless", "--browser", "chrome", "--no-sandbox"],
+      "enabled": true,
+      "environment": {
+        "PLAYWRIGHT_MCP_HEADLESS": "true"
+      }
+    },
+    "nuphus-desktop": {
+      "type": "local",
+      "command": ["node", "__RESOURCES_PATH__/nuphus-mcp/nuphus-mcp.cjs"],
+      "enabled": true,
+      "environment": {}
+    },
+    "zyraxon-cross-mcp": {
+      "type": "local",
+      "command": ["python", "__RESOURCES_PATH__/zyraxon-cross-mcp-v2/run.py"],
+      "enabled": true,
+      "environment": {
+        "PYTHONPATH": "__RESOURCES_PATH__/zyraxon-cross-mcp-v2/libs"
+      }
     }
   },
   "tools": {

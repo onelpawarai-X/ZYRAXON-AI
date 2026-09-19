@@ -3,8 +3,11 @@ import * as Tool from "./tool"
 import { Global } from "@zyraxon-ai/core/global"
 import path from "path"
 import fs from "fs/promises"
-import { execSync } from "child_process"
+import { execFile } from "child_process"
+import { promisify } from "util"
 import os from "os"
+
+const execFileAsync = promisify(execFile)
 
 const SCREENSHOT_DIR = path.join(Global.Path.data, "pro", "screenshots")
 
@@ -14,8 +17,8 @@ async function ensureDir() {
 
 async function takeScreenshot(): Promise<string> {
   await ensureDir()
-  const filename = `screen_${Date.now()}.png`
-  const filepath = path.join(SCREENSHOT_DIR, filename)
+  const pngPath = path.join(SCREENSHOT_DIR, `screen_${Date.now()}.png`)
+  const jpgPath = path.join(SCREENSHOT_DIR, `screen_${Date.now()}.jpg`)
 
   if (process.platform === "win32") {
     const psScript = `
@@ -25,24 +28,31 @@ async function takeScreenshot(): Promise<string> {
       $bitmap = New-Object System.Drawing.Bitmap($bounds.Width, $bounds.Height)
       $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
       $graphics.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
-      $bitmap.Save('${filepath.replace(/\\/g, "\\\\")}')
+      $bitmap.Save('${pngPath.replace(/\\/g, "\\\\")}')
       $graphics.Dispose()
       $bitmap.Dispose()
     `
     const tempScript = path.join(os.tmpdir(), `screenshot_${Date.now()}.ps1`)
     await fs.writeFile(tempScript, psScript, "utf-8")
     try {
-      execSync(`powershell -ExecutionPolicy Bypass -File "${tempScript}"`, { stdio: "pipe", timeout: 15000 })
+      await execFileAsync("powershell", ["-ExecutionPolicy", "Bypass", "-File", tempScript], { timeout: 15000 })
     } finally {
       await fs.unlink(tempScript).catch(() => {})
     }
   } else if (process.platform === "darwin") {
-    execSync(`screencapture -x "${filepath}"`, { stdio: "pipe" })
+    await execFileAsync("screencapture", ["-x", pngPath], { timeout: 15000 })
   } else {
-    execSync(`import -window root "${filepath}"`, { stdio: "pipe" })
+    await execFileAsync("import", ["-window", "root", pngPath], { timeout: 15000 })
   }
 
-  return filepath
+  try {
+    const sharp = (await import("sharp")).default
+    await sharp(pngPath).jpeg({ quality: 80 }).toFile(jpgPath)
+    await fs.unlink(pngPath).catch(() => {})
+    return jpgPath
+  } catch {
+    return pngPath
+  }
 }
 
 async function ocrScreenshot(_filepath: string): Promise<string> {

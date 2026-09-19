@@ -6,6 +6,7 @@
 import { exec } from "child_process"
 import { promisify } from "util"
 import fs from "fs"
+import fsAsync from "fs/promises"
 import path from "path"
 import os from "os"
 import { Global } from "@zyraxon-ai/core/global"
@@ -70,7 +71,7 @@ $g.Dispose(); $bmp.Dispose()
 Write-Output "$totalW|$totalH"
 `
         cachedPsPath = path.join(os.tmpdir(), "zyx_fast_cap.ps1")
-        fs.writeFileSync(cachedPsPath, psScript, "utf-8")
+        await fsAsync.writeFile(cachedPsPath, psScript, "utf-8")
       }
       const { stdout } = await execAsync(`powershell -ExecutionPolicy Bypass -NoProfile -File "${cachedPsPath}"`, { timeout: 10000 })
       const dims = stdout.trim().split("|").map(Number)
@@ -86,11 +87,26 @@ Write-Output "$totalW|$totalH"
       }
       if (!method) throw new Error("No capture tool")
     }
-    const stats = fs.statSync(filepath)
+    const stats = await fsAsync.stat(filepath)
     return { id: `cap_${Date.now()}`, timestamp: Date.now(), filepath, platform, size: stats.size, width: w, height: h, method }
   } catch (e) {
     return { id: `cap_err_${Date.now()}`, timestamp: Date.now(), filepath: "", platform, size: 0, method: "none", error: e instanceof Error ? e.message : String(e) }
   }
+}
+
+// Debounce writes to avoid flooding the event loop
+let pendingWrite: ReturnType<typeof setTimeout> | null = null
+let pendingMeta: ScreenCapture | null = null
+
+function debouncedWriteMeta(cap: ScreenCapture) {
+  pendingMeta = cap
+  if (pendingWrite) return
+  pendingWrite = setTimeout(() => {
+    pendingWrite = null
+    if (pendingMeta) {
+      fsAsync.writeFile(LATEST_JSON, JSON.stringify({ ...pendingMeta, buffer: undefined })).catch(() => {})
+    }
+  }, 200)
 }
 
 function startAutoCapture(intervalMs: number = CAPTURE_INTERVAL_MS): void {
@@ -100,10 +116,12 @@ function startAutoCapture(intervalMs: number = CAPTURE_INTERVAL_MS): void {
   const tick = async () => {
     const cap = await captureScreen()
     if (cap.filepath && cap.size > 1000) {
-      try { latestBuffer = fs.readFileSync(cap.filepath) } catch {}
+      try {
+        latestBuffer = await fsAsync.readFile(cap.filepath)
+      } catch {}
     }
     latestCapture = cap
-    fs.writeFileSync(LATEST_JSON, JSON.stringify({ ...cap, buffer: undefined }))
+    debouncedWriteMeta(cap)
   }
   tick()
   daemonInterval = setInterval(tick, intervalMs)
@@ -119,12 +137,12 @@ function getLatestCapture(): { capture: ScreenCapture | null; buffer: Buffer | n
 }
 
 function captureNowSync(): ScreenCapture | null {
-  captureScreen().then(c => {
+  captureScreen().then(async c => {
     if (c.filepath && c.size > 1000) {
-      try { latestBuffer = fs.readFileSync(c.filepath) } catch {}
+      try { latestBuffer = await fsAsync.readFile(c.filepath) } catch {}
     }
     latestCapture = c
-    fs.writeFileSync(LATEST_JSON, JSON.stringify({ ...c, buffer: undefined }))
+    debouncedWriteMeta(c)
   })
   return latestCapture
 }

@@ -36,6 +36,28 @@ import { McpEvent } from "@zyraxon-ai/schema/mcp-event"
 import { McpBrowser } from "./browser"
 
 const DEFAULT_TIMEOUT = 30_000
+
+// Cache resolved node path to avoid repeated blocking `where` calls
+let _cachedNodePath: string | null = null
+let _nodePathResolved = false
+
+async function resolveNodePath(): Promise<string> {
+  if (_nodePathResolved) return _cachedNodePath ?? "node"
+  _nodePathResolved = true
+  try {
+    const { execFile: _execFile } = require("child_process") as typeof import("child_process")
+    const { promisify } = require("util") as typeof import("util")
+    const execFileAsync = promisify(_execFile)
+    const { stdout } = await execFileAsync("where", ["node"], { encoding: "utf8", timeout: 5000 })
+    const nodePath = stdout.trim().split("\n")[0]?.trim()
+    if (nodePath && (require("fs") as typeof import("fs")).existsSync(nodePath)) {
+      _cachedNodePath = nodePath
+    }
+  } catch {
+    // where not available or node not on PATH — leave as null (fall back to "node")
+  }
+  return _cachedNodePath ?? "node"
+}
 const CLIENT_OPTIONS = {
   capabilities: {
     // https://github.com/onelpawarai/ZYRAXON-AI/issues/11948
@@ -349,26 +371,28 @@ const layer = Layer.effect(
       // Try multiple paths: env var, packaged Electron resourcesPath, then dev fallbacks
       const findResourcesPath = (): string => {
         const fs = require("fs") as typeof import("fs")
+        const markerFiles = ["jarvis-browser-mcp.cjs", "nuphus-mcp/nuphus-mcp.cjs", "zyraxon-cross-mcp-v2/run.py"]
+        const hasResources = (p: string) => markerFiles.some((m) => fs.existsSync(path.join(p, m)))
         // 1. ZYRAXON_RESOURCES_PATH env var (set by Electron main process for sidecar)
         if (process.env.ZYRAXON_RESOURCES_PATH) {
           const p = process.env.ZYRAXON_RESOURCES_PATH
-          if (fs.existsSync(path.join(p, "jarvis-browser-mcp.cjs"))) return p
+          if (hasResources(p)) return p
         }
         // 2. Packaged Electron: process.resourcesPath works in main process
         if (typeof process !== "undefined" && (process as any).resourcesPath) {
           const p = (process as any).resourcesPath as string
-          if (fs.existsSync(path.join(p, "jarvis-browser-mcp.cjs"))) return p
+          if (hasResources(p)) return p
         }
         // 3. Dev mode: resolve relative to this file (packages/zyraxon/src/mcp/)
         try {
           const { fileURLToPath } = require("url") as typeof import("url")
           const here = path.dirname(fileURLToPath(import.meta.url))
           const devResources = path.resolve(here, "../../../desktop/resources")
-          if (fs.existsSync(path.join(devResources, "jarvis-browser-mcp.cjs"))) return devResources
+          if (hasResources(devResources)) return devResources
         } catch {}
         // 4. Fallback: check resources dir relative to baseDir
         const fallback = path.resolve(baseDir, "packages/desktop/resources")
-        if (fs.existsSync(path.join(fallback, "jarvis-browser-mcp.cjs"))) return fallback
+        if (hasResources(fallback)) return fallback
         return baseDir
       }
       const resourcesPath = findResourcesPath()
@@ -376,18 +400,9 @@ const layer = Layer.effect(
       let resolvedCmd = resolvePath(cmd)
       const resolvedArgs = args.map(resolvePath)
 
-      // Resolve "node" to full path if bare command not found
+      // Resolve "node" to full path if bare command not found (cached, async)
       if (resolvedCmd === "node" || resolvedCmd === "node.exe") {
-        try {
-          const { execFileSync: _exec } = require("child_process") as typeof import("child_process")
-          const whereOut = _exec("where", ["node"], { encoding: "utf8", timeout: 5000 }).trim()
-          const nodePath = whereOut.split("\n")[0]?.trim()
-          if (nodePath && (require("fs") as typeof import("fs")).existsSync(nodePath)) {
-            resolvedCmd = nodePath
-          }
-        } catch {
-          // where not available or node not on PATH — leave as "node" and let spawn fail clearly
-        }
+        resolvedCmd = yield* Effect.promise(() => resolveNodePath())
       }
 
       const transport = new StdioClientTransport({

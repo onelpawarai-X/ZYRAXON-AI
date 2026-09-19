@@ -564,6 +564,8 @@ const main = Effect.gen(function* () {
         const resolved = execCmd("where node", { encoding: "utf8", timeout: 3000 }).trim().split("\n")[0].trim()
         if (resolved && existsSync(resolved)) nodeExe = resolved
       } catch {}
+      const nuphusMcpPath = join(resourcesPath, "nuphus-mcp", "nuphus-mcp.cjs")
+      const crossMcpPath = join(resourcesPath, "zyraxon-cross-mcp-v2", "run.py")
       const defaultConfig = {
         "$schema": "https://zyraxon.ai/config.json",
         "mcp": {
@@ -573,6 +575,20 @@ const main = Effect.gen(function* () {
             "enabled": true,
             "environment": {
               "PLAYWRIGHT_MCP_HEADLESS": "true"
+            }
+          },
+          "nuphus-desktop": {
+            "type": "local",
+            "command": [nodeExe, nuphusMcpPath],
+            "enabled": true,
+            "environment": {}
+          },
+          "zyraxon-cross-mcp": {
+            "type": "local",
+            "command": ["python", crossMcpPath],
+            "enabled": true,
+            "environment": {
+              "PYTHONPATH": join(resourcesPath, "zyraxon-cross-mcp-v2", "libs")
             }
           }
         }
@@ -593,22 +609,31 @@ const main = Effect.gen(function* () {
           let existing = readFileSync(configPath, "utf-8")
           if (existing.charCodeAt(0) === 0xFEFF) existing = existing.slice(1)
           const parsed = JSON.parse(existing)
-          if (!parsed.mcp || !parsed.mcp["jarvis-browser"]) {
-            parsed.mcp = parsed.mcp || {}
-            parsed.mcp["jarvis-browser"] = defaultConfig.mcp["jarvis-browser"]
-            writeFileSync(configPath, JSON.stringify(parsed, null, 2), "utf-8")
-            logger.info("added jarvis-browser to existing MCP config", { path: configPath })
-          } else {
-            const existingCmd = parsed.mcp["jarvis-browser"].command
-            const existingPath = existingCmd?.[1] ?? ""
-            const nodeCmd = existingCmd?.[0] ?? ""
-            const pathBroken = !existingPath || !existsSync(existingPath) || existingPath.includes("__RESOURCES_PATH__") || existingPath.includes("app.asar")
-            const nodeBroken = !nodeCmd || nodeCmd === "node" || !existsSync(nodeCmd)
-            if (pathBroken || nodeBroken) {
-              parsed.mcp["jarvis-browser"].command = defaultConfig.mcp["jarvis-browser"].command
-              writeFileSync(configPath, JSON.stringify(parsed, null, 2), "utf-8")
-              logger.info("fixed jarvis-browser MCP config", { path: configPath, oldNode: nodeCmd, oldPath: existingPath })
+          let changed = false
+          if (!parsed.mcp) { parsed.mcp = {} }
+          // Ensure all 3 MCP servers exist
+          for (const [name, def] of Object.entries(defaultConfig.mcp)) {
+            if (!parsed.mcp[name]) {
+              parsed.mcp[name] = def
+              changed = true
+              logger.info(`added ${name} to MCP config`, { path: configPath })
             }
+          }
+          // Fix broken paths (hardcoded or inside asar)
+          for (const [name, def] of Object.entries(defaultConfig.mcp)) {
+            const existingCmd = parsed.mcp[name]?.command
+            if (!existingCmd) continue
+            const existingPath = existingCmd[1] ?? ""
+            const pathBroken = !existingPath || !existsSync(existingPath) || existingPath.includes("__RESOURCES_PATH__") || existingPath.includes("app.asar")
+            if (pathBroken) {
+              parsed.mcp[name].command = def.command
+              if (def.environment) parsed.mcp[name].environment = def.environment
+              changed = true
+              logger.info(`fixed ${name} MCP config`, { path: configPath, oldPath: existingPath })
+            }
+          }
+          if (changed) {
+            writeFileSync(configPath, JSON.stringify(parsed, null, 2), "utf-8")
           }
         }
       }

@@ -264,6 +264,14 @@ function getToolRequiredTier(toolId: string): Tier {
 
 export { getCurrentTier, hasAccess, getToolRequiredTier }
 
+// Lazy-loaded registry helper — call this instead of xToolRegistry for deferred initialization
+let _xToolRegistryCache: XToolDef[] | null = null
+export function getXToolRegistry(): XToolDef[] {
+  if (_xToolRegistryCache) return _xToolRegistryCache
+  _xToolRegistryCache = xToolRegistry
+  return _xToolRegistryCache
+}
+
 export const xToolRegistry: XToolDef[] = [
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -3799,24 +3807,24 @@ export const xToolRegistry: XToolDef[] = [
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function getToolsByCategory(category: string): XToolDef[] {
-  return xToolRegistry.filter(t => t.category === category)
+  return getXToolRegistry().filter(t => t.category === category)
 }
 
 export function getToolById(id: string): XToolDef | undefined {
-  return xToolRegistry.find(t => t.id === id)
+  return getXToolRegistry().find(t => t.id === id)
 }
 
 export function getAllCategories(): string[] {
-  return [...new Set(xToolRegistry.map(t => t.category))]
+  return [...new Set(getXToolRegistry().map(t => t.category))]
 }
 
 export function getToolCount(): number {
-  return xToolRegistry.length
+  return getXToolRegistry().length
 }
 
 export function getToolCountByCategory(): Record<string, number> {
   const counts: Record<string, number> = {}
-  for (const tool of xToolRegistry) {
+  for (const tool of getXToolRegistry()) {
     counts[tool.category] = (counts[tool.category] || 0) + 1
   }
   return counts

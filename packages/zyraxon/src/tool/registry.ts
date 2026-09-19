@@ -156,14 +156,23 @@ const layer = Layer.effect(
           const entries = Object.entries(args)
           const allZod = entries.every((entry) => isZodType(entry[1]))
           const zodParams = allZod ? z.object(args) : undefined
-          const jsonSchema = zodParams ? zodJsonSchema(zodParams) : legacyJsonSchema(entries)
           const parameters = zodParams
             ? Schema.declare<unknown>((u): u is unknown => zodParams.safeParse(u).success)
             : Schema.Unknown
-          return {
+          // Defer expensive Zod→JSON Schema conversion until first access
+          let _jsonSchema: JSONSchema7 | undefined
+          let _jsonSchemaComputed = false
+          const computeJsonSchema = (): JSONSchema7 => {
+            if (!_jsonSchemaComputed) {
+              _jsonSchema = zodParams ? zodJsonSchema(zodParams) : legacyJsonSchema(entries)
+              _jsonSchemaComputed = true
+            }
+            return _jsonSchema!
+          }
+          const toolObj: Tool.Def = {
             id,
             parameters,
-            jsonSchema,
+            get jsonSchema() { return computeJsonSchema() },
             description: def.description,
             execute: (args, toolCtx) =>
               Effect.gen(function* () {
@@ -203,6 +212,7 @@ const layer = Layer.effect(
                 }),
               ),
           }
+          return toolObj
         }
 
         const dirs = yield* config.directories()
