@@ -371,7 +371,7 @@ const layer = Layer.effect(
       // Try multiple paths: env var, packaged Electron resourcesPath, then dev fallbacks
       const findResourcesPath = (): string => {
         const fs = require("fs") as typeof import("fs")
-        const markerFiles = ["jarvis-browser-mcp.cjs", "nuphus-mcp/nuphus-mcp.cjs", "zyraxon-cross-mcp-v2/run.py"]
+        const markerFiles = ["jarvis-browser-mcp.cjs", "nuphus-mcp/nuphus-mcp.cjs", "touchpoint-mcp/touchpoint-mcp.cjs"]
         const hasResources = (p: string) => markerFiles.some((m) => fs.existsSync(path.join(p, m)))
         // 1. ZYRAXON_RESOURCES_PATH env var (set by Electron main process for sidecar)
         if (process.env.ZYRAXON_RESOURCES_PATH) {

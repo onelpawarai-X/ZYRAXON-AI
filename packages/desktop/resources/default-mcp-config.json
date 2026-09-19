@@ -14,12 +14,13 @@
       "enabled": true,
       "environment": {}
     },
-    "zyraxon-cross-mcp": {
+    "touchpoint-mcp": {
       "type": "local",
-      "command": ["python", "__RESOURCES_PATH__/zyraxon-cross-mcp-v2/run.py"],
+      "command": ["python", "__RESOURCES_PATH__/touchpoint-mcp/run.py"],
       "enabled": true,
       "environment": {
-        "PYTHONPATH": "__RESOURCES_PATH__/zyraxon-cross-mcp-v2/libs"
+        "PYTHONPATH": "__RESOURCES_PATH__/touchpoint-mcp/libs",
+        "TOUCHPOINT_MODE": "no-vision"
       }
     }
   }

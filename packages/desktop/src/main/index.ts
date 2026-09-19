@@ -565,7 +565,7 @@ const main = Effect.gen(function* () {
         if (resolved && existsSync(resolved)) nodeExe = resolved
       } catch {}
       const nuphusMcpPath = join(resourcesPath, "nuphus-mcp", "nuphus-mcp.cjs")
-      const crossMcpPath = join(resourcesPath, "zyraxon-cross-mcp-v2", "run.py")
+      const touchpointMcpCjs = join(resourcesPath, "touchpoint-mcp", "touchpoint-mcp.cjs")
       const defaultConfig = {
         "$schema": "https://zyraxon.ai/config.json",
         "mcp": {
@@ -583,12 +583,12 @@ const main = Effect.gen(function* () {
             "enabled": true,
             "environment": {}
           },
-          "zyraxon-cross-mcp": {
+          "touchpoint-mcp": {
             "type": "local",
-            "command": ["python", crossMcpPath],
+            "command": [nodeExe, touchpointMcpCjs],
             "enabled": true,
             "environment": {
-              "PYTHONPATH": join(resourcesPath, "zyraxon-cross-mcp-v2", "libs")
+              "TOUCHPOINT_MODE": "no-vision"
             }
           }
         }

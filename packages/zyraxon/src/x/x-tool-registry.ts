@@ -3607,11 +3607,129 @@ export const xToolRegistry: XToolDef[] = [
   // ═══════════════════════════════════════════════════════════════════════════
   // DAILY TASK SYSTEM (5 tools)
   // ═══════════════════════════════════════════════════════════════════════════
-  { id: "x_task_create", name: "Create Daily Task", description: "Create a scheduled daily task with specific time and action", parameters: { name: { type: "string", description: "Task name", required: true }, time: { type: "string", description: "Time like '09:00' or '14:30'", required: true }, action: { type: "string", description: "What to do: 'open_app', 'run_script', 'send_message', 'browse_url'", required: true }, target: { type: "string", description: "App name, URL, or script path", required: true }, days: { type: "string", description: "Days: 'mon-fri', 'daily', 'weekends', or comma-separated 'mon,tue,wed'" } }, category: "daily-task", execute: async (a) => { try { const fs = require('fs'); const path = require('path'); const tasksFile = path.join(process.env.HOME || process.env.USERPROFILE || '', '.zyraxon', 'daily-tasks.json'); let tasks = []; if (fs.existsSync(tasksFile)) { tasks = JSON.parse(fs.readFileSync(tasksFile, 'utf-8')); } const task = { id: Date.now().toString(36), name: a.name, time: a.time, action: a.action, target: a.target, days: a.days || 'daily', enabled: true, createdAt: new Date().toISOString() }; tasks.push(task); fs.mkdirSync(path.dirname(tasksFile), { recursive: true }); fs.writeFileSync(tasksFile, JSON.stringify(tasks, null, 2)); return { ok: true, data: task }; } catch (e) { return { ok: false, error: e.message }; } } },
+  { id: "x_task_create", name: "Create Daily Task", description: "Create a scheduled daily task with specific time and action", parameters: { name: { type: "string", description: "Task name", required: true }, time: { type: "string", description: "Time like '09:00' or '14:30'", required: true }, action: { type: "string", description: "What to do: 'open_app', 'run_script', 'send_message', 'browse_url', 'ai_prompt'", required: true }, target: { type: "string", description: "App name, URL, or script path", required: true }, prompt: { type: "string", description: "AI prompt to execute when task runs (for ai_prompt action)" }, days: { type: "string", description: "Days: 'mon-fri', 'daily', 'weekends', or comma-separated 'mon,tue,wed'" } }, category: "daily-task", execute: async (a) => { try { const fs = require('fs'); const path = require('path'); const tasksFile = path.join(process.env.HOME || process.env.USERPROFILE || '', '.zyraxon', 'daily-tasks.json'); let tasks = []; if (fs.existsSync(tasksFile)) { tasks = JSON.parse(fs.readFileSync(tasksFile, 'utf-8')); } const task = { id: Date.now().toString(36), name: a.name, time: a.time, action: a.action, target: a.target, prompt: a.prompt || '', days: a.days || 'daily', enabled: true, lastRun: null, createdAt: new Date().toISOString() }; tasks.push(task); fs.mkdirSync(path.dirname(tasksFile), { recursive: true }); fs.writeFileSync(tasksFile, JSON.stringify(tasks, null, 2)); return { ok: true, data: task }; } catch (e) { return { ok: false, error: e.message }; } } },
   { id: "x_task_list", name: "List Daily Tasks", description: "List all scheduled daily tasks", parameters: {}, category: "daily-task", execute: async () => { try { const fs = require('fs'); const path = require('path'); const tasksFile = path.join(process.env.HOME || process.env.USERPROFILE || '', '.zyraxon', 'daily-tasks.json'); if (!fs.existsSync(tasksFile)) return { ok: true, data: [] }; const tasks = JSON.parse(fs.readFileSync(tasksFile, 'utf-8')); return { ok: true, data: tasks }; } catch (e) { return { ok: false, error: e.message }; } } },
   { id: "x_task_delete", name: "Delete Daily Task", description: "Delete a scheduled task by ID", parameters: { taskId: { type: "string", description: "Task ID to delete", required: true } }, category: "daily-task", execute: async (a) => { try { const fs = require('fs'); const path = require('path'); const tasksFile = path.join(process.env.HOME || process.env.USERPROFILE || '', '.zyraxon', 'daily-tasks.json'); if (!fs.existsSync(tasksFile)) return { ok: false, error: 'No tasks file found' }; let tasks = JSON.parse(fs.readFileSync(tasksFile, 'utf-8')); const before = tasks.length; tasks = tasks.filter((t) => t.id !== a.taskId); fs.writeFileSync(tasksFile, JSON.stringify(tasks, null, 2)); return { ok: true, data: { deleted: before - tasks.length > 0 } }; } catch (e) { return { ok: false, error: e.message }; } } },
   { id: "x_task_toggle", name: "Enable/Disable Daily Task", description: "Toggle a task on or off", parameters: { taskId: { type: "string", required: true }, enabled: { type: "boolean", required: true } }, category: "daily-task", execute: async (a) => { try { const fs = require('fs'); const path = require('path'); const tasksFile = path.join(process.env.HOME || process.env.USERPROFILE || '', '.zyraxon', 'daily-tasks.json'); if (!fs.existsSync(tasksFile)) return { ok: false, error: 'No tasks file found' }; let tasks = JSON.parse(fs.readFileSync(tasksFile, 'utf-8')); const task = tasks.find((t) => t.id === a.taskId); if (!task) return { ok: false, error: 'Task not found' }; task.enabled = a.enabled; fs.writeFileSync(tasksFile, JSON.stringify(tasks, null, 2)); return { ok: true, data: task }; } catch (e) { return { ok: false, error: e.message }; } } },
   { id: "x_task_run_now", name: "Run Daily Task Now", description: "Immediately execute a scheduled task", parameters: { taskId: { type: "string", required: true } }, category: "daily-task", execute: async (a) => { try { const fs = require('fs'); const path = require('path'); const { execSync } = require('child_process'); const tasksFile = path.join(process.env.HOME || process.env.USERPROFILE || '', '.zyraxon', 'daily-tasks.json'); if (!fs.existsSync(tasksFile)) return { ok: false, error: 'No tasks file found' }; const tasks = JSON.parse(fs.readFileSync(tasksFile, 'utf-8')); const task = tasks.find((t) => t.id === a.taskId); if (!task) return { ok: false, error: 'Task not found' }; let result = ''; if (task.action === 'open_app') { if (process.platform === 'win32') { execSync(`start "" "${task.target}"`, { timeout: 10000 }); } else if (process.platform === 'darwin') { execSync(`open "${task.target}"`, { timeout: 10000 }); } else { execSync(`${task.target} &`, { timeout: 10000 }); } result = `Opened: ${task.target}`; } else if (task.action === 'browse_url') { result = `URL: ${task.target}`; } else if (task.action === 'run_script') { result = execSync(task.target, { encoding: 'utf-8', timeout: 30000 }); } return { ok: true, data: { task: task.name, result } }; } catch (e) { return { ok: false, error: e.message }; } } },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DAILY TASK AUTO-SCHEDULER (2 tools)
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    id: "x_task_start_scheduler",
+    name: "Start Daily Task Scheduler",
+    description: "Start the auto-scheduler daemon. Checks every 60 seconds and auto-runs tasks when their time arrives. Runs in background.",
+    parameters: {},
+    category: "daily-task",
+    execute: async () => {
+      try {
+        const fs = require("fs");
+        const path = require("path");
+        const { spawn } = require("child_process");
+        const tasksFile = path.join(process.env.HOME || process.env.USERPROFILE || "", ".zyraxon", "daily-tasks.json");
+        const logFile = path.join(process.env.HOME || process.env.USERPROFILE || "", ".zyraxon", "task-scheduler.log");
+
+        // Check if scheduler already running
+        const pidFile = path.join(process.env.HOME || process.env.USERPROFILE || "", ".zyraxon", "scheduler.pid");
+        if (fs.existsSync(pidFile)) {
+          const oldPid = parseInt(fs.readFileSync(pidFile, "utf-8").trim());
+          try { process.kill(oldPid, 0); return { ok: true, data: { message: "Scheduler already running", pid: oldPid } }; } catch { /* not running, continue */ }
+        }
+
+        function getDayOfWeek() { return ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][new Date().getDay()]; }
+        function isTaskScheduledToday(task) {
+          const days = (task.days || "daily").toLowerCase();
+          if (days === "daily") return true;
+          const today = getDayOfWeek();
+          if (days === "weekends") return today === "sat" || today === "sun";
+          if (days === "mon-fri") return ["mon", "tue", "wed", "thu", "fri"].includes(today);
+          return days.split(",").map((d) => d.trim()).includes(today);
+        }
+        function checkAndRunTasks() {
+          try {
+            if (!fs.existsSync(tasksFile)) return;
+            const tasks = JSON.parse(fs.readFileSync(tasksFile, "utf-8"));
+            const now = new Date();
+            const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+            for (const task of tasks) {
+              if (!task.enabled || !isTaskScheduledToday(task)) continue;
+              if (task.lastRun) {
+                const lastRun = new Date(task.lastRun);
+                const diffMinutes = (now.getTime() - lastRun.getTime()) / 60000;
+                if (diffMinutes < 59) continue; // Already ran this hour
+              }
+              if (task.time === currentTime) {
+                task.lastRun = now.toISOString();
+                fs.writeFileSync(tasksFile, JSON.stringify(tasks, null, 2));
+                const logEntry = `[${now.toISOString()}] AUTO-RUN: ${task.name} (${task.action}: ${task.target})\n`;
+                fs.appendFileSync(logFile, logEntry);
+                // Execute the task
+                const { execSync } = require("child_process");
+                if (task.action === "open_app") {
+                  if (process.platform === "win32") execSync(`start "" "${task.target}"`, { timeout: 10000 });
+                  else if (process.platform === "darwin") execSync(`open "${task.target}"`, { timeout: 10000 });
+                  else execSync(`${task.target} &`, { timeout: 10000 });
+                } else if (task.action === "browse_url") {
+                  if (process.platform === "win32") execSync(`start "" "${task.target}"`, { timeout: 10000 });
+                  else execSync(`open "${task.target}"`, { timeout: 10000 });
+                } else if (task.action === "run_script") {
+                  execSync(task.target, { encoding: "utf-8", timeout: 30000 });
+                }
+              }
+            }
+          } catch (e) {
+            fs.appendFileSync(logFile, `[${new Date().toISOString()}] ERROR: ${e.message}\n`);
+          }
+        }
+
+        // Start background checker
+        fs.mkdirSync(path.dirname(tasksFile), { recursive: true });
+        fs.writeFileSync(pidFile, String(process.pid));
+        const interval = setInterval(checkAndRunTasks, 60000);
+        checkAndRunTasks(); // Run immediately on start
+
+        // Keep process alive
+        process.on("SIGTERM", () => { clearInterval(interval); try { fs.unlinkSync(pidFile); } catch {} process.exit(0); });
+        process.on("SIGINT", () => { clearInterval(interval); try { fs.unlinkSync(pidFile); } catch {} process.exit(0); });
+
+        return { ok: true, data: { message: "Daily task scheduler started", pid: process.pid, checkInterval: "60 seconds" } };
+      } catch (e) { return { ok: false, error: e.message }; }
+    },
+  },
+  {
+    id: "x_task_scheduler_status",
+    name: "Scheduler Status",
+    description: "Check if the daily task scheduler is running and see recent activity",
+    parameters: {},
+    category: "daily-task",
+    execute: async () => {
+      try {
+        const fs = require("fs");
+        const path = require("path");
+        const pidFile = path.join(process.env.HOME || process.env.USERPROFILE || "", ".zyraxon", "scheduler.pid");
+        const logFile = path.join(process.env.HOME || process.env.USERPROFILE || "", ".zyraxon", "task-scheduler.log");
+        const tasksFile = path.join(process.env.HOME || process.env.USERPROFILE || "", ".zyraxon", "daily-tasks.json");
+
+        let running = false;
+        let pid = null;
+        if (fs.existsSync(pidFile)) {
+          pid = parseInt(fs.readFileSync(pidFile, "utf-8").trim());
+          try { process.kill(pid, 0); running = true; } catch { running = false; }
+        }
+
+        let tasks = [];
+        if (fs.existsSync(tasksFile)) tasks = JSON.parse(fs.readFileSync(tasksFile, "utf-8"));
+        let recentLogs = [];
+        if (fs.existsSync(logFile)) {
+          const lines = fs.readFileSync(logFile, "utf-8").split("\n").filter(Boolean);
+          recentLogs = lines.slice(-10);
+        }
+
+        return { ok: true, data: { running, pid, totalTasks: tasks.length, enabledTasks: tasks.filter((t) => t.enabled).length, recentLogs } };
+      } catch (e) { return { ok: false, error: e.message }; }
+    },
+  },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // CAPTCHA SOLVING TOOLS (4 tools)

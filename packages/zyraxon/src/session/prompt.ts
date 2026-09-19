@@ -261,21 +261,14 @@ const layer = Layer.effect(
           model: mdl,
           sessionID: input.session.id,
           retries: 1,
-          messages: [
-            {
-              role: "user",
-              content:
-                "Generate a short, descriptive title (max 50 chars) for this conversation. Reply ONLY with the title, no quotes, no explanation:\n",
-            },
-            ...msgs,
-          ],
+          messages: msgs,
         })
         .pipe(
           Stream.filter(LLMEvent.is.textDelta),
           Stream.map((e) => e.text),
           Stream.mkString,
           Effect.orDie,
-          Effect.timeout(15_000),
+          Effect.timeout(30_000),
           Effect.catchAll((cause) =>
             Effect.gen(function* () {
               yield* Effect.logWarning("title LLM call failed, using fallback", { error: Cause.squash(cause) })

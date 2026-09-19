@@ -43,12 +43,12 @@ function copyMcpBundles(configuration: { appOutDir: string }) {
     console.log("[afterPack] Copied nuphus-mcp to", nuphusDst)
   }
 
-  // Copy zyraxon-cross-mcp-v2 bundle (build script creates this)
-  const crossV2Src = path.join(packageDir, "resources", "zyraxon-cross-mcp-v2")
-  const crossV2Dst = path.join(resourcesDst, "zyraxon-cross-mcp-v2")
-  if (existsSync(crossV2Src)) {
-    cpSync(crossV2Src, crossV2Dst, { recursive: true })
-    console.log("[afterPack] Copied zyraxon-cross-mcp-v2 to", crossV2Dst)
+  // Copy touchpoint-mcp bundle (accessibility-based desktop automation)
+  const touchpointSrc = path.join(packageDir, "resources", "touchpoint-mcp")
+  const touchpointDst = path.join(resourcesDst, "touchpoint-mcp")
+  if (existsSync(touchpointSrc)) {
+    cpSync(touchpointSrc, touchpointDst, { recursive: true })
+    console.log("[afterPack] Copied touchpoint-mcp to", touchpointDst)
   }
 }
 
@@ -91,7 +91,7 @@ const getBase = (appId: string): Configuration => ({
     "node_modules/chromium-bidi/**",
     "jarvis-browser/**",
     "nuphus-mcp/**",
-    "zyraxon-cross-mcp-v2/**",
+    "touchpoint-mcp/**",
   ],
   extraResources: [
     {
@@ -138,8 +138,8 @@ const getBase = (appId: string): Configuration => ({
       filter: ["*.cjs", "*.js", "*.json", "*.md"],
     },
     {
-      from: "resources/zyraxon-cross-mcp-v2",
-      to: "zyraxon-cross-mcp-v2",
+      from: "resources/touchpoint-mcp",
+      to: "touchpoint-mcp",
       filter: ["*.py", "*.cjs", "*.js", "*.json", "*.md", "libs/**/*"],
     },
     {
