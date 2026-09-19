@@ -18,10 +18,10 @@
 
 <a href="https://zyraxonai.lovable.app"><img alt="ZYRAXON AI" src="https://img.shields.io/badge/ZYRAXON_AI-live-00D4FF?style=for-the-badge&logo=googlechrome&logoColor=white" /></a>
 <a href="https://zyraxon-pro.ai.studio"><img alt="ZYRAXON Pro" src="https://img.shields.io/badge/Cloud_Agent-online-FF6B35?style=for-the-badge&logo=cloudflare&logoColor=white" /></a>
-<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><img alt="Version" src="https://img.shields.io/badge/Version-19.0.2-blue?style=for-the-badge&logo=github" /></a>
+<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><img alt="Version" src="https://img.shields.io/badge/Version-19.0.5-blue?style=for-the-badge&logo=github" /></a>
 <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/onelpawarai-X/ZYRAXON-AI?style=for-the-badge&color=yellow" /></a>
 <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/onelpawarai-X/ZYRAXON-AI/total?style=for-the-badge&color=purple" /></a>
-<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-BSL_1.1-green?style=for-the-badge" /></a>
+<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-ZSL--X-00D4FF?style=for-the-badge" /></a>
 
 <br/>
 
@@ -419,6 +419,56 @@ Mic → Chrome → SpeechRecognition → AI → Edge TTS → You hear it.
 
 <div align="center">
 
+### SDK — Build with ZYRAXON
+
+</div>
+
+<br/>
+
+ZYRAXON AI provides a powerful JavaScript/TypeScript SDK for developers who want to integrate AI capabilities into their own applications.
+
+#### Quick Start
+
+```bash
+npm install @zyraxon-ai/sdk
+```
+
+```typescript
+import { createZyraxonClient } from '@zyraxon-ai/sdk'
+
+const client = createZyraxonClient({
+  baseUrl: 'http://localhost:3000',  // ZYRAXON server port
+})
+
+// Chat with AI
+const response = await client.chat({
+  message: 'Hello ZYRAXON!',
+})
+
+console.log(response.text)
+```
+
+#### What You Can Do
+
+| Feature | Description |
+|:--------|:------------|
+| **AI Chat** | converse with 25+ LLM providers |
+| **Tool Execution** | Run 552+ tools programmatically |
+| **Session Management** | Create and manage AI sessions |
+| **Memory** | Store and retrieve memories |
+| **Voice** | Speech recognition & TTS |
+| **Vision** | Screen capture & analysis |
+
+#### Full Documentation
+
+See **[SDK.md](./SDK.md)** for complete API reference, examples, and guides.
+
+---
+
+<br/>
+
+<div align="center">
+
 ### DOWNLOAD
 
 </div>
@@ -551,12 +601,57 @@ ZYRAXON-AI/
 
 <div align="center">
 
+### NPM PACKAGES & PUBLISHING
+
+</div>
+
+<br/>
+
+ZYRAXON AI publishes **12 packages** to npm under the `@zyraxon-ai` scope.
+
+#### Quick Install
+
+```bash
+# Most users — just the SDK
+npm install @zyraxon-ai/sdk
+
+# Plugin developers
+npm install @zyraxon-ai/plugin
+```
+
+#### All Packages
+
+See **[PACKAGES.md](./PACKAGES.md)** for full documentation of all 12 packages, dependency graph, and usage guides.
+
+#### Publishing
+
+Use the all-in-one publish script to build and publish all packages at once:
+
+```powershell
+# Publish all 12 packages to npm
+.\publish-all.ps1
+
+# Dry run (no actual publish)
+.\publish-all.ps1 -DryRun
+
+# Custom version
+.\publish-all.ps1 -Version "20.0.0"
+```
+
+The script handles everything: resolves dependencies, compiles TypeScript, and publishes in correct order.
+
+---
+
+<br/>
+
+<div align="center">
+
 ### LICENSE
 
-**Business Source License 1.1 (BSL 1.1)**
+**Zyraxon Sovereign License — X Edition (ZSL-X)**
 
-Free for non-commercial use. Commercial use requires a paid license.
-Converts to Apache 2.0 on 2030-07-21.
+Free for all uses including commercial. Attribution required.
+Automatically transitions to MEKRA-X on January 1, 2028.
 
 </div>
 
