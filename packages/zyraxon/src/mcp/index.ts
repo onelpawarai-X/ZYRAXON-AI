@@ -621,7 +621,7 @@ const layer = Layer.effect(
     )
 
     // Pre-warm MCP connections in background so they're ready before first prompt
-    yield* Effect.fork(InstanceState.get(state)).pipe(Effect.ignoreLogged)
+    yield* InstanceState.get(state).pipe(Effect.forkScoped, Effect.ignoreLogged)
 
     function closeClient(s: State, name: string) {
       const client = s.clients[name]
