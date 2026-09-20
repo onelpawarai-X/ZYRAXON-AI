@@ -16,6 +16,7 @@
     "typecheck:e2e": "tsgo -p e2e/tsconfig.json",
     "start": "vite",
     "dev": "vite",
+    "prebuild": "bun run --cwd ../sdk/js build",
     "build": "vite build",
     "serve": "vite preview",
     "test": "bun run test:unit && bun run test:browser",
