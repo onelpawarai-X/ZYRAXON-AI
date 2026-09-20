@@ -18,86 +18,154 @@
 
 var path = require('path');
 var fs = require('fs');
-var { spawn, execSync } = require('child_process');
+var { spawn } = require('child_process');
 
-// ─── Playwright MCP Launch (DEFAULT) ───────────────────────────────
+function log(msg) {
+  process.stderr.write('[ZYRAXON Browser] ' + msg + '\n');
+}
 
-function launchPlaywrightMCP(extraArgs) {
+// ─── Resolve @playwright/mcp/cli.js ──────────────────────────────
+
+function findPlaywrightMCP() {
+  var dir = __dirname;
+
   var candidates = [
-    path.join(__dirname, 'jarvis-browser', 'node_modules'),
-    process.resourcesPath ? path.join(process.resourcesPath, 'jarvis-browser', 'node_modules') : null,
-    path.join(__dirname, '..', 'node_modules'),
-    path.join(__dirname, '..', '..', 'node_modules'),
-    path.join(__dirname, '..', '..', '..', 'node_modules'),
-    path.join(__dirname, '..', '..', '..', '..', 'node_modules'),
-  ].filter(Boolean);
+    path.join(dir, 'jarvis-browser', 'node_modules'),
+    path.join(dir, 'nuphus-mcp', 'node_modules'),
+    path.join(dir, '..', 'jarvis-browser', 'node_modules'),
+    path.join(dir, '..', 'node_modules'),
+    path.join(dir, '..', '..', 'jarvis-browser', 'node_modules'),
+    path.join(dir, '..', '..', 'node_modules'),
+    path.join(dir, '..', '..', '..', 'jarvis-browser', 'node_modules'),
+    path.join(dir, '..', '..', '..', 'node_modules'),
+    path.join(dir, '..', '..', '..', '..', 'jarvis-browser', 'node_modules'),
+    path.join(dir, '..', '..', '..', '..', 'node_modules'),
+    path.join(dir, '..', '..', '..', '..', '..', 'jarvis-browser', 'node_modules'),
+    path.join(dir, '..', '..', '..', '..', '..', 'node_modules'),
+  ];
 
-  var nodeModules = null;
+  if (process.resourcesPath) {
+    candidates.unshift(
+      path.join(process.resourcesPath, 'jarvis-browser', 'node_modules'),
+    );
+  }
+
+  log('Searching for @playwright/mcp in ' + candidates.length + ' locations...');
+  log('__dirname = ' + dir);
+
   for (var i = 0; i < candidates.length; i++) {
+    var candidate = candidates[i];
     try {
-      if (fs.existsSync(path.join(candidates[i], '@playwright', 'mcp', 'cli.js'))) {
-        nodeModules = candidates[i];
+      var cliPath = path.join(candidate, '@playwright', 'mcp', 'cli.js');
+      if (fs.existsSync(cliPath)) {
+        var pwCore = path.join(candidate, 'playwright-core', 'package.json');
+        var hasPwCore = fs.existsSync(pwCore);
+        log('Found @playwright/mcp at: ' + candidate + ' (playwright-core: ' + hasPwCore + ')');
+        return { nodeModules: candidate, cliPath: cliPath };
+      }
+    } catch (e) {}
+  }
+
+  log('ERROR: @playwright/mcp not found in any location');
+  for (var j = 0; j < candidates.length; j++) {
+    log('  Tried: ' + candidates[j]);
+  }
+  return null;
+}
+
+// ─── Resolve system Node.js executable ───────────────────────────
+
+function findNodeExec() {
+  var nodeExec = process.execPath;
+
+  var possiblePaths = [
+    path.join(process.env.APPDATA || '', 'nvm', 'current', 'node.exe'),
+    path.join(process.env.ProgramFiles || '', 'nodejs', 'node.exe'),
+    path.join(process.env['PROGRAMFILES(X86)'] || '', 'nodejs', 'node.exe'),
+    path.join(process.env.LOCALAPPDATA || '', 'Programs', 'nodejs', 'node.exe'),
+  ];
+
+  for (var i = 0; i < possiblePaths.length; i++) {
+    try {
+      if (possiblePaths[i] && fs.existsSync(possiblePaths[i])) {
+        nodeExec = possiblePaths[i];
         break;
       }
     } catch (e) {}
   }
 
-  if (!nodeModules) {
-    console.error('[ZYRAXON Browser] @playwright/mcp not found in any location');
+  if (nodeExec === process.execPath && process.platform === 'win32') {
+    try {
+      var { execSync } = require('child_process');
+      var nodePath = execSync('where node', { encoding: 'utf8', timeout: 3000 })
+        .trim().split('\n')[0].trim();
+      if (nodePath && fs.existsSync(nodePath)) {
+        nodeExec = nodePath;
+      }
+    } catch (e) {}
+  }
+
+  return nodeExec;
+}
+
+// ─── Playwright MCP Launch ───────────────────────────────────────
+
+function launchPlaywrightMCP(extraArgs) {
+  var result = findPlaywrightMCP();
+  if (!result) {
     process.exit(1);
   }
 
-  process.env.NODE_PATH = nodeModules;
-  require('module').Module._initPaths();
+  var nodeExec = findNodeExec();
+  log('Using node: ' + nodeExec);
+  log('Spawning Playwright MCP...');
 
-  var cliPath = path.join(nodeModules, '@playwright', 'mcp', 'cli.js');
+  var fullArgs = [result.cliPath].concat(extraArgs);
 
-  var nodeExec = process.execPath;
-  try {
-    var possiblePaths = [
-      path.join(process.env.APPDATA || '', 'nvm', 'current', 'node.exe'),
-      path.join(process.env.ProgramFiles || '', 'nodejs', 'node.exe'),
-      path.join(process.env['PROGRAMFILES(X86)'] || '', 'nodejs', 'node.exe'),
-      path.join(process.env.LOCALAPPDATA || '', 'Programs', 'nodejs', 'node.exe'),
-    ];
-    for (var i = 0; i < possiblePaths.length; i++) {
-      if (possiblePaths[i] && fs.existsSync(possiblePaths[i])) { nodeExec = possiblePaths[i]; break; }
-    }
-    if (nodeExec === process.execPath) {
-      var nodePath = execSync('where node', { encoding: 'utf8' }).trim().split('\n')[0].trim();
-      if (nodePath && fs.existsSync(nodePath)) { nodeExec = nodePath; }
-    }
-  } catch (e) {}
-
-  console.error('[ZYRAXON Browser] Launching Playwright Chromium (headless, background)...');
-  console.error('[ZYRAXON Browser] This is the default browser for all general tasks');
-
-  var child = spawn(nodeExec, [cliPath].concat(extraArgs), {
-    stdio: ['inherit', 'inherit', 'inherit'],
-    env: Object.assign({}, process.env, { NODE_PATH: nodeModules }),
+  var child = spawn(nodeExec, fullArgs, {
+    stdio: ['pipe', 'pipe', 'pipe'],
+    env: Object.assign({}, process.env, { NODE_PATH: result.nodeModules }),
   });
-  child.on('error', function(err) {
-    console.error('[ZYRAXON Browser] Playwright error:', err.message);
+
+  var startupTimeout = setTimeout(function () {
+    log('ERROR: Child process did not exit within 5 seconds — it may be running normally (MCP server).');
+  }, 5000);
+
+  child.on('error', function (err) {
+    clearTimeout(startupTimeout);
+    log('ERROR: Failed to spawn node process: ' + err.message);
+    log('  nodeExec: ' + nodeExec);
+    log('  cliPath: ' + result.cliPath);
+    process.exit(1);
   });
-  child.on('exit', function(code) {
+
+  child.on('exit', function (code, signal) {
+    clearTimeout(startupTimeout);
+    if (signal) {
+      log('Child killed by signal: ' + signal);
+    } else if (code !== 0) {
+      log('Child exited with code: ' + code);
+    }
     process.exit(code || 0);
   });
-  process.on('SIGTERM', function() { child.kill(); process.exit(0); });
-  process.on('SIGINT', function() { child.kill(); process.exit(0); });
+
+  process.stdin.pipe(child.stdin);
+  child.stdout.pipe(process.stdout);
+  child.stderr.pipe(process.stderr);
+
+  process.on('SIGTERM', function () { child.kill(); process.exit(0); });
+  process.on('SIGINT', function () { child.kill(); process.exit(0); });
+  process.on('exit', function () { try { child.kill(); } catch (e) {} });
 }
 
-// ─── Main ──────────────────────────────────────────────────────────
+// ─── Main ────────────────────────────────────────────────────────
 
 var args = process.argv.slice(2);
 
-console.error('');
-console.error('╔══════════════════════════════════════════════════════════╗');
-console.error('║      ZYRAXON Browser — Playwright Chromium (Default)   ║');
-console.error('╚══════════════════════════════════════════════════════════╝');
-console.error('');
-console.error('[ZYRAXON Browser] Primary browser: Playwright Chromium (headless)');
-console.error('[ZYRAXON Browser] For account work: AI opens real Chrome via PowerShell');
-console.error('[ZYRAXON Browser] NEVER auto-launches Chrome');
-console.error('');
+log('');
+log('ZYRAXON Browser — Playwright Chromium (Default)');
+log('Primary browser: Playwright Chromium (headless)');
+log('Arguments: ' + args.join(' '));
+log('');
 
 launchPlaywrightMCP(args);

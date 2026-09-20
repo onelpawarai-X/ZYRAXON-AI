@@ -238,14 +238,25 @@ function launchChrome() {
   ]
 
   try {
-    chromeProcess = spawn(chromePath, args, { detached: true, stdio: "ignore" })
-    chromeProcess.unref()
+    chromeProcess = spawn(chromePath, args, { stdio: "ignore" })
     chromeProcess.on("error", (e) => console.log("[VoiceBridge] Chrome error:", e.message))
     chromeProcess.on("exit", () => {
       console.log("[VoiceBridge] Chrome exited")
       chromeProcess = null
     })
     console.log("[VoiceBridge] Chrome launched:", chromePath)
+    setTimeout(() => {
+      try {
+        execSync(
+          `powershell -NoProfile -Command "` +
+          `$p = Get-Process chrome -EA SilentlyContinue | Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero -and ($_.MainWindowTitle -match 'voice-bridge' -or $_.MainWindowTitle -match '127.0.0.1') } | Select-Object -First 1; ` +
+          `if ($p) { Add-Type -MemberDefinition '[DllImport(\\"user32.dll\\")] public static extern bool ShowWindow(IntPtr h, int c);' -Name S -Namespace U; [U.S]::ShowWindow($p.MainWindowHandle, 6) }` +
+          `"`,
+          { timeout: 8000, windowsHide: true }
+        )
+        console.log("[VoiceBridge] Voice Chrome minimized to taskbar")
+      } catch {}
+    }, 2500)
     return true
   } catch (e) {
     console.log("[VoiceBridge] Failed to launch Chrome:", e)

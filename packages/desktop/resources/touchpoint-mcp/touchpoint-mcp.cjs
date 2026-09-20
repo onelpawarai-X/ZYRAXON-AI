@@ -17,7 +17,8 @@ function findPython() {
     var candidates = [];
 
     // 1. System PATH (fastest, most reliable)
-    var sysCmds = isWin ? ['python3', 'python', 'py -3'] : ['python3', 'python'];
+    // Check 'python' first (often newer with pip packages), then python3, then py -3
+    var sysCmds = isWin ? ['python', 'python3', 'py -3'] : ['python3', 'python'];
     for (var i = 0; i < sysCmds.length; i++) {
         var cmd = sysCmds[i];
         var baseCmd = cmd.split(' ')[0];
@@ -105,7 +106,6 @@ if (!pythonCmd) {
 }
 
 var env = Object.assign({}, process.env, {
-    PYTHONPATH: libsDir + (process.env.PATHSEP || ';') + (process.env.PYTHONPATH || ''),
     TOUCHPOINT_MODE: process.env.TOUCHPOINT_MODE || 'no-vision'
 });
 
