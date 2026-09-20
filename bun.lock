@@ -399,7 +399,7 @@
     },
     "packages/desktop": {
       "name": "@zyraxon-ai/desktop",
-      "version": "19.0.2",
+      "version": "19.0.5",
       "dependencies": {
         "@playwright/mcp": "0.0.79",
         "@zip.js/zip.js": "2.7.62",
