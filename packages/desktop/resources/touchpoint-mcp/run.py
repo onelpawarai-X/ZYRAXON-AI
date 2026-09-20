@@ -12,17 +12,15 @@ try:
     import pydantic
     import pydantic_core
     import mcp
-    # System packages available — don't add bundled libs to path
     os.environ.setdefault("TOUCHPOINT_MODE", "no-vision")
-    from zyraxon_touchpoint import mcp as _mcp
+    from touchpoint.mcp.server import mcp as _mcp
     if __name__ == "__main__":
         _mcp.run()
 except ImportError:
-    # System packages missing — fall back to bundled libs
     if _libs.is_dir():
         sys.path.insert(0, str(_libs))
         os.environ["PYTHONPATH"] = str(_libs) + os.pathsep + os.environ.get("PYTHONPATH", "")
     os.environ.setdefault("TOUCHPOINT_MODE", "no-vision")
-    from zyraxon_touchpoint import mcp as _mcp
+    from touchpoint.mcp.server import mcp as _mcp
     if __name__ == "__main__":
         _mcp.run()
