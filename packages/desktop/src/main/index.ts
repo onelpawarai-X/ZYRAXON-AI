@@ -584,6 +584,7 @@ const main = Effect.gen(function* () {
             "type": "local",
             "command": [nodeExe, jarvisMcpPath, "--headless", "--browser", "chrome", "--no-sandbox"],
             "enabled": true,
+            "timeout": 30000,
             "environment": {
               "PLAYWRIGHT_MCP_HEADLESS": "true"
             }
@@ -598,6 +599,7 @@ const main = Effect.gen(function* () {
             "type": "local",
             "command": [nodeExe, touchpointMcpCjs],
             "enabled": true,
+            "timeout": 30000,
             "environment": {
               "TOUCHPOINT_MODE": "no-vision"
             }
