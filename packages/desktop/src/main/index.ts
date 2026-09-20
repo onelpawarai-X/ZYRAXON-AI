@@ -552,6 +552,17 @@ const main = Effect.gen(function* () {
     }
   })()
 
+  // Auto Python Install — ensures Python is available for touchpoint MCP
+  void (async () => {
+    try {
+      const { ensurePython } = await import("./python-installer")
+      await ensurePython()
+      logger.info("Python check complete")
+    } catch (error) {
+      logger.warn("Python auto-install failed (MCP may not work):", error)
+    }
+  })()
+
   // Deferred MCP Config Auto-Create — async file I/O, non-blocking
   void (async () => {
     try {

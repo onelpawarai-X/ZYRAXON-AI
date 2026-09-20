@@ -35,7 +35,7 @@ import { McpCatalog } from "./catalog"
 import { McpEvent } from "@zyraxon-ai/schema/mcp-event"
 import { McpBrowser } from "./browser"
 
-const DEFAULT_TIMEOUT = 30_000
+const DEFAULT_TIMEOUT = 10_000
 
 // Cache resolved node path to avoid repeated blocking `where` calls
 let _cachedNodePath: string | null = null
