@@ -3,10 +3,8 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { homedir } from "node:os"
-import { execSync } from "node:child_process"
 import { execFile } from "node:child_process"
 import { promisify } from "node:util"
-import { pipeline } from "node:stream/promises"
 import { createWriteStream } from "node:fs"
 
 const execFileAsync = promisify(execFile)
@@ -14,10 +12,9 @@ const execFileAsync = promisify(execFile)
 const PYTHON_DIR = join(homedir(), ".zyraxon", "python")
 const PYTHON_MARKER = join(PYTHON_DIR, ".installed")
 const INSTALL_TIMEOUT = 120_000 // 2 minutes for download + install
+const DETECT_TIMEOUT = 3000 // 3s per detection attempt (async, non-blocking)
 
-// Python versions to try (embeddable for Windows, system for others)
 const PYTHON_VERSION = "3.12.8"
-const PYTHON_VERSION_SHORT = "3.12"
 
 interface PythonInfo {
   path: string
@@ -26,40 +23,38 @@ interface PythonInfo {
 }
 
 /**
- * Detect if Python is already available on the system
+ * Async Python detection — runs all candidates in parallel, returns first hit
  */
-function detectSystemPython(): PythonInfo | null {
+async function detectSystemPython(): Promise<PythonInfo | null> {
   const isWindows = process.platform === "win32"
-
-  // Try multiple Python commands
   const commands = isWindows
-    ? ["python3", "python", "py -3", "py"]
-    : ["python3", "python", "python3.12", "python3.11", "python3.10"]
+    ? ["python3", "python", "py"]
+    : ["python3", "python", "python3.12", "python3.11"]
 
-  for (const cmd of commands) {
-    try {
-      const { stdout } = execSync(`${cmd} --version`, {
-        encoding: "utf8",
-        timeout: 5000,
-        stdio: ["pipe", "pipe", "pipe"],
-      })
-      const match = stdout.trim().match(/Python (\d+\.\d+\.\d+)/)
-      if (match) {
-        // Resolve full path
+  // Run all detection attempts in parallel for speed
+  const results = await Promise.allSettled(
+    commands.map(async (cmd) => {
+      try {
+        const baseCmd = cmd.split(" ")[0]
+        const { stdout } = await execFileAsync(baseCmd, ["--version"], {
+          encoding: "utf8",
+          timeout: DETECT_TIMEOUT,
+        })
+        const match = stdout.trim().match(/Python (\d+\.\d+\.\d+)/)
+        if (!match) return null
+
         let fullPath = cmd
         try {
           if (isWindows) {
-            const { stdout: whereOut } = execSync(`where ${cmd.split(" ")[0]}`, {
+            const { stdout: whereOut } = await execFileAsync("where", [baseCmd], {
               encoding: "utf8",
-              timeout: 3000,
-              stdio: ["pipe", "pipe", "pipe"],
+              timeout: 2000,
             })
             fullPath = whereOut.trim().split("\n")[0].trim()
           } else {
-            const { stdout: whichOut } = execSync(`which ${cmd}`, {
+            const { stdout: whichOut } = await execFileAsync("which", [baseCmd], {
               encoding: "utf8",
-              timeout: 3000,
-              stdio: ["pipe", "pipe", "pipe"],
+              timeout: 2000,
             })
             fullPath = whichOut.trim()
           }
@@ -70,8 +65,17 @@ function detectSystemPython(): PythonInfo | null {
           version: match[1],
           available: true,
         }
+      } catch {
+        return null
       }
-    } catch {}
+    }),
+  )
+
+  // Return first successful detection
+  for (const result of results) {
+    if (result.status === "fulfilled" && result.value) {
+      return result.value
+    }
   }
 
   // Check if we installed Python ourselves
@@ -79,11 +83,7 @@ function detectSystemPython(): PythonInfo | null {
     const markerContent = require("node:fs").readFileSync(PYTHON_MARKER, "utf8").trim()
     const localPython = join(PYTHON_DIR, process.platform === "win32" ? "python.exe" : "bin/python3")
     if (existsSync(localPython)) {
-      return {
-        path: localPython,
-        version: markerContent,
-        available: true,
-      }
+      return { path: localPython, version: markerContent, available: true }
     }
   }
 
@@ -91,7 +91,7 @@ function detectSystemPython(): PythonInfo | null {
 }
 
 /**
- * Download file with progress (using Node.js fetch + stream)
+ * Download file with streaming
  */
 async function downloadFile(url: string, dest: string): Promise<void> {
   const response = await fetch(url)
@@ -136,20 +136,18 @@ async function installPythonWindows(): Promise<PythonInfo> {
     mkdirSync(PYTHON_DIR, { recursive: true })
   }
 
-  // Download Python embeddable package
   const url = `https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-embed-amd64.zip`
   console.log(`[Python Installer] Downloading Python ${PYTHON_VERSION} for Windows...`)
 
   await downloadFile(url, zipPath)
   console.log("\n[Python Installer] Extracting...")
 
-  // Extract using PowerShell
-  execSync(
-    `powershell -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${PYTHON_DIR}' -Force"`,
-    { timeout: 60_000, stdio: "pipe" }
-  )
+  await execFileAsync("powershell", [
+    "-Command",
+    `Expand-Archive -Path '${zipPath}' -DestinationPath '${PYTHON_DIR}' -Force`,
+  ], { timeout: 60_000 })
 
-  // Enable pip — uncomment import site in python312._pth
+  // Enable pip — uncomment import site
   const pthFiles = require("node:fs")
     .readdirSync(PYTHON_DIR)
     .filter((f: string) => f.endsWith("._pth"))
@@ -160,32 +158,26 @@ async function installPythonWindows(): Promise<PythonInfo> {
     require("node:fs").writeFileSync(pthPath, content, "utf8")
   }
 
-  // Install pip (get-pip.py)
+  // Install pip
   const getPipPath = join(PYTHON_DIR, "get-pip.py")
   try {
     console.log("[Python Installer] Installing pip...")
     await downloadFile("https://bootstrap.pypa.io/get-pip.py", getPipPath)
-    execSync(`"${pythonExe}" "${getPipPath}"`, {
+    await execFileAsync(pythonExe, [getPipPath], {
       timeout: 60_000,
-      stdio: "pipe",
       cwd: PYTHON_DIR,
     })
   } catch (e) {
     console.log("[Python Installer] pip install failed (non-fatal):", e)
   }
 
-  // Install required packages for touchpoint-mcp
+  // Install touchpoint dependencies
   try {
     console.log("[Python Installer] Installing touchpoint dependencies...")
-    const libsDir = join(PYTHON_DIR, "Lib", "site-packages")
-    execSync(
-      `"${pythonExe}" -m pip install --no-warn-script-location touchpoint mcp pywin32 Pillow 2>nul`,
-      {
-        timeout: 120_000,
-        stdio: "pipe",
-        cwd: PYTHON_DIR,
-      }
-    )
+    await execFileAsync(pythonExe, [
+      "-m", "pip", "install", "--no-warn-script-location",
+      "touchpoint", "mcp", "pywin32", "Pillow",
+    ], { timeout: 120_000, cwd: PYTHON_DIR })
   } catch (e) {
     console.log("[Python Installer] Package install failed (non-fatal):", e)
   }
@@ -194,19 +186,14 @@ async function installPythonWindows(): Promise<PythonInfo> {
   try { require("node:fs").unlinkSync(zipPath) } catch {}
   try { require("node:fs").unlinkSync(getPipPath) } catch {}
 
-  // Write marker
   writeFileSync(PYTHON_MARKER, PYTHON_VERSION, "utf8")
   console.log(`[Python Installer] Python ${PYTHON_VERSION} installed to ${PYTHON_DIR}`)
 
-  return {
-    path: pythonExe,
-    version: PYTHON_VERSION,
-    available: true,
-  }
+  return { path: pythonExe, version: PYTHON_VERSION, available: true }
 }
 
 /**
- * Install Python on macOS (using Homebrew or dead-snakes)
+ * Install Python on macOS (Homebrew or download)
  */
 async function installPythonMacOS(): Promise<PythonInfo> {
   const localPython = join(PYTHON_DIR, "bin", "python3")
@@ -215,153 +202,117 @@ async function installPythonMacOS(): Promise<PythonInfo> {
     mkdirSync(PYTHON_DIR, { recursive: true })
   }
 
-  // Try Homebrew first
   try {
     console.log("[Python Installer] Installing Python via Homebrew...")
-    execSync("brew install python@3.12", {
-      timeout: INSTALL_TIMEOUT,
-      stdio: "pipe",
+    await execFileAsync("brew", ["install", "python@3.12"], { timeout: INSTALL_TIMEOUT })
+    const { stdout } = await execFileAsync("brew", ["--prefix", "python@3.12"], {
+      encoding: "utf8", timeout: 5000,
     })
-    const { stdout } = execSync("brew --prefix python@3.12", {
-      encoding: "utf8",
-      timeout: 5000,
-      stdio: "pipe",
-    })
-    const brewPath = stdout.trim()
-    const brewPython = join(brewPath, "bin", "python3.12")
+    const brewPython = join(stdout.trim(), "bin", "python3.12")
     if (existsSync(brewPython)) {
       writeFileSync(PYTHON_MARKER, PYTHON_VERSION, "utf8")
       return { path: brewPython, version: PYTHON_VERSION, available: true }
     }
   } catch {}
 
-  // Fallback: download from python.org
   console.log("[Python Installer] Downloading Python from python.org...")
   const dmgPath = join(PYTHON_DIR, "python.dmg")
   const url = `https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-macos11.pkg`
-
-  try {
-    await downloadFile(url, dmgPath)
-    execSync(`sudo installer -pkg "${dmgPath}" -target /`, {
-      timeout: INSTALL_TIMEOUT,
-      stdio: "pipe",
-    })
-    writeFileSync(PYTHON_MARKER, PYTHON_VERSION, "utf8")
-    return { path: "/usr/local/bin/python3.12", version: PYTHON_VERSION, available: true }
-  } catch (e) {
-    console.error("[Python Installer] macOS install failed:", e)
-    throw e
-  }
+  await downloadFile(url, dmgPath)
+  await execFileAsync("sudo", ["installer", "-pkg", dmgPath, "-target", "/"], {
+    timeout: INSTALL_TIMEOUT,
+  })
+  writeFileSync(PYTHON_MARKER, PYTHON_VERSION, "utf8")
+  return { path: "/usr/local/bin/python3.12", version: PYTHON_VERSION, available: true }
 }
 
 /**
- * Install Python on Linux (apt, yum, or compile)
+ * Install Python on Linux (apt, yum, or dnf)
  */
 async function installPythonLinux(): Promise<PythonInfo> {
   if (!existsSync(PYTHON_DIR)) {
     mkdirSync(PYTHON_DIR, { recursive: true })
   }
 
-  // Try apt (Debian/Ubuntu)
+  // Try apt
   try {
     console.log("[Python Installer] Installing Python via apt...")
-    execSync("sudo apt-get update -qq && sudo apt-get install -y -qq python3.12 python3.12-venv python3-pip", {
-      timeout: INSTALL_TIMEOUT,
-      stdio: "pipe",
+    await execFileAsync("sudo", [
+      "apt-get", "update", "-qq",
+    ], { timeout: 30_000 })
+    await execFileAsync("sudo", [
+      "apt-get", "install", "-y", "-qq", "python3.12", "python3.12-venv", "python3-pip",
+    ], { timeout: INSTALL_TIMEOUT })
+    const { stdout } = await execFileAsync("which", ["python3.12"], {
+      encoding: "utf8", timeout: 5000,
     })
-    const { stdout } = execSync("which python3.12", { encoding: "utf8", timeout: 5000, stdio: "pipe" })
     const pythonPath = stdout.trim()
     writeFileSync(PYTHON_MARKER, PYTHON_VERSION, "utf8")
     return { path: pythonPath, version: PYTHON_VERSION, available: true }
   } catch {}
 
-  // Try yum (CentOS/RHEL)
+  // Try yum
   try {
     console.log("[Python Installer] Installing Python via yum...")
-    execSync("sudo yum install -y python3.12", {
-      timeout: INSTALL_TIMEOUT,
-      stdio: "pipe",
+    await execFileAsync("sudo", [
+      "yum", "install", "-y", "python3.12", "python3.12-pip",
+    ], { timeout: INSTALL_TIMEOUT })
+    const { stdout } = await execFileAsync("which", ["python3.12"], {
+      encoding: "utf8", timeout: 5000,
     })
-    const { stdout } = execSync("which python3.12", { encoding: "utf8", timeout: 5000, stdio: "pipe" })
-    const pythonPath = stdout.trim()
     writeFileSync(PYTHON_MARKER, PYTHON_VERSION, "utf8")
-    return { path: pythonPath, version: PYTHON_VERSION, available: true }
+    return { path: stdout.trim(), version: PYTHON_VERSION, available: true }
   } catch {}
 
-  // Try dnf (Fedora)
+  // Try dnf
   try {
     console.log("[Python Installer] Installing Python via dnf...")
-    execSync("sudo dnf install -y python3.12", {
-      timeout: INSTALL_TIMEOUT,
-      stdio: "pipe",
+    await execFileAsync("sudo", [
+      "dnf", "install", "-y", "python3.12", "python3.12-pip",
+    ], { timeout: INSTALL_TIMEOUT })
+    const { stdout } = await execFileAsync("which", ["python3.12"], {
+      encoding: "utf8", timeout: 5000,
     })
-    const { stdout } = execSync("which python3.12", { encoding: "utf8", timeout: 5000, stdio: "pipe" })
-    const pythonPath = stdout.trim()
     writeFileSync(PYTHON_MARKER, PYTHON_VERSION, "utf8")
-    return { path: pythonPath, version: PYTHON_VERSION, available: true }
+    return { path: stdout.trim(), version: PYTHON_VERSION, available: true }
   } catch {}
 
-  throw new Error("Could not install Python on this Linux distribution")
+  throw new Error("Failed to install Python on Linux. Please install Python 3.12 manually.")
 }
 
 /**
- * Main entry point: ensure Python is available
- * Returns the Python executable path
+ * Main entry point: detect or install Python, return path
  */
-export async function ensurePython(): Promise<PythonInfo> {
-  // 1. Check if Python already exists
-  const existing = detectSystemPython()
-  if (existing) {
-    console.log(`[Python Installer] Python ${existing.version} found at ${existing.path}`)
-    return existing
-  }
-
-  // 2. Python not found — install automatically
-  console.log("[Python Installer] Python not found. Installing automatically...")
-
-  try {
-    switch (process.platform) {
-      case "win32":
-        return await installPythonWindows()
-      case "darwin":
-        return await installPythonMacOS()
-      case "linux":
-        return await installPythonLinux()
-      default:
-        throw new Error(`Unsupported platform: ${process.platform}`)
-    }
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e)
-    console.error(`[Python Installer] Auto-install failed: ${msg}`)
-    console.error("[Python Installer] Please install Python 3.12+ manually from https://python.org")
-    throw e
-  }
-}
-
-/**
- * Get Python path for MCP use — returns cached result or detects
- */
-let _cachedPythonPath: string | null = null
-
-export function getPythonPath(): string {
-  if (_cachedPythonPath) return _cachedPythonPath
-
-  // Try system Python first
-  const info = detectSystemPython()
-  if (info) {
-    _cachedPythonPath = info.path
-    return info.path
-  }
-
-  // Try our installed Python
+export async function ensurePython(): Promise<string> {
+  // 1. Fast path: check marker file first (sub-ms)
   if (existsSync(PYTHON_MARKER)) {
+    const markerContent = require("node:fs").readFileSync(PYTHON_MARKER, "utf8").trim()
     const localPython = join(PYTHON_DIR, process.platform === "win32" ? "python.exe" : "bin/python3")
     if (existsSync(localPython)) {
-      _cachedPythonPath = localPython
       return localPython
     }
   }
 
-  // Fallback — will trigger install on next ensurePython() call
-  return process.platform === "win32" ? "python" : "python3"
+  // 2. Detect system Python (async, parallel — ~3s max)
+  const detected = await detectSystemPython()
+  if (detected) {
+    console.log(`[Python Installer] Found system Python: ${detected.path} (${detected.version})`)
+    return detected.path
+  }
+
+  // 3. Install Python (slow path — only on first run)
+  console.log("[Python Installer] Python not found. Installing...")
+  const installed = await installForPlatform()
+  return installed.path
+}
+
+function installForPlatform(): Promise<PythonInfo> {
+  switch (process.platform) {
+    case "win32":
+      return installPythonWindows()
+    case "darwin":
+      return installPythonMacOS()
+    default:
+      return installPythonLinux()
+  }
 }
