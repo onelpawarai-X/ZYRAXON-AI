@@ -102,3 +102,7 @@ packages/zyraxon-code-clean/
 
 # Playwright MCP
 .playwright-mcp/
+
+__pycache__/
+
+*.pyc

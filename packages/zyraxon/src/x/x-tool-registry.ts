@@ -33,6 +33,7 @@ import { MatrixOperations, CalculusEngine, StatisticsEngine, NumberTheory, Geome
 import { DroneController, CarController, BoatController, RocketController, SatelliteController, ZyraxonVehicles } from "./vehicles"
 import { UniversalCommandEngine } from "./universal-command"
 import { cdpBrowserTools, computerControlTools, planningTools, mediaTools, selfImproveTools } from "./advanced-tools"
+import { nuphusMcpTools, touchpointMcpTools } from "./mcp-tool-fallbacks"
 
 export type XToolDef = {
   id: string
@@ -3918,6 +3919,14 @@ export const xToolRegistry: XToolDef[] = [
   ...planningTools,
   ...mediaTools,
   ...selfImproveTools,
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // MCP TOOL FALLBACKS — Nuphus Desktop + Touchpoint Accessibility
+  // AI knows these tools exist even if MCP servers fail to connect
+  // When MCP connects, real MCP tools take over automatically
+  // ══════════════════════════════════════════════════════════════════════════════
+  ...nuphusMcpTools,
+  ...touchpointMcpTools,
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════════

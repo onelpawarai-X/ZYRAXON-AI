@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "https://json.schemastore.org/package.json",
   "name": "@zyraxon-ai/sdk-next",
   "version": "19.0.5",
@@ -20,8 +20,8 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
-    "@zyraxon-ai/client": "^19.0.5",
-    "@zyraxon-ai/server": "^19.0.5",
+    "@zyraxon-ai/client": "workspace:*",
+    "@zyraxon-ai/server": "workspace:*",
     "effect": "4.0.0-beta.83"
   },
   "devDependencies": {

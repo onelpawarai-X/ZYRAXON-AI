@@ -305,7 +305,7 @@
     },
     "packages/core": {
       "name": "@zyraxon-ai/core",
-      "version": "19.0.0",
+      "version": "19.0.5",
       "bin": {
         "zyraxon": "./bin/zyraxon",
       },
@@ -331,9 +331,9 @@
         "@ai-sdk/vercel": "2.0.39",
         "@ai-sdk/xai": "3.0.102",
         "@aws-sdk/credential-providers": "3.1057.0",
-        "@effect/opentelemetry": "catalog:",
-        "@effect/platform-node": "catalog:",
-        "@effect/sql-sqlite-bun": "catalog:",
+        "@effect/opentelemetry": "4.0.0-beta.83",
+        "@effect/platform-node": "4.0.0-beta.83",
+        "@effect/sql-sqlite-bun": "4.0.0-beta.83",
         "@ff-labs/fff-bun": "0.9.4",
         "@lydell/node-pty": "catalog:",
         "@npmcli/arborist": "9.4.0",
@@ -471,7 +471,7 @@
     },
     "packages/effect-drizzle-sqlite": {
       "name": "@zyraxon-ai/effect-drizzle-sqlite",
-      "version": "19.0.0",
+      "version": "19.0.5",
       "dependencies": {
         "drizzle-orm": "catalog:",
         "effect": "catalog:",
@@ -485,7 +485,7 @@
     },
     "packages/effect-sqlite-node": {
       "name": "@zyraxon-ai/effect-sqlite-node",
-      "version": "19.0.0",
+      "version": "19.0.5",
       "dependencies": {
         "effect": "catalog:",
       },
@@ -545,7 +545,7 @@
     },
     "packages/http-recorder": {
       "name": "@zyraxon-ai/http-recorder",
-      "version": "19.0.0",
+      "version": "19.0.5",
       "dependencies": {
         "@effect/platform-node": "4.0.0-beta.83",
         "@effect/platform-node-shared": "4.0.0-beta.83",
@@ -576,7 +576,7 @@
     },
     "packages/llm": {
       "name": "@zyraxon-ai/llm",
-      "version": "19.0.0",
+      "version": "19.0.5",
       "dependencies": {
         "@smithy/eventstream-codec": "4.2.14",
         "@smithy/util-utf8": "4.2.2",
@@ -595,7 +595,7 @@
     },
     "packages/plugin": {
       "name": "@zyraxon-ai/plugin",
-      "version": "19.0.0",
+      "version": "19.0.5",
       "dependencies": {
         "@ai-sdk/provider": "3.0.8",
         "@zyraxon-ai/sdk": "workspace:*",
@@ -657,36 +657,36 @@
     },
     "packages/sdk-next": {
       "name": "@zyraxon-ai/sdk-next",
+      "version": "19.0.5",
       "dependencies": {
         "@zyraxon-ai/client": "workspace:*",
-        "@zyraxon-ai/core": "workspace:*",
         "@zyraxon-ai/server": "workspace:*",
-        "effect": "catalog:",
+        "effect": "4.0.0-beta.83",
       },
       "devDependencies": {
-        "@tsconfig/bun": "catalog:",
-        "@types/bun": "catalog:",
-        "@typescript/native-preview": "catalog:",
+        "@tsconfig/bun": "1.0.9",
+        "@types/bun": "1.3.13",
+        "@typescript/native-preview": "7.0.0-dev.20251207.1",
       },
     },
     "packages/sdk/js": {
       "name": "@zyraxon-ai/sdk",
-      "version": "19.0.0",
+      "version": "19.0.5",
       "dependencies": {
-        "cross-spawn": "catalog:",
+        "cross-spawn": "^7.0.3",
       },
       "devDependencies": {
         "@hey-api/openapi-ts": "0.90.10",
-        "@tsconfig/node22": "catalog:",
-        "@types/cross-spawn": "catalog:",
-        "@types/node": "catalog:",
-        "@typescript/native-preview": "catalog:",
-        "typescript": "catalog:",
+        "@tsconfig/node22": "22.0.2",
+        "@types/cross-spawn": "6.0.6",
+        "@types/node": "24.12.2",
+        "@typescript/native-preview": "7.0.0-dev.20251207.1",
+        "typescript": "5.8.2",
       },
     },
     "packages/server": {
       "name": "@zyraxon-ai/server",
-      "version": "19.0.0",
+      "version": "19.0.5",
       "dependencies": {
         "@zyraxon-ai/core": "workspace:*",
         "@zyraxon-ai/protocol": "workspace:*",

@@ -1,43 +1,22 @@
-﻿{
+{
   "$schema": "https://json.schemastore.org/package.json",
   "name": "@zyraxon-ai/client",
-  "version": "19.0.5",
+  "private": true,
   "type": "module",
-  "license": "SEE LICENSE IN LICENSE",
-  "description": "Official ZYRAXON AI API Client",
-  "homepage": "https://zyraxonai.lovable.app",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/onelpawarai-X/ZYRAXON-AI.git",
-    "directory": "packages/client"
-  },
-  "author": "OMG / Lx Sayidi <sayidilx@gmail.com>",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "license": "BSL-1.1",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./effect": {
-      "types": "./dist/effect.d.ts",
-      "default": "./dist/effect.js"
-    }
+    ".": "./src/index.ts",
+    "./effect": "./src/effect.ts"
   },
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "generate": "bun run script/build.ts",
     "check:generated": "bun run generate && git diff --exit-code -- src/generated src/generated-effect",
-    "build": "tsc --project tsconfig.build.json",
     "test": "bun test --timeout 5000",
-    "typecheck": "tsgo --noEmit",
-    "prepublishOnly": "npm run build"
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
-    "@zyraxon-ai/schema": "^19.0.5",
-    "@zyraxon-ai/protocol": "^19.0.5"
+    "@zyraxon-ai/schema": "workspace:*",
+    "@zyraxon-ai/protocol": "workspace:*"
   },
   "peerDependencies": {
     "effect": "4.0.0-beta.83"
@@ -48,12 +27,13 @@
     }
   },
   "devDependencies": {
-    "@effect/platform-node": "4.0.0-beta.83",
-    "@tsconfig/bun": "1.0.9",
-    "@types/bun": "1.3.13",
-    "@typescript/native-preview": "7.0.0-dev.20251207.1",
-    "effect": "4.0.0-beta.83",
-    "typescript": "5.8.2"
+    "@effect/platform-node": "catalog:",
+    "@zyraxon-ai/core": "workspace:*",
+    "@zyraxon-ai/httpapi-codegen": "workspace:*",
+    "@zyraxon-ai/server": "workspace:*",
+    "@tsconfig/bun": "catalog:",
+    "@types/bun": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "effect": "catalog:"
   }
 }
-

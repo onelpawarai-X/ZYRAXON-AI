@@ -1,46 +1,22 @@
-﻿{
+{
   "$schema": "https://json.schemastore.org/package.json",
   "name": "@zyraxon-ai/protocol",
-  "version": "19.0.5",
+  "private": true,
   "type": "module",
-  "license": "SEE LICENSE IN LICENSE",
-  "description": "ZYRAXON AI Protocol â€” Effect-TS communication protocol for ZYRAXON services",
-  "homepage": "https://zyraxonai.lovable.app",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/onelpawarai-X/ZYRAXON-AI.git",
-    "directory": "packages/protocol"
-  },
-  "author": "OMG / Lx Sayidi <sayidilx@gmail.com>",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "license": "BSL-1.1",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./*": {
-      "types": "./dist/*.d.ts",
-      "default": "./dist/*.js"
-    }
+    "./*": "./src/*.ts"
   },
-  "files": [
-    "dist"
-  ],
   "scripts": {
-    "build": "tsc --project tsconfig.build.json",
-    "typecheck": "tsgo --noEmit",
-    "prepublishOnly": "npm run build"
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
-    "@zyraxon-ai/schema": "^19.0.5",
-    "effect": "4.0.0-beta.83"
+    "@zyraxon-ai/schema": "workspace:*",
+    "effect": "catalog:"
   },
   "devDependencies": {
-    "@tsconfig/bun": "1.0.9",
-    "@types/bun": "1.3.13",
-    "@typescript/native-preview": "7.0.0-dev.20251207.1",
-    "typescript": "5.8.2"
+    "@tsconfig/bun": "catalog:",
+    "@types/bun": "catalog:",
+    "@typescript/native-preview": "catalog:"
   }
 }
-
