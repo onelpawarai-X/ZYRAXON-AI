@@ -1,0 +1,20 @@
+/**
+ * Copyright (c) ZYRAXON AI.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// ZYRAXON: Skip Chromium download — we connect to REAL Chrome via CDP
+// The user's actual Chrome browser (with all profiles, logins, cookies) is used
+// via --remote-debugging-port=9222. No bundled Chromium needed.
+console.log('[ZYRAXON] Skipping Chromium download — using real Chrome via CDP');

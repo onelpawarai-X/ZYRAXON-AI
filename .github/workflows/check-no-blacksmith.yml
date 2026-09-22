@@ -1,0 +1,21 @@
+name: check-no-blacksmith
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for blacksmith runners
+        run: |
+          if grep -r "blacksmith" .github/workflows/; then
+            echo "::error::Blacksmith runners detected! Use ubuntu-latest instead."
+            exit 1
+          fi
+          echo "All workflows use ubuntu-latest. OK!"

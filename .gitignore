@@ -1,0 +1,108 @@
+.DS_Store
+node_modules
+.worktrees
+.sst
+.env
+.env.local
+.idea
+.vscode
+.codex
+*~
+playground
+tmp
+ts-dist
+.turbo
+**/.serena
+.serena/
+**/.omo
+.omo/
+/result
+refs
+Session.vim
+/opencode.json
+a.out
+target
+.scripts
+.direnv/
+
+# Local dev files
+opencode-dev
+UPCOMING_CHANGELOG.md
+*.bun-build
+tsconfig.tsbuildinfo
+
+# Binaries
+*.exe
+*.msi
+*.dmg
+*.deb
+*.rpm
+*.AppImage
+*.snap
+*.flatpak
+
+# Build outputs
+packages/desktop/dist/
+packages/desktop/web/
+packages/app/dist/
+packages/opencode/dist/
+packages/opencode/opencode
+packages/VSCode-win32-x64/
+**/dist/
+
+# Electron output
+out/
+
+# Temp HTML files
+temp_*
+
+# Android build
+packages/mobile/android-automation/app/build/
+packages/mobile/android-automation/.gradle/
+packages/mobile/android-automation/app/.cxx/
+packages/mobile/android-automation/local.properties
+
+# Temp & cache
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+.cache/
+.cache*/
+
+# Logs
+*.log
+*.log.*
+logs/
+
+# Streaming
+*.stream
+*.rtmp
+*.flv
+
+# MCP
+*.mcp
+*.mcp.json
+
+# Test files (RULE #1)
+test_*.py
+check_*.py
+temp_*.py
+
+# Bun
+.bun/
+
+# Lockfiles
+*.lock
+!bun.lock
+
+# zyraxon-code-clean (not needed — zyraxon-code is main)
+packages/zyraxon-code-clean/
+
+# Playwright MCP
+.playwright-mcp/
+
+__pycache__/
+
+*.pyc

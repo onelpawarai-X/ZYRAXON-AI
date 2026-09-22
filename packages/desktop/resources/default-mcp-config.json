@@ -1,0 +1,27 @@
+{
+  "mcp": {
+    "jarvis-browser": {
+      "type": "local",
+      "command": ["node", "__RESOURCES_PATH__/jarvis-browser-mcp.cjs", "--headless", "--browser", "chrome", "--no-sandbox"],
+      "enabled": true,
+      "environment": {
+        "PLAYWRIGHT_MCP_HEADLESS": "true"
+      }
+    },
+    "nuphus-desktop": {
+      "type": "local",
+      "command": ["node", "__RESOURCES_PATH__/nuphus-mcp/nuphus-mcp.cjs"],
+      "enabled": true,
+      "environment": {}
+    },
+    "touchpoint-mcp": {
+      "type": "local",
+      "command": ["python", "__RESOURCES_PATH__/touchpoint-mcp/run.py"],
+      "enabled": true,
+      "environment": {
+        "PYTHONPATH": "__RESOURCES_PATH__/touchpoint-mcp/libs",
+        "TOUCHPOINT_MODE": "no-vision"
+      }
+    }
+  }
+}

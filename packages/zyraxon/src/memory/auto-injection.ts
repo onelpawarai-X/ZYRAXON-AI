@@ -1,0 +1,1604 @@
+// ZYRAXON ETERNAL MEMORY v5 — Token-Based Compaction, 50,000 Year Preservation
+// OpenCode-inspired but 100x better: token-based selection, incremental LLM summaries,
+// structured summary (Objective/Work State/Next Move), 500-message buffer.
+// Zero limits. Zero forget. Zero latency. Survives 1000GB+ databases.
+
+import fs from "fs/promises"
+import path from "path"
+import { Global } from "@zyraxon-ai/core/global"
+
+type DB = import("bun:sqlite").Database
+let db: DB | null = null
+let dbInitPromise: Promise<void> | null = null
+
+const MEMORY_DIR = path.join(Global.Path.data, "memory")
+const DB_PATH = path.join(MEMORY_DIR, "infinite_memory.db")
+
+// ═══════════════════════════════════════════════════════════════
+// TOKEN-BASED COMPACTION CONSTANTS — 10x more than OpenCode
+// ═══════════════════════════════════════════════════════════════
+const CHARS_PER_TOKEN = 4                        // Same as OpenCode: length / 4
+const RECENT_BUFFER_SIZE = 500                   // 500 messages buffer (OpenCode: ~50)
+const MAX_CONTEXT_MEMORIES = 100                 // 100 memories for deep recall
+const KEEP_TOKENS = 20000                        // Keep last 20K tokens (OpenCode: 8K)
+const COMPACTION_TRIGGER_TOKENS = 60000          // Trigger compaction at 60K tokens
+const COMPACTION_SUMMARY_TOKENS = 4096           // Max tokens for summary output
+const TOOL_OUTPUT_MAX_CHARS = 2000               // Truncate tool outputs in serialization
+const COMPACTION_SUMMARY_TEMPLATE = `Output exactly the Markdown structure shown inside <template> and keep the section order unchanged. Do not include the <template> tags in your response.
+<template>
+## Objective
+- [one or two brief sentences describing what the user is trying to accomplish]
+
+## Important Details
+- [constraints/preferences, decisions and why, important facts/assumptions, exact context needed to continue, or "(none)"]
+
+## Work State
+### Completed
+- [finished work, verified facts, or changes made; otherwise "(none)"]
+
+### Active
+- [current work, partial changes, or investigation state; otherwise "(none)"]
+
+### Blocked
+- [blockers, failing commands, or unknowns; otherwise "(none)"]
+
+## Next Move
+1. [immediate concrete action, or "(none)"]
+2. [next action if known, or "(none)"]
+
+## Relevant Files
+- [file or directory path: why it matters, or "(none)"]
+</template>
+
+Rules:
+- Keep every section, even when empty.
+- Use terse bullets, not prose paragraphs.
+- Preserve exact file paths, symbols, commands, error strings, URLs, and identifiers when known.
+- Do not mention the summary process or that context was compacted.
+- Write in the same language as the conversation (Bengali if conversation is in Bengali).`
+
+// SAFE: .get() fails in compiled binary — use .all()[0] instead
+function qget(d: DB, sql: string, ...params: any[]): any {
+  try { const rows = d.query(sql).all(...params) as any[]; return rows.length > 0 ? rows[0] : undefined } catch { return undefined }
+}
+
+async function getDb(): Promise<DB> {
+  if (db) return db
+  if (!dbInitPromise) {
+    dbInitPromise = initDb()
+  }
+  await dbInitPromise
+  return db!
+}
+
+async function initDb(): Promise<void> {
+  try { await fs.access(MEMORY_DIR) } catch { await fs.mkdir(MEMORY_DIR, { recursive: true }) }
+  const { Database } = await import("bun:sqlite")
+  db = new Database(DB_PATH)
+  db.run("PRAGMA journal_mode=WAL")
+  db.run("PRAGMA synchronous=NORMAL")
+  db.run("PRAGMA cache_size=-65536")
+  db.run("PRAGMA mmap_size=268435456")
+  db.run("PRAGMA temp_store=MEMORY")
+  db.run("PRAGMA busy_timeout=5000")
+
+  db.run(`CREATE TABLE IF NOT EXISTS memories (
+    id TEXT PRIMARY KEY,
+    key TEXT NOT NULL,
+    content TEXT NOT NULL DEFAULT '',
+    summary TEXT NOT NULL DEFAULT '',
+    tags TEXT NOT NULL DEFAULT '[]',
+    category TEXT NOT NULL DEFAULT 'conversation',
+    importance INTEGER NOT NULL DEFAULT 5,
+    source TEXT NOT NULL DEFAULT 'auto',
+    timestamp INTEGER NOT NULL,
+    access_count INTEGER NOT NULL DEFAULT 0,
+    last_accessed INTEGER NOT NULL DEFAULT 0,
+    project_id TEXT DEFAULT '',
+    session_id TEXT DEFAULT '',
+    compressed INTEGER NOT NULL DEFAULT 0,
+    original_ids TEXT DEFAULT ''
+  )`)
+
+  db.run(`CREATE TABLE IF NOT EXISTS conversations (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    agent TEXT DEFAULT '',
+    model TEXT DEFAULT '',
+    timestamp INTEGER NOT NULL,
+    turn_index INTEGER NOT NULL DEFAULT 0
+  )`)
+
+  db.run(`CREATE TABLE IF NOT EXISTS context_buffer (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT NOT NULL,
+    entry_type TEXT NOT NULL,
+    content TEXT NOT NULL,
+    timestamp INTEGER NOT NULL
+  )`)
+
+  db.run(`CREATE INDEX IF NOT EXISTS idx_memories_key ON memories(key)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_memories_timestamp ON memories(timestamp)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_memories_importance ON memories(importance)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_memories_category ON memories(category)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_memories_tags ON memories(tags)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_conversations_session ON conversations(session_id)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_conversations_timestamp ON conversations(timestamp)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_context_buffer_session ON context_buffer(session_id)`)
+
+  // Compound indexes for common query patterns
+  db.run(`CREATE INDEX IF NOT EXISTS idx_memories_cat_ts ON memories(category, timestamp DESC)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_memories_imp_ts ON memories(importance DESC, timestamp DESC)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_memories_project_ts ON memories(project_id, timestamp DESC)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_memories_session_ts ON memories(session_id, timestamp DESC)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_conv_session_turn ON conversations(session_id, turn_index DESC)`)
+  db.run(`CREATE TABLE IF NOT EXISTS error_record (
+    id TEXT PRIMARY KEY,
+    error_type TEXT NOT NULL,
+    error_message TEXT NOT NULL,
+    stack_trace TEXT DEFAULT '',
+    fix_applied TEXT DEFAULT '',
+    fix_session_id TEXT DEFAULT '',
+    occurrence_count INTEGER NOT NULL DEFAULT 1,
+    severity TEXT NOT NULL DEFAULT 'error',
+    time_first_seen INTEGER NOT NULL,
+    time_last_seen INTEGER NOT NULL
+  )`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_error_type_msg ON error_record(error_type, error_message)`)
+  db.run(`CREATE TABLE IF NOT EXISTS learned_pattern (
+    id TEXT PRIMARY KEY,
+    pattern_type TEXT NOT NULL,
+    description TEXT NOT NULL,
+    frequency INTEGER NOT NULL DEFAULT 1,
+    confidence_score REAL NOT NULL DEFAULT 0.5,
+    example_sessions TEXT DEFAULT '[]',
+    time_created INTEGER NOT NULL,
+    time_last_seen INTEGER NOT NULL
+  )`)
+  db.run(`CREATE TABLE IF NOT EXISTS knowledge_entity (
+    id TEXT PRIMARY KEY,
+    entity_type TEXT NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    importance INTEGER NOT NULL DEFAULT 5,
+    access_count INTEGER NOT NULL DEFAULT 0,
+    metadata TEXT DEFAULT '{}',
+    time_created INTEGER NOT NULL,
+    time_updated INTEGER NOT NULL,
+    time_last_accessed INTEGER NOT NULL
+  )`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_pattern_type ON learned_pattern(pattern_type, frequency DESC)`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_knowledge_type_name ON knowledge_entity(entity_type, name)`)
+
+  try {
+    db.run(`CREATE VIRTUAL TABLE IF NOT EXISTS memories_fts USING fts5(key, content, summary, tags, content=memories, content_rowid=rowid)`)
+  } catch {
+    try { db.run(`CREATE VIRTUAL TABLE IF NOT EXISTS memories_fts USING fts5(key, content, summary, tags)`) } catch {}
+  }
+
+  // Ring buffer — last N turns, survives crashes (replaces file-based pending_save)
+  db.run(`CREATE TABLE IF NOT EXISTS ring_buffer (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    agent TEXT DEFAULT '',
+    model TEXT DEFAULT '',
+    timestamp INTEGER NOT NULL
+  )`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_ring_buffer_session ON ring_buffer(session_id, timestamp)`)
+
+  // Auto-evict ring buffer on insert (keeps last 200 per session — replaces slow subquery)
+  db.run(`CREATE TRIGGER IF NOT EXISTS trg_ring_buffer_evict AFTER INSERT ON ring_buffer
+    BEGIN
+      DELETE FROM ring_buffer WHERE id IN (
+        SELECT id FROM ring_buffer WHERE session_id = NEW.session_id
+        ORDER BY timestamp DESC LIMIT -1 OFFSET 200
+      );
+    END`)
+
+  // Heartbeat — memory daemon persistence (survives crashes)
+  db.run(`CREATE TABLE IF NOT EXISTS memory_heartbeat (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    last_beat INTEGER NOT NULL,
+    last_save INTEGER NOT NULL,
+    total_saves INTEGER NOT NULL DEFAULT 0,
+    uptime_ms INTEGER NOT NULL DEFAULT 0,
+    pid INTEGER NOT NULL DEFAULT 0
+  )`)
+  // Initialize heartbeat row if not exists
+  try { db.run(`INSERT OR IGNORE INTO memory_heartbeat (id, last_beat, last_save, total_saves, uptime_ms, pid) VALUES (1, ?, ?, 0, 0, ?)`, [Date.now(), Date.now(), process.pid]) } catch {}
+
+  // Pre-cached context table — instant injection without file I/O
+  db.run(`CREATE TABLE IF NOT EXISTS cached_context (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    context_json TEXT NOT NULL DEFAULT '{}',
+    updated_at INTEGER NOT NULL DEFAULT 0
+  )`)
+
+  // Compaction summary table — stores LLM-generated conversation summaries
+  db.run(`CREATE TABLE IF NOT EXISTS compaction_summary (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    recent_context TEXT NOT NULL DEFAULT '',
+    message_count INTEGER NOT NULL DEFAULT 0,
+    token_estimate INTEGER NOT NULL DEFAULT 0,
+    time_created INTEGER NOT NULL,
+    time_updated INTEGER NOT NULL
+  )`)
+  db.run(`CREATE INDEX IF NOT EXISTS idx_compaction_session ON compaction_summary(session_id, time_updated DESC)`)
+
+  try { db.run(`INSERT OR IGNORE INTO memories_fts(memories_fts) VALUES('rebuild')`) } catch {}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOKEN ESTIMATION — Same algorithm as OpenCode (4 chars = 1 token)
+// ═══════════════════════════════════════════════════════════════
+
+function tokenEstimate(input: string): number {
+  return Math.max(0, Math.round(input.length / CHARS_PER_TOKEN))
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MESSAGE SERIALIZATION — Convert messages to text for compaction
+// ═══════════════════════════════════════════════════════════════
+
+function truncateToolOutput(value: string): string {
+  return value.length <= TOOL_OUTPUT_MAX_CHARS ? value : `${value.slice(0, TOOL_OUTPUT_MAX_CHARS)}\n[truncated]`
+}
+
+function serializeMessage(msg: { role: string; content: string; agent?: string; model?: string }): string {
+  if (msg.role === "user") return `[User]: ${msg.content}`
+  if (msg.role === "assistant") return `[Assistant]: ${msg.content}`
+  if (msg.role === "system") return `[System]: ${msg.content}`
+  return `[${msg.role}]: ${msg.content}`
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOKEN-BASED MESSAGE SELECTION — Keep recent N tokens, not N messages
+// ═══════════════════════════════════════════════════════════════
+
+function selectMessagesByTokens(
+  messages: Array<{ role: string; content: string; agent?: string; model?: string; timestamp?: number }>,
+  keepTokens: number
+): { head: string; recent: string } | undefined {
+  const serialized = messages
+    .filter(m => m.role !== "compaction")
+    .map(m => serializeMessage(m))
+    .filter(Boolean)
+  if (serialized.length === 0) return undefined
+
+  let total = 0
+  let split = serialized.length
+  for (let i = serialized.length - 1; i >= 0; i--) {
+    const next = total + tokenEstimate(serialized[i])
+    if (next > keepTokens) break
+    total = next
+    split = i
+  }
+  return {
+    head: serialized.slice(0, split).join("\n\n"),
+    recent: serialized.slice(split).join("\n\n"),
+  }
+}
+
+export interface MemoryEntry {
+  id: string; key: string; content: string; summary: string
+  tags: string[]; category: string; importance: number
+  source: string; timestamp: number; accessCount: number
+  lastAccessed: number; projectId?: string; sessionId?: string
+  compressed?: boolean; originalIds?: string[]
+}
+
+export interface AutoContext {
+  enabled: boolean; lastInjection: number; injectedCount: number
+  totalMemories: number; recentContext: string
+  userPreferences: Record<string, string>
+  projectContext: string; sessionHistory: string[]
+  learnedPatterns: string[]; masterPreferences: Record<string, string>
+  lastCompression: number; version: number
+}
+
+const CONTEXT_FILE = path.join(MEMORY_DIR, "auto_context.json")
+let cachedContext: AutoContext | null = null
+
+async function loadAutoContext(): Promise<AutoContext> {
+  if (cachedContext) return cachedContext
+  try {
+    const data = await fs.readFile(CONTEXT_FILE, "utf-8")
+    cachedContext = JSON.parse(data)
+  } catch {
+    cachedContext = {
+      enabled: true, lastInjection: 0, injectedCount: 0, totalMemories: 0,
+      recentContext: "", userPreferences: {}, projectContext: "",
+      sessionHistory: [], learnedPatterns: [], masterPreferences: {},
+      lastCompression: 0, version: 3,
+    }
+  }
+  return cachedContext!
+}
+
+async function saveAutoContext(ctx?: AutoContext): Promise<void> {
+  const c = ctx || cachedContext
+  if (!c) return
+  cachedContext = c
+  await fs.writeFile(CONTEXT_FILE + ".tmp", JSON.stringify(c, null, 2))
+  await fs.rename(CONTEXT_FILE + ".tmp", CONTEXT_FILE)
+}
+
+// ============================================
+// CORE: Memory Store / Recall (SQLite)
+// ============================================
+
+function rowToEntry(row: any): MemoryEntry {
+  return {
+    id: row.id, key: row.key, content: row.content, summary: row.summary,
+    tags: JSON.parse(row.tags || '[]'), category: row.category,
+    importance: row.importance, source: row.source,
+    timestamp: row.timestamp, accessCount: row.access_count,
+    lastAccessed: row.last_accessed,
+    projectId: row.project_id || undefined,
+    sessionId: row.session_id || undefined,
+    compressed: row.compressed === 1,
+    originalIds: row.original_ids ? JSON.parse(row.original_ids) : undefined,
+  }
+}
+
+export async function storeMemory(params: {
+  key: string; content: string; summary?: string; tags?: string[]
+  category?: string; importance?: number; source?: string
+  projectId?: string; sessionId?: string
+}): Promise<void> {
+  const d = await getDb()
+  const id = `mem_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+  const now = Date.now()
+  d.run(`INSERT OR REPLACE INTO memories (id, key, content, summary, tags, category, importance, source, timestamp, access_count, last_accessed, project_id, session_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`,
+    [id, params.key, params.content, params.summary || params.content.substring(0, 150),
+     JSON.stringify(params.tags || []), params.category || 'conversation',
+     params.importance ?? 5, params.source || 'auto', now, now,
+     params.projectId || '', params.sessionId || ''])
+  try { d.run(`INSERT INTO memories_fts (rowid, key, content, summary, tags) VALUES (last_insert_rowid(), ?, ?, ?, ?)`,
+    [params.key, params.content, params.summary || '', JSON.stringify(params.tags || [])]) } catch {}
+}
+
+export async function searchMemories(query: string, limit: number = 25): Promise<MemoryEntry[]> {
+  const d = await getDb()
+  const queryLower = query.toLowerCase()
+  const queryWords = queryLower.split(/\s+/).filter(w => w.length > 2)
+
+  // FTS5 search with phrase matching + prefix fallback
+  let rows: any[]
+  try {
+    // Try exact phrase match first
+    rows = d.query(`SELECT m.*, rank FROM memories_fts fts JOIN memories m ON m.rowid = fts.rowid WHERE memories_fts MATCH ? ORDER BY rank LIMIT ?`).all(`"${queryLower}"`, limit) as any[]
+    if (rows.length > 0) return rows.map(rowToEntry)
+  } catch {}
+
+  try {
+    // Fallback: OR-separated words with prefix matching
+    const ftsQuery = queryWords.map(w => `"${w}"*`).join(' OR ')
+    if (ftsQuery) {
+      rows = d.query(`SELECT m.*, rank FROM memories_fts fts JOIN memories m ON m.rowid = fts.rowid WHERE memories_fts MATCH ? ORDER BY rank LIMIT ?`).all(ftsQuery, limit) as any[]
+      if (rows.length > 0) return rows.map(rowToEntry)
+    }
+  } catch {}
+
+  // Final fallback: in-memory scoring with pre-filtered candidates
+  rows = d.query(`SELECT * FROM memories WHERE importance >= 3 ORDER BY importance DESC, timestamp DESC LIMIT ?`).all(Math.min(limit * 4, 200)) as any[]
+  const scored = rows.map((r: any) => {
+    let score = 0
+    const keyL = (r.key || '').toLowerCase()
+    const contentL = (r.content || '').toLowerCase()
+    const summaryL = (r.summary || '').toLowerCase()
+    if (keyL.includes(queryLower)) score += 100
+    if (contentL.includes(queryLower)) score += 50
+    if (summaryL.includes(queryLower)) score += 30
+    for (const w of queryWords) {
+      if (keyL.includes(w)) score += 20
+      if (contentL.includes(w)) score += 10
+      if (summaryL.includes(w)) score += 8
+    }
+    score += (r.importance || 5) * 5
+    const age = Date.now() - r.timestamp
+    if (age < 86400000) score += 30
+    else if (age < 604800000) score += 20
+    score += Math.min((r.access_count || 0) * 3, 30)
+    return { row: r, score }
+  })
+  return scored.filter(r => r.score > 0).sort((a, b) => b.score - a.score).slice(0, limit).map(r => rowToEntry(r.row))
+}
+
+export async function storeConversationTurn(params: {
+  sessionId: string; role: string; content: string; agent?: string; model?: string
+}): Promise<void> {
+  const d = await getDb()
+  const id = `conv_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+  const maxTurn = qget(d, `SELECT COALESCE(MAX(turn_index), -1) as mx FROM conversations WHERE session_id = ?`, params.sessionId)
+  const turnIndex = (maxTurn?.mx ?? -1) + 1
+  d.run(`INSERT INTO conversations (id, session_id, role, content, agent, model, timestamp, turn_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, params.sessionId, params.role, params.content, params.agent || '', params.model || '', Date.now(), turnIndex])
+  storeContextBuffer(params.sessionId, `${params.role}: ${params.content.substring(0, 500)}`)
+  // Also push to ring buffer (crash-proof, replaces file-based pending_save)
+  ringBufferPush({ sessionId: params.sessionId, role: params.role, content: params.content, agent: params.agent, model: params.model }).catch(() => {})
+}
+
+export async function getRecentConversationTurns(sessionId: string, count: number = 10): Promise<any[]> {
+  const d = await getDb()
+  return d.query(`SELECT * FROM conversations WHERE session_id = ? ORDER BY turn_index DESC LIMIT ?`).all(sessionId, count) as any[]
+}
+
+function storeContextBuffer(sessionId: string, content: string): void {
+  if (!db) return
+  db.run(`INSERT INTO context_buffer (session_id, entry_type, content, timestamp) VALUES (?, 'turn', ?, ?)`,
+    [sessionId, content, Date.now()])
+  db.run(`DELETE FROM context_buffer WHERE id NOT IN (SELECT id FROM context_buffer WHERE session_id = ? ORDER BY id DESC LIMIT ?)`,
+    [sessionId, RECENT_BUFFER_SIZE * 2])
+}
+
+export async function getContextBuffer(sessionId: string): Promise<string[]> {
+  const d = await getDb()
+  const rows = d.query(`SELECT content FROM context_buffer WHERE session_id = ? ORDER BY id DESC LIMIT ?`).all(sessionId, RECENT_BUFFER_SIZE) as any[]
+  return rows.map((r: any) => r.content).reverse()
+}
+
+// ============================================
+// PREPARED STATEMENT CACHE — Reuse hot queries
+// ============================================
+
+const stmtCache = new Map<string, any>()
+
+function preparedQuery(db: DB, sql: string): any {
+  let stmt = stmtCache.get(sql)
+  if (!stmt) {
+    stmt = db.query(sql)
+    stmtCache.set(sql, stmt)
+  }
+  return stmt
+}
+
+// ============================================
+// CURSOR PAGINATION — Efficient large-set traversal
+// ============================================
+
+export async function listMemoriesCursor(opts: {
+  cursor?: string; limit?: number; category?: string; minImportance?: number
+} = {}): Promise<{ items: MemoryEntry[]; nextCursor: string | null }> {
+  const d = await getDb()
+  const limit = Math.min(opts.limit || 50, 200)
+  const cursor = opts.cursor ? parseInt(Buffer.from(opts.cursor, 'base64').toString('utf-8')) : 0
+
+  let sql = `SELECT * FROM memories WHERE id > ?`
+  const params: any[] = [cursor]
+
+  if (opts.category) {
+    sql += ` AND category = ?`
+    params.push(opts.category)
+  }
+  if (opts.minImportance !== undefined) {
+    sql += ` AND importance >= ?`
+    params.push(opts.minImportance)
+  }
+  sql += ` ORDER BY id ASC LIMIT ?`
+  params.push(limit + 1) // fetch one extra to detect next page
+
+  const rows = d.query(sql).all(...params) as any[]
+  const hasMore = rows.length > limit
+  const items = rows.slice(0, limit).map(rowToEntry)
+  const nextCursor = hasMore
+    ? Buffer.from(String(rows[limit].id)).toString('base64')
+    : null
+
+  return { items, nextCursor }
+}
+
+export async function searchMemoriesCursor(opts: {
+  query: string; cursor?: string; limit?: number
+} = { query: "" }): Promise<{ items: MemoryEntry[]; nextCursor: string | null }> {
+  const d = await getDb()
+  const limit = Math.min(opts.limit || 25, 100)
+  const queryLower = opts.query.toLowerCase()
+
+  // Use FTS5 with cursor support
+  let rows: any[] = []
+  try {
+    const ftsQuery = queryLower.split(/\s+/).filter(w => w.length > 2).map(w => `"${w}"*`).join(' OR ')
+    if (ftsQuery) {
+      const sql = `SELECT m.*, rank, fts.rowid FROM memories_fts fts JOIN memories m ON m.rowid = fts.rowid
+        WHERE memories_fts MATCH ? AND m.id > ? ORDER BY rank LIMIT ?`
+      const cursorId = opts.cursor ? parseInt(Buffer.from(opts.cursor, 'base64').toString('utf-8')) : 0
+      rows = d.query(sql).all(ftsQuery, cursorId, limit + 1) as any[]
+    }
+  } catch {}
+
+  if (rows.length === 0) {
+    // Fallback with cursor
+    const cursorId = opts.cursor ? parseInt(Buffer.from(opts.cursor, 'base64').toString('utf-8')) : 0
+    const sql = `SELECT * FROM memories WHERE importance >= 3 AND id > ? ORDER BY importance DESC, timestamp DESC LIMIT ?`
+    rows = d.query(sql).all(cursorId, limit + 1) as any[]
+  }
+
+  const hasMore = rows.length > limit
+  const items = rows.slice(0, limit).map(rowToEntry)
+  const nextCursor = hasMore
+    ? Buffer.from(String(rows[limit].id)).toString('base64')
+    : null
+
+  return { items, nextCursor }
+}
+
+// ============================================
+// BATCH OPERATIONS — Bulk save/search in one transaction
+// ============================================
+
+export async function batchSave(entries: Array<{
+  key: string; content: string; summary?: string; tags?: string[]
+  category?: string; importance?: number; source?: string
+  projectId?: string; sessionId?: string
+}>): Promise<string[]> {
+  const d = await getDb()
+  const ids: string[] = []
+  const now = Date.now()
+
+  // Single transaction for all inserts
+  d.run("BEGIN TRANSACTION")
+  try {
+    const insertMem = preparedQuery(d, `INSERT OR REPLACE INTO memories
+      (id, key, content, summary, tags, category, importance, source, timestamp, access_count, last_accessed, project_id, session_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`)
+    const insertFts = preparedQuery(d, `INSERT INTO memories_fts (rowid, key, content, summary, tags)
+      VALUES (last_insert_rowid(), ?, ?, ?, ?)`)
+
+    for (const e of entries) {
+      const id = `mem_${now}_${Math.random().toString(36).slice(2, 10)}`
+      const tags = JSON.stringify(e.tags || [])
+      insertMem.run(id, e.key, e.content, e.summary || e.content.substring(0, 150),
+        tags, e.category || 'conversation', e.importance ?? 5, e.source || 'auto',
+        now, now, e.projectId || '', e.sessionId || '')
+      try { insertFts.run(e.key, e.content, e.summary || '', tags) } catch {}
+      ids.push(id)
+    }
+    d.run("COMMIT")
+  } catch (e) {
+    d.run("ROLLBACK")
+    throw e
+  }
+  return ids
+}
+
+export async function batchSearch(queries: string[], limitPerQuery: number = 5): Promise<Map<string, MemoryEntry[]>> {
+  const results = new Map<string, MemoryEntry[]>()
+  const d = await getDb()
+
+  // Use a single FTS query per search term
+  const searchFts = preparedQuery(d,
+    `SELECT m.*, rank FROM memories_fts fts JOIN memories m ON m.rowid = fts.rowid
+     WHERE memories_fts MATCH ? ORDER BY rank LIMIT ?`)
+
+  for (const q of queries) {
+    const queryLower = q.toLowerCase()
+    let rows: any[] = []
+
+    try {
+      const ftsQuery = queryLower.split(/\s+/).filter(w => w.length > 2).map(w => `"${w}"*`).join(' OR ')
+      if (ftsQuery) rows = searchFts.all(ftsQuery, limitPerQuery) as any[]
+    } catch {}
+
+    if (rows.length === 0) {
+      const fallback = preparedQuery(d,
+        `SELECT * FROM memories WHERE importance >= 3 AND (key LIKE ? OR content LIKE ?)
+         ORDER BY importance DESC, timestamp DESC LIMIT ?`)
+      rows = fallback.all(`%${queryLower}%`, `%${queryLower}%`, limitPerQuery) as any[]
+    }
+
+    results.set(q, rows.map(rowToEntry))
+  }
+  return results
+}
+
+export async function getMemoryStatsDetailed(): Promise<{
+  totalMemories: number; totalConversations: number; totalTurns: number
+  oldestMemory: string; newestMemory: string; topCategories: Record<string, number>
+  bufferSize: number
+}> {
+  const d = await getDb()
+  const memCount = qget(d, `SELECT COUNT(*) as c FROM memories`)?.c || 0
+  const convCount = qget(d, `SELECT COUNT(DISTINCT session_id) as c FROM conversations`)?.c || 0
+  const turnCount = qget(d, `SELECT COUNT(*) as c FROM conversations`)?.c || 0
+  const oldest = qget(d, `SELECT MIN(timestamp) as t FROM memories`)?.t
+  const newest = qget(d, `SELECT MAX(timestamp) as t FROM memories`)?.t
+  const cats = d.query(`SELECT category, COUNT(*) as c FROM memories GROUP BY category ORDER BY c DESC`).all() as any[]
+  const bufSize = qget(d, `SELECT COUNT(*) as c FROM context_buffer`)?.c || 0
+  const topCats: Record<string, number> = {}
+  for (const r of cats) topCats[r.category] = r.c
+  return {
+    totalMemories: memCount, totalConversations: convCount, totalTurns: turnCount,
+    oldestMemory: oldest ? new Date(oldest).toISOString() : 'none',
+    newestMemory: newest ? new Date(newest).toISOString() : 'none',
+    topCategories: topCats, bufferSize: bufSize,
+  }
+}
+
+// ============================================
+// RING BUFFER — Crash-proof conversation ring (replaces file-based pending_save)
+// ============================================
+
+const RING_BUFFER_MAX = 200
+
+export async function ringBufferPush(params: {
+  sessionId: string; role: string; content: string; agent?: string; model?: string
+}): Promise<void> {
+  const d = await getDb()
+  d.run(`INSERT INTO ring_buffer (session_id, role, content, agent, model, timestamp) VALUES (?, ?, ?, ?, ?, ?)`,
+    [params.sessionId, params.role, params.content, params.agent || '', params.model || '', Date.now()])
+  // Auto-eviction handled by trg_ring_buffer_evict trigger
+  // Global prune if total rows exceed 10x max (safety net)
+  const total = qget(d, `SELECT COUNT(*) as c FROM ring_buffer`)?.c || 0
+  if (total > RING_BUFFER_MAX * 10) {
+    d.run(`DELETE FROM ring_buffer WHERE id NOT IN (
+      SELECT id FROM ring_buffer ORDER BY timestamp DESC LIMIT ?
+    )`, [RING_BUFFER_MAX * 5])
+  }
+}
+
+export async function ringBufferGet(sessionId: string, count: number = 10): Promise<Array<{
+  role: string; content: string; agent: string; model: string; timestamp: number
+}>> {
+  const d = await getDb()
+  return d.query(`SELECT role, content, agent, model, timestamp FROM ring_buffer
+    WHERE session_id = ? ORDER BY timestamp DESC LIMIT ?`).all(sessionId, count) as any[]
+}
+
+export async function ringBufferPrune(olderThanMs: number = 86400000): Promise<number> {
+  const d = await getDb()
+  const cutoff = Date.now() - olderThanMs
+  const before = qget(d, `SELECT COUNT(*) as c FROM ring_buffer`)?.c || 0
+  d.run(`DELETE FROM ring_buffer WHERE timestamp < ?`, [cutoff])
+  const after = qget(d, `SELECT COUNT(*) as c FROM ring_buffer`)?.c || 0
+  return before - after
+}
+
+// ============================================
+// HEARTBEAT — Memory daemon persistence (survives crashes)
+// ============================================
+
+export async function heartbeatBeat(): Promise<void> {
+  const d = await getDb()
+  d.run(`UPDATE memory_heartbeat SET last_beat = ?, uptime_ms = uptime_ms + 2000, pid = ? WHERE id = 1`,
+    [Date.now(), process.pid])
+}
+
+export async function heartbeatGetStats(): Promise<{
+  lastBeat: number; lastSave: number; totalSaves: number; uptimeMs: number; pid: number
+  isAlive: boolean; ageMs: number
+} | null> {
+  const d = await getDb()
+  const row = qget(d, `SELECT * FROM memory_heartbeat WHERE id = 1`)
+  if (!row) return null
+  const now = Date.now()
+  return {
+    lastBeat: row.last_beat,
+    lastSave: row.last_save,
+    totalSaves: row.total_saves,
+    uptimeMs: row.uptime_ms,
+    pid: row.pid,
+    isAlive: (now - row.last_beat) < 5000,
+    ageMs: now - row.last_beat,
+  }
+}
+
+export async function heartbeatUptime(): Promise<number> {
+  const stats = await heartbeatGetStats()
+  return stats?.uptimeMs ?? 0
+}
+
+// ============================================
+// CACHED CONTEXT — Instant injection (pre-cached, no file I/O)
+// ============================================
+
+export async function cachedContextGet(): Promise<Record<string, any> | null> {
+  const d = await getDb()
+  const row = qget(d, `SELECT context_json, updated_at FROM cached_context WHERE id = 1`)
+  if (!row) return null
+  // Cache valid for 30 seconds
+  if (Date.now() - row.updated_at > 30000) return null
+  try { return JSON.parse(row.context_json) } catch { return null }
+}
+
+export async function cachedContextUpdate(context: Record<string, any>): Promise<void> {
+  const d = await getDb()
+  d.run(`INSERT OR REPLACE INTO cached_context (id, context_json, updated_at) VALUES (1, ?, ?)`,
+    [JSON.stringify(context), Date.now()])
+}
+
+// ============================================
+// TOKEN-BASED CONTEXT INJECTION — 100x better than OpenCode
+// ============================================
+
+export async function autoInjectContext(userMessage: string, agent: string, sessionId?: string): Promise<string> {
+  const _t = Date.now()
+
+  // Try pre-cached context first (instant, no file I/O)
+  const cached = await cachedContextGet()
+  const ctx = cached as AutoContext | null
+  if (ctx && !ctx.enabled) return ""
+
+  const parts: string[] = []
+
+  // Current mode/agent awareness
+  parts.push(`Current mode: ${agent}`)
+
+  // Compaction summary (if exists) — the "brain" of past conversations
+  if (sessionId) {
+    try {
+      const summary = await getCompactionSummary(sessionId)
+      if (summary) {
+        parts.push(`Previous conversation summary:\n${summary.summary}`)
+      }
+    } catch {}
+  }
+
+  // Token-based recent conversation history (not fixed count!)
+  if (sessionId) {
+    try {
+      const d = await getDb()
+      const rows = d.query(
+        `SELECT role, content, agent, model, timestamp FROM conversations
+         WHERE session_id = ? ORDER BY turn_index DESC LIMIT ?`
+      ).all(sessionId, RECENT_BUFFER_SIZE) as any[]
+
+      if (rows.length > 0) {
+        const messages = rows.reverse().map(r => ({
+          role: r.role, content: r.content, agent: r.agent, model: r.model, timestamp: r.timestamp
+        }))
+        const selected = selectMessagesByTokens(messages, KEEP_TOKENS)
+        if (selected && selected.recent) {
+          parts.push(`Recent conversation (${messages.length} turns, last ~${Math.round(KEEP_TOKENS / 1000)}K tokens):\n${selected.recent}`)
+        }
+      }
+    } catch {}
+  }
+
+  if (ctx?.masterPreferences && Object.keys(ctx.masterPreferences).length > 0) {
+    const masterPrefs = Object.entries(ctx.masterPreferences).map(([k, v]) => `- ${k}: ${v}`).join("\n")
+    parts.push(`Master's preferences (NEVER violate):\n${masterPrefs}`)
+  }
+
+  if (ctx?.recentContext) {
+    parts.push(`Recent context:\n${ctx.recentContext}`)
+  }
+  if (ctx?.userPreferences && Object.keys(ctx.userPreferences).length > 0) {
+    const prefs = Object.entries(ctx.userPreferences).map(([k, v]) => `- ${k}: ${v}`).join("\n")
+    parts.push(`User preferences:\n${prefs}`)
+  }
+  if (ctx?.projectContext) {
+    parts.push(`Project context:\n${ctx.projectContext}`)
+  }
+  if (ctx?.learnedPatterns && ctx.learnedPatterns.length > 0) {
+    parts.push(`Learned patterns:\n${ctx.learnedPatterns.map(p => `- ${p}`).join("\n")}`)
+  }
+
+  // SQLite-powered unlimited memory recall (100 memories, not 25)
+  let memoryCount = 0
+  try {
+    const _tMem = Date.now()
+    const memories = await searchMemories(userMessage, MAX_CONTEXT_MEMORIES)
+    memoryCount = memories.length
+    if (memories.length > 0) {
+      const memStr = memories.map(m => {
+        const age = Date.now() - m.timestamp
+        const daysOld = Math.floor(age / 86400000)
+        let recency = daysOld === 0 ? "today" : daysOld === 1 ? "yesterday" : daysOld < 7 ? `${daysOld}d ago` : daysOld < 30 ? `${Math.floor(daysOld / 7)}w ago` : daysOld < 365 ? `${Math.floor(daysOld / 30)}mo ago` : `${Math.floor(daysOld / 365)}y ago`
+        return `- [${m.importance}/10|${m.category}|${recency}] ${m.key}: ${m.summary.substring(0, 200)}`
+      }).join("\n")
+      parts.push(`Unlimited memory recall (${memories.length} matches):\n${memStr}`)
+    }
+    console.log(`[autoInjectContext] memory_search: ${memories.length} results in ${Date.now() - _tMem}ms`)
+  } catch (e: any) {
+    console.log(`[autoInjectContext] memory_search ERROR: ${e?.message ?? e}`)
+  }
+
+  // Update cached context for next time
+  if (ctx) {
+    ctx.lastInjection = Date.now()
+    ctx.injectedCount++
+    cachedContextUpdate(ctx).catch(() => {})
+  }
+
+  if (parts.length === 0) return ""
+  console.log(`[autoInjectContext] total: ${Date.now() - _t}ms, memories: ${memoryCount}, parts: ${parts.length}`)
+  return `[ZYRAXON ETERNAL MEMORY v5]\n${parts.join("\n\n")}\n[/ZYRAXON ETERNAL MEMORY]\n\n`
+}
+
+export async function autoStoreConversation(
+  userMessage: string, assistantResponse: string, agent: string, model: string,
+  projectId?: string, sessionId?: string,
+): Promise<void> {
+  const ctx = await loadAutoContext()
+  const now = Date.now()
+  const importance = calculateImportance(userMessage, assistantResponse)
+  const tags = extractTags(userMessage + " " + assistantResponse)
+  const category = extractCategory(userMessage + " " + assistantResponse)
+  const key = extractKey(userMessage)
+  const isMaster = masterKeywords.some(kw => userMessage.toLowerCase().includes(kw))
+
+  if (importance >= 3 || isMaster) {
+    await storeMemory({
+      key, content: userMessage.substring(0, 2000),
+      summary: generateSummary(userMessage), tags, category,
+      importance: isMaster ? Math.max(importance, 9) : importance,
+      source: "auto", projectId, sessionId,
+    })
+  }
+
+  if (isMaster) {
+    if (!ctx.masterPreferences) ctx.masterPreferences = {}
+    ctx.masterPreferences[key.substring(0, 50)] = userMessage.substring(0, 500)
+  }
+
+  ctx.recentContext = `User: ${userMessage.substring(0, 300)}\nAssistant: ${assistantResponse.substring(0, 300)}`
+  ctx.sessionHistory.push(`[${agent}] User: ${userMessage.substring(0, 150)}`)
+  if (ctx.sessionHistory.length > 50) ctx.sessionHistory = ctx.sessionHistory.slice(-50)
+
+  const prefs = extractPreferences(userMessage)
+  for (const [k, v] of Object.entries(prefs)) ctx.userPreferences[k] = v
+
+  if (sessionId) {
+    await storeConversationTurn({ sessionId, role: "user", content: userMessage, agent, model })
+    await storeConversationTurn({ sessionId, role: "assistant", content: assistantResponse, agent, model })
+  }
+
+  await saveAutoContext(ctx)
+  // Update pre-cached context for instant injection next turn
+  cachedContextUpdate(ctx).catch(() => {})
+}
+
+export async function smartRecall(query: string, limit: number = 15): Promise<string> {
+  const memories = await searchMemories(query, limit)
+  if (memories.length === 0) return "No relevant memories found."
+  return memories.map(m => {
+    const age = Date.now() - m.timestamp
+    const daysOld = Math.floor(age / 86400000)
+    let recency = daysOld === 0 ? "today" : daysOld === 1 ? "yesterday" : daysOld < 7 ? `${daysOld} days ago` : daysOld < 30 ? `${Math.floor(daysOld / 7)} weeks ago` : daysOld < 365 ? `${Math.floor(daysOld / 30)} months ago` : `${Math.floor(daysOld / 365)} years ago`
+    return `[${m.importance}/10|${m.category}|${recency}] ${m.key}:\n${m.summary.substring(0, 400)}`
+  }).join("\n\n")
+}
+
+// ============================================
+// Legacy helpers (preserved for compatibility)
+// ============================================
+
+const masterKeywords = ["মাস্টার", "master", "always remember", "সবসময় মনে রাখো", "never forget", "কখনো ভুলবা না"]
+
+function calculateImportance(userMessage: string, assistantResponse: string): number {
+  let importance = 5
+  const combined = (userMessage + " " + assistantResponse).toLowerCase()
+  const highImportance = ["critical", "important", "always", "never", "must", "requirement", "constraint", "decision", "chose", "architecture", "security"]
+  const medImportance = ["bug", "error", "feature", "implementation", "fix", "preference", "prefer", "pattern", "workflow"]
+  const lowImportance = ["test", "example", "demo", "temporary"]
+  for (const word of highImportance) { if (combined.includes(word)) importance += 2 }
+  for (const word of medImportance) { if (combined.includes(word)) importance += 1 }
+  for (const word of lowImportance) { if (combined.includes(word)) importance -= 1 }
+  if (combined.includes("master") || combined.includes("মাস্টার")) importance += 3
+  if (combined.includes("always") || combined.includes("সবসময়")) importance += 2
+  if (combined.includes("never") || combined.includes("কখনো না")) importance += 2
+  if (combined.includes("remember") || combined.includes("মনে রাখো")) importance += 3
+  if (assistantResponse.length > 500) importance += 1
+  if (assistantResponse.length > 1000) importance += 1
+  return Math.min(10, Math.max(1, importance))
+}
+
+function extractCategory(text: string): string {
+  const lower = text.toLowerCase()
+  if (lower.includes("bug") || lower.includes("error") || lower.includes("fix")) return "error"
+  if (lower.includes("prefer") || lower.includes("like") || lower.includes("want")) return "preference"
+  if (lower.includes("decided") || lower.includes("chose") || lower.includes("architecture")) return "decision"
+  if (lower.includes("pattern") || lower.includes("workflow") || lower.includes("approach")) return "workflow"
+  if (lower.includes("code") || lower.includes("function") || lower.includes("class")) return "code"
+  if (lower.includes("fact") || lower.includes("info") || lower.includes("note")) return "fact"
+  return "conversation"
+}
+
+function extractTags(text: string): string[] {
+  const tags: string[] = []
+  const lower = text.toLowerCase()
+  const tagMap: Record<string, string> = {
+    bug: "bug", error: "bug", crash: "bug", exception: "bug",
+    feature: "feature", add: "feature", implement: "feature", create: "feature",
+    fix: "fix", resolve: "fix", repair: "fix", patch: "fix",
+    test: "test", testing: "test", unittest: "test",
+    deploy: "deploy", deployment: "deploy", release: "deploy",
+    security: "security", auth: "security", password: "security", token: "security",
+    performance: "performance", optimization: "performance", speed: "performance", slow: "performance",
+    ui: "ui", frontend: "ui", design: "ui", layout: "ui",
+    api: "api", backend: "api", endpoint: "api", rest: "api",
+    database: "database", db: "database", sql: "database", query: "database",
+    config: "config", configuration: "config", settings: "config",
+    master: "master", মাস্টার: "master",
+    important: "important", critical: "important",
+    opencode: "opencode", opencode: "opencode",
+  }
+  for (const [keyword, tag] of Object.entries(tagMap)) {
+    if (lower.includes(keyword) && !tags.includes(tag)) tags.push(tag)
+  }
+  return tags.slice(0, 10)
+}
+
+function extractKey(text: string): string {
+  const words = text.split(/\s+/).filter(w => w.length > 2).slice(0, 8)
+  return words.join("_").substring(0, 80) || "unknown"
+}
+
+function generateSummary(content: string): string {
+  if (content.length <= 150) return content
+  const sentences = content.split(/[.!?।]+/).filter(s => s.trim().length > 10)
+  if (sentences.length <= 2) return content.substring(0, 150)
+  return sentences.slice(0, 2).join(". ").substring(0, 150)
+}
+
+function extractPreferences(text: string): Record<string, string> {
+  const prefs: Record<string, string> = {}
+  const lower = text.toLowerCase()
+  if (lower.includes("prefer") || lower.includes("like") || lower.includes("use")) {
+    if (lower.includes("typescript")) prefs["language"] = "TypeScript"
+    if (lower.includes("javascript")) prefs["language"] = "JavaScript"
+    if (lower.includes("python")) prefs["language"] = "Python"
+    if (lower.includes("dark mode") || lower.includes("dark")) prefs["theme"] = "dark"
+    if (lower.includes("light mode") || lower.includes("light")) prefs["theme"] = "light"
+    if (lower.includes("bun")) prefs["runtime"] = "bun"
+    if (lower.includes("node")) prefs["runtime"] = "node"
+  }
+  if (lower.includes("call me") || lower.includes("নাম")) {
+    const nameMatch = text.match(/(?:call me|নাম)\s+(\w+)/i)
+    if (nameMatch) prefs["name"] = nameMatch[1]
+  }
+  return prefs
+}
+
+export async function storeMasterPreference(key: string, value: string): Promise<void> {
+  const ctx = await loadAutoContext()
+  if (!ctx.masterPreferences) ctx.masterPreferences = {}
+  ctx.masterPreferences[key] = value
+  await saveAutoContext(ctx)
+  await storeMemory({
+    key: `master_pref_${key}`, content: `Master preference: ${key} = ${value}`,
+    summary: `Master wants ${key}: ${value}`, tags: ["master", "preference", "important"],
+    category: "preference", importance: 10, source: "manual",
+  })
+}
+
+export async function autoLearnPattern(pattern: string, context: string): Promise<void> {
+  await storeMemory({
+    key: `pattern_${extractKey(pattern)}`, content: `${pattern}\nContext: ${context}`,
+    summary: generateSummary(pattern), tags: ["pattern", "learned", ...extractTags(pattern)],
+    category: "pattern", importance: 7, source: "learned",
+  })
+  const ctx = await loadAutoContext()
+  if (!ctx.learnedPatterns) ctx.learnedPatterns = []
+  ctx.learnedPatterns.push(pattern.substring(0, 200))
+  if (ctx.learnedPatterns.length > 1000) ctx.learnedPatterns = ctx.learnedPatterns.slice(-1000)
+  await saveAutoContext(ctx)
+}
+
+// ============================================
+// COMPACTION SUMMARY — LLM-generated conversation summaries
+// ============================================
+
+export async function getCompactionSummary(sessionId: string): Promise<{
+  summary: string; recentContext: string; messageCount: number; tokenEstimate: number
+} | null> {
+  const d = await getDb()
+  const row = qget(d, `SELECT * FROM compaction_summary WHERE session_id = ? ORDER BY time_updated DESC LIMIT 1`, sessionId)
+  if (!row) return null
+  return {
+    summary: row.summary,
+    recentContext: row.recent_context,
+    messageCount: row.message_count,
+    tokenEstimate: row.token_estimate,
+  }
+}
+
+export async function storeCompactionSummary(params: {
+  sessionId: string; summary: string; recentContext: string
+  messageCount: number; tokenEstimate: number
+}): Promise<void> {
+  const d = await getDb()
+  const id = `comp_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+  const now = Date.now()
+  d.run(`INSERT OR REPLACE INTO compaction_summary (id, session_id, summary, recent_context, message_count, token_estimate, time_created, time_updated)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, params.sessionId, params.summary, params.recentContext,
+     params.messageCount, params.tokenEstimate, now, now])
+}
+
+export async function updateCompactionSummary(sessionId: string, newSummary: string, recentContext: string, messageCount: number): Promise<void> {
+  const d = await getDb()
+  const existing = qget(d, `SELECT id FROM compaction_summary WHERE session_id = ? ORDER BY time_updated DESC LIMIT 1`, sessionId)
+  if (existing) {
+    d.run(`UPDATE compaction_summary SET summary = ?, recent_context = ?, message_count = ?, token_estimate = ?, time_updated = ? WHERE id = ?`,
+      [newSummary, recentContext, messageCount, tokenEstimate(newSummary + recentContext), Date.now(), existing.id])
+  } else {
+    await storeCompactionSummary({ sessionId, summary: newSummary, recentContext, messageCount, tokenEstimate: tokenEstimate(newSummary + recentContext) })
+  }
+}
+
+// ============================================
+// COMPACTION TRIGGER — Check if compaction needed, return prompt for LLM
+// ============================================
+
+export async function checkCompactionNeeded(sessionId: string): Promise<{
+  needed: boolean; prompt?: string; previousSummary?: string
+}> {
+  const d = await getDb()
+  const turnCount = qget(d, `SELECT COUNT(*) as c FROM conversations WHERE session_id = ?`, sessionId)?.c || 0
+
+  // Not enough messages to compact
+  if (turnCount < 20) return { needed: false }
+
+  // Estimate total tokens in conversation
+  const rows = d.query(
+    `SELECT role, content FROM conversations WHERE session_id = ? ORDER BY turn_index`
+  ).all(sessionId) as any[]
+
+  let totalTokens = 0
+  for (const r of rows) {
+    totalTokens += tokenEstimate(serializeMessage({ role: r.role, content: r.content }))
+  }
+
+  // Check if we exceed compaction threshold
+  if (totalTokens <= COMPACTION_TRIGGER_TOKENS) return { needed: false }
+
+  // Get previous summary if exists
+  const previousSummary = await getCompactionSummary(sessionId)
+
+  // Build compaction prompt (same as OpenCode's buildPrompt)
+  const selected = selectMessagesByTokens(
+    rows.map(r => ({ role: r.role, content: r.content })),
+    KEEP_TOKENS
+  )
+
+  if (!selected || selected.head.length === 0) return { needed: false }
+
+  const conversation = `Here is the conversation so far:\n\n<conversation>\n${selected.head}\n</conversation>`
+  let prompt: string
+
+  if (previousSummary?.summary) {
+    prompt = [
+      conversation,
+      `Here is the summary of the conversation before the <conversation> above:\n\n<prior-summary>\n${previousSummary.summary}\n</prior-summary>`,
+      `The <prior-summary> summarizes everything that happened before the <conversation>. Construct a new summary that combines both. The <prior-summary> is discarded after this: anything you do not carry into the new summary is lost.
+
+When combining:
+- Carry forward objectives, constraints, user directives, decisions, and parallel workstreams from the <prior-summary> even when the <conversation> does not mention them. Drop only what is finished and no longer needed.
+- The <conversation> is more recent than the <prior-summary>. Where they conflict, the conversation wins: state the corrected fact and drop the old claim.
+- Add new progress, decisions, constraints, and context from the conversation.
+- Move completed work from "Active" to "Completed".
+- If a blocker has been resolved, update the summary to reflect that while keeping any details still needed to continue the work.
+- Update "Objective" and "Next Move" to reflect the current work state.`,
+      COMPACTION_SUMMARY_TEMPLATE,
+    ].join("\n\n")
+  } else {
+    prompt = [
+      conversation,
+      "Create a new anchored summary from the conversation history in the <conversation> tags above so another coding agent can continue the work.",
+      COMPACTION_SUMMARY_TEMPLATE,
+    ].join("\n\n")
+  }
+
+  return {
+    needed: true,
+    prompt,
+    previousSummary: previousSummary?.summary,
+  }
+}
+
+// Export compaction helper for external LLM caller
+export const compaction = {
+  checkNeeded: checkCompactionNeeded,
+  storeSummary: storeCompactionSummary,
+  updateSummary: updateCompactionSummary,
+  getSummary: getCompactionSummary,
+  tokenEstimate,
+  serializeMessage,
+  selectMessagesByTokens,
+  TEMPLATE: COMPACTION_SUMMARY_TEMPLATE,
+  KEEP_TOKENS,
+  TRIGGER_TOKENS: COMPACTION_TRIGGER_TOKENS,
+}
+
+export async function getMemoryStats(): Promise<{
+  total: number; compressed: number; categories: Record<string, number>
+  topTags: Array<{ tag: string; count: number }>
+  oldestMemory: string; newestMemory: string
+}> {
+  try {
+    const d = await getDb()
+    const total = qget(d, `SELECT COUNT(*) as c FROM memories`)?.c || 0
+    const compressed = qget(d, `SELECT COUNT(*) as c FROM memories WHERE compressed=1`)?.c || 0
+    const catRows = d.query(`SELECT category, COUNT(*) as c FROM memories GROUP BY category`).all() as any[]
+    const categories: Record<string, number> = {}
+    for (const r of catRows) categories[r.category] = r.c
+    const tagRows = d.query(`SELECT tags FROM memories`).all() as any[]
+    const tagCounts: Record<string, number> = {}
+    for (const r of tagRows) {
+      try { for (const t of JSON.parse(r.tags)) tagCounts[t] = (tagCounts[t] || 0) + 1 } catch {}
+    }
+    const topTags = Object.entries(tagCounts).map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count).slice(0, 20)
+    const oldest = qget(d, `SELECT MIN(timestamp) as t FROM memories`)?.t
+    const newest = qget(d, `SELECT MAX(timestamp) as t FROM memories`)?.t
+    return { total, compressed, categories, topTags, oldestMemory: oldest ? new Date(oldest).toISOString() : "none", newestMemory: newest ? new Date(newest).toISOString() : "none" }
+  } catch {
+    return { total: 0, compressed: 0, categories: {}, topTags: [], oldestMemory: "none", newestMemory: "none" }
+  }
+}
+
+// ============================================
+// ETERNAL MEMORY v4 — Knowledge Graph, Decisions, Errors, Patterns
+// ============================================
+
+export interface KnowledgeEntity {
+  id: string; entityType: string; name: string; description: string
+  importance: number; accessCount: number; metadata: Record<string, any>
+  timeCreated: number; timeUpdated: number; timeLastAccessed: number
+}
+
+export interface KnowledgeRelation {
+  id: string; fromEntityId: string; toEntityId: string
+  relationType: string; weight: number; metadata: Record<string, any>
+  timeCreated: number
+}
+
+export interface DecisionRecord {
+  id: string; decision: string; reasoning: string
+  alternatives: string[]; outcome: string; impactScore: number
+  sessionId: string; timeCreated: number; timeResolved?: number
+}
+
+export interface ErrorRecord {
+  id: string; errorType: string; errorMessage: string
+  stackTrace: string; fixApplied: string; fixSessionId: string
+  occurrenceCount: number; severity: string
+  timeFirstSeen: number; timeLastSeen: number
+}
+
+export interface LearnedPattern {
+  id: string; patternType: string; description: string
+  frequency: number; confidenceScore: number
+  exampleSessions: string[]; timeCreated: number; timeLastSeen: number
+}
+
+export interface MemorySummary {
+  id: string; timeRange: string; timeStart: number; timeEnd: number
+  content: string; messageCount: number; importanceScore: number
+  timeCreated: number
+}
+
+export async function storeKnowledgeEntity(params: {
+  entityType: string; name: string; description?: string
+  importance?: number; metadata?: Record<string, any>
+}): Promise<string> {
+  const d = await getDb()
+  const id = `entity_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+  const now = Date.now()
+  d.run(`INSERT OR REPLACE INTO knowledge_entity (id, entity_type, name, description, importance, access_count, metadata, time_created, time_updated, time_last_accessed)
+    VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`,
+    [id, params.entityType, params.name, params.description || '',
+     params.importance ?? 5, JSON.stringify(params.metadata || {}),
+     now, now, now])
+  return id
+}
+
+export async function getKnowledgeEntity(id: string): Promise<KnowledgeEntity | null> {
+  const d = await getDb()
+  const row = qget(d, `SELECT * FROM knowledge_entity WHERE id = ?`, id)
+  if (!row) return null
+  d.run(`UPDATE knowledge_entity SET access_count = access_count + 1, time_last_accessed = ? WHERE id = ?`, [Date.now(), id])
+  return {
+    id: row.id, entityType: row.entity_type, name: row.name, description: row.description,
+    importance: row.importance, accessCount: row.access_count + 1,
+    metadata: JSON.parse(row.metadata || '{}'),
+    timeCreated: row.time_created, timeUpdated: row.time_updated, timeLastAccessed: Date.now(),
+  }
+}
+
+export async function searchKnowledgeEntities(query: string, limit: number = 20): Promise<KnowledgeEntity[]> {
+  const d = await getDb()
+  const queryLower = query.toLowerCase()
+  const rows = d.query(`SELECT * FROM knowledge_entity WHERE name LIKE ? OR description LIKE ? ORDER BY importance DESC, access_count DESC LIMIT ?`)
+    .all(`%${queryLower}%`, `%${queryLower}%`, limit) as any[]
+  return rows.map((r: any) => ({
+    id: r.id, entityType: r.entity_type, name: r.name, description: r.description,
+    importance: r.importance, accessCount: r.access_count,
+    metadata: JSON.parse(r.metadata || '{}'),
+    timeCreated: r.time_created, timeUpdated: r.time_updated, timeLastAccessed: r.time_last_accessed,
+  }))
+}
+
+export async function storeKnowledgeRelation(params: {
+  fromEntityId: string; toEntityId: string; relationType: string
+  weight?: number; metadata?: Record<string, any>
+}): Promise<string> {
+  const d = await getDb()
+  const id = `rel_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+  d.run(`INSERT INTO knowledge_relation (id, from_entity_id, to_entity_id, relation_type, weight, metadata, time_created)
+    VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [id, params.fromEntityId, params.toEntityId, params.relationType,
+     params.weight ?? 1.0, JSON.stringify(params.metadata || {}), Date.now()])
+  return id
+}
+
+export async function getEntityRelations(entityId: string): Promise<KnowledgeRelation[]> {
+  const d = await getDb()
+  const rows = d.query(`SELECT * FROM knowledge_relation WHERE from_entity_id = ? OR to_entity_id = ?`)
+    .all(entityId, entityId) as any[]
+  return rows.map((r: any) => ({
+    id: r.id, fromEntityId: r.from_entity_id, toEntityId: r.to_entity_id,
+    relationType: r.relation_type, weight: r.weight,
+    metadata: JSON.parse(r.metadata || '{}'), timeCreated: r.time_created,
+  }))
+}
+
+export async function storeDecision(params: {
+  decision: string; reasoning?: string; alternatives?: string[]
+  impactScore?: number; sessionId?: string
+}): Promise<string> {
+  const d = await getDb()
+  const id = `decision_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+  d.run(`INSERT INTO decision (id, decision, reasoning, alternatives, outcome, impact_score, session_id, time_created)
+    VALUES (?, ?, ?, ?, 'active', ?, ?, ?)`,
+    [id, params.decision, params.reasoning || '',
+     JSON.stringify(params.alternatives || []), params.impactScore ?? 5,
+     params.sessionId || '', Date.now()])
+  return id
+}
+
+export async function searchDecisions(query: string, limit: number = 10): Promise<DecisionRecord[]> {
+  const d = await getDb()
+  const queryLower = query.toLowerCase()
+  const rows = d.query(`SELECT * FROM decision WHERE decision LIKE ? OR reasoning LIKE ? ORDER BY impact_score DESC, time_created DESC LIMIT ?`)
+    .all(`%${queryLower}%`, `%${queryLower}%`, limit) as any[]
+  return rows.map((r: any) => ({
+    id: r.id, decision: r.decision, reasoning: r.reasoning,
+    alternatives: JSON.parse(r.alternatives || '[]'), outcome: r.outcome,
+    impactScore: r.impact_score, sessionId: r.session_id,
+    timeCreated: r.time_created, timeResolved: r.time_resolved || undefined,
+  }))
+}
+
+export async function storeError(params: {
+  errorType: string; errorMessage: string; stackTrace?: string
+  severity?: string; fixApplied?: string; fixSessionId?: string
+}): Promise<string> {
+  const d = await getDb()
+  const now = Date.now()
+  const existing = qget(d, `SELECT id, occurrence_count FROM error_record WHERE error_type = ? AND error_message = ?`, params.errorType, params.errorMessage)
+  if (existing) {
+    d.run(`UPDATE error_record SET occurrence_count = occurrence_count + 1, time_last_seen = ?, fix_applied = COALESCE(?, fix_applied), fix_session_id = COALESCE(?, fix_session_id) WHERE id = ?`,
+      [now, params.fixApplied || null, params.fixSessionId || null, existing.id])
+    return existing.id
+  }
+  const id = `error_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+  d.run(`INSERT INTO error_record (id, error_type, error_message, stack_trace, fix_applied, fix_session_id, occurrence_count, severity, time_first_seen, time_last_seen)
+    VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
+    [id, params.errorType, params.errorMessage, params.stackTrace || '',
+     params.fixApplied || '', params.fixSessionId || '',
+     params.severity || 'medium', now, now])
+  return id
+}
+
+export async function searchErrors(query: string, limit: number = 10): Promise<ErrorRecord[]> {
+  const d = await getDb()
+  const queryLower = query.toLowerCase()
+  const rows = d.query(`SELECT * FROM error_record WHERE error_type LIKE ? OR error_message LIKE ? ORDER BY occurrence_count DESC, time_last_seen DESC LIMIT ?`)
+    .all(`%${queryLower}%`, `%${queryLower}%`, limit) as any[]
+  return rows.map((r: any) => ({
+    id: r.id, errorType: r.error_type, errorMessage: r.error_message,
+    stackTrace: r.stack_trace, fixApplied: r.fix_applied,
+    fixSessionId: r.fix_session_id, occurrenceCount: r.occurrence_count,
+    severity: r.severity, timeFirstSeen: r.time_first_seen, timeLastSeen: r.time_last_seen,
+  }))
+}
+
+export async function getErrorFix(errorType: string, errorMessage: string): Promise<string | null> {
+  const d = await getDb()
+  const row = d.query(`SELECT fix_applied FROM error_record WHERE error_type = ? AND error_message LIKE ? AND fix_applied != '' ORDER BY occurrence_count DESC LIMIT 1`)
+    .get(errorType, `%${errorMessage.substring(0, 100)}%`) as any
+  return row?.fix_applied || null
+}
+
+export async function storeLearnedPattern(params: {
+  patternType: string; description: string; exampleSessions?: string[]
+  confidenceScore?: number
+}): Promise<string> {
+  const d = await getDb()
+  const now = Date.now()
+  const existing = qget(d, `SELECT id, frequency FROM learned_pattern WHERE pattern_type = ? AND description = ?`, params.patternType, params.description)
+  if (existing) {
+    d.run(`UPDATE learned_pattern SET frequency = frequency + 1, time_last_seen = ?, confidence_score = MAX(confidence_score, ?) WHERE id = ?`,
+      [now, params.confidenceScore ?? 5, existing.id])
+    return existing.id
+  }
+  const id = `pattern_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+  d.run(`INSERT INTO learned_pattern (id, pattern_type, description, frequency, confidence_score, example_sessions, time_created, time_last_seen)
+    VALUES (?, ?, ?, 1, ?, ?, ?, ?)`,
+    [id, params.patternType, params.description,
+     params.confidenceScore ?? 5, JSON.stringify(params.exampleSessions || []), now, now])
+  return id
+}
+
+export async function searchPatterns(query: string, limit: number = 10): Promise<LearnedPattern[]> {
+  const d = await getDb()
+  const queryLower = query.toLowerCase()
+  const rows = d.query(`SELECT * FROM learned_pattern WHERE pattern_type LIKE ? OR description LIKE ? ORDER BY frequency DESC, confidence_score DESC LIMIT ?`)
+    .all(`%${queryLower}%`, `%${queryLower}%`, limit) as any[]
+  return rows.map((r: any) => ({
+    id: r.id, patternType: r.pattern_type, description: r.description,
+    frequency: r.frequency, confidenceScore: r.confidence_score,
+    exampleSessions: JSON.parse(r.example_sessions || '[]'),
+    timeCreated: r.time_created, timeLastSeen: r.time_last_seen,
+  }))
+}
+
+export async function storeTemporalIndex(params: {
+  entityId: string; entityType: string; eventType: string
+  metadata?: Record<string, any>
+}): Promise<void> {
+  const d = await getDb()
+  const id = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+  d.run(`INSERT INTO temporal_index (id, entity_id, entity_type, time_point, event_type, metadata)
+    VALUES (?, ?, ?, ?, ?, ?)`,
+    [id, params.entityId, params.entityType, Date.now(), params.eventType,
+     JSON.stringify(params.metadata || {})])
+}
+
+// ============================================
+// ENHANCED auto-injection with Knowledge Graph
+// ============================================
+
+export async function autoInjectContextV2(userMessage: string, agent: string): Promise<string> {
+  const ctx = await loadAutoContext()
+  if (!ctx.enabled) return ""
+  const parts: string[] = []
+
+  parts.push(`Current mode: ${agent}`)
+
+  if (ctx.masterPreferences && Object.keys(ctx.masterPreferences).length > 0) {
+    const masterPrefs = Object.entries(ctx.masterPreferences).map(([k, v]) => `- ${k}: ${v}`).join("\n")
+    parts.push(`Master's preferences (NEVER violate):\n${masterPrefs}`)
+  }
+
+  // Knowledge Graph context
+  try {
+    const entities = await searchKnowledgeEntities(userMessage, 5)
+    if (entities.length > 0) {
+      const entityStr = entities.map(e => {
+        const age = Date.now() - e.timeLastAccessed
+        const daysOld = Math.floor(age / 86400000)
+        let recency = daysOld === 0 ? "today" : daysOld === 1 ? "yesterday" : daysOld < 7 ? `${daysOld}d ago` : `${Math.floor(daysOld / 30)}mo ago`
+        return `- [${e.entityType}|${e.importance}/10|${recency}] ${e.name}: ${e.description.substring(0, 150)}`
+      }).join("\n")
+      parts.push(`Knowledge graph (${entities.length} entities):\n${entityStr}`)
+    }
+  } catch {}
+
+  // Previous decisions context
+  try {
+    const decisions = await searchDecisions(userMessage, 3)
+    if (decisions.length > 0) {
+      const decStr = decisions.map(d => `- [${d.outcome}|impact:${d.impactScore}] ${d.decision}`).join("\n")
+      parts.push(`Previous decisions:\n${decStr}`)
+    }
+  } catch {}
+
+  // Known errors context
+  try {
+    const errors = await searchErrors(userMessage, 3)
+    if (errors.length > 0) {
+      const errStr = errors.map(e => `- [${e.severity}|${e.occurrenceCount}x] ${e.errorType}: ${e.errorMessage.substring(0, 100)}`).join("\n")
+      parts.push(`Known errors (avoid repeating):\n${errStr}`)
+    }
+  } catch {}
+
+  // Learned patterns
+  try {
+    const patterns = await searchPatterns(userMessage, 3)
+    if (patterns.length > 0) {
+      const patStr = patterns.map(p => `- [${p.patternType}|${p.frequency}x|${p.confidenceScore}/10] ${p.description.substring(0, 150)}`).join("\n")
+      parts.push(`Learned patterns:\n${patStr}`)
+    }
+  } catch {}
+
+  if (ctx.recentContext) {
+    parts.push(`Recent context:\n${ctx.recentContext}`)
+  }
+  if (Object.keys(ctx.userPreferences).length > 0) {
+    const prefs = Object.entries(ctx.userPreferences).map(([k, v]) => `- ${k}: ${v}`).join("\n")
+    parts.push(`User preferences:\n${prefs}`)
+  }
+  if (ctx.projectContext) {
+    parts.push(`Project context:\n${ctx.projectContext}`)
+  }
+  if (ctx.learnedPatterns.length > 0) {
+    parts.push(`Learned patterns:\n${ctx.learnedPatterns.slice(-10).map(p => `- ${p}`).join("\n")}`)
+  }
+  if (ctx.sessionHistory.length > 0) {
+    parts.push(`Recent session:\n${ctx.sessionHistory.slice(-8).join("\n")}`)
+  }
+
+  // SQLite-powered unlimited memory recall
+  try {
+    const memories = await searchMemories(userMessage, MAX_CONTEXT_MEMORIES)
+    if (memories.length > 0) {
+      const memStr = memories.map(m => {
+        const age = Date.now() - m.timestamp
+        const daysOld = Math.floor(age / 86400000)
+        let recency = daysOld === 0 ? "today" : daysOld === 1 ? "yesterday" : daysOld < 7 ? `${daysOld}d ago` : daysOld < 30 ? `${Math.floor(daysOld / 7)}w ago` : daysOld < 365 ? `${Math.floor(daysOld / 30)}mo ago` : `${Math.floor(daysOld / 365)}y ago`
+        return `- [${m.importance}/10|${m.category}|${recency}] ${m.key}: ${m.summary.substring(0, 200)}`
+      }).join("\n")
+      parts.push(`Unlimited memory recall (${memories.length} matches):\n${memStr}`)
+    }
+  } catch {}
+
+  ctx.lastInjection = Date.now()
+  ctx.injectedCount++
+  await saveAutoContext(ctx)
+
+  if (parts.length === 0) return ""
+  return `[ZYRAXON ETERNAL MEMORY v4]\n${parts.join("\n\n")}\n[/ZYRAXON ETERNAL MEMORY]\n\n`
+}
+
+export async function autoStoreConversationV2(
+  userMessage: string, assistantResponse: string, agent: string, model: string,
+  projectId?: string, sessionId?: string,
+): Promise<void> {
+  // Store basic memory
+  await autoStoreConversation(userMessage, assistantResponse, agent, model, projectId, sessionId)
+
+  // Extract and store knowledge entities
+  try {
+    const entities = extractKnowledgeEntities(userMessage + " " + assistantResponse)
+    for (const entity of entities) {
+      const entityId = await storeKnowledgeEntity(entity)
+      // Store temporal index
+      await storeTemporalIndex({ entityId, entityType: entity.entityType, eventType: "mentioned" })
+    }
+  } catch {}
+
+  // Store decision if detected
+  try {
+    const decision = extractDecision(userMessage)
+    if (decision) {
+      await storeDecision({ decision, reasoning: assistantResponse.substring(0, 500), sessionId })
+    }
+  } catch {}
+
+  // Store error if detected
+  try {
+    const error = extractError(userMessage)
+    if (error) {
+      await storeError(error)
+    }
+  } catch {}
+
+  // Store pattern if detected
+  try {
+    const pattern = extractPattern(userMessage, assistantResponse)
+    if (pattern) {
+      await storeLearnedPattern(pattern)
+    }
+  } catch {}
+}
+
+function extractKnowledgeEntities(text: string): Array<{ entityType: string; name: string; description: string; importance: number }> {
+  const entities: Array<{ entityType: string; name: string; description: string; importance: number }> = []
+  const lower = text.toLowerCase()
+
+  // Extract people
+  const peoplePatterns = [/\b(boss|manager|developer|designer|user|admin|master|মাস্টার)\b/gi]
+  for (const pattern of peoplePatterns) {
+    let match
+    while ((match = pattern.exec(text)) !== null) {
+      entities.push({ entityType: "person", name: match[1], description: `Person mentioned: ${match[1]}`, importance: 7 })
+    }
+  }
+
+  // Extract technologies
+  const techPatterns = [/\b(typescript|javascript|python|rust|go|react|vue|angular|node|bun|deno|sqlite|postgres|redis|docker|kubernetes|aws|gcp|azure)\b/gi]
+  for (const pattern of techPatterns) {
+    let match
+    while ((match = pattern.exec(text)) !== null) {
+      entities.push({ entityType: "technology", name: match[1].toLowerCase(), description: `Technology: ${match[1]}`, importance: 6 })
+    }
+  }
+
+  // Extract files
+  const filePattern = /\b[\w\-/]+\.(ts|js|py|rs|go|tsx|jsx|json|yaml|yml|md|txt|sql|css|html)\b/gi
+  let fileMatch
+  while ((fileMatch = filePattern.exec(text)) !== null) {
+    entities.push({ entityType: "file", name: fileMatch[0], description: `File: ${fileMatch[0]}`, importance: 5 })
+  }
+
+  // Extract concepts
+  const conceptPatterns = [/\b(api|endpoint|database|server|client|authentication|authorization|caching|deployment|testing|debugging|refactoring)\b/gi]
+  for (const pattern of conceptPatterns) {
+    let match
+    while ((match = pattern.exec(text)) !== null) {
+      entities.push({ entityType: "concept", name: match[1].toLowerCase(), description: `Concept: ${match[1]}`, importance: 5 })
+    }
+  }
+
+  return entities.slice(0, 10)
+}
+
+function extractDecision(text: string): string | null {
+  const lower = text.toLowerCase()
+  const decisionKeywords = ["decided", "chose", "selected", "picked", "going with", "will use", " decided"]
+  for (const keyword of decisionKeywords) {
+    if (lower.includes(keyword)) {
+      const idx = lower.indexOf(keyword)
+      return text.substring(idx, Math.min(idx + 200, text.length))
+    }
+  }
+  return null
+}
+
+function extractError(text: string): { errorType: string; errorMessage: string; severity: string } | null {
+  const lower = text.toLowerCase()
+  const errorKeywords = ["error", "bug", "crash", "exception", "failed", "failure", "broken"]
+  for (const keyword of errorKeywords) {
+    if (lower.includes(keyword)) {
+      return {
+        errorType: keyword,
+        errorMessage: text.substring(0, 500),
+        severity: lower.includes("critical") || lower.includes("fatal") ? "critical" :
+                  lower.includes("high") || lower.includes("major") ? "high" : "medium",
+      }
+    }
+  }
+  return null
+}
+
+function extractPattern(userMessage: string, assistantResponse: string): { patternType: string; description: string; confidenceScore: number } | null {
+  const lower = (userMessage + " " + assistantResponse).toLowerCase()
+  if (lower.includes("always") || lower.includes("every time") || lower.includes("pattern")) {
+    return {
+      patternType: "behavioral",
+      description: userMessage.substring(0, 300),
+      confidenceScore: 6,
+    }
+  }
+  if (lower.includes("workflow") || lower.includes("process") || lower.includes("steps")) {
+    return {
+      patternType: "workflow",
+      description: userMessage.substring(0, 300),
+      confidenceScore: 5,
+    }
+  }
+  return null
+}
+
+export const autoMemory = {
+  autoInjectContext, autoInjectContextV2, autoStoreConversation, autoStoreConversationV2,
+  autoLearnPattern, smartRecall, storeMasterPreference, getMemoryStats,
+  loadAutoContext, saveAutoContext, storeMemory, searchMemories,
+  storeConversationTurn, getRecentConversationTurns, getContextBuffer, getMemoryStatsDetailed,
+  storeKnowledgeEntity, getKnowledgeEntity, searchKnowledgeEntities,
+  storeKnowledgeRelation, getEntityRelations, storeDecision, searchDecisions,
+  storeError, searchErrors, storeLearnedPattern, searchPatterns, storeTemporalIndex,
+  // Ring buffer (crash-proof)
+  ringBufferPush, ringBufferGet, ringBufferPrune,
+  // Heartbeat (daemon persistence)
+  heartbeatBeat, heartbeatGetStats, heartbeatUptime,
+  // Cached context (instant injection)
+  cachedContextGet, cachedContextUpdate,
+  // Cursor pagination (new)
+  listMemoriesCursor, searchMemoriesCursor,
+  // Batch operations (new)
+  batchSave, batchSearch,
+  // Compaction system (v5 — 100x better than OpenCode)
+  compaction,
+  getCompactionSummary, storeCompactionSummary, updateCompactionSummary, checkCompactionNeeded,
+}

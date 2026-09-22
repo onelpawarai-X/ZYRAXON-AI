@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head><title>Mic Test</title></head>
+<body>
+<h2>Speech Recognition Test</h2>
+<div id="status">Not started</div>
+<div id="result" style="border:1px solid #ccc;padding:10px;min-height:50px;margin-top:10px"></div>
+<div id="log" style="margin-top:10px;font-size:12px;color:gray"></div>
+<button id="btn" onclick="startTest()">Start Test</button>
+<script>
+const status = document.getElementById('status');
+const result = document.getElementById('result');
+const log = document.getElementById('log');
+const btn = document.getElementById('btn');
+
+function addLog(msg) {
+  log.innerHTML += new Date().toLocaleTimeString() + ': ' + msg + '<br>';
+}
+
+function startTest() {
+  btn.disabled = true;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    status.textContent = 'FAIL: SpeechRecognition NOT available';
+    addLog('SpeechRecognition API not found in this browser');
+    return;
+  }
+  addLog('SpeechRecognition API found: ' + SR.name);
+  status.textContent = 'API found. Starting recognition...';
+
+  const rec = new SR();
+  rec.continuous = false;
+  rec.interimResults = true;
+  rec.maxAlternatives = 1;
+  rec.lang = 'en-US';
+
+  rec.onstart = () => {
+    status.textContent = 'LISTENING - speak now!';
+    addLog('Recognition started');
+  };
+
+  rec.onresult = (e) => {
+    let text = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      const fin = e.results[i].isFinal;
+      text += (fin ? '[FINAL] ' : '[interim] ') + t;
+    }
+    result.textContent = text;
+    addLog('Result: ' + text);
+  };
+
+  rec.onerror = (e) => {
+    status.textContent = 'ERROR: ' + e.error;
+    addLog('Error: ' + e.error + ' (type=' + e.type + ')');
+    btn.disabled = false;
+  };
+
+  rec.onend = () => {
+    status.textContent = 'STOPPED';
+    addLog('Recognition ended');
+    btn.disabled = false;
+  };
+
+  rec.start();
+  addLog('rec.start() called');
+  setTimeout(() => {
+    if (status.textContent === 'LISTENING - speak now!') {
+      addLog('Still listening after 5s...');
+    }
+  }, 5000);
+}
+</script>
+</body>
+</html>

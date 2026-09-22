@@ -1,0 +1,197 @@
+import * as http from "node:http"
+import * as tls from "node:tls"
+
+type NodeHttpWithEnvProxy = typeof http & {
+  setGlobalProxyFromEnv: () => void
+}
+
+type NodeTlsWithSystemCertificates = typeof tls & {
+  getCACertificates: (type: "default" | "system") => string[]
+  setDefaultCACertificates: (certificates: string[]) => void
+}
+
+type StartCommand = {
+  type: "start"
+  hostname: string
+  port: number
+  password: string
+  userDataPath: string
+}
+
+type StopCommand = { type: "stop" }
+type SidecarCommand = StartCommand | StopCommand
+
+type SidecarMessage =
+  | { type: "ready" }
+  | { type: "stopped" }
+  | { type: "error"; error: { message: string; stack?: string } }
+
+type ParentPort = {
+  postMessage(message: SidecarMessage): void
+  on(event: "message", listener: (event: { data: unknown }) => void): void
+}
+
+type Listener = {
+  stop(close?: boolean): void | Promise<void>
+}
+
+const parentPort = getParentPort()
+let listener: Listener | undefined
+
+parentPort.on("message", (event) => {
+  const command = parseCommand(event.data)
+  if (!command) return
+  if (command.type === "stop") {
+    void stop()
+    return
+  }
+  void start(command)
+})
+
+async function start(command: StartCommand) {
+  try {
+    console.log("[Sidecar] Starting server with config:", {
+      hostname: command.hostname,
+      port: command.port,
+      userDataPath: command.userDataPath
+    })
+
+    prepareSidecarEnv(command.password, command.userDataPath)
+    ensureLoopbackNoProxy()
+    useSystemCertificates()
+    useEnvProxy()
+
+    console.log("[Sidecar] Environment prepared, loading server bundle...")
+
+    // Load the pre-built server bundle from the output directory at runtime.
+    // The server bundle uses ESM with top-level await, so we MUST use import()
+    // (not require). The server bundle has bun:sqlite/bun:ffi imports patched
+    // to local shim files at build time.
+    const { dirname } = await import("node:path")
+    const { fileURLToPath } = await import("node:url")
+    const __filename = fileURLToPath(import.meta.url)
+    const __dirname = dirname(__filename)
+    const serverUrl = new URL("./chunks/zyraxon-server.js", import.meta.url).href
+
+    console.log("[Sidecar] Server bundle URL:", serverUrl)
+    console.log("[Sidecar] Importing server bundle...")
+
+    const { Server } = await import(serverUrl)
+
+    console.log("[Sidecar] Server bundle imported successfully, starting listener...")
+
+    listener = await Server.listen({
+      port: command.port,
+      hostname: command.hostname,
+      username: "zyraxon",
+      password: command.password,
+      cors: ["oc://renderer"],
+    })
+
+    console.log("[Sidecar] Server listener started successfully, sending ready message")
+    parentPort.postMessage({ type: "ready" })
+  } catch (error) {
+    console.error("[Sidecar] Failed to start server:", error)
+    parentPort.postMessage({ type: "error", error: serializeError(error) })
+    setImmediate(() => process.exit(1))
+  }
+}
+
+async function stop() {
+  try {
+    await listener?.stop()
+  } finally {
+    listener = undefined
+    parentPort.postMessage({ type: "stopped" })
+    setImmediate(() => process.exit(0))
+  }
+}
+
+function prepareSidecarEnv(password: string, userDataPath: string) {
+  // Read marketplace auth token from ecosystem auth file
+  let marketplaceToken = ""
+  try {
+    const fs = require("node:fs")
+    const path = require("node:path")
+    const authPath = path.join(userDataPath, "ecosystem", "auth.json")
+    if (fs.existsSync(authPath)) {
+      const authData = JSON.parse(fs.readFileSync(authPath, "utf-8"))
+      marketplaceToken = authData.token || ""
+    }
+  } catch {}
+
+  Object.assign(process.env, {
+    ZYRAXON_SERVER_USERNAME: "zyraxon",
+    ZYRAXON_SERVER_PASSWORD: password,
+    XDG_STATE_HOME: process.env.XDG_STATE_HOME ?? userDataPath,
+    ZYRAXON_GITHUB_TOKEN: marketplaceToken || process.env.ZYRAXON_GITHUB_TOKEN || "",
+  })
+}
+
+function ensureLoopbackNoProxy() {
+  const loopback = ["127.0.0.1", "localhost", "::1"]
+  const upsert = (key: string) => {
+    const items = (process.env[key] ?? "")
+      .split(",")
+      .map((value: string) => value.trim())
+      .filter((value: string) => Boolean(value))
+
+    for (const host of loopback) {
+      if (items.some((value: string) => value.toLowerCase() === host)) continue
+      items.push(host)
+    }
+
+    process.env[key] = items.join(",")
+  }
+
+  upsert("NO_PROXY")
+  upsert("no_proxy")
+}
+
+function useSystemCertificates() {
+  try {
+    const nodeTls = tls as NodeTlsWithSystemCertificates
+    nodeTls.setDefaultCACertificates([
+      ...new Set([...nodeTls.getCACertificates("default"), ...nodeTls.getCACertificates("system")]),
+    ])
+  } catch (error) {
+    console.warn("failed to load system certificates", error)
+  }
+}
+
+function useEnvProxy() {
+  try {
+    ;(http as NodeHttpWithEnvProxy).setGlobalProxyFromEnv()
+  } catch (error) {
+    console.warn("failed to load proxy environment", error)
+  }
+}
+
+function parseCommand(value: unknown): SidecarCommand | undefined {
+  if (!value || typeof value !== "object") return
+  const command = value as Partial<StartCommand | StopCommand>
+  if (command.type === "stop") return { type: "stop" }
+  if (command.type !== "start") return
+  if (typeof command.hostname !== "string") return
+  if (typeof command.port !== "number") return
+  if (typeof command.password !== "string") return
+  if (typeof command.userDataPath !== "string") return
+  return {
+    type: "start",
+    hostname: command.hostname,
+    port: command.port,
+    password: command.password,
+    userDataPath: command.userDataPath,
+  }
+}
+
+function serializeError(error: unknown) {
+  if (error instanceof Error) return { message: error.message, stack: error.stack }
+  return { message: String(error) }
+}
+
+function getParentPort() {
+  const port = process.parentPort as ParentPort | undefined
+  if (!port) throw new Error("Sidecar parent port unavailable")
+  return port
+}
