@@ -26,11 +26,9 @@ packages/opencode/dist/** binary
 
 # ZYRAXON streaming files
 *.flv binary
-*.ts binary
+*.m2ts binary
 *.mp4 binary
 *.mkv binary
 
 # ZYRAXON memory files
 *.db binary
-*.json binary
-*.txt text
