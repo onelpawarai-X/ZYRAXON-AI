@@ -2008,7 +2008,7 @@ export async function ultraMetrics(args: {
           }
           if (started && depth === 0) { end = j; break }
           if (lines[j].trim().match(/(?:public|private|protected|static)?\s*(?:async\s+)?\w+\s*\(/)) methodCount++
-          if (lines[j].trim().match(/(?:public|private|protected|static)\s+\w+\s*[=:])) propCount++
+          if (lines[j].trim().match(/(?:public|private|protected|static)\s+\w+\s*[=:]/)) propCount++
         }
         classes.push({ name: classMatch[1], methods: methodCount, properties: propCount, loc: end - i })
       }
@@ -2417,4 +2417,15 @@ export async function ultraSchedule(args: {
   } catch (e: any) {
     return { success: false, output: "", error: e.message }
   }
+}
+
+export const ultraTools = {
+  ultraDocGen,
+  ultraDebug,
+  ultraComplexity,
+  ultraArchitect,
+  ultraGraph,
+  ultraMetrics,
+  ultraProfile,
+  ultraSchedule,
 }
