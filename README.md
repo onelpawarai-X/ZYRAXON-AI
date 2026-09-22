@@ -7,7 +7,7 @@
 <picture>
   <source srcset="packages/console/app/src/asset/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
   <source srcset="packages/console/app/src/asset/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
-  <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="ZYRAXON" width="180">
+  <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="ZYRAXON AI" width="400">
 </picture>
 
 <h1 style="font-family: Orbitron; letter-spacing: 4px; color: #00D4FF;">ZYRAXON AI</h1>
