@@ -1,7 +1,7 @@
 import { readFileSync, existsSync } from "node:fs"
 import { join } from "node:path"
 import { homedir } from "node:os"
-import { getCurrentTier, hasAccess, TIER_ORDER, type Tier, TOOL_TIER_MAP } from "./canonical"
+import { getCurrentTier, hasAccess, TIER_ORDER, type Tier, TOOL_TIER_MAP } from "../subscription/canonical"
 import { xToolRegistry } from "./x-tool-registry"
 
 interface SubState {

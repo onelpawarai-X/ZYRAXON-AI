@@ -1921,7 +1921,7 @@ class DesignPatternDetector {
    * Detect Factory Method pattern.
    *
    * Structural requirements:
-   *   1. Method named create*/make*/build*/new* that returns an object
+   *   1. Method named create/make/build/new that returns an object
    *   2. Return type is either abstract or interface
    *   3. Multiple concrete implementations exist
    *   4. Factory method uses conditional logic or registration
