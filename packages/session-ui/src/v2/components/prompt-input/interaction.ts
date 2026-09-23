@@ -341,6 +341,10 @@ export function createPromptInputV2Controller(input: {
       if (prompt) draft.setPrompt(prompt, cursor)
       dispatch({ type: "input.changed", value, persist: !prompt })
     },
+    setText(content: string) {
+      draft.setText(content)
+      dispatch({ type: "input.changed", value: content, persist: true })
+    },
     onCursor(cursor: number) {
       draft.setCursor(cursor)
     },

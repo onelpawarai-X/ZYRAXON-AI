@@ -78,7 +78,8 @@ function handleMessage(raw: string) {
     }
     if (data.type === "ping") return
     if (data.type === "transcript") {
-      if (data.text && data.text.trim()) {
+      // Only accumulate finals — interim live-stream updates must not double-count
+      if (data.final && data.text && data.text.trim()) {
         const entry = { text: data.text.trim(), lang: data.lang || currentLanguage, timestamp: Date.now() }
         transcriptBuffer.push(entry)
         if (transcriptBuffer.length > MAX_BUFFER_SIZE) {
@@ -86,7 +87,7 @@ function handleMessage(raw: string) {
         }
         accumulatedTranscript += (accumulatedTranscript ? " " : "") + data.text.trim()
       }
-      rendererCallback?.({ type: "voice-transcript", text: data.text, fullText: data.fullText, isFinal: data.final, lang: data.lang })
+      rendererCallback?.({ type: "voice-transcript", text: data.text, fullText: data.fullText, isFinal: !!data.final, lang: data.lang })
     }
     else if (data.type === "send-to-chat") {
       if (data.text && data.text.trim()) {

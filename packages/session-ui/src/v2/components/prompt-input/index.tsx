@@ -245,9 +245,14 @@ export function PromptInputV2(props: PromptInputV2Props) {
             />
           </div>
           <PromptInputV2MicButton
-            onTranscript={(text, lang) => {
-              props.controller.addPart({ type: "text", content: text, start: 0, end: text.length })
+            onTranscript={(text, _lang) => {
+              // Final settle only — live text already streamed via onLiveText; never auto-send
+              props.controller.setText(text)
               requestAnimationFrame(() => editor?.focus())
+            }}
+            onLiveText={(text) => {
+              // Interim speech streams straight into the chat box as the user speaks
+              props.controller.setText(text)
             }}
             onError={(err) => console.error("[Mic]", err)}
             disabled={state.mode === "shell"}
