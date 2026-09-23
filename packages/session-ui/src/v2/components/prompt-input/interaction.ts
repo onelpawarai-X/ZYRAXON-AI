@@ -70,6 +70,7 @@ export function createPromptInputV2Controller(input: {
 }) {
   let editor: HTMLElement | undefined
   let fileInput: HTMLInputElement | undefined
+  let submitting = false
   const draft = createPromptInputV2Store(input.store)
   const [state, setState] = input.state ?? createPromptInputV2State()
   if (input.identity) {
@@ -356,7 +357,16 @@ export function createPromptInputV2Controller(input: {
       dispatch({ type: "mode.normal" })
     },
     submit() {
+      // Guard against double-fire: form onSubmit + Enter keydown + button
+      // click can race within the same tick when the editor is focused.
+      if (submitting) return
+      submitting = true
       input.view.submit.onSubmit()
+      // Keep the lock through the end of this tick so a synchronous
+      // second submit() in the same event loop turn is dropped.
+      queueMicrotask(() => {
+        submitting = false
+      })
       dispatch({ type: "popover.close" })
     },
     stop() {

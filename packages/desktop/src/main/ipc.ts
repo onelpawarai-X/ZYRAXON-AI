@@ -394,26 +394,60 @@ export function registerIpcHandlers(deps: Deps) {
   })
 
   // Voice Bridge — Chrome speech recognition controls
-  ipcMain.handle("voice-start-listening", () => {
-    const vb = getVoiceBridgeModule()
+  // Auto-start the bridge on first use so mic activation never fails with
+  // "module not ready" when deferred startup is still in flight.
+  let voiceBridgeStarting: Promise<boolean> | null = null
+  async function ensureVoiceBridge(): Promise<typeof import("./voice-bridge") | null> {
+    const existing = getVoiceBridgeModule()
+    if (existing) return existing
+    if (!voiceBridgeStarting) {
+      voiceBridgeStarting = (async () => {
+        try {
+          const voiceBridge = await import("./voice-bridge")
+          const { setVoiceBridgeModule } = await import("./voice-bridge-singleton")
+          setVoiceBridgeModule(voiceBridge)
+          voiceBridge.setRendererCallback((data) => {
+            const allWindows = BrowserWindow.getAllWindows()
+            for (const win of allWindows) {
+              if (!win.isDestroyed()) {
+                try { win.webContents.send("voice-event", data) } catch {}
+              }
+            }
+          })
+          await voiceBridge.startVoiceBridge()
+          return true
+        } catch (e) {
+          console.error("[VoiceBridge] lazy start failed:", e)
+          return false
+        } finally {
+          voiceBridgeStarting = null
+        }
+      })()
+    }
+    const ok = await voiceBridgeStarting
+    return ok ? getVoiceBridgeModule() : null
+  }
+
+  ipcMain.handle("voice-start-listening", async () => {
+    const vb = (await ensureVoiceBridge()) ?? getVoiceBridgeModule()
     if (!vb) return false
     vb.setVoiceListening(true)
     return true
   })
-  ipcMain.handle("voice-stop-listening", () => {
-    const vb = getVoiceBridgeModule()
+  ipcMain.handle("voice-stop-listening", async () => {
+    const vb = (await ensureVoiceBridge()) ?? getVoiceBridgeModule()
     if (!vb) return false
     vb.setVoiceListening(false)
     return true
   })
-  ipcMain.handle("voice-set-language", (_event: IpcMainInvokeEvent, lang: string) => {
-    const vb = getVoiceBridgeModule()
+  ipcMain.handle("voice-set-language", async (_event: IpcMainInvokeEvent, lang: string) => {
+    const vb = (await ensureVoiceBridge()) ?? getVoiceBridgeModule()
     if (!vb) return false
     vb.setVoiceLanguage(lang)
     return true
   })
-  ipcMain.handle("voice-send-text", (_event: IpcMainInvokeEvent, text: string) => {
-    const vb = getVoiceBridgeModule()
+  ipcMain.handle("voice-send-text", async (_event: IpcMainInvokeEvent, text: string) => {
+    const vb = (await ensureVoiceBridge()) ?? getVoiceBridgeModule()
     if (!vb) return false
     vb.sendVoiceTranscript(text)
     return true

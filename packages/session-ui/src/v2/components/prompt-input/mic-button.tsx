@@ -87,13 +87,29 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     if (removeVoiceListener) { removeVoiceListener(); removeVoiceListener = null }
   }
 
+  // voice-send and voice-mic-state can both arrive for the same utterance;
+  // dropping the second delivery prevents the transcript from being inserted twice.
+  let transcriptDelivered = false
+  const deliverOnce = (text: string, lang: string) => {
+    if (transcriptDelivered) return
+    const trimmed = text.trim()
+    if (!trimmed) return
+    transcriptDelivered = true
+    clearSafetyTimeout()
+    cleanupListener()
+    props.onTranscript(trimmed, lang)
+    setState("idle")
+  }
+
   const finishWithText = () => {
     if (state() !== "processing" && state() !== "recording") return
+    if (transcriptDelivered) return
     clearSafetyTimeout()
     cleanupListener()
     const text = finalText.trim()
     finalText = ""
     if (text) {
+      transcriptDelivered = true
       props.onTranscript(text, selectedLang())
     }
     setState("idle")
@@ -101,6 +117,7 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
 
   const registerVoiceListener = () => {
     cleanupListener()
+    transcriptDelivered = false
     const api = (window as any).api
     if (!api?.onVoiceEvent) return
 
@@ -118,12 +135,7 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
           finishWithText()
         }
       } else if (event.type === "voice-send") {
-        const t = (event.text || "").trim()
-        if (t) {
-          clearSafetyTimeout()
-          props.onTranscript(t, event.lang || selectedLang())
-          setState("idle")
-        }
+        deliverOnce(event.text || "", event.lang || selectedLang())
       }
     })
   }
@@ -176,10 +188,11 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     setState("recording")
     registerVoiceListener()
 
+    // Always push the selected language before listening — including "auto"
+    // mapped to the bridge default — so non-English recognition uses the
+    // right recognizer instead of falling back to en-US.
     const lang = selectedLang()
-    if (lang && lang !== "auto") {
-      try { await api.voiceSetLanguage(lang) } catch {}
-    }
+    try { await api.voiceSetLanguage(lang && lang !== "auto" ? lang : "en-US") } catch {}
 
     try {
       const result = await api.voiceStartListening()
