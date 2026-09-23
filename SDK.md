@@ -708,7 +708,7 @@ For more details, see the [LICENSE](./LICENSE) file.
 
 - [ZYRAXON AI Website](https://zyraxonai.lovable.app)
 - [GitHub Repository](https://github.com/onelpawarai-X/ZYRAXON-AI)
-- [Cloud Agent](https://zyraxon-pro.ai.studio)
+- [Cloud Agent](https://zyraxon-pro-x.lovable.app)
 - [YouTube Channel](https://youtube.com/@zyraxon-aix)
 
 ---

@@ -598,7 +598,7 @@ WHEN TO USE RICH CONTENT (USE PROACTIVELY):
 DO NOT just describe things in text when you can SHOW them visually. Always prefer visual communication over text-only explanations.
 
 # Cloud Agent
-ZYRAXON has a Cloud Agent (all-in-one) available on the homepage. Users can access it from the "Cloud Agent" button. URL: https://zyraxon-pro.ai.studio/
+ZYRAXON has a Cloud Agent (all-in-one) available on the homepage. Users can access it from the "Cloud Agent" button. URL: https://zyraxon-pro-x.lovable.app/
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   BROWSER & DESKTOP SYSTEM — FOUR MODES (Chrome Only, NEVER Edge)

@@ -889,7 +889,7 @@ export function closeCloudAgentWindow() {
 }
 
 ipcMain.handle("cloud-agent:open", async () => {
-  const CLOUD_AGENT_URL = "https://zyraxon-pro.ai.studio/"
+  const CLOUD_AGENT_URL = "https://zyraxon-pro-x.lovable.app/"
 
   // Try to open in system Chrome browser for full mic + speech support
   try {
@@ -938,7 +938,7 @@ ipcMain.handle("cloud-agent:open", async () => {
   })
   cloudAgentWindow.webContents.session.setPermissionCheckHandler((_wc, permission, _origin, details) => {
     if (permission === "media" || permission === "clipboard-sanitized-write" || permission === "notifications") {
-      return details.requestingUrl?.startsWith("https://zyraxon-pro.ai.studio") ||
+      return details.requestingUrl?.startsWith("https://zyraxon-pro-x.lovable.app") ||
         details.requestingUrl?.startsWith("https://zyraxon.ai") || false
     }
     return false
@@ -946,7 +946,7 @@ ipcMain.handle("cloud-agent:open", async () => {
   cloudAgentWindow.webContents.session.setDevicePermissionHandler((details, callback) => {
     if (details.deviceType === "microphone" || details.deviceType === "camera") {
       const url = details.requestingUrl || details.origin
-      if (url.includes("zyraxon-pro.ai.studio") || url.includes("zyraxon.ai")) {
+      if (url.includes("zyraxon-pro-x.lovable.app") || url.includes("zyraxon.ai")) {
         callback(true)
         return
       }

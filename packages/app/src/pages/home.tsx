@@ -1069,11 +1069,11 @@ function CloudAgentDialog(props: { show: boolean; onClose: () => void }) {
         api.cloudAgentOpen().then(() => {
           props.onClose()
         }).catch(() => {
-          window.open("https://zyraxon-pro.ai.studio/", "_blank")
+          window.open("https://zyraxon-pro-x.lovable.app/", "_blank")
           props.onClose()
         })
       } else {
-        window.open("https://zyraxon-pro.ai.studio/", "_blank")
+        window.open("https://zyraxon-pro-x.lovable.app/", "_blank")
         props.onClose()
       }
     }
