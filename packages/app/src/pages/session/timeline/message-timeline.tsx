@@ -341,10 +341,9 @@ export function MessageTimeline(props: {
   const timelineRows = projection.rows
 
   const spokenStorageKey = () => `tts-spoken-${sessionKey()}`
+  const ttsSpokenContentHashes = new Set<string>(loadPersistedContentHashes())
   const ttsSpokenIds = new Set<string>(loadPersistedSpokenIds())
   const ttsSentText = new Map<string, string>()
-  // Track spoken content by text hash to prevent double-speaking across retries
-  const ttsSpokenContentHashes = new Set<string>()
   const TTS_SERVER = "http://127.0.0.1:19810"
 
   // TTS SERIAL queue — ONE audio at a time, never parallel
@@ -405,9 +404,17 @@ export function MessageTimeline(props: {
     } catch { return [] }
   }
 
+  function loadPersistedContentHashes(): string[] {
+    try {
+      const raw = localStorage.getItem(`${spokenStorageKey()}:hashes`)
+      return raw ? JSON.parse(raw) : []
+    } catch { return [] }
+  }
+
   function persistSpokenIds() {
     try {
       localStorage.setItem(spokenStorageKey(), JSON.stringify([...ttsSpokenIds]))
+      localStorage.setItem(`${spokenStorageKey()}:hashes`, JSON.stringify([...ttsSpokenContentHashes]))
     } catch {}
   }
 

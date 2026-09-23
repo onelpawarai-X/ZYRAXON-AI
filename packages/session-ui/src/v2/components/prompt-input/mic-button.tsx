@@ -51,6 +51,7 @@ const VOICE_LANGUAGES: Array<{ code: string; label: string }> = [
 
 export type MicButtonProps = {
   onTranscript: (text: string, lang: string) => void
+  onLiveText?: (text: string) => void
   onError?: (error: string) => void
   disabled?: boolean
   language?: string
@@ -69,6 +70,7 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
   const [state, setState] = createSignal<VoiceState>("idle")
   const [selectedLang, setSelectedLang] = createSignal(props.language || "auto")
   let finalText = ""
+  let receivedAnySpeech = false
   let removeVoiceListener: (() => void) | null = null
   let safetyTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -118,14 +120,19 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
   const registerVoiceListener = () => {
     cleanupListener()
     transcriptDelivered = false
+    receivedAnySpeech = false
     const api = (window as any).api
     if (!api?.onVoiceEvent) return
 
     removeVoiceListener = api.onVoiceEvent((event: any) => {
       if (event.type === "voice-transcript") {
-        if (event.isFinal) {
-          const t = (event.fullText || event.text || "").trim()
-          if (t) finalText = t
+        const t = (event.fullText || event.text || "").trim()
+        if (t) {
+          receivedAnySpeech = true
+          finalText = t
+          clearSafetyTimeout()
+          // Stream interim text into the chat box as the user speaks — no waiting for stop
+          props.onLiveText?.(t)
         }
       } else if (event.type === "voice-mic-state") {
         if (event.active) {
@@ -188,11 +195,10 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     setState("recording")
     registerVoiceListener()
 
-    // Always push the selected language before listening — including "auto"
-    // mapped to the bridge default — so non-English recognition uses the
-    // right recognizer instead of falling back to en-US.
+    // Push selected language as-is — keep "auto" so the bridge uses the
+    // browser locale; never force en-US for non-English selections.
     const lang = selectedLang()
-    try { await api.voiceSetLanguage(lang && lang !== "auto" ? lang : "en-US") } catch {}
+    try { await api.voiceSetLanguage(lang || "auto") } catch {}
 
     try {
       const result = await api.voiceStartListening()
@@ -208,7 +214,7 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     }
 
     safetyTimeout = setTimeout(() => {
-      if (state() === "recording" && !finalText) {
+      if (state() === "recording" && !receivedAnySpeech) {
         setState("idle")
         cleanupListener()
         props.onError?.("Voice bridge timeout. Make sure ZYRAXON Voice window is open.")
@@ -218,9 +224,9 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
 
   const stopListening = async () => {
     clearSafetyTimeout()
-    setState("processing")
 
     if (isInsideIframe) {
+      setState("processing")
       window.parent.postMessage({ type: "zyraxon-speech-stop" }, "*")
       safetyTimeout = setTimeout(() => {
         finishWithText()
@@ -231,7 +237,7 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     const api = (window as any).api
     if (api) {
       try { await api.voiceStopListening() } catch {}
-      // Get accumulated transcript from buffer as fallback
+      // Final text may already be live in the box; settle from bridge buffer as fallback
       if (!finalText) {
         try {
           const accumulated = await api.voiceGetAccumulatedTranscript?.()
@@ -240,12 +246,18 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
           }
         } catch {}
       }
-      // Clear buffer after retrieving
       try { await api.voiceClearAccumulatedTranscript?.() } catch {}
     }
-    safetyTimeout = setTimeout(() => {
+    // Final transcript arrives via voice-transcript (final:true) then mic-state false —
+    // finishWithText settles without a long processing state (text already streamed).
+    if (state() === "recording") {
       finishWithText()
-    }, 5000)
+    } else {
+      setState("processing")
+      safetyTimeout = setTimeout(() => {
+        finishWithText()
+      }, 3000)
+    }
   }
 
   const toggleMic = (e: MouseEvent) => {

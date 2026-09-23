@@ -132,11 +132,30 @@ var timerInterval = null;
 var recordStartTime = 0;
 var micStream = null, analyser = null, animFrame = null;
 var pollTimer = null;
+var silenceTimer = null;
 
 function $(id) { return document.getElementById(id); }
 
 function send(d) {
   fetch(API + "/api/message", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).catch(function() {});
+}
+
+function activeLang() {
+  return selLang && selLang !== "auto" ? selLang : (navigator.language || "en-US");
+}
+
+function applyRecLang() {
+  if (rec) rec.lang = activeLang();
+}
+
+function resetSilenceTimer() {
+  if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+  if (!isRecording) return;
+  silenceTimer = setTimeout(function() {
+    if (!isRecording || !rec) return;
+    // 5.5s silence — restart recognizer once to clear lag/hang; onend auto-restarts while recording
+    try { rec.stop(); } catch (e) {}
+  }, 5500);
 }
 
 function pickLang(c) {
@@ -146,6 +165,14 @@ function pickLang(c) {
     els[i].classList.toggle("on", els[i].getAttribute("data-lang") === c);
   }
   send({ type: "language-changed", lang: c });
+  if (isRecording) {
+    applyRecLang();
+    if (rec) {
+      try { rec.stop(); } catch (e) {}
+      // onend restarts with new lang while still recording
+      resetSilenceTimer();
+    }
+  }
 }
 
 function pickGender(g) {
@@ -228,7 +255,7 @@ function startRecording() {
   $("mc").innerHTML = '<svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
   $("r1").classList.add("on"); $("r2").classList.add("on");
   $("dot").className = "dot rec"; $("ctx").textContent = "Recording...";
-  $("statusMsg").textContent = "Recording... click mic to stop";
+  $("statusMsg").textContent = "Listening — text streams as you speak";
   $("tx").innerHTML = '<span class="ph">Listening...</span>';
   $("sn").disabled = true;
 
@@ -236,6 +263,7 @@ function startRecording() {
   updateTimer();
   startMicMeter();
   startSpeechRecognition();
+  resetSilenceTimer();
   send({ type: "mic-state", active: true });
 }
 
@@ -244,8 +272,9 @@ function stopRecording() {
   isRecording = false;
 
   clearInterval(timerInterval);
+  if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
   $("timer").textContent = "";
-  $("statusMsg").textContent = "Processing...";
+  $("statusMsg").textContent = "";
 
   stopSpeechRecognition();
   stopMicMeter();
@@ -258,9 +287,9 @@ function stopRecording() {
   var text = finalTranscript.trim();
   if (text) {
     $("tx").innerHTML = '<div class="ft">' + esc(text) + '</div>';
-    $("statusMsg").textContent = "Ready to send";
+    $("statusMsg").textContent = "Ready — click Send when you want";
     $("sn").disabled = false;
-    send({ type: "transcript", final: true, text: text, fullText: text, lang: selLang });
+    send({ type: "transcript", final: true, text: text, fullText: text, lang: activeLang() });
     setTimeout(function() {
       send({ type: "mic-state", active: false });
     }, 200);
@@ -280,10 +309,11 @@ function startSpeechRecognition() {
     return;
   }
   if (!rec) { rec = new SR(); rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1; }
-  if (selLang !== "auto") rec.lang = selLang;
+  applyRecLang();
 
-  rec.onstart = function() {};
+  rec.onstart = function() { resetSilenceTimer(); };
   rec.onresult = function(ev) {
+    resetSilenceTimer();
     interimText = "";
     for (var i = ev.resultIndex; i < ev.results.length; i++) {
       var t = ev.results[i][0].transcript;
@@ -297,16 +327,22 @@ function startSpeechRecognition() {
       }
     }
     updDisplay();
+    var live = ((finalTranscript ? finalTranscript + " " : "") + interimText).trim();
+    if (live) {
+      // Live interim stream into chat box — final:false, no auto-send
+      send({ type: "transcript", final: false, text: live, fullText: live, lang: activeLang() });
+    }
   };
   rec.onerror = function(e) {
     if (e.error === "no-speech" || e.error === "aborted" || e.error === "network") {
-      if (isRecording) { try { rec.start(); } catch(ex) {} }
+      if (isRecording) { try { rec.start(); } catch(ex) {} resetSilenceTimer(); }
     }
   };
   rec.onend = function() {
-    if (isRecording) { try { rec.start(); } catch(ex) {} }
+    if (isRecording) { try { rec.start(); } catch(ex) {} resetSilenceTimer(); }
   };
   try { rec.start(); } catch(e) {}
+  resetSilenceTimer();
 }
 
 function stopSpeechRecognition() {
@@ -334,7 +370,7 @@ $("mc").onclick = function() { isRecording ? stopRecording() : startRecording();
 $("sn").onclick = function() {
   var text = finalTranscript.trim();
   if (!text) return;
-  send({ type: "send-to-chat", text: text, lang: selLang });
+  send({ type: "send-to-chat", text: text, lang: activeLang() });
   finalTranscript = ""; interimText = ""; updDisplay();
   $("sn").disabled = true;
   $("statusMsg").textContent = "Sent!";
