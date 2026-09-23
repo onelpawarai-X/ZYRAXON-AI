@@ -218,6 +218,40 @@ export function createMainWindow(id: string = randomUUID()) {
     // The Cloud Agent iframe (zyraxon-pro-x.lovable.app) needs these headers
     // to allow Web Speech API to function properly
     addSpeechRecognitionHeaders(details.url, responseHeaders)
+    // Cross-origin subframes (site preview, ecosystem hub, cloud agent) are
+    // often blocked by the remote site's X-Frame-Options / frame-ancestors
+    // CSP. Strip those framing restrictions for iframe loads only so the
+    // embedded content renders without cross-origin frame errors.
+    if (details.resourceType === "subFrame") {
+      const isLocal =
+        details.url.startsWith(`${rendererProtocol}://`) ||
+        details.url.startsWith("http://127.0.0.1") ||
+        details.url.startsWith("http://localhost")
+      if (!isLocal) {
+        delete responseHeaders["x-frame-options"]
+        delete responseHeaders["X-Frame-Options"]
+        const csp = responseHeaders["content-security-policy"] ?? responseHeaders["Content-Security-Policy"]
+        if (csp) {
+          const list = Array.isArray(csp) ? csp : [String(csp)]
+          const filtered = list
+            .map((value) =>
+              value
+                .split(";")
+                .map((directive) => directive.trim())
+                .filter((directive) => !/^frame-ancestors\b/i.test(directive))
+                .join(";"),
+            )
+            .filter(Boolean)
+          if (filtered.length > 0) {
+            if (responseHeaders["content-security-policy"]) responseHeaders["content-security-policy"] = filtered
+            if (responseHeaders["Content-Security-Policy"]) responseHeaders["Content-Security-Policy"] = filtered
+          } else {
+            delete responseHeaders["content-security-policy"]
+            delete responseHeaders["Content-Security-Policy"]
+          }
+        }
+      }
+    }
     callback({ responseHeaders })
   })
 
