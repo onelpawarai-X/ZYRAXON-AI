@@ -185,24 +185,32 @@ export const prepare = Effect.fn("LLMRequestPrep.prepare")(function* (input: Pre
     tools: Object.fromEntries(Object.entries(tools).toSorted(([a], [b]) => a.localeCompare(b))),
     params,
     messageTransformOptions: options,
-    headers: {
-      ...(input.model.providerID.startsWith("opencode")
-        ? {
-            ...(opencodeProjectID ? { "x-opencode-project": opencodeProjectID } : {}),
-            "x-opencode-session": input.sessionID,
-            "x-opencode-request": input.user.id,
-            "x-opencode-client": input.flags.client,
-            "User-Agent": OPENCODE_USER_AGENT,
-          }
-        : {
-            "x-session-affinity": input.sessionID,
-            "X-Session-Id": input.sessionID,
-            "User-Agent": USER_AGENT,
-          }),
-      ...(input.parentSessionID ? { "x-parent-session-id": input.parentSessionID } : {}),
-      ...input.model.headers,
-      ...headers,
-    },
+    headers: (() => {
+      const isOpencodeProvider = input.model.providerID.startsWith("opencode")
+      const merged: Record<string, string> = {
+        ...(!isOpencodeProvider
+          ? {
+              "x-session-affinity": input.sessionID,
+              "X-Session-Id": input.sessionID,
+            }
+          : {}),
+        ...(input.parentSessionID ? { "x-parent-session-id": input.parentSessionID } : {}),
+        ...input.model.headers,
+        ...headers,
+      }
+      if (isOpencodeProvider) {
+        if (opencodeProjectID) merged["x-opencode-project"] = opencodeProjectID
+        merged["x-opencode-session"] = input.sessionID
+        merged["x-opencode-request"] = input.user.id
+        merged["x-opencode-client"] = input.flags.client
+        merged["User-Agent"] = OPENCODE_USER_AGENT
+        delete merged["user-agent"]
+      } else {
+        merged["User-Agent"] = USER_AGENT
+        delete merged["user-agent"]
+      }
+      return merged
+    })(),
   }
 })
 
