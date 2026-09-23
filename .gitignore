@@ -106,3 +106,7 @@ packages/zyraxon-code-clean/
 __pycache__/
 
 *.pyc
+
+# Electron-vite temp configs (contain machine-specific injected paths)
+packages/desktop/electron.vite.config.*.mjs
+

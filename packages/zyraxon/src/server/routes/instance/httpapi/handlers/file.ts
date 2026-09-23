@@ -3,6 +3,8 @@ import { FileSystem } from "@zyraxon-ai/core/filesystem"
 import { LocationServiceMap, locationServiceMapLayer } from "@zyraxon-ai/core/location-services"
 import { Ripgrep } from "@zyraxon-ai/core/ripgrep"
 import { FSUtil } from "@zyraxon-ai/core/fs-util"
+import { ensureDirectory, directoryExists } from "@zyraxon-ai/core/default-project"
+import { InvalidRequestError } from "../errors"
 import { Location } from "@zyraxon-ai/core/location"
 import { AbsolutePath, RelativePath } from "@zyraxon-ai/core/schema"
 import { Effect, Layer, Option } from "effect"
@@ -64,7 +66,14 @@ export const fileHandlers = HttpApiBuilder.group(InstanceHttpApi, "file", (handl
     })
 
     const list = Effect.fn("FileHttpApi.list")(function* (ctx: { query: { path: string } }) {
-      const directory = (yield* InstanceState.context).directory
+      const directory = ensureDirectory((yield* InstanceState.context).directory)
+      if (!directoryExists(directory)) {
+        return yield* Effect.fail(
+          new InvalidRequestError({
+            message: `Directory does not exist: ${directory}. Create it or pick another project.`,
+          }),
+        )
+      }
       return yield* filesystem(
         Effect.gen(function* () {
           const fs = yield* FileSystem.Service

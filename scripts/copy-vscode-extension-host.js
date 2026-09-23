@@ -16,7 +16,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // ─── Paths ───────────────────────────────────────────────────────────────────
 
-const VSCODE_SRC = "C:\\Users\\MMP\\Downloads\\vscode-source\\src\\vs"
+const VSCODE_SRC = process.env.VSCODE_SRC || join(__dirname, "..", "vscode-source", "src", "vs")
 const ZYRAXON_TARGET = join(__dirname, "..", "packages", "desktop", "vscode-host", "vs")
 
 // ─── Directories/Files to Copy ───────────────────────────────────────────────

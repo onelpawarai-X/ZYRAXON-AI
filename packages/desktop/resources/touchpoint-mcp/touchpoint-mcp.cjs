@@ -7,7 +7,9 @@ var { spawn, execSync, execFileSync } = require('child_process');
 var os = require('os');
 
 var _dir = path.dirname(__filename || __dirname);
-var runPy = path.join(_dir, 'run.py');
+// zyraxon_touchpoint.py is the primary server (47 tools); run.py is the vendored fallback
+var runPy = path.join(_dir, 'zyraxon_touchpoint.py');
+if (!fs.existsSync(runPy)) runPy = path.join(_dir, 'run.py');
 var libsDir = path.join(_dir, 'libs');
 
 // ─── Dynamic Python Detection ─────────────────────────────────────

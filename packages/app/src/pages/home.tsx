@@ -361,17 +361,17 @@ export function NewHome() {
   const selectedProject = createMemo(() => projects().find((project) => project.worktree === selection().directory))
 
   // Default project — always exists so users can create sessions without adding a project first
-  const DEFAULT_PROJECT: LocalProject = {
-    worktree: "/workspace",
+  const DEFAULT_PROJECT = createMemo<LocalProject>(() => ({
+    worktree: homedir() || "/",
     expanded: true,
     name: "Default Project",
-  }
+  }))
   const newSessionProject = createMemo(
     () =>
       selectedProject() ??
       projects().find((project) => project.worktree === focusedServerCtx()?.projects.last()) ??
       projects()[0] ??
-      DEFAULT_PROJECT,
+      DEFAULT_PROJECT(),
   )
   const directories = (project: LocalProject) => [project.worktree, ...(project.sandboxes ?? [])]
   const projectDirectories = createMemo(() => {
@@ -602,8 +602,8 @@ export function NewHome() {
         openProjectNewSession(conn, homeDir)
         return
       }
-      // Use default project directory so sessions always work
-      openProjectNewSession(conn, "/workspace")
+      // Last resort: server cwd — never a dangling Linux path on Windows
+      openProjectNewSession(conn, homedir() || "/")
     }
   }
 
@@ -930,7 +930,8 @@ function HomeProjectColumn(props: {
                       data-action="home-default-project"
                       class={`${HOME_PROJECT_NAV_ROW} data-[selected]:bg-v2-background-bg-layer-03 data-[selected]:text-v2-text-text-base`}
                       onClick={() => {
-                        props.openNewSession(server, "/workspace")
+                        const dir = props.homedir || "/"
+                        props.openNewSession(server, dir)
                       }}
                     >
                       <IconV2 name="folder" size="small" class="text-v2-icon-icon-muted" />
