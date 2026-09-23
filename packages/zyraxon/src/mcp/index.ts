@@ -35,7 +35,9 @@ import { McpCatalog } from "./catalog"
 import { McpEvent } from "@zyraxon-ai/schema/mcp-event"
 import { McpBrowser } from "./browser"
 
-const DEFAULT_TIMEOUT = 10_000
+// Bundled local servers (Playwright, Python imports, desktop-commander cold start)
+// routinely need >10s for the initialize handshake
+const DEFAULT_TIMEOUT = 30_000
 
 // Cache resolved node path to avoid repeated blocking `where` calls
 let _cachedNodePath: string | null = null
@@ -365,14 +367,18 @@ const layer = Layer.effect(
     ) {
       const [cmd, ...args] = mcp.command
       const baseDir = yield* InstanceState.directory
-      const cwd = mcp.cwd ? path.resolve(baseDir, mcp.cwd) : baseDir
+      const fs = require("fs") as typeof import("fs")
+      let cwd = mcp.cwd ? path.resolve(baseDir, mcp.cwd) : baseDir
+      // Invalid session directories (deleted/moved projects) must not break spawn
+      if (!fs.existsSync(cwd)) {
+        cwd = require("os").homedir()
+      }
 
       // Resolve __RESOURCES_PATH__ placeholder in command/args (for bundled MCP servers)
       // Try multiple paths: env var, packaged Electron resourcesPath, then dev fallbacks
       const findResourcesPath = (): string => {
-        const fs = require("fs") as typeof import("fs")
-        const markerFiles = ["jarvis-browser-mcp.cjs", "nuphus-mcp/nuphus-mcp.cjs", "touchpoint-mcp/touchpoint-mcp.cjs"]
-        const hasResources = (p: string) => markerFiles.some((m) => fs.existsSync(path.join(p, m)))
+        const markerFiles = ["jarvis-browser-mcp.cjs", "nuphus-mcp/nuphus-mcp.cjs", "touchpoint-mcp/touchpoint-mcp.cjs", "desktop-commander/desktop-commander.cjs"]
+        const hasResources = (p: string) => markerFiles.every((m) => fs.existsSync(path.join(p, m)))
         // 1. ZYRAXON_RESOURCES_PATH env var (set by Electron main process for sidecar)
         if (process.env.ZYRAXON_RESOURCES_PATH) {
           const p = process.env.ZYRAXON_RESOURCES_PATH
@@ -393,12 +399,20 @@ const layer = Layer.effect(
         // 4. Fallback: check resources dir relative to baseDir
         const fallback = path.resolve(baseDir, "packages/desktop/resources")
         if (hasResources(fallback)) return fallback
+        // 5. Last resort: any dir containing the core marker files (partial installs)
+        if (process.env.ZYRAXON_RESOURCES_PATH) return process.env.ZYRAXON_RESOURCES_PATH
+        if (typeof process !== "undefined" && (process as any).resourcesPath) {
+          return (process as any).resourcesPath as string
+        }
         return baseDir
       }
       const resourcesPath = findResourcesPath()
       const resolvePath = (p: string) => p.replace(/__RESOURCES_PATH__/g, resourcesPath)
       let resolvedCmd = resolvePath(cmd)
       const resolvedArgs = args.map(resolvePath)
+      const resolvedEnv = Object.fromEntries(
+        Object.entries(mcp.environment ?? {}).map(([name, value]) => [name, resolvePath(value)]),
+      )
 
       // Resolve "node" to full path if bare command not found (cached, async)
       if (resolvedCmd === "node" || resolvedCmd === "node.exe") {
@@ -413,7 +427,7 @@ const layer = Layer.effect(
         env: {
           ...process.env,
           ...(cmd === "opencode" ? { BUN_BE_BUN: "1" } : {}),
-          ...mcp.environment,
+          ...resolvedEnv,
         },
       })
 

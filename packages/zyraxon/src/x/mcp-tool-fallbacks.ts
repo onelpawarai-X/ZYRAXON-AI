@@ -1,8 +1,17 @@
 import type { XToolDef } from "../x-tool-registry"
+import { toolHandlers, type HandlerArgs, type HandlerResult } from "./mcp-tool-handlers"
 
 function fb(id: string, name: string, desc: string, params: Record<string, { type: string; description: string; required?: boolean }>, cat: string, server: string): XToolDef {
   return { id, name, description: desc, category: cat, parameters: params,
-    execute: async () => ({ ok: true, data: { tool: id, message: "Connect to " + server + " MCP to use this tool" } }) }
+    execute: async (args: HandlerArgs): Promise<HandlerResult> => {
+      try {
+        const handler = toolHandlers[id]
+        if (!handler) return { ok: false, error: `No implementation registered for ${id} (server: ${server})` }
+        return await handler(args ?? {})
+      } catch (error) {
+        return { ok: false, error: error instanceof Error ? error.message : String(error) }
+      }
+    } }
 }
 
 // Nuphus MCP — Desktop automation + CDP Chrome (19 tools)
@@ -28,7 +37,7 @@ export const nuphusMcpTools: XToolDef[] = [
   fb("nuphus_browser_execute", "Nuphus: Browser Execute JS", "Execute JS in page context.", { script: { type: "string", description: "JS code", required: true } }, "nuphus-desktop", "nuphus-desktop"),
 ]
 
-// Touchpoint MCP — Accessibility-based desktop automation (56 tools)
+// Touchpoint MCP — Accessibility-based desktop automation (47 tools)
 export const touchpointMcpTools: XToolDef[] = [
   fb("tp_apps", "Touchpoint: Apps", "List all open apps with accessibility elements.", {}, "touchpoint", "touchpoint-mcp"),
   fb("tp_windows", "Touchpoint: Windows", "List all windows with title, app, PID, position, size.", {}, "touchpoint", "touchpoint-mcp"),

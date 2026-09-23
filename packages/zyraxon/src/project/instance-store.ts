@@ -6,6 +6,7 @@ import { WorkspaceContext } from "@/control-plane/workspace-context"
 import { InstanceRef } from "@/effect/instance-ref"
 import { disposeInstance as runDisposers } from "@/effect/instance-registry"
 import { FSUtil } from "@zyraxon-ai/core/fs-util"
+import { ensureDirectory } from "@zyraxon-ai/core/default-project"
 import { Context, Deferred, Duration, Effect, Exit, Layer, Scope } from "effect"
 import { type InstanceContext } from "./instance-context"
 import { InstanceBootstrap } from "./bootstrap-service"
@@ -106,7 +107,7 @@ const layer: Layer.Layer<Service, never, Project.Service | InstanceBootstrap.Ser
     })
 
     const load = (input: LoadInput): Effect.Effect<InstanceContext> => {
-      const directory = FSUtil.resolve(input.directory)
+      const directory = ensureDirectory(FSUtil.resolve(input.directory))
       return Effect.uninterruptibleMask((restore) =>
         Effect.gen(function* () {
           const existing = cache.get(directory)
@@ -124,7 +125,7 @@ const layer: Layer.Layer<Service, never, Project.Service | InstanceBootstrap.Ser
     }
 
     const reload = (input: LoadInput): Effect.Effect<InstanceContext> => {
-      const directory = FSUtil.resolve(input.directory)
+      const directory = ensureDirectory(FSUtil.resolve(input.directory))
       return Effect.uninterruptibleMask((restore) =>
         Effect.gen(function* () {
           const previous = cache.get(directory)

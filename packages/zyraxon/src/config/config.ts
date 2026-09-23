@@ -629,13 +629,15 @@ const layer = Layer.effect(
             if (resourcesPath) {
               const defaultMcp = JSON.parse(fsSync.readFileSync(pathMod.join(resourcesPath, "default-mcp-config.json"), "utf-8"))
               if (defaultMcp.mcp) {
+                const expand = (value: string) => value.replace(/__RESOURCES_PATH__/g, resourcesPath)
                 const resolvedMcp: Record<string, any> = {}
                 for (const [key, value] of Object.entries(defaultMcp.mcp) as [string, any][]) {
                   resolvedMcp[key] = {
                     ...value,
-                    command: value.command?.map((c: string) =>
-                      c.replace(/__RESOURCES_PATH__/g, resourcesPath)
-                    ),
+                    command: value.command?.map(expand),
+                    environment: value.environment
+                      ? Object.fromEntries(Object.entries(value.environment).map(([k, v]) => [k, expand(String(v))]))
+                      : value.environment,
                   }
                 }
                 result.mcp = { ...resolvedMcp, ...result.mcp }

@@ -6,10 +6,19 @@ OUT = os.path.join(os.path.dirname(__file__), "mcp-tool-fallbacks.ts")
 
 lines = []
 lines.append('import type { XToolDef } from "../x-tool-registry"')
+lines.append('import { toolHandlers, type HandlerArgs, type HandlerResult } from "./mcp-tool-handlers"')
 lines.append('')
 lines.append('function fb(id: string, name: string, desc: string, params: Record<string, { type: string; description: string; required?: boolean }>, cat: string, server: string): XToolDef {')
 lines.append('  return { id, name, description: desc, category: cat, parameters: params,')
-lines.append('    execute: async () => ({ ok: true, data: { tool: id, message: "Connect to " + server + " MCP to use this tool" } }) }')
+lines.append('    execute: async (args: HandlerArgs): Promise<HandlerResult> => {')
+lines.append('      try {')
+lines.append('        const handler = toolHandlers[id]')
+lines.append('        if (!handler) return { ok: false, error: `No implementation registered for ${id} (server: ${server})` }')
+lines.append('        return await handler(args ?? {})')
+lines.append('      } catch (error) {')
+lines.append('        return { ok: false, error: error instanceof Error ? error.message : String(error) }')
+lines.append('      }')
+lines.append('    } }')
 lines.append('}')
 lines.append('')
 
@@ -53,7 +62,7 @@ lines.append(']')
 lines.append('')
 
 # TOUCHPOINT TOOLS
-lines.append('// Touchpoint MCP — Accessibility-based desktop automation (56 tools)')
+lines.append('// Touchpoint MCP — Accessibility-based desktop automation (47 tools)')
 lines.append('export const touchpointMcpTools: XToolDef[] = [')
 
 touchpoint = [

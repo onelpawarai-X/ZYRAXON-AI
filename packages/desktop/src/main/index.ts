@@ -567,23 +567,14 @@ const main = Effect.gen(function* () {
   void (async () => {
     try {
       const { writeFileSync, mkdirSync, existsSync, readFileSync } = await import("node:fs")
-      const { execSync: execCmd } = await import("node:child_process")
-      const resourcesPath = app.isPackaged ? process.resourcesPath : join(import.meta.dirname, "..", "..", "..", "packages", "desktop", "resources")
-      const jarvisMcpPath = join(resourcesPath, "jarvis-browser-mcp.cjs")
-      let nodeExe = "node"
-      try {
-        const resolved = execCmd("where node", { encoding: "utf8", timeout: 3000 }).trim().split("\n")[0].trim()
-        if (resolved && existsSync(resolved)) nodeExe = resolved
-      } catch {}
-      const nuphusMcpPath = join(resourcesPath, "nuphus-mcp", "nuphus-mcp.cjs")
-      const touchpointMcpCjs = join(resourcesPath, "touchpoint-mcp", "touchpoint-mcp.cjs")
-      const desktopCommanderCjs = join(resourcesPath, "desktop-commander", "desktop-commander.cjs")
+      // Commands use the __RESOURCES_PATH__ placeholder so configs never bake
+      // machine-specific absolute paths; the MCP loader expands it at spawn time.
       const defaultConfig = {
         "$schema": "https://zyraxon.ai/config.json",
         "mcp": {
           "jarvis-browser": {
             "type": "local",
-            "command": [nodeExe, jarvisMcpPath, "--headless", "--browser", "chrome", "--no-sandbox"],
+            "command": ["node", "__RESOURCES_PATH__/jarvis-browser-mcp.cjs", "--headless", "--browser", "chrome", "--no-sandbox"],
             "enabled": true,
             "timeout": 30000,
             "environment": {
@@ -592,13 +583,14 @@ const main = Effect.gen(function* () {
           },
           "nuphus-desktop": {
             "type": "local",
-            "command": [nodeExe, nuphusMcpPath],
+            "command": ["node", "__RESOURCES_PATH__/nuphus-mcp/nuphus-mcp.cjs"],
             "enabled": true,
+            "timeout": 30000,
             "environment": {}
           },
           "touchpoint-mcp": {
             "type": "local",
-            "command": [nodeExe, touchpointMcpCjs],
+            "command": ["node", "__RESOURCES_PATH__/touchpoint-mcp/touchpoint-mcp.cjs"],
             "enabled": true,
             "timeout": 30000,
             "environment": {
@@ -607,9 +599,9 @@ const main = Effect.gen(function* () {
           },
           "desktop-commander": {
             "type": "local",
-            "command": [nodeExe, desktopCommanderCjs],
+            "command": ["node", "__RESOURCES_PATH__/desktop-commander/desktop-commander.cjs"],
             "enabled": true,
-            "timeout": 30000,
+            "timeout": 60000,
             "environment": {
               "DESKTOP_COMMANDER_NO_ANALYTICS": "1"
             }
@@ -642,15 +634,21 @@ const main = Effect.gen(function* () {
               logger.info(`added ${name} to MCP config`, { path: configPath })
             }
           }
-          // Fix broken paths (hardcoded or inside asar)
+          // Fix broken paths (hardcoded absolute paths into deleted dirs, asar, etc.)
           for (const [name, def] of Object.entries(defaultConfig.mcp)) {
             const existingCmd = parsed.mcp[name]?.command
             if (!existingCmd) continue
             const existingPath = existingCmd[1] ?? ""
-            const pathBroken = !existingPath || !existsSync(existingPath) || existingPath.includes("__RESOURCES_PATH__") || existingPath.includes("app.asar")
+            // __RESOURCES_PATH__ placeholders are dynamic and healthy — never rewrite them
+            const isPlaceholder = existingPath.includes("__RESOURCES_PATH__")
+            const pathBroken =
+              !existingPath ||
+              existingPath.includes("app.asar") ||
+              (!isPlaceholder && !existsSync(existingPath))
             if (pathBroken) {
               parsed.mcp[name].command = def.command
               if (def.environment) parsed.mcp[name].environment = def.environment
+              if (def.timeout) parsed.mcp[name].timeout = def.timeout
               changed = true
               logger.info(`fixed ${name} MCP config`, { path: configPath, oldPath: existingPath })
             }

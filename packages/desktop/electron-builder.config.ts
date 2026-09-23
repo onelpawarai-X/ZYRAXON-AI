@@ -50,6 +50,14 @@ function copyMcpBundles(configuration: { appOutDir: string }) {
     cpSync(touchpointSrc, touchpointDst, { recursive: true })
     console.log("[afterPack] Copied touchpoint-mcp to", touchpointDst)
   }
+
+  // Copy desktop-commander bundle (wrapper + ESM dist + node_modules)
+  const commanderSrc = path.join(packageDir, "resources", "desktop-commander")
+  const commanderDst = path.join(resourcesDst, "desktop-commander")
+  if (existsSync(commanderSrc)) {
+    cpSync(commanderSrc, commanderDst, { recursive: true })
+    console.log("[afterPack] Copied desktop-commander to", commanderDst)
+  }
 }
 
 const afterPack = (context: { appOutDir: string }) => {
@@ -92,6 +100,7 @@ const getBase = (appId: string): Configuration => ({
     "jarvis-browser/**",
     "nuphus-mcp/**",
     "touchpoint-mcp/**",
+    "desktop-commander/**",
   ],
   extraResources: [
     {
@@ -141,6 +150,11 @@ const getBase = (appId: string): Configuration => ({
       from: "resources/touchpoint-mcp",
       to: "touchpoint-mcp",
       filter: ["*.py", "*.cjs", "*.js", "*.json", "*.md", "libs/**/*"],
+    },
+    {
+      from: "resources/desktop-commander",
+      to: "desktop-commander",
+      filter: ["*.cjs", "*.js", "*.json", "*.md", "LICENSE", "dist/**/*", "node_modules/**/*"],
     },
     {
       from: "assets/videos",

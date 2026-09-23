@@ -20,6 +20,7 @@ import { Skill } from "@/skill"
 import { AbsolutePath } from "@zyraxon-ai/core/schema"
 import { Location } from "@zyraxon-ai/core/location"
 import { LocationServiceMap, locationServiceMapLayer } from "@zyraxon-ai/core/location-services"
+import { ensureDirectory } from "@zyraxon-ai/core/default-project"
 import { Reference } from "@zyraxon-ai/core/reference"
 import { MCP } from "@/mcp"
 import { PermissionV1 } from "@zyraxon-ai/core/v1/permission"
@@ -59,16 +60,17 @@ const layer = Layer.effect(
     return Service.of({
       environment: Effect.fn("SystemPrompt.environment")(function* (model: Provider.Model) {
         const ctx = yield* InstanceState.context
+        const directory = ensureDirectory(ctx.directory)
         const references = yield* Effect.gen(function* () {
           const refs = yield* (yield* Reference.Service).list()
           return (refs ?? []).filter((reference) => reference.description !== undefined)
-        }).pipe(Effect.provide(locations.get(Location.Ref.make({ directory: AbsolutePath.make(ctx.directory) }))))
+        }).pipe(Effect.provide(locations.get(Location.Ref.make({ directory: AbsolutePath.make(directory) }))))
         return [
           [
             `You are powered by the model named ${model.api.id}. The exact model ID is ${model.providerID}/${model.api.id}`,
             `Here is some useful information about the environment you are running in:`,
             `<env>`,
-            `  Working directory: ${ctx.directory}`,
+            `  Working directory: ${directory}`,
             `  Workspace root folder: ${ctx.worktree}`,
             `  Is directory a git repo: ${ctx.project.vcs === "git" ? "yes" : "no"}`,
             `  Platform: ${process.platform}`,

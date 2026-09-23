@@ -36,6 +36,9 @@ import { DroneController, CarController, BoatController, RocketController, Satel
 import { UniversalCommandEngine } from "./universal-command"
 import { cdpBrowserTools, computerControlTools, planningTools, mediaTools, selfImproveTools } from "./advanced-tools"
 import { nuphusMcpTools, touchpointMcpTools } from "./mcp-tool-fallbacks"
+import * as fs from "fs"
+import * as path from "path"
+import * as os from "os"
 
 export type XToolDef = {
   id: string
@@ -4232,39 +4235,733 @@ export const xToolRegistry: XToolDef[] = [
   { id: "x_robot_pose_error", name: "Pose Error", description: "Robot pose error (distance + angle)", parameters: { cx: { type: "number", description: "Current X", required: true }, cy: { type: "number", description: "Current Y", required: true }, ctheta: { type: "number", description: "Current theta", required: true }, tx: { type: "number", description: "Target X", required: true }, ty: { type: "number", description: "Target Y", required: true }, ttheta: { type: "number", description: "Target theta", required: true } }, category: "robotics", execute: async (a) => ({ ok: true, data: { error: RoboticsTools.poseError({ x: a.cx, y: a.cy, theta: a.ctheta }, { x: a.tx, y: a.ty, theta: a.ttheta }) } }) },
 
   // ═══════════════════════════════════════════════════════════════
-  // BUILTIN TOOLS (19) — Core agent tools registered via registry.ts
+  // BUILTIN TOOLS (19) — Real implementations (no stubs)
   // ═══════════════════════════════════════════════════════════════
-  { id: "task", name: "Task", description: "Delegate a task to a sub-agent for autonomous execution", parameters: { prompt: { type: "string", description: "Task description", required: true }, subagent_type: { type: "string", description: "Agent type (explore/general/vision)", required: false } }, category: "builtin", execute: async () => ({ ok: true, data: { message: "Task tool — registered via registry.ts" } }) },
-  { id: "plan", name: "Plan", description: "Create a structured plan for complex tasks", parameters: { goal: { type: "string", description: "Goal to plan for", required: true } }, category: "builtin", execute: async () => ({ ok: true, data: { message: "Plan tool — registered via registry.ts" } }) },
-  { id: "apply_patch", name: "Apply Patch", description: "Apply a unified diff patch to files", parameters: { patch: { type: "string", description: "Unified diff patch", required: true } }, category: "builtin", execute: async () => ({ ok: true, data: { message: "ApplyPatch tool — registered via registry.ts" } }) },
-  { id: "code_analyzer", name: "Code Analyzer", description: "Analyze code for patterns, complexity, and issues", parameters: { code: { type: "string", description: "Code to analyze", required: true }, language: { type: "string", description: "Programming language", required: false } }, category: "builtin", execute: async () => ({ ok: true, data: { message: "CodeAnalyzer tool — registered via registry.ts" } }) },
-  { id: "api_tester", name: "API Tester", description: "Test API endpoints with various methods and payloads", parameters: { url: { type: "string", description: "API endpoint URL", required: true }, method: { type: "string", description: "HTTP method", required: false }, body: { type: "string", description: "Request body JSON", required: false } }, category: "builtin", execute: async () => ({ ok: true, data: { message: "ApiTester tool — registered via registry.ts" } }) },
-  { id: "system_info", name: "System Info", description: "Get system information (OS, CPU, memory, disk)", parameters: {}, category: "builtin", execute: async () => ({ ok: true, data: { platform: process.platform, arch: process.arch, nodeVersion: process.version } }) },
-  { id: "screen_vision", name: "Screen Vision", description: "Capture and analyze screen content using AI vision", parameters: { prompt: { type: "string", description: "What to look for on screen", required: false } }, category: "builtin", execute: async () => ({ ok: true, data: { message: "ScreenVision tool — registered via registry.ts" } }) },
-  { id: "self_evolve", name: "Self Evolve", description: "Analyze and improve the agent's own codebase and behavior", parameters: { focus: { type: "string", description: "Area to improve", required: false } }, category: "builtin", execute: async () => ({ ok: true, data: { message: "SelfEvolve tool — registered via registry.ts" } }) },
-  { id: "code_mode", name: "Code Mode", description: "Switch between code generation modes", parameters: { mode: { type: "string", description: "Mode name", required: true } }, category: "builtin", execute: async () => ({ ok: true, data: { message: "CodeMode tool — registered via registry.ts" } }) },
-  { id: "mcp_websearch", name: "MCP Web Search", description: "Search the web using MCP server connections", parameters: { query: { type: "string", description: "Search query", required: true } }, category: "builtin", execute: async () => ({ ok: true, data: { message: "MCP WebSearch tool — registered via registry.ts" } }) },
-  { id: "site_create", name: "Site Create", description: "Create a new website with templates and configuration", parameters: { name: { type: "string", description: "Site name", required: true }, template: { type: "string", description: "Template to use", required: false } }, category: "builtin", execute: async () => ({ ok: true, data: { message: "SiteCreate tool — registered via registry.ts" } }) },
-  { id: "site_publish", name: "Site Publish", description: "Publish a site to make it live", parameters: { site_id: { type: "string", description: "Site ID", required: true } }, category: "builtin", execute: async () => ({ ok: true, data: { message: "SitePublish tool — registered via registry.ts" } }) },
-  { id: "site_unpublish", name: "Site Unpublish", description: "Take a published site offline", parameters: { site_id: { type: "string", description: "Site ID", required: true } }, category: "builtin", execute: async () => ({ ok: true, data: { message: "SiteUnpublish tool — registered via registry.ts" } }) },
-  { id: "site_domain", name: "Site Domain", description: "Configure custom domain for a site", parameters: { site_id: { type: "string", description: "Site ID", required: true }, domain: { type: "string", description: "Custom domain", required: true } }, category: "builtin", execute: async () => ({ ok: true, data: { message: "SiteDomain tool — registered via registry.ts" } }) },
-  { id: "site_preview", name: "Site Preview", description: "Generate a preview URL for a site", parameters: { site_id: { type: "string", description: "Site ID", required: true } }, category: "builtin", execute: async () => ({ ok: true, data: { message: "SitePreview tool — registered via registry.ts" } }) },
-  { id: "media_fetch", name: "Media Fetch", description: "Fetch media content from URLs (images, videos, audio)", parameters: { url: { type: "string", description: "Media URL", required: true }, type: { type: "string", description: "Media type hint", required: false } }, category: "builtin", execute: async () => ({ ok: true, data: { message: "MediaFetch tool — registered via registry.ts" } }) },
-  { id: "svg_generate", name: "SVG Generate", description: "Generate SVG graphics from descriptions", parameters: { description: { type: "string", description: "What to draw", required: true }, width: { type: "number", description: "Width", required: false }, height: { type: "number", description: "Height", required: false } }, category: "builtin", execute: async () => ({ ok: true, data: { message: "SvgGenerate tool — registered via registry.ts" } }) },
-  { id: "github_connect", name: "GitHub Connect", description: "Connect to GitHub for repository operations", parameters: { repo: { type: "string", description: "Repository (owner/name)", required: false } }, category: "builtin", execute: async () => ({ ok: true, data: { message: "GithubConnect tool — registered via registry.ts" } }) },
-  { id: "external_directory", name: "External Directory", description: "Manage external directory entries and resources", parameters: { action: { type: "string", description: "Action (list/add/remove)", required: true }, path: { type: "string", description: "Directory path", required: false } }, category: "builtin", execute: async () => ({ ok: true, data: { message: "ExternalDirectory tool — registered via registry.ts" } }) },
+  { id: "task", name: "Task", description: "Delegate a task to a sub-agent for autonomous execution", parameters: { prompt: { type: "string", description: "Task description", required: true }, subagent_type: { type: "string", description: "Agent type (explore/general/vision)", required: false } }, category: "builtin", execute: async (a) => {
+    const prompt = String(a.prompt ?? "").trim()
+    if (!prompt) return { ok: false, error: "prompt is required" }
+    return { ok: false, error: "Sub-agent delegation requires an active session runtime. The session Task tool (src/tool/task.ts) is registered separately via tool/registry.ts and must be invoked by the agent loop, not the standalone X registry. Pass your prompt to the model as a follow-up turn instead." }
+  } },
+  { id: "plan", name: "Plan", description: "Create a structured plan for complex tasks", parameters: { goal: { type: "string", description: "Goal to plan for", required: true } }, category: "builtin", execute: async (a) => {
+    const goal = String(a.goal ?? "").trim()
+    if (!goal) return { ok: false, error: "goal is required" }
+    const planDir = path.join(process.cwd(), ".zyraxon", "plans")
+    fs.mkdirSync(planDir, { recursive: true })
+    const steps = splitPlanSteps(goal)
+    const planId = `${Date.now().toString(36)}-${steps.length}`
+    const planPath = path.join(planDir, `${planId}.md`)
+    const lines = [`# Plan: ${goal}`, "", `Created: ${new Date().toISOString()}`, "", "## Steps", "", ...steps.map((s, i) => `${i + 1}. ${s}`), ""]
+    fs.writeFileSync(planPath, lines.join("\n"), "utf8")
+    return { ok: true, data: { planId, goal, steps, path: planPath, stepCount: steps.length } }
+  } },
+  { id: "apply_patch", name: "Apply Patch", description: "Apply a unified diff patch to files", parameters: { patch: { type: "string", description: "Unified diff patch", required: true } }, category: "builtin", execute: async (a) => {
+    const patchText = String(a.patch ?? "")
+    if (!patchText.trim()) return { ok: false, error: "patch is required" }
+    const cwd = process.cwd()
+    try {
+      if (patchText.includes("*** Begin Patch")) {
+        const { parsePatch, deriveNewContentsFromChunks } = await import("../patch")
+        const { hunks } = parsePatch(patchText)
+        if (hunks.length === 0) return { ok: false, error: "No hunks found in apply_patch-format patch" }
+        const modified: string[] = []
+        const added: string[] = []
+        const deleted: string[] = []
+        for (const hunk of hunks) {
+          const file = path.resolve(cwd, hunk.path)
+          if (hunk.type === "add") {
+            fs.mkdirSync(path.dirname(file), { recursive: true })
+            const content = hunk.contents.length === 0 || hunk.contents.endsWith("\n") ? hunk.contents : `${hunk.contents}\n`
+            fs.writeFileSync(file, content, "utf8")
+            added.push(hunk.path)
+          } else if (hunk.type === "delete") {
+            if (fs.existsSync(file)) fs.unlinkSync(file)
+            deleted.push(hunk.path)
+          } else {
+            if (!fs.existsSync(file)) return { ok: false, error: `File not found for update: ${hunk.path}` }
+            const original = fs.readFileSync(file, "utf8")
+            try {
+              const update = deriveNewContentsFromChunks(hunk.path, hunk.chunks, original)
+              if (hunk.move_path) {
+                const dest = path.resolve(cwd, hunk.move_path)
+                fs.mkdirSync(path.dirname(dest), { recursive: true })
+                fs.writeFileSync(dest, update.content, "utf8")
+                fs.unlinkSync(file)
+                modified.push(hunk.move_path)
+              } else {
+                fs.writeFileSync(file, update.content, "utf8")
+                modified.push(hunk.path)
+              }
+            } catch (e) {
+              return { ok: false, error: `Failed applying hunk to ${hunk.path}: ${e instanceof Error ? e.message : String(e)}` }
+            }
+          }
+        }
+        return { ok: true, data: { format: "apply_patch", modified, added, deleted } }
+      }
+      const result = applyUnifiedDiff(patchText, cwd)
+      if (result.errors.length > 0 && result.modified.length === 0 && result.added.length === 0 && result.deleted.length === 0) {
+        return { ok: false, error: `Unified diff apply failed: ${result.errors.join("; ")}` }
+      }
+      return { ok: true, data: { format: "unified-diff", ...result } }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  } },
+  { id: "code_analyzer", name: "Code Analyzer", description: "Analyze code for patterns, complexity, and issues", parameters: { code: { type: "string", description: "Code to analyze", required: true }, language: { type: "string", description: "Programming language", required: false } }, category: "builtin", execute: async (a) => {
+    const code = String(a.code ?? "")
+    if (!code.trim()) return { ok: false, error: "code is required" }
+    return { ok: true, data: analyzeCode(code, String(a.language ?? "")) }
+  } },
+  { id: "api_tester", name: "API Tester", description: "Test API endpoints with various methods and payloads", parameters: { url: { type: "string", description: "API endpoint URL", required: true }, method: { type: "string", description: "HTTP method", required: false }, body: { type: "string", description: "Request body JSON", required: false } }, category: "builtin", execute: async (a) => {
+    const url = String(a.url ?? "").trim()
+    if (!url) return { ok: false, error: "url is required" }
+    let parsed: URL
+    try {
+      parsed = new URL(url)
+    } catch {
+      return { ok: false, error: `Invalid URL: ${url}` }
+    }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return { ok: false, error: `Only http/https URLs are supported (got ${parsed.protocol})` }
+    }
+    const method = (String(a.method ?? "GET") || "GET").toUpperCase()
+    const bodyText = a.body === undefined || a.body === null ? "" : String(a.body)
+    const init: RequestInit = { method, signal: AbortSignal.timeout(30000), redirect: "follow" }
+    if (bodyText && method !== "GET" && method !== "HEAD") {
+      init.body = bodyText
+      init.headers = { "content-type": "application/json" }
+    }
+    const started = Date.now()
+    try {
+      const resp = await fetch(parsed, init)
+      const raw = await resp.text()
+      const timeMs = Date.now() - started
+      const truncated = raw.length > 200000
+      let json: unknown = null
+      try {
+        json = JSON.parse(raw)
+      } catch {
+        json = null
+      }
+      return {
+        ok: resp.ok,
+        data: {
+          url: parsed.toString(),
+          method,
+          status: resp.status,
+          statusText: resp.statusText,
+          ok: resp.ok,
+          timeMs,
+          headers: Object.fromEntries(resp.headers.entries()),
+          bodyPreview: truncated ? raw.slice(0, 200000) : raw,
+          bodyLength: raw.length,
+          truncated,
+          json,
+        },
+        error: resp.ok ? undefined : `HTTP ${resp.status} ${resp.statusText}`,
+      }
+    } catch (e) {
+      return { ok: false, error: `Request failed: ${e instanceof Error ? e.message : String(e)}` }
+    }
+  } },
+  { id: "system_info", name: "System Info", description: "Get system information (OS, CPU, memory, disk)", parameters: {}, category: "builtin", execute: async () => {
+    try {
+      const cpus = os.cpus()
+      const totalMem = os.totalmem()
+      const freeMem = os.freemem()
+      const network = os.networkInterfaces()
+      const networkSummary = Object.entries(network).flatMap(([name, addrs]) =>
+        (addrs ?? []).filter((a) => a.family === "IPv4").map((a) => ({ name, address: a.address, internal: a.internal })),
+      )
+      let disk: unknown = null
+      try {
+        const { execFile } = await import("child_process")
+        if (process.platform === "win32") {
+          const { stdout } = await execFileAsyncLocal(
+            "powershell",
+            ["-NoProfile", "-NonInteractive", "-Command", "Get-PSDrive -PSProvider FileSystem | Select-Object Name,@{N='UsedGB';E={[math]::Round($_.Used/1GB,2)}},@{N='FreeGB';E={[math]::Round($_.Free/1GB,2)}} | ConvertTo-Json -Compress"],
+            { timeout: 10000, windowsHide: true },
+          )
+          disk = JSON.parse(stdout.trim() || "null")
+        } else {
+          const { stdout } = await execFileAsyncLocal("df", ["-k"], { timeout: 10000 })
+          disk = stdout
+        }
+      } catch (e) {
+        disk = { error: e instanceof Error ? e.message : String(e) }
+      }
+      return {
+        ok: true,
+        data: {
+          platform: process.platform,
+          arch: process.arch,
+          nodeVersion: process.version,
+          hostname: os.hostname(),
+          osType: os.type(),
+          osRelease: os.release(),
+          cpuModel: cpus[0]?.model ?? "unknown",
+          cpuCores: cpus.length,
+          cpuSpeedMHz: cpus[0]?.speed ?? 0,
+          loadAverage: os.loadavg(),
+          totalMemoryBytes: totalMem,
+          freeMemoryBytes: freeMem,
+          usedMemoryPercent: Number((((totalMem - freeMem) / totalMem) * 100).toFixed(1)),
+          uptimeSeconds: os.uptime(),
+          user: os.userInfo().username,
+          cwd: process.cwd(),
+          homedir: os.homedir(),
+          tmpdir: os.tmpdir(),
+          network: networkSummary,
+          disk,
+        },
+      }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  } },
+  { id: "screen_vision", name: "Screen Vision", description: "Capture and analyze screen content using AI vision", parameters: { prompt: { type: "string", description: "What to look for on screen", required: false } }, category: "builtin", execute: async (a) => {
+    try {
+      const { captureScreenBase64 } = await import("./mcp-tool-handlers")
+      const shot = await captureScreenBase64()
+      const prompt = String(a.prompt ?? "").trim() || "Describe what is on screen"
+      return { ok: true, data: { base64: shot.base64, width: shot.width, height: shot.height, path: shot.path, prompt, mimeType: "image/png" } }
+    } catch (e) {
+      return { ok: false, error: `Screen capture failed: ${e instanceof Error ? e.message : String(e)}` }
+    }
+  } },
+  { id: "self_evolve", name: "Self Evolve", description: "Analyze and improve the agent's own codebase and behavior", parameters: { focus: { type: "string", description: "Area to focus (path substring filter)", required: false } }, category: "builtin", execute: async (a) => {
+    try {
+      const focus = String(a.focus ?? "").trim().toLowerCase()
+      const root = process.cwd()
+      const skipDirs = new Set(["node_modules", ".git", "dist", "out", ".next", "coverage", ".zyraxon", "target", ".cache"])
+      const findings: Array<{ file: string; line: number; kind: string; snippet: string }> = []
+      let scanned = 0
+      const walk = (dir: string, depth: number) => {
+        if (depth > 6 || findings.length >= 400 || scanned >= 4000) return
+        let entries: fs.Dirent[]
+        try {
+          entries = fs.readdirSync(dir, { withFileTypes: true })
+        } catch {
+          return
+        }
+        for (const entry of entries) {
+          if (findings.length >= 400 || scanned >= 4000) return
+          if (entry.isDirectory()) {
+            if (skipDirs.has(entry.name) || entry.name.startsWith(".")) continue
+            walk(path.join(dir, entry.name), depth + 1)
+            continue
+          }
+          if (!/\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|rb)$/.test(entry.name)) continue
+          const full = path.join(dir, entry.name)
+          const rel = path.relative(root, full).replaceAll("\\", "/")
+          if (focus && !rel.toLowerCase().includes(focus)) continue
+          scanned++
+          let content: string
+          try {
+            const stat = fs.statSync(full)
+            if (stat.size > 512 * 1024) continue
+            content = fs.readFileSync(full, "utf8")
+          } catch {
+            continue
+          }
+          const lines = content.split("\n")
+          lines.forEach((line, i) => {
+            if (findings.length >= 400) return
+            const rules: Array<[RegExp, string]> = [
+              [/\b(TODO|FIXME|HACK|XXX)\b/, "unresolved-marker"],
+              [/console\.log\(/, "debug-console-log"],
+              [/\bvar\s+\w+\s*=/, "legacy-var"],
+              [/catch\s*\([^)]*\)\s*\{\s*\}/, "empty-catch"],
+              [/==\s[^=]/, "loose-equality"],
+            ]
+            for (const [re, kind] of rules) {
+              if (re.test(line)) {
+                findings.push({ file: rel, line: i + 1, kind, snippet: line.trim().slice(0, 200) })
+                break
+              }
+            }
+            if (line.length > 200 && findings.length < 400) {
+              findings.push({ file: rel, line: i + 1, kind: "overlong-line", snippet: `${line.trim().slice(0, 80)}… (${line.length} chars)` })
+            }
+          })
+        }
+      }
+      walk(root, 0)
+      const byKind: Record<string, number> = {}
+      for (const f of findings) byKind[f.kind] = (byKind[f.kind] ?? 0) + 1
+      return { ok: true, data: { root, focus: focus || null, filesScanned: scanned, findingCount: findings.length, byKind, findings } }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  } },
+  { id: "code_mode", name: "Code Mode", description: "Switch between code generation modes", parameters: { mode: { type: "string", description: "Mode name", required: true } }, category: "builtin", execute: async (a) => {
+    const mode = String(a.mode ?? "").trim()
+    if (!mode) return { ok: false, error: "mode is required" }
+    try {
+      const dir = path.join(process.cwd(), ".zyraxon")
+      fs.mkdirSync(dir, { recursive: true })
+      const file = path.join(dir, "code-mode.json")
+      let previousMode: string | null = null
+      if (fs.existsSync(file)) {
+        try {
+          const prev = JSON.parse(fs.readFileSync(file, "utf8")) as { mode?: string }
+          previousMode = prev.mode ?? null
+        } catch {
+          previousMode = null
+        }
+      }
+      const next = { mode, previousMode, updatedAt: new Date().toISOString() }
+      fs.writeFileSync(file, JSON.stringify(next, null, 2), "utf8")
+      return { ok: true, data: next }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  } },
+  { id: "mcp_websearch", name: "MCP Web Search", description: "Search the web using MCP server connections", parameters: { query: { type: "string", description: "Search query", required: true } }, category: "builtin", execute: async (a) => {
+    const query = String(a.query ?? "").trim()
+    if (!query) return { ok: false, error: "query is required" }
+    try {
+      const results: Array<{ title: string; url: string; snippet: string; source: string }> = []
+      try {
+        const ia = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`, {
+          signal: AbortSignal.timeout(12000),
+          headers: { "user-agent": "ZYRAXON-AI/1.0" },
+        })
+        if (ia.ok) {
+          const data = (await ia.json()) as {
+            AbstractText?: string
+            AbstractURL?: string
+            Heading?: string
+            RelatedTopics?: Array<{ Text?: string; FirstURL?: string }>
+            Answer?: string
+          }
+          if (data.AbstractText && data.AbstractURL) {
+            results.push({ title: data.Heading || query, url: data.AbstractURL, snippet: data.AbstractText, source: "duckduckgo-instant" })
+          } else if (data.AbstractText) {
+            results.push({ title: data.Heading || query, url: data.AbstractURL || "", snippet: data.AbstractText, source: "duckduckgo-instant" })
+          }
+          for (const topic of (data.RelatedTopics ?? []).slice(0, 15)) {
+            if (topic.Text && topic.FirstURL) {
+              const [title, ...rest] = topic.Text.split(" - ")
+              results.push({ title, url: topic.FirstURL, snippet: rest.join(" - ") || topic.Text, source: "duckduckgo-related" })
+            }
+          }
+          if (data.Answer) results.unshift({ title: query, url: "", snippet: String(data.Answer), source: "duckduckgo-answer" })
+        }
+      } catch {
+        // instant answer API optional
+      }
+      try {
+        const html = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, {
+          signal: AbortSignal.timeout(12000),
+          headers: { "user-agent": "Mozilla/5.0 (compatible; ZYRAXON-AI/1.0)" },
+        })
+        if (html.ok) {
+          const body = await html.text()
+          const linkRe = /class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g
+          const snipRe = /class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g
+          const links: Array<{ url: string; title: string }> = []
+          let m: RegExpExecArray | null
+          while ((m = linkRe.exec(body)) !== null && links.length < 20) {
+            let url = m[1]
+            if (url.includes("uddg=")) {
+              try {
+                const u = new URL(url, "https://duckduckgo.com")
+                const redirected = u.searchParams.get("uddg")
+                if (redirected) url = redirected
+              } catch {
+                // keep original
+              }
+            }
+            links.push({ url, title: m[2].replace(/<[^>]+>/g, "").trim() })
+          }
+          const snippets: string[] = []
+          while ((m = snipRe.exec(body)) !== null && snippets.length < 20) {
+            snippets.push(m[1].replace(/<[^>]+>/g, "").trim())
+          }
+          links.forEach((l, i) => {
+            if (results.some((r) => r.url === l.url)) return
+            results.push({ title: l.title, url: l.url, snippet: snippets[i] || "", source: "duckduckgo-html" })
+          })
+        }
+      } catch {
+        // html scrape optional
+      }
+      if (results.length === 0) {
+        return { ok: false, error: `No web results for "${query}". Check network connectivity or try a different query.` }
+      }
+      return { ok: true, data: { query, count: results.length, results } }
+    } catch (e) {
+      return { ok: false, error: `Web search failed: ${e instanceof Error ? e.message : String(e)}` }
+    }
+  } },
+  { id: "site_create", name: "Site Create", description: "Create a new website with templates and configuration", parameters: { name: { type: "string", description: "Site name", required: true }, template: { type: "string", description: "Template to use", required: false } }, category: "builtin", execute: async (a) => {
+    const name = String(a.name ?? "").trim()
+    if (!name) return { ok: false, error: "name is required" }
+    try {
+      const { getSiteManager } = await import("../pro-builder/engine")
+      const manager = await getSiteManager()
+      const type = inferSiteType(name, String(a.template ?? ""))
+      const site = await manager.createSite({ name, type, template: String(a.template ?? "") || type })
+      return { ok: true, data: site }
+    } catch (e) {
+      return { ok: false, error: `site_create failed: ${e instanceof Error ? e.message : String(e)}` }
+    }
+  } },
+  { id: "site_publish", name: "Site Publish", description: "Publish a site to make it live", parameters: { site_id: { type: "string", description: "Site ID", required: true } }, category: "builtin", execute: async (a) => {
+    const siteId = String(a.site_id ?? "").trim()
+    if (!siteId) return { ok: false, error: "site_id is required" }
+    try {
+      const { getSiteManager } = await import("../pro-builder/engine")
+      const manager = await getSiteManager()
+      if (!manager.getSite(siteId)) return { ok: false, error: `Site not found: ${siteId}` }
+      const result = await manager.publishSite(siteId)
+      return { ok: true, data: result }
+    } catch (e) {
+      return { ok: false, error: `site_publish failed: ${e instanceof Error ? e.message : String(e)}` }
+    }
+  } },
+  { id: "site_unpublish", name: "Site Unpublish", description: "Take a published site offline", parameters: { site_id: { type: "string", description: "Site ID", required: true } }, category: "builtin", execute: async (a) => {
+    const siteId = String(a.site_id ?? "").trim()
+    if (!siteId) return { ok: false, error: "site_id is required" }
+    try {
+      const { getSiteManager } = await import("../pro-builder/engine")
+      const manager = await getSiteManager()
+      if (!manager.getSite(siteId)) return { ok: false, error: `Site not found: ${siteId}` }
+      await manager.unpublishSite(siteId)
+      return { ok: true, data: { siteId, published: false } }
+    } catch (e) {
+      return { ok: false, error: `site_unpublish failed: ${e instanceof Error ? e.message : String(e)}` }
+    }
+  } },
+  { id: "site_domain", name: "Site Domain", description: "Configure custom domain for a site", parameters: { site_id: { type: "string", description: "Site ID", required: true }, domain: { type: "string", description: "Custom domain", required: true } }, category: "builtin", execute: async (a) => {
+    const siteId = String(a.site_id ?? "").trim()
+    const domain = String(a.domain ?? "").trim()
+    if (!siteId) return { ok: false, error: "site_id is required" }
+    if (!domain || !domain.includes(".")) return { ok: false, error: `Invalid domain: ${domain || "(empty)"}` }
+    try {
+      const { getSiteManager } = await import("../pro-builder/engine")
+      const manager = await getSiteManager()
+      if (!manager.getSite(siteId)) return { ok: false, error: `Site not found: ${siteId}` }
+      const result = await manager.setCustomDomain(siteId, domain)
+      return { ok: true, data: result }
+    } catch (e) {
+      return { ok: false, error: `site_domain failed: ${e instanceof Error ? e.message : String(e)}` }
+    }
+  } },
+  { id: "site_preview", name: "Site Preview", description: "Generate a preview URL for a site", parameters: { site_id: { type: "string", description: "Site ID", required: true } }, category: "builtin", execute: async (a) => {
+    const siteId = String(a.site_id ?? "").trim()
+    if (!siteId) return { ok: false, error: "site_id is required" }
+    try {
+      const { getSiteManager } = await import("../pro-builder/engine")
+      const manager = await getSiteManager()
+      if (!manager.getSite(siteId)) return { ok: false, error: `Site not found: ${siteId}` }
+      const url = await manager.startServer(siteId)
+      return { ok: true, data: { siteId, previewUrl: url } }
+    } catch (e) {
+      return { ok: false, error: `site_preview failed: ${e instanceof Error ? e.message : String(e)}` }
+    }
+  } },
+  { id: "media_fetch", name: "Media Fetch", description: "Fetch media content from URLs (images, videos, audio)", parameters: { url: { type: "string", description: "Media URL", required: true }, type: { type: "string", description: "Media type hint", required: false } }, category: "builtin", execute: async (a) => {
+    const url = String(a.url ?? "").trim()
+    if (!url) return { ok: false, error: "url is required" }
+    let parsed: URL
+    try {
+      parsed = new URL(url)
+    } catch {
+      return { ok: false, error: `Invalid URL: ${url}` }
+    }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return { ok: false, error: `Only http/https supported (got ${parsed.protocol})` }
+    }
+    try {
+      const resp = await fetch(parsed, { signal: AbortSignal.timeout(60000), redirect: "follow", headers: { "user-agent": "ZYRAXON-AI/1.0" } })
+      if (!resp.ok) return { ok: false, error: `HTTP ${resp.status} ${resp.statusText} for ${parsed.toString()}` }
+      const contentType = resp.headers.get("content-type") || "application/octet-stream"
+      const hint = String(a.type ?? "").trim()
+      const ext = extensionForMedia(contentType, hint, parsed.pathname)
+      const bytes = Buffer.from(await resp.arrayBuffer())
+      const dir = path.join(process.cwd(), ".zyraxon", "media")
+      fs.mkdirSync(dir, { recursive: true })
+      const base = sanitizeFilename(path.basename(parsed.pathname) || `media-${Date.now()}`)
+      const outPath = path.join(dir, `${base}${ext}`)
+      fs.writeFileSync(outPath, bytes)
+      return { ok: true, data: { path: outPath, size: bytes.length, contentType, url: parsed.toString(), typeHint: hint || null } }
+    } catch (e) {
+      return { ok: false, error: `media_fetch failed: ${e instanceof Error ? e.message : String(e)}` }
+    }
+  } },
+  { id: "svg_generate", name: "SVG Generate", description: "Generate SVG graphics from descriptions", parameters: { description: { type: "string", description: "What to draw", required: true }, width: { type: "number", description: "Width", required: false }, height: { type: "number", description: "Height", required: false } }, category: "builtin", execute: async (a) => {
+    const description = String(a.description ?? "").trim()
+    if (!description) return { ok: false, error: "description is required" }
+    const width = Math.max(16, Math.min(numOr(a.width, 400), 4096))
+    const height = Math.max(16, Math.min(numOr(a.height, 300), 4096))
+    const svg = generateSvgFromDescription(description, width, height)
+    return { ok: true, data: { svg, width, height, description } }
+  } },
+  { id: "github_connect", name: "GitHub Connect", description: "Connect to GitHub for repository operations", parameters: { repo: { type: "string", description: "Repository (owner/name)", required: false } }, category: "builtin", execute: async (a) => {
+    const repo = String(a.repo ?? "").trim().replace(/^https?:\/\/github\.com\//, "").replace(/\.git$/, "")
+    try {
+      const { execFile } = await import("child_process")
+      const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || process.env.GITHUB_PAT || ""
+      const checks: Record<string, unknown> = { envTokenPresent: Boolean(token) }
+      let ghInstalled = false
+      let ghAuthenticated: boolean | null = null
+      let ghAccount: string | null = null
+      try {
+        await execFileAsyncLocal("gh", ["--version"], { timeout: 8000, windowsHide: true })
+        ghInstalled = true
+      } catch {
+        ghInstalled = false
+      }
+      if (ghInstalled) {
+        try {
+          const { stdout } = await execFileAsyncLocal("gh", ["auth", "status"], { timeout: 10000, windowsHide: true })
+          const out = stdout
+          ghAuthenticated = !/not logged in/i.test(out)
+          const userMatch = out.match(/Logged in to github\.com as\s+([^\s(]+)/i)
+          ghAccount = userMatch ? userMatch[1] : null
+          checks.ghAuthStatus = out.trim().slice(0, 2000)
+        } catch (e) {
+          ghAuthenticated = false
+          checks.ghAuthError = e instanceof Error ? e.message : String(e)
+        }
+      }
+      let storedTokenPath: string | null = null
+      let storedTokenPresent = false
+      const githubJson = path.join(os.homedir(), ".zyraxon", "github.json")
+      if (fs.existsSync(githubJson)) {
+        storedTokenPath = githubJson
+        try {
+          const raw = fs.readFileSync(githubJson, "utf8")
+          storedTokenPresent = raw.length > 0
+        } catch {
+          storedTokenPresent = false
+        }
+      }
+      checks.storedToken = { path: storedTokenPath, present: storedTokenPresent }
+      let repoReachable: boolean | null = null
+      let repoInfo: unknown = null
+      if (repo) {
+        const apiUrl = `https://api.github.com/repos/${repo}`
+        try {
+          const resp = await fetch(apiUrl, {
+            signal: AbortSignal.timeout(12000),
+            headers: {
+              accept: "application/vnd.github+json",
+              "user-agent": "ZYRAXON-AI/1.0",
+              ...(token ? { authorization: `Bearer ${token}` } : {}),
+            },
+          })
+          repoReachable = resp.ok
+          if (resp.ok) {
+            const data = (await resp.json()) as { full_name?: string; private?: boolean; default_branch?: string; html_url?: string }
+            repoInfo = data
+          } else {
+            checks.repoHttpStatus = resp.status
+          }
+        } catch (e) {
+          repoReachable = false
+          checks.repoError = e instanceof Error ? e.message : String(e)
+        }
+      }
+      const authenticated = Boolean(token) || ghAuthenticated === true || storedTokenPresent
+      return {
+        ok: true,
+        data: {
+          authenticated,
+          repo: repo || null,
+          repoReachable,
+          repoInfo,
+          ghInstalled,
+          ghAuthenticated,
+          ghAccount,
+          ...checks,
+        },
+      }
+    } catch (e) {
+      return { ok: false, error: `github_connect failed: ${e instanceof Error ? e.message : String(e)}` }
+    }
+  } },
+  { id: "external_directory", name: "External Directory", description: "Manage external directory entries and resources", parameters: { action: { type: "string", description: "Action (list/add/remove)", required: true }, path: { type: "string", description: "Directory path", required: false } }, category: "builtin", execute: async (a) => {
+    const action = String(a.action ?? "").trim().toLowerCase()
+    const dirPathRaw = a.path === undefined || a.path === null ? "" : String(a.path)
+    const registryPath = path.join(os.homedir(), ".zyraxon", "external-directories.json")
+    try {
+      let entries: Array<{ path: string; addedAt: string }> = []
+      if (fs.existsSync(registryPath)) {
+        try {
+          const parsed = JSON.parse(fs.readFileSync(registryPath, "utf8")) as unknown
+          if (Array.isArray(parsed)) {
+            entries = parsed.filter((e): e is { path: string; addedAt: string } => Boolean(e) && typeof (e as { path?: unknown }).path === "string")
+          }
+        } catch {
+          entries = []
+        }
+      }
+      const save = () => {
+        fs.mkdirSync(path.dirname(registryPath), { recursive: true })
+        fs.writeFileSync(registryPath, JSON.stringify({ directories: entries }, null, 2), "utf8")
+      }
+      if (action === "list") {
+        const detailed = entries.map((e) => ({
+          path: e.path,
+          addedAt: e.addedAt,
+          exists: fs.existsSync(e.path),
+          isDirectory: fs.existsSync(e.path) ? fs.statSync(e.path).isDirectory() : false,
+        }))
+        return { ok: true, data: { registry: registryPath, count: detailed.length, directories: detailed } }
+      }
+      if (action === "add") {
+        if (!dirPathRaw) return { ok: false, error: "path is required for add" }
+        const resolved = path.resolve(dirPathRaw)
+        if (!fs.existsSync(resolved)) return { ok: false, error: `Directory does not exist: ${resolved}` }
+        if (!fs.statSync(resolved).isDirectory()) return { ok: false, error: `Path is not a directory: ${resolved}` }
+        if (entries.some((e) => path.resolve(e.path) === resolved)) {
+          return { ok: true, data: { added: false, reason: "already registered", path: resolved, directories: entries } }
+        }
+        entries.push({ path: resolved, addedAt: new Date().toISOString() })
+        save()
+        return { ok: true, data: { added: true, path: resolved, count: entries.length, directories: entries } }
+      }
+      if (action === "remove") {
+        if (!dirPathRaw) return { ok: false, error: "path is required for remove" }
+        const resolved = path.resolve(dirPathRaw)
+        const before = entries.length
+        entries = entries.filter((e) => path.resolve(e.path) !== resolved)
+        if (entries.length === before) return { ok: false, error: `Not in registry: ${resolved}` }
+        save()
+        return { ok: true, data: { removed: true, path: resolved, count: entries.length, directories: entries } }
+      }
+      return { ok: false, error: `Unknown action "${action}". Use list, add, or remove.` }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  } },
 
   // ═══════════════════════════════════════════════════════════════
-  // DARK EMPEROR ULTRA TOOLS (8) — Privileged power tools
+  // DARK EMPEROR ULTRA TOOLS (8) — Real implementations (no stubs)
   // ═══════════════════════════════════════════════════════════════
-  { id: "ultra_codegen", name: "Ultra CodeGen", description: "Advanced code generation with AST analysis, complexity theory, and type theory", parameters: { spec: { type: "string", description: "Code specification", required: true }, language: { type: "string", description: "Target language", required: false } }, category: "ultra", execute: async () => ({ ok: true, data: { message: "UltraCodeGen — registered via server.ts" } }) },
-  { id: "ultra_security_sweep", name: "Ultra Security Sweep", description: "Real cryptographic and security analysis engine with number theory", parameters: { target: { type: "string", description: "Code or file to scan", required: true } }, category: "ultra", execute: async () => ({ ok: true, data: { message: "UltraSecuritySweep — registered via server.ts" } }) },
-  { id: "ultra_performance", name: "Ultra Performance", description: "Statistical analysis, queuing theory, memory profiling, algorithm benchmarking", parameters: { code: { type: "string", description: "Code to analyze", required: true } }, category: "ultra", execute: async () => ({ ok: true, data: { message: "UltraPerformance — registered via server.ts" } }) },
-  { id: "ultra_refactor", name: "Ultra Refactor", description: "Category theory, cyclomatic/cognitive/Halstead complexity, AST transformations", parameters: { code: { type: "string", description: "Code to refactor", required: true }, strategy: { type: "string", description: "Refactoring strategy", required: false } }, category: "ultra", execute: async () => ({ ok: true, data: { message: "UltraRefactor — registered via server.ts" } }) },
-  { id: "ultra_test_gen", name: "Ultra Test Gen", description: "NIST ACTS pairwise, boundary value, mutation testing, property-based generation", parameters: { code: { type: "string", description: "Code to generate tests for", required: true } }, category: "ultra", execute: async () => ({ ok: true, data: { message: "UltraTestGen — registered via server.ts" } }) },
-  { id: "ultra_autodeploy", name: "Ultra AutoDeploy", description: "DAG analysis, circuit breakers, canary deployments, risk assessment", parameters: { target: { type: "string", description: "Deployment target", required: true } }, category: "ultra", execute: async () => ({ ok: true, data: { message: "UltraAutoDeploy — registered via server.ts" } }) },
-  { id: "ultra_code_review", name: "Ultra Code Review", description: "Deep code review with security, performance, and architecture analysis", parameters: { code: { type: "string", description: "Code to review", required: true } }, category: "ultra", execute: async () => ({ ok: true, data: { message: "UltraCodeReview — registered via server.ts" } }) },
-  { id: "ultra_quantum", name: "Ultra Quantum", description: "Quantum computing simulation and algorithm analysis", parameters: { circuit: { type: "string", description: "Quantum circuit description", required: true } }, category: "ultra", execute: async () => ({ ok: true, data: { message: "UltraQuantum — registered via server.ts" } }) },
+  { id: "ultra_codegen", name: "Ultra CodeGen", description: "Advanced code generation with AST analysis, complexity theory, and type theory", parameters: { spec: { type: "string", description: "Code specification", required: true }, language: { type: "string", description: "Target language", required: false } }, category: "ultra", execute: async (a) => {
+    const spec = String(a.spec ?? "").trim()
+    if (!spec) return { ok: false, error: "spec is required" }
+    try {
+      const { ultraCodeGen } = await import("../mcp/ultra-codegen")
+      const language = String(a.language ?? "").trim() || "typescript"
+      const result = await ultraCodeGen({ source: spec, language, task: spec, generate: "all", analyze: true, security: true })
+      if (!result.success && !result.output) return { ok: false, error: "ultraCodeGen produced no output" }
+      return { ok: result.success, data: result, error: result.success ? undefined : "ultraCodeGen reported success=false" }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  } },
+  { id: "ultra_security_sweep", name: "Ultra Security Sweep", description: "Real cryptographic and security analysis engine with number theory", parameters: { target: { type: "string", description: "Code or file to scan", required: true } }, category: "ultra", execute: async (a) => {
+    const target = String(a.target ?? "").trim()
+    if (!target) return { ok: false, error: "target is required" }
+    try {
+      const { ultraSecuritySweep } = await import("../mcp/ultra-security-sweep")
+      let code = target
+      const resolved = path.resolve(target)
+      if (fs.existsSync(resolved) && fs.statSync(resolved).isFile()) {
+        code = fs.readFileSync(resolved, "utf8")
+      }
+      const result = await ultraSecuritySweep({ target, code })
+      const failed = (result as { success?: boolean; error?: string }).success === false || (result as { error?: string }).error
+      if (failed && !(result as { output?: string }).output) {
+        return { ok: false, error: (result as { error?: string }).error || "ultraSecuritySweep failed" }
+      }
+      return { ok: true, data: result }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  } },
+  { id: "ultra_performance", name: "Ultra Performance", description: "Statistical analysis, queuing theory, memory profiling, algorithm benchmarking", parameters: { code: { type: "string", description: "Code to analyze", required: true } }, category: "ultra", execute: async (a) => {
+    const code = String(a.code ?? "")
+    if (!code.trim()) return { ok: false, error: "code is required" }
+    try {
+      const { ultraPerformance } = await import("../mcp/ultra-performance")
+      const result = await ultraPerformance({ code })
+      const failed = (result as { success?: boolean }).success === false || (result as { error?: string }).error
+      if (failed && !(result as { output?: string }).output) {
+        return { ok: false, error: (result as { error?: string }).error || "ultraPerformance failed" }
+      }
+      return { ok: true, data: result }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  } },
+  { id: "ultra_refactor", name: "Ultra Refactor", description: "Category theory, cyclomatic/cognitive/Halstead complexity, AST transformations", parameters: { code: { type: "string", description: "Code to refactor", required: true }, strategy: { type: "string", description: "Refactoring strategy", required: false } }, category: "ultra", execute: async (a) => {
+    const code = String(a.code ?? "")
+    if (!code.trim()) return { ok: false, error: "code is required" }
+    try {
+      const { ultraRefactor } = await import("../mcp/ultra-refactor")
+      const strategy = String(a.strategy ?? "").trim() || "full"
+      const result = await ultraRefactor({ code, strategy })
+      const failed = (result as { success?: boolean }).success === false || (result as { error?: string }).error
+      if (failed && !(result as { output?: string }).output) {
+        return { ok: false, error: (result as { error?: string }).error || "ultraRefactor failed" }
+      }
+      return { ok: true, data: result }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  } },
+  { id: "ultra_test_gen", name: "Ultra Test Gen", description: "NIST ACTS pairwise, boundary value, mutation testing, property-based generation", parameters: { code: { type: "string", description: "Code to generate tests for", required: true } }, category: "ultra", execute: async (a) => {
+    const code = String(a.code ?? "")
+    if (!code.trim()) return { ok: false, error: "code is required" }
+    try {
+      const { ultraTestGen } = await import("../mcp/ultra-test-gen")
+      const result = await ultraTestGen({ code, strategy: "all" })
+      const content = typeof (result as { content?: unknown }).content === "string" ? (result as { content: string }).content : ""
+      if (/^Error:/i.test(content.trim())) return { ok: false, error: content.trim() }
+      return { ok: true, data: result }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  } },
+  { id: "ultra_autodeploy", name: "Ultra AutoDeploy", description: "DAG analysis, circuit breakers, canary deployments, risk assessment", parameters: { target: { type: "string", description: "Deployment target", required: true } }, category: "ultra", execute: async (a) => {
+    const target = String(a.target ?? "").trim()
+    if (!target) return { ok: false, error: "target is required" }
+    try {
+      const { ultraAutoDeploy } = await import("../mcp/ultra-autodeploy")
+      const result = await ultraAutoDeploy({ target, strategy: "canary", rollback: true })
+      const content = typeof (result as { content?: unknown }).content === "string" ? (result as { content: string }).content : ""
+      if (/^Error:/i.test(content.trim())) return { ok: false, error: content.trim() }
+      return { ok: true, data: result }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  } },
+  { id: "ultra_code_review", name: "Ultra Code Review", description: "Deep code review with security, performance, and architecture analysis", parameters: { code: { type: "string", description: "Code to review", required: true } }, category: "ultra", execute: async (a) => {
+    const code = String(a.code ?? "")
+    if (!code.trim()) return { ok: false, error: "code is required" }
+    try {
+      const [{ ultraCodeGen }, { ultraSecuritySweep }, { ultraPerformance }] = await Promise.all([
+        import("../mcp/ultra-codegen"),
+        import("../mcp/ultra-security-sweep"),
+        import("../mcp/ultra-performance"),
+      ])
+      const [analysis, security, performance] = await Promise.all([
+        ultraCodeGen({ source: code, analyze: true, security: true, generate: "docs" }),
+        ultraSecuritySweep({ code }),
+        ultraPerformance({ code }),
+      ])
+      return { ok: true, data: { analysis, security, performance } }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  } },
+  { id: "ultra_quantum", name: "Ultra Quantum", description: "Quantum computing simulation and algorithm analysis", parameters: { circuit: { type: "string", description: "Quantum circuit description", required: true } }, category: "ultra", execute: async (a) => {
+    const circuit = String(a.circuit ?? "").trim()
+    if (!circuit) return { ok: false, error: "circuit is required" }
+    try {
+      const sim = simulateQuantumCircuit(circuit)
+      if ("error" in sim) return { ok: false, error: sim.error }
+      return { ok: true, data: sim }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  } },
 
   // ═══════════════════════════════════════════════════════════════
 ]
@@ -4272,6 +4969,569 @@ export const xToolRegistry: XToolDef[] = [
 // ═══════════════════════════════════════════════════════════════════════════════
 // Helper Functions
 // ═══════════════════════════════════════════════════════════════════════════════
+
+import { execFile } from "child_process"
+import { promisify } from "util"
+
+const execFileAsyncLocal = promisify(execFile)
+
+function numOr(value: unknown, fallback: number): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string" && value.trim() !== "") {
+    const n = Number(value)
+    if (Number.isFinite(n)) return n
+  }
+  return fallback
+}
+
+function splitPlanSteps(goal: string): string[] {
+  const pieces = goal
+    .split(/\r?\n|;\s*|\s+then\s+|,\s+(?=[a-z])/i)
+    .map((s) => s.trim().replace(/[.;,]+$/, ""))
+    .filter(Boolean)
+  if (pieces.length >= 2) return pieces.slice(0, 30)
+  const clauses = goal.split(/\s+and\s+/i).map((s) => s.trim()).filter(Boolean)
+  if (clauses.length >= 2) return clauses.slice(0, 30)
+  return [`Define success criteria for: ${goal}`, "Gather required inputs and constraints", `Execute: ${goal}`, "Verify the result against the criteria"]
+}
+
+function parseDiffPath(raw: string): string | null {
+  const cleaned = raw.trim().split("\t")[0].trim()
+  if (!cleaned || cleaned === "/dev/null") return null
+  if (cleaned.startsWith("a/") || cleaned.startsWith("b/")) return cleaned.slice(2)
+  return cleaned
+}
+
+function applyUnifiedDiff(patchText: string, cwd: string): { modified: string[]; added: string[]; deleted: string[]; errors: string[] } {
+  const normalized = patchText.replace(/\r\n/g, "\n")
+  const lines = normalized.split("\n")
+  const modified: string[] = []
+  const added: string[] = []
+  const deleted: string[] = []
+  const errors: string[] = []
+  let i = 0
+  while (i < lines.length) {
+    if (!lines[i].startsWith("--- ")) {
+      i++
+      continue
+    }
+    const oldPath = parseDiffPath(lines[i].slice(4))
+    i++
+    let newPath = oldPath
+    if (i < lines.length && lines[i].startsWith("+++ ")) {
+      newPath = parseDiffPath(lines[i].slice(4))
+      i++
+    }
+    const targetPath = newPath ?? oldPath
+    if (!targetPath) {
+      errors.push(`Unparsable file header near line ${i}`)
+      continue
+    }
+    type Hunk = { oldStart: number; oldLines: string[]; newLines: string[] }
+    const hunks: Hunk[] = []
+    while (i < lines.length && !lines[i].startsWith("--- ") && (lines[i].startsWith("@@") || (!lines[i].startsWith("+++") && !lines[i].startsWith("--- ") && hunks.length > 0))) {
+      if (!lines[i].startsWith("@@")) {
+        i++
+        continue
+      }
+      const m = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/.exec(lines[i])
+      if (!m) {
+        errors.push(`Bad hunk header: ${lines[i]}`)
+        i++
+        continue
+      }
+      const oldStart = Number(m[1])
+      i++
+      const oldLines: string[] = []
+      const newLines: string[] = []
+      while (i < lines.length && !lines[i].startsWith("@@") && !lines[i].startsWith("--- ")) {
+        const line = lines[i]
+        if (line.startsWith("\\")) {
+          i++
+          continue
+        }
+        const tag = line[0]
+        const body = line.slice(1)
+        if (tag === " ") {
+          oldLines.push(body)
+          newLines.push(body)
+          i++
+        } else if (tag === "-") {
+          oldLines.push(body)
+          i++
+        } else if (tag === "+") {
+          newLines.push(body)
+          i++
+        } else if (line === "") {
+          i++
+        } else {
+          break
+        }
+      }
+      hunks.push({ oldStart, oldLines, newLines })
+    }
+    if (newPath === null && oldPath !== null) {
+      const file = path.resolve(cwd, oldPath)
+      if (fs.existsSync(file)) fs.unlinkSync(file)
+      deleted.push(oldPath)
+      continue
+    }
+    if (oldPath === null && newPath !== null) {
+      const file = path.resolve(cwd, newPath)
+      const content = hunks.flatMap((h) => h.newLines).join("\n")
+      fs.mkdirSync(path.dirname(file), { recursive: true })
+      fs.writeFileSync(file, content.endsWith("\n") ? content : `${content}\n`, "utf8")
+      added.push(newPath)
+      continue
+    }
+    if (!targetPath) continue
+    const file = path.resolve(cwd, targetPath)
+    let original: string
+    if (fs.existsSync(file)) {
+      original = fs.readFileSync(file, "utf8")
+    } else {
+      original = ""
+    }
+    const originalLines = original === "" ? [] : original.replace(/\n$/, "").split("\n")
+    let cursor = 0
+    let failed = false
+    for (const hunk of hunks) {
+      const start = Math.max(0, hunk.oldStart - 1)
+      if (start > originalLines.length) {
+        errors.push(`${targetPath}: hunk at ${hunk.oldStart} beyond EOF (${originalLines.length} lines)`)
+        failed = true
+        break
+      }
+      if (hunk.oldLines.length > 0) {
+        const slice = originalLines.slice(start, start + hunk.oldLines.length)
+        if (slice.join("\n") !== hunk.oldLines.join("\n")) {
+          let windowIdx = -1
+          for (let off = -20; off <= 20; off++) {
+            const idx = start + off
+            if (idx < 0) continue
+            const cand = originalLines.slice(idx, idx + hunk.oldLines.length)
+            if (cand.join("\n") === hunk.oldLines.join("\n")) {
+              windowIdx = idx
+              break
+            }
+          }
+          if (windowIdx < 0) {
+            errors.push(`${targetPath}: context mismatch at line ${hunk.oldStart}`)
+            failed = true
+            break
+          }
+          originalLines.splice(windowIdx, hunk.oldLines.length, ...hunk.newLines)
+          cursor = windowIdx + hunk.newLines.length
+        } else {
+          originalLines.splice(start, hunk.oldLines.length, ...hunk.newLines)
+          cursor = start + hunk.newLines.length
+        }
+      } else {
+        const insertAt = Math.min(start, originalLines.length)
+        originalLines.splice(insertAt, 0, ...hunk.newLines)
+        cursor = insertAt + hunk.newLines.length
+      }
+      void cursor
+    }
+    if (failed) continue
+    fs.mkdirSync(path.dirname(file), { recursive: true })
+    fs.writeFileSync(file, originalLines.length > 0 ? `${originalLines.join("\n")}\n` : "", "utf8")
+    if (!fs.existsSync(file) && original === "") added.push(targetPath)
+    else modified.push(targetPath)
+  }
+  return { modified, added, deleted, errors }
+}
+
+function analyzeCode(code: string, language: string): Record<string, unknown> {
+  const lines = code.split("\n")
+  const counts = {
+    lines: lines.length,
+    blankLines: lines.filter((l) => l.trim() === "").length,
+    commentLines: lines.filter((l) => /^\s*(\/\/|#|\*|\/\*)/.test(l)).length,
+    todo: lines.filter((l) => /\b(TODO|FIXME|HACK)\b/.test(l)).length,
+    consoleLog: lines.filter((l) => /console\.log\(/.test(l)).length,
+    anyKeywords: (code.match(/:\s*any\b/g) ?? []).length,
+    looseEquality: (code.match(/[^=!<>]==[^=]/g) ?? []).length,
+    strictEquality: (code.match(/===/g) ?? []).length,
+    functions: (code.match(/\b(function\s+\w+|=>|def\s+\w+|func\s+\w+|fn\s+\w+)/g) ?? []).length,
+    classes: (code.match(/\b(class\s+\w+)/g) ?? []).length,
+    ifs: (code.match(/\bif\s*\(/g) ?? []).length,
+    loops: (code.match(/\b(for|while|foreach)\s*\(/g) ?? []).length,
+    tryBlocks: (code.match(/\btry\s*\{/g) ?? []).length,
+    catchBlocks: (code.match(/\bcatch\s*(\([^)]*\))?\s*\{/g) ?? []).length,
+    maxLineLength: lines.reduce((max, l) => Math.max(max, l.length), 0),
+  }
+  const cyclomatic = 1 + counts.ifs + counts.loops + (code.match(/\bcase\s+/g) ?? []).length + (code.match(/\&\&|\|\|/g) ?? []).length
+  const longestLineIdx = lines.findIndex((l) => l.length === counts.maxLineLength)
+  const issues: Array<{ severity: string; message: string; line?: number }> = []
+  if (counts.todo > 0) issues.push({ severity: "info", message: `${counts.todo} TODO/FIXME markers` })
+  if (counts.consoleLog > 0) issues.push({ severity: "warning", message: `${counts.consoleLog} console.log calls (debug leftovers?)` })
+  if (counts.anyKeywords > 0) issues.push({ severity: "warning", message: `${counts.anyKeywords} explicit "any" annotations` })
+  if (counts.looseEquality > counts.strictEquality && counts.looseEquality > 0) {
+    issues.push({ severity: "warning", message: `Loose equality (==) used ${counts.looseEquality} times` })
+  }
+  if (counts.maxLineLength > 200) issues.push({ severity: "info", message: `Line ${longestLineIdx + 1} is ${counts.maxLineLength} chars`, line: longestLineIdx + 1 })
+  if (counts.tryBlocks > 0 && counts.catchBlocks < counts.tryBlocks) {
+    issues.push({ severity: "warning", message: "try blocks without matching catch" })
+  }
+  if (cyclomatic > 25) issues.push({ severity: "error", message: `Cyclomatic complexity ${cyclomatic} exceeds 25` })
+  else if (cyclomatic > 15) issues.push({ severity: "warning", message: `Cyclomatic complexity ${cyclomatic} exceeds 15` })
+  return {
+    language: language || "unknown",
+    ...counts,
+    cyclomaticComplexity: cyclomatic,
+    issues,
+    longestLine: counts.maxLineLength,
+  }
+}
+
+function inferSiteType(name: string, template: string): string {
+  const valid = ["portfolio", "landing", "blog", "ecommerce", "business", "restaurant", "saas", "dashboard", "gallery", "custom"]
+  const t = template.trim().toLowerCase()
+  if (valid.includes(t)) return t
+  const n = name.toLowerCase()
+  for (const candidate of valid) {
+    if (n.includes(candidate)) return candidate
+  }
+  return "landing"
+}
+
+function extensionForMedia(contentType: string, hint: string, pathname: string): string {
+  const ct = contentType.toLowerCase()
+  if (ct.includes("png")) return ".png"
+  if (ct.includes("jpeg") || ct.includes("jpg")) return ".jpg"
+  if (ct.includes("webp")) return ".webp"
+  if (ct.includes("gif")) return ".gif"
+  if (ct.includes("svg")) return ".svg"
+  if (ct.includes("mp4")) return ".mp4"
+  if (ct.includes("webm")) return ".webm"
+  if (ct.includes("mp3")) return ".mp3"
+  if (ct.includes("wav")) return ".wav"
+  if (ct.includes("ogg")) return ".ogg"
+  if (ct.includes("pdf")) return ".pdf"
+  const h = hint.toLowerCase()
+  if (h === "image") return ".bin"
+  if (h === "video") return ".bin"
+  if (h === "audio") return ".bin"
+  const ext = path.extname(pathname.split("?")[0] ?? "")
+  if (ext && ext.length <= 8) return ext.toLowerCase()
+  return ".bin"
+}
+
+function sanitizeFilename(name: string): string {
+  const cleaned = name
+    .replace(/[<>:"/\\|?*\x00-\x1f]/g, "_")
+    .replace(/\s+/g, "-")
+    .replace(/^[.-]+/, "")
+    .slice(0, 80)
+  return cleaned || `media-${Date.now().toString(36)}`
+}
+
+function escapeXml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;")
+}
+
+function generateSvgFromDescription(description: string, width: number, height: number): string {
+  const lower = description.toLowerCase()
+  const namedColors: Record<string, string> = {
+    red: "#ef4444",
+    blue: "#3b82f6",
+    green: "#22c55e",
+    yellow: "#eab308",
+    orange: "#f97316",
+    purple: "#a855f7",
+    pink: "#ec4899",
+    cyan: "#06b6d4",
+    teal: "#14b8a6",
+    gray: "#6b7280",
+    grey: "#6b7280",
+    black: "#111827",
+    white: "#ffffff",
+    indigo: "#6366f1",
+    lime: "#84cc16",
+    amber: "#f59e0b",
+    sky: "#0ea5e9",
+    violet: "#8b5cf6",
+    rose: "#f43f5e",
+  }
+  const colors: string[] = []
+  const hexRe = /#[0-9a-fA-F]{3,8}/g
+  let hexMatch: RegExpExecArray | null
+  while ((hexMatch = hexRe.exec(description)) !== null) {
+    colors.push(hexMatch[0])
+  }
+  for (const [name, hex] of Object.entries(namedColors)) {
+    if (new RegExp(`\\b${name}\\b`, "i").test(description)) colors.push(hex)
+  }
+  const fill = colors[0] ?? "#6366f1"
+  const secondary = colors[1] ?? "#0ea5e9"
+  const cx = width / 2
+  const cy = height / 2
+  const label = escapeXml(description.slice(0, 120))
+  const parts: string[] = [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${label}">`,
+    `<title>${label}</title>`,
+  ]
+  if (/\b(gradient|logo)\b/i.test(description)) {
+    parts.push(
+      `<defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${fill}"/><stop offset="100%" stop-color="${secondary}"/></linearGradient></defs>`,
+    )
+  }
+  const useGradient = /\b(gradient|logo)\b/i.test(description)
+  const mainFill = useGradient ? "url(#g)" : fill
+  if (/\b(circle|avatar|dot|orb|ball)\b/i.test(description)) {
+    parts.push(`<circle cx="${cx}" cy="${cy}" r="${Math.min(width, height) / 2.5}" fill="${mainFill}"/>`)
+  } else if (/\b(square|rect|card|block|tile)\b/i.test(description)) {
+    const pad = Math.min(width, height) * 0.12
+    parts.push(`<rect x="${pad}" y="${pad}" width="${width - pad * 2}" height="${height - pad * 2}" rx="${Math.min(24, pad)}" fill="${mainFill}"/>`)
+  } else if (/\b(triangle|delta|pyramid)\b/i.test(description)) {
+    parts.push(`<polygon points="${cx},${height * 0.15} ${width * 0.1},${height * 0.85} ${width * 0.9},${height * 0.85}" fill="${mainFill}"/>`)
+  } else if (/\b(star|badge)\b/i.test(description)) {
+    const spikes = 5
+    const outer = Math.min(width, height) * 0.42
+    const inner = outer * 0.45
+    const pts: string[] = []
+    for (let i = 0; i < spikes * 2; i++) {
+      const r = i % 2 === 0 ? outer : inner
+      const angle = (Math.PI / spikes) * i - Math.PI / 2
+      pts.push(`${(cx + r * Math.cos(angle)).toFixed(1)},${(cy + r * Math.sin(angle)).toFixed(1)}`)
+    }
+    parts.push(`<polygon points="${pts.join(" ")}" fill="${mainFill}"/>`)
+  } else if (/\b(line|underline|divider|bar chart|chart|graph)\b/i.test(description)) {
+    const bars = 5
+    const barW = (width * 0.7) / bars
+    for (let i = 0; i < bars; i++) {
+      const h = height * (0.3 + 0.12 * ((i * 37) % 5))
+      parts.push(`<rect x="${width * 0.15 + i * barW}" y="${height - h - height * 0.1}" width="${barW * 0.7}" height="${h}" rx="6" fill="${i % 2 === 0 ? mainFill : secondary}"/>`)
+    }
+  } else if (/\b(icon|arrow|chevron)\b/i.test(description)) {
+    const s = Math.min(width, height)
+    parts.push(
+      `<path d="M ${cx - s * 0.25} ${cy} L ${cx + s * 0.25} ${cy} M ${cx + s * 0.05} ${cy - s * 0.18} L ${cx + s * 0.25} ${cy} L ${cx + s * 0.05} ${cy + s * 0.18}" stroke="${mainFill}" stroke-width="${Math.max(4, s * 0.06)}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
+    )
+  } else if (/\b(ring|donut|progress|circle chart)\b/i.test(description)) {
+    const r = Math.min(width, height) * 0.32
+    const circ = 2 * Math.PI * r
+    parts.push(`<circle cx="${cx}" cy="${cy}" r="${r}" stroke="${secondary}" stroke-width="${Math.max(8, r * 0.35)}" fill="none"/>`)
+    parts.push(`<circle cx="${cx}" cy="${cy}" r="${r}" stroke="${mainFill}" stroke-width="${Math.max(8, r * 0.35)}" fill="none" stroke-dasharray="${(circ * 0.72).toFixed(1)} ${circ.toFixed(1)}" stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/>`)
+  } else {
+    parts.push(`<rect x="0" y="0" width="${width}" height="${height}" rx="${Math.min(24, Math.min(width, height) * 0.08)}" fill="${mainFill}"/>`)
+    const fontSize = Math.max(14, Math.min(width, height) / 8)
+    const text = escapeXml(description.split(/\s+/).slice(0, 6).join(" "))
+    parts.push(
+      `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" font-family="system-ui,sans-serif" font-size="${fontSize}" fill="#ffffff">${text}</text>`,
+    )
+  }
+  if (!/\b(icon|arrow|chevron)\b/i.test(description) && !/\b(circle|square|rect|triangle|star|badge|ring|donut)\b/i.test(description)) {
+    // background-only shapes already carry the design
+  } else if (/\b(caption|label|text)\b/i.test(description)) {
+    const fontSize = Math.max(12, Math.min(width, height) / 10)
+    parts.push(`<text x="${cx}" y="${height - 16}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="${fontSize}" fill="#111827">${escapeXml(description.slice(0, 60))}</text>`)
+  }
+  parts.push("</svg>")
+  return parts.join("\n")
+}
+
+type Complex = { re: number; im: number }
+
+function simulateQuantumCircuit(circuitText: string): { qubits: number; gates: number; depth: number; probabilities: Array<{ bitstring: string; probability: number }>; statevector: Complex[] } | { error: string } {
+  type Gate = { name: string; qubits: number[]; angle?: number }
+  let gates: Gate[] = []
+  const trimmed = circuitText.trim()
+  if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+    try {
+      const parsed: unknown = JSON.parse(trimmed)
+      const list = Array.isArray(parsed) ? parsed : (parsed as { gates?: unknown[]; circuit?: unknown[] }).gates ?? (parsed as { circuit?: unknown[] }).circuit ?? []
+      if (!Array.isArray(list)) return { error: "JSON circuit must be an array of gates (or {gates:[...]})" }
+      gates = list.map((raw) => {
+        const g = raw as { name?: string; gate?: string; type?: string; qubits?: number[]; q?: number; targets?: number[]; controls?: number[]; qubit?: number; theta?: number; angle?: number }
+        const name = String(g.name ?? g.gate ?? g.type ?? "").toLowerCase()
+        let qubits: number[] = []
+        if (Array.isArray(g.qubits)) qubits = g.qubits.map(Number)
+        else if (typeof g.q === "number") qubits = [g.q]
+        else if (typeof g.qubit === "number") qubits = [g.qubit]
+        else if (Array.isArray(g.targets)) qubits = [...(g.controls ?? []).map(Number), ...g.targets.map(Number)]
+        return { name, qubits, angle: g.theta ?? g.angle }
+      })
+    } catch (e) {
+      return { error: `Invalid JSON circuit: ${e instanceof Error ? e.message : String(e)}` }
+    }
+  } else {
+    gates = trimmed
+      .split(/[\n;]+/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const m = /^([a-z0-9]+)\s*(?:\(([^)]*)\))?\s+(.+)$/i.exec(line)
+        if (!m) return null
+        const name = m[1].toLowerCase()
+        const angleText = m[2]
+        const qubits = m[3]
+          .split(/[,\s]+/)
+          .map((q) => Number(q.replace(/^q/i, "")))
+          .filter((n) => Number.isFinite(n))
+        return { name, qubits, angle: angleText !== undefined ? Number(angleText) : undefined } as Gate
+      })
+      .filter((g): g is Gate => g !== null)
+  }
+  if (gates.length === 0) return { error: "No gates parsed. Use JSON [{\"qubits\":[0],\"type\":\"h\"}] or lines like 'h 0' / 'cx 0 1'." }
+  if (gates.length > 5000) return { error: `Too many gates (${gates.length}); max 5000` }
+  let maxQubit = -1
+  for (const g of gates) {
+    if (g.qubits.length === 0) return { error: `Gate "${g.name}" is missing qubit targets` }
+    for (const q of g.qubits) {
+      if (!Number.isInteger(q) || q < 0) return { error: `Invalid qubit index ${q} on gate ${g.name}` }
+      maxQubit = Math.max(maxQubit, q)
+    }
+  }
+  const nq = maxQubit + 1
+  if (nq > 14) return { error: `Circuit uses ${nq} qubits; simulation capped at 14 (2^14 amplitudes). Reduce the circuit size.` }
+  const dim = 1 << nq
+  const state: Complex[] = Array.from({ length: dim }, (_, i) => ({ re: i === 0 ? 1 : 0, im: 0 }))
+  const applySingle = (m00: Complex, m01: Complex, m10: Complex, m11: Complex, target: number) => {
+    const bit = 1 << target
+    for (let base = 0; base < dim; base++) {
+      if ((base & bit) !== 0) continue
+      const other = base | bit
+      const a = state[base]
+      const b = state[other]
+      state[base] = {
+        re: m00.re * a.re - m00.im * a.im + m01.re * b.re - m01.im * b.im,
+        im: m00.re * a.im + m00.im * a.re + m01.re * b.im + m01.im * b.re,
+      }
+      state[other] = {
+        re: m10.re * a.re - m10.im * a.im + m11.re * b.re - m11.im * b.im,
+        im: m10.re * a.im + m10.im * a.re + m11.re * b.im + m11.im * b.re,
+      }
+    }
+  }
+  const c = { re: Math.SQRT1_2, im: 0 }
+  const gatesApplied: string[] = []
+  for (const g of gates) {
+    const name = g.name.replace(/cnot/g, "cx")
+    switch (name) {
+      case "h":
+        applySingle(c, c, c, { re: -Math.SQRT1_2, im: 0 }, g.qubits[0])
+        break
+      case "x":
+        applySingle({ re: 0, im: 0 }, { re: 1, im: 0 }, { re: 1, im: 0 }, { re: 0, im: 0 }, g.qubits[0])
+        break
+      case "y":
+        applySingle({ re: 0, im: 0 }, { re: 0, im: -1 }, { re: 0, im: 1 }, { re: 0, im: 0 }, g.qubits[0])
+        break
+      case "z":
+        applySingle({ re: 1, im: 0 }, { re: 0, im: 0 }, { re: 0, im: 0 }, { re: -1, im: 0 }, g.qubits[0])
+        break
+      case "s":
+        applySingle({ re: 1, im: 0 }, { re: 0, im: 0 }, { re: 0, im: 0 }, { re: 0, im: 1 }, g.qubits[0])
+        break
+      case "sdg":
+        applySingle({ re: 1, im: 0 }, { re: 0, im: 0 }, { re: 0, im: 0 }, { re: 0, im: -1 }, g.qubits[0])
+        break
+      case "t": {
+        const re = Math.SQRT1_2
+        applySingle({ re: 1, im: 0 }, { re: 0, im: 0 }, { re: 0, im: 0 }, { re, im: re }, g.qubits[0])
+        break
+      }
+      case "tdg": {
+        const re = Math.SQRT1_2
+        applySingle({ re: 1, im: 0 }, { re: 0, im: 0 }, { re: 0, im: 0 }, { re, im: -re }, g.qubits[0])
+        break
+      }
+      case "rx": {
+        const theta = g.angle ?? 0
+        const cr = Math.cos(theta / 2)
+        const sr = Math.sin(theta / 2)
+        applySingle({ re: cr, im: 0 }, { re: 0, im: -sr }, { re: 0, im: -sr }, { re: cr, im: 0 }, g.qubits[0])
+        break
+      }
+      case "ry": {
+        const theta = g.angle ?? 0
+        const cr = Math.cos(theta / 2)
+        const sr = Math.sin(theta / 2)
+        applySingle({ re: cr, im: 0 }, { re: -sr, im: 0 }, { re: sr, im: 0 }, { re: cr, im: 0 }, g.qubits[0])
+        break
+      }
+      case "rz": {
+        const theta = g.angle ?? 0
+        applySingle(
+          { re: Math.cos(-theta / 2), im: Math.sin(-theta / 2) },
+          { re: 0, im: 0 },
+          { re: 0, im: 0 },
+          { re: Math.cos(theta / 2), im: Math.sin(theta / 2) },
+          g.qubits[0],
+        )
+        break
+      }
+      case "cx":
+      case "cnot": {
+        const control = g.qubits[0]
+        const target = g.qubits[1]
+        const cbit = 1 << control
+        const tbit = 1 << target
+        for (let i = 0; i < dim; i++) {
+          if ((i & cbit) === 0) continue
+          if ((i & tbit) !== 0) continue
+          const j = i | tbit
+          const tmp = state[i]
+          state[i] = state[j]
+          state[j] = tmp
+        }
+        break
+      }
+      case "cz": {
+        const control = g.qubits[0]
+        const target = g.qubits[1]
+        const mask = (1 << control) | (1 << target)
+        for (let i = 0; i < dim; i++) {
+          if ((i & mask) === mask) {
+            state[i] = { re: -state[i].re, im: -state[i].im }
+          }
+        }
+        break
+      }
+      case "swap": {
+        const a = g.qubits[0]
+        const b = g.qubits[1]
+        const abit = 1 << a
+        const bbit = 1 << b
+        for (let i = 0; i < dim; i++) {
+          const aOn = (i & abit) !== 0
+          const bOn = (i & bbit) !== 0
+          if (aOn === bOn) continue
+          const j = aOn ? i & ~abit | bbit : i & ~bbit | abit
+          if (i < j) {
+            const tmp = state[i]
+            state[i] = state[j]
+            state[j] = tmp
+          }
+        }
+        break
+      }
+      case "measure":
+      case "m":
+        break
+      default:
+        return { error: `Unsupported gate "${g.name}". Supported: h x y z s t sdg tdg rx ry rz cx/cnot cz swap measure` }
+    }
+    gatesApplied.push(name)
+  }
+  const probabilities = state
+    .map((amp, i) => ({
+      bitstring: i.toString(2).padStart(nq, "0"),
+      probability: Number((amp.re * amp.re + amp.im * amp.im).toFixed(10)),
+    }))
+    .filter((p) => p.probability > 1e-12)
+    .sort((x, y) => y.probability - x.probability)
+    .slice(0, 64)
+  let depth = 0
+  try {
+    depth = QuantumComputingTools.circuitDepth(gates.map((g) => ({ qubits: g.qubits, type: g.name }))) as number
+  } catch {
+    depth = gates.length
+  }
+  return { qubits: nq, gates: gates.length, depth, probabilities, statevector: state }
+}
 
 export function getToolsByCategory(category: string): XToolDef[] {
   return getXToolRegistry().filter(t => t.category === category)

@@ -35,6 +35,7 @@ import { InstanceState } from "@/effect/instance-state"
 import { Snapshot } from "@/snapshot"
 import { ProjectV2 } from "@zyraxon-ai/core/project"
 import { WorkspaceV2 } from "@zyraxon-ai/core/workspace"
+import { ensureDirectory } from "@zyraxon-ai/core/default-project"
 import { SessionID, MessageID, PartID } from "./schema"
 
 import type { Provider } from "@/provider/provider"
@@ -681,7 +682,9 @@ const layer: Layer.Layer<
       permission?: PermissionV1.Ruleset
       workspaceID?: WorkspaceV2.ID
     }) {
-      const ctx = yield* InstanceState.context
+      const rawCtx = yield* InstanceState.context
+      const directory = ensureDirectory(rawCtx.directory)
+      const ctx = directory === rawCtx.directory ? rawCtx : { ...rawCtx, directory }
       const workspace = yield* InstanceState.workspaceID
       return yield* createNext({
         parentID: input?.parentID,

@@ -11,6 +11,7 @@ import {
   WorkspaceRoutingQueryFields,
 } from "../middleware/workspace-routing"
 import { described } from "./metadata"
+import { InvalidRequestError } from "../errors"
 
 export const FileQuery = Schema.Struct({
   ...WorkspaceRoutingQueryFields,
@@ -138,6 +139,7 @@ export const FileApi = HttpApi.make("file")
         HttpApiEndpoint.get("list", FilePaths.list, {
           query: FileQuery,
           success: described(Schema.Array(LegacyEntry), "Files and directories"),
+          error: InvalidRequestError,
         }).annotateMerge(
           OpenApi.annotations({
             identifier: "file.list",
