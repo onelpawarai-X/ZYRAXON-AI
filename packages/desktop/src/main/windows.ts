@@ -215,7 +215,7 @@ export function createMainWindow(id: string = randomUUID()) {
     const { responseHeaders = {} } = details
     addRendererHeaders(details.url, responseHeaders)
     // Enable speech recognition features for cross-origin iframes
-    // The Cloud Agent iframe (zyraxon-pro.ai.studio) needs these headers
+    // The Cloud Agent iframe (zyraxon-pro-x.lovable.app) needs these headers
     // to allow Web Speech API to function properly
     addSpeechRecognitionHeaders(details.url, responseHeaders)
     callback({ responseHeaders })
@@ -478,7 +478,7 @@ function allowRendererPermissions(win: BrowserWindow) {
       if (
         isTrustedRendererUrl(url) ||
         isRendererUrl(url) ||
-        url.includes("zyraxon-pro.ai.studio") ||
+        url.includes("zyraxon-pro-x.lovable.app") ||
         url.includes("zyraxon.ai") ||
         url.includes("127.0.0.1:19800")
       ) {
@@ -503,7 +503,7 @@ function addRendererHeaders(value: string, headers: Record<string, any>) {
 function addSpeechRecognitionHeaders(value: string, headers: Record<string, any>) {
   if (!value || !URL.canParse(value)) return
   const url = new URL(value)
-  const isCloudAgent = url.hostname.includes("zyraxon-pro.ai.studio") ||
+  const isCloudAgent = url.hostname.includes("zyraxon-pro-x.lovable.app") ||
     url.hostname.includes("zyraxon.ai")
   const isVoiceBridge = url.hostname === "127.0.0.1" && url.port === "19800"
   if (!isCloudAgent && !isVoiceBridge) return
@@ -582,7 +582,7 @@ export function injectCloudAgentSpeechBridge(win: BrowserWindow) {
   // cross-origin iframes. Permission is granted but the speech recognition service
   // silently fails to produce output. The bridge proxies SpeechRecognition calls
   // through the parent frame, which has full Chrome speech support.
-  const CLOUD_AGENT_ORIGIN = "https://zyraxon-pro.ai.studio"
+  const CLOUD_AGENT_ORIGIN = "https://zyraxon-pro-x.lovable.app"
 
   function findIframeWebContents(): Electron.WebContents | null {
     try {

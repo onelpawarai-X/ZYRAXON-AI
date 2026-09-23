@@ -17,7 +17,7 @@
 </p>
 
 <a href="https://zyraxonai.lovable.app"><img alt="ZYRAXON AI" src="https://img.shields.io/badge/ZYRAXON_AI-live-00D4FF?style=for-the-badge&logo=googlechrome&logoColor=white" /></a>
-<a href="https://zyraxon-pro.ai.studio"><img alt="ZYRAXON Pro" src="https://img.shields.io/badge/Cloud_Agent-online-FF6B35?style=for-the-badge&logo=cloudflare&logoColor=white" /></a>
+<a href="https://zyraxon-pro-x.lovable.app"><img alt="ZYRAXON Pro" src="https://img.shields.io/badge/Cloud_Agent-online-FF6B35?style=for-the-badge&logo=cloudflare&logoColor=white" /></a>
 <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><img alt="Version" src="https://img.shields.io/badge/Version-19.0.5-blue?style=for-the-badge&logo=github" /></a>
 <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/onelpawarai-X/ZYRAXON-AI?style=for-the-badge&color=yellow" /></a>
 <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/onelpawarai-X/ZYRAXON-AI/total?style=for-the-badge&color=purple" /></a>
@@ -25,7 +25,7 @@
 
 <br/>
 
-<a href="https://zyraxonai.lovable.app">Website</a> · <a href="https://zyraxon-pro.ai.studio">Cloud Agent</a> · <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases">Download</a> · <a href="https://youtube.com/@zyraxon-aix">YouTube</a>
+<a href="https://zyraxonai.lovable.app">Website</a> · <a href="https://zyraxon-pro-x.lovable.app">Cloud Agent</a> · <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases">Download</a> · <a href="https://youtube.com/@zyraxon-aix">YouTube</a>
 
 <br/>
 
@@ -593,7 +593,7 @@ ZYRAXON-AI/
 | [Myra Agent](https://github.com/onelpawarai-X/Myra-Agent) | Android voice assistant |
 | [Zyraxon Code](https://github.com/onelpawarai-X/Zyraxon-Code) | AI-powered code editor (Monaco fork) |
 | [ZYRAXON Website](https://zyraxonai.lovable.app) | Main website |
-| [Cloud Agent](https://zyraxon-pro.ai.studio) | Cloud-based agent interface |
+| [Cloud Agent](https://zyraxon-pro-x.lovable.app) | Cloud-based agent interface |
 
 ---
 
