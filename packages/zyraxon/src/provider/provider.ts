@@ -26,7 +26,7 @@ import { type LanguageModelV3 } from "@ai-sdk/provider"
 import { ModelsDev } from "@zyraxon-ai/core/models-dev"
 import { Auth } from "../auth"
 import { Env } from "../env"
-import { InstallationVersion } from "@zyraxon-ai/core/installation/version"
+import { InstallationVersion, freeTierUserAgent } from "@zyraxon-ai/core/installation/version"
 import { iife } from "@/util/iife"
 import { Global } from "@zyraxon-ai/core/global"
 import path from "path"
@@ -238,7 +238,12 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
 
       return {
         autoload: Object.keys(input.models).length > 0,
-        options: ok ? {} : { apiKey: "public" },
+        options: {
+          ...(ok ? {} : { apiKey: "public" }),
+          // Zen free-tier gate reads User-Agent: opencode/<release> on every
+          // provider request; session prep layers x-opencode-* on top of this.
+          headers: { "User-Agent": freeTierUserAgent() },
+        },
       }
     }),
     openai: () =>
@@ -1944,6 +1949,8 @@ const layer = Layer.effect(
         const headerTimeout = options["headerTimeout"] ?? 300_000
         delete options["chunkTimeout"]
         delete options["headerTimeout"]
+        const isOpencodeProvider = model.providerID.startsWith("opencode")
+        const freeTierUA = freeTierUserAgent()
 
         options["fetch"] = async (input: any, init?: BunFetchRequestInit) => {
           const fetchFn = customFetch ?? fetch
@@ -1961,6 +1968,13 @@ const layer = Layer.effect(
 
           const combined = signals.length === 0 ? null : signals.length === 1 ? signals[0] : AbortSignal.any(signals)
           if (combined) opts.signal = combined
+
+          if (isOpencodeProvider) {
+            const headers = new Headers(opts.headers)
+            headers.set("User-Agent", freeTierUA)
+            headers.delete("user-agent")
+            opts.headers = headers
+          }
 
           const res = await fetchFn(input, {
             ...opts,
