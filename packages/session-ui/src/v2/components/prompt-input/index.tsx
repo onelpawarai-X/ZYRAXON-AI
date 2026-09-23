@@ -247,7 +247,14 @@ export function PromptInputV2(props: PromptInputV2Props) {
           <PromptInputV2MicButton
             onTranscript={(text, lang) => {
               props.controller.addPart({ type: "text", content: text, start: 0, end: text.length })
-              requestAnimationFrame(() => editor?.focus())
+              // Real-time voice mode: send speech to AI immediately
+              // without requiring a manual Send click.
+              requestAnimationFrame(() => {
+                editor?.focus()
+                if (!props.disabled && props.controller.canSubmit()) {
+                  props.controller.submit()
+                }
+              })
             }}
             onError={(err) => console.error("[Mic]", err)}
             disabled={state.mode === "shell"}
