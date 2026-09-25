@@ -54,11 +54,20 @@ async function resolveNodePath(): Promise<string> {
     const nodePath = stdout.trim().split("\n")[0]?.trim()
     if (nodePath && (require("fs") as typeof import("fs")).existsSync(nodePath)) {
       _cachedNodePath = nodePath
+      return nodePath
     }
   } catch {
     // where not available or node not on PATH — leave as null (fall back to "node")
   }
-  return _cachedNodePath ?? "node"
+  // Packaged Electron: node is not on PATH, but the Electron binary itself runs JS
+  // as plain Node when ELECTRON_RUN_AS_NODE is set. Fall back to process.execPath
+  // so local MCP servers keep working on any platform without hardcoded paths.
+  const execPath = (process as { execPath?: string }).execPath
+  if (execPath && (require("fs") as typeof import("fs")).existsSync(execPath)) {
+    _cachedNodePath = execPath
+    return execPath
+  }
+  return "node"
 }
 const CLIENT_OPTIONS = {
   capabilities: {
@@ -415,8 +424,14 @@ const layer = Layer.effect(
       )
 
       // Resolve "node" to full path if bare command not found (cached, async)
+      let dotenv: Record<string, string> = {}
       if (resolvedCmd === "node" || resolvedCmd === "node.exe") {
         resolvedCmd = yield* Effect.promise(() => resolveNodePath())
+        const { execPath } = process as { execPath?: string }
+        // When falling back to the Electron binary, run it as plain Node.
+        if (execPath && resolvedCmd === execPath) {
+          dotenv = { ELECTRON_RUN_AS_NODE: "1" }
+        }
       }
 
       const transport = new StdioClientTransport({
@@ -427,6 +442,7 @@ const layer = Layer.effect(
         env: {
           ...process.env,
           ...(cmd === "opencode" ? { BUN_BE_BUN: "1" } : {}),
+          ...dotenv,
           ...resolvedEnv,
         },
       })
