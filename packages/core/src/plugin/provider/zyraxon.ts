@@ -12,7 +12,6 @@ import { ProviderV2 } from "../../provider"
 import { ConfigProviderV1 } from "../../v1/config/provider"
 import { ConfigProviderOptionsV1 } from "../../v1/config/provider-options"
 import { ConfigV1 } from "../../v1/config/config"
-import { freeTierUserAgent } from "../../installation/version"
 
 const defaultServer = "https://console.zyraxon.ai"
 const clientID = "zyraxon-cli"
@@ -168,7 +167,6 @@ export const ZyraxonPlugin = define<HttpClient.HttpClient | EventV2.Service | Sc
       const hasKey = Boolean(process.env.OPENCODE_API_KEY || connected || item.provider.request.body.apiKey)
       catalog.provider.update(item.provider.id, (provider) => {
         if (!hasKey) provider.request.body.apiKey = "public"
-        provider.request.headers["User-Agent"] = freeTierUserAgent()
       })
       if (hasKey) return
       for (const model of item.models.values()) {
