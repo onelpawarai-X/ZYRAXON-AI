@@ -122,6 +122,9 @@ export async function bootstrapGlobal(input: {
         .then((data) => input.setGlobalStore("project", data)),
   ]
   await runAll(slow)
+  // Server loads the external models catalog in the background on cold start;
+  // poll briefly so the global provider list appears without a reload.
+  scheduleProviderRefetch(input.queryClient, input.scope, null)
   // showErrors({
   //   errors: errors(),
   //   title: input.requestFailedTitle,
@@ -183,6 +186,22 @@ export const loadProvidersQuery = (scope: ServerScope, directory: string | null,
     queryKey: [scope, directory, "providers"],
     queryFn: () => retry(() => sdk.provider.list().then((x) => normalizeProviderList(x.data!))),
   })
+
+// After a cold start the server loads the external models catalog in the
+// background, so the first provider.list responses are empty. Refetch a few
+// times (only while the list stays empty) so models appear without a reload.
+function scheduleProviderRefetch(queryClient: QueryClient, scope: ServerScope, directory: string | null, attempts = 3) {
+  if (attempts <= 0) return
+  setTimeout(() => {
+    void queryClient
+      .refetchQueries({ queryKey: [scope, directory, "providers"], type: "active" })
+      .then((results) => {
+        const loaded = results.some((result) => result.status === "success" && (result.data?.all?.size ?? 0) > 0)
+        if (!loaded) scheduleProviderRefetch(queryClient, scope, directory, attempts - 1)
+      })
+      .catch(() => {})
+  }, 2500)
+}
 
 export const loadAgentsQuery = (scope: ServerScope, directory: string | null, sdk: ZyraxonClient) =>
   queryOptions({
@@ -354,7 +373,9 @@ export async function bootstrapDirectory(input: {
       input.mcp && (() => input.queryClient.fetchQuery(loadMcpQuery(input.scope, input.directory, input.sdk))),
       input.mcp && (() => input.queryClient.fetchQuery(loadMcpResourcesQuery(input.scope, input.directory, input.sdk))),
       () =>
-        input.queryClient.fetchQuery(loadProvidersQuery(input.scope, input.directory, input.sdk)).catch((err) => {
+        input.queryClient.fetchQuery(loadProvidersQuery(input.scope, input.directory, input.sdk)).then((providers) => {
+          if (providers?.all?.size === 0) scheduleProviderRefetch(input.queryClient, input.scope, input.directory)
+        }).catch((err) => {
           const project = getFilename(input.directory)
           showToast({
             variant: "error",

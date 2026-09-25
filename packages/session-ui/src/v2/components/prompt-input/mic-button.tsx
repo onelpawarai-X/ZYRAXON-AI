@@ -189,16 +189,17 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
       return
     }
 
-    // Clear any previously accumulated transcript before starting fresh
-    try { await api.voiceClearAccumulatedTranscript?.() } catch {}
-
+    // Optimistic UI — show recording before any IPC so the click feels instant
     setState("recording")
     registerVoiceListener()
 
     // Push selected language as-is — keep "auto" so the bridge uses the
     // browser locale; never force en-US for non-English selections.
     const lang = selectedLang()
-    try { await api.voiceSetLanguage(lang || "auto") } catch {}
+    await Promise.all([
+      Promise.resolve(api.voiceClearAccumulatedTranscript?.()).catch(() => {}),
+      Promise.resolve(api.voiceSetLanguage?.(lang || "auto")).catch(() => {}),
+    ])
 
     try {
       const result = await api.voiceStartListening()

@@ -73,7 +73,8 @@ function handleMessage(raw: string) {
     const data = JSON.parse(raw)
     if (data.type === "ready") {
       broadcastState()
-      rendererCallback?.({ type: "voice-mic-state", active: false })
+      // Chrome connecting mid-activation must not clobber a pending start-listening
+      rendererCallback?.({ type: "voice-mic-state", active: pendingListening })
       return
     }
     if (data.type === "ping") return
@@ -152,7 +153,6 @@ function killPort(port: number) {
 function startHTTPServer(): Promise<void> {
   return new Promise((resolve) => {
     if (httpServer) { resolve(); return }
-    killPort(PORT)
 
     const htmlPath = findHTMLPath()
     if (htmlPath) {
@@ -204,22 +204,37 @@ function startHTTPServer(): Promise<void> {
       res.end("Not found")
     })
 
-    httpServer.listen(PORT, "127.0.0.1", () => {
+    const onListening = () => {
       console.log(`[VoiceBridge] HTTP server on port ${PORT}`)
       resolve()
-    })
+    }
+
+    httpServer.listen(PORT, "127.0.0.1", onListening)
 
     httpServer.on("error", (e: any) => {
       if (e.code === "EADDRINUSE") {
         console.log(`[VoiceBridge] Port ${PORT} busy, killing...`)
         killPort(PORT)
-        setTimeout(() => httpServer?.listen(PORT, "127.0.0.1"), 500)
+        setTimeout(() => {
+          try {
+            httpServer?.listen(PORT, "127.0.0.1", onListening)
+          } catch {}
+        }, 300)
+        return
       }
+      console.log(`[VoiceBridge] HTTP server error:`, e?.message || e)
+      httpServer = null
+      resolve()
     })
   })
 }
 
 function launchChrome() {
+  if (chromeProcess && !chromeProcess.killed) {
+    console.log("[VoiceBridge] Chrome already running — reusing")
+    return true
+  }
+
   const chromePath = findChromePath()
   if (!chromePath) {
     console.log("[VoiceBridge] Chrome not found — voice bridge will run in app iframe")
@@ -235,6 +250,15 @@ function launchChrome() {
     "--disable-background-timer-throttling",
     "--disable-backgrounding-occluded-windows",
     "--disable-renderer-backgrounding",
+    "--disable-background-networking",
+    "--disable-component-update",
+    "--disable-domain-reliability",
+    "--disable-sync",
+    "--disable-default-apps",
+    "--metrics-recording-only",
+    "--no-service-autorun",
+    "--no-pings",
+    "--safebrowsing-disable-auto-update",
     `--app=http://127.0.0.1:${PORT}/`,
   ]
 
@@ -297,15 +321,23 @@ function stopTTSServer() {
   if (nodeTTSModule) { try { nodeTTSModule.stopNodeTTS() } catch {} nodeTTSModule = null }
 }
 
-export async function startVoiceBridge() {
-  await startHTTPServer()
-  await startTTSServer()
-  const launched = launchChrome()
-  if (launched) {
-    console.log("[VoiceBridge] Voice bridge running via Chrome")
-  } else {
-    console.log("[VoiceBridge] Chrome not found — voice bridge HTTP server running on port", PORT, "(use app iframe)")
-  }
+let startPromise: Promise<void> | null = null
+
+export function startVoiceBridge(): Promise<void> {
+  if (startPromise) return startPromise
+  startPromise = (async () => {
+    await startHTTPServer()
+    const launched = launchChrome()
+    if (launched) {
+      console.log("[VoiceBridge] Voice bridge running via Chrome")
+    } else {
+      console.log("[VoiceBridge] Chrome not found — voice bridge HTTP server running on port", PORT, "(use app iframe)")
+    }
+    void startTTSServer()
+  })().finally(() => {
+    startPromise = null
+  })
+  return startPromise
 }
 
 export function stopVoiceBridge() {
