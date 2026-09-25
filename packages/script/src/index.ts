@@ -24,7 +24,7 @@ const env = {
   ZYRAXON_RELEASE: process.env["ZYRAXON_RELEASE"],
 }
 // Must match core FREE_TIER_VERSION. The free-tier gate only accepts this exact release string.
-const RELEASE_VERSION = "1.18.32"
+const RELEASE_VERSION = "1.18.31"
 const CHANNEL = await (async () => {
   if (env.ZYRAXON_CHANNEL) return env.ZYRAXON_CHANNEL
   if (env.ZYRAXON_BUMP) return "latest"

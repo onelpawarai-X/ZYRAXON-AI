@@ -88,7 +88,11 @@ export function readSubState(): SubscriptionState {
 }
 
 export const TOOL_TIER_MAP: Record<string, Tier> = {
-  task: "pro", plan: "pro", apply_patch: "pro", code_analyzer: "pro", api_tester: "pro",
+  bash: "free", read: "free", glob: "free", grep: "free", edit: "free", write: "free",
+  webfetch: "free", websearch: "free", todowrite: "free", skill: "free", memory: "free",
+  question: "free", lsp: "free", invalid: "free", patch: "free", plan: "free",
+  execute: "free", list_mcp_resources: "free", list_mcp_resource_templates: "free", read_mcp_resource: "free",
+  mcp_websearch: "pro", task: "pro", apply_patch: "pro", code_analyzer: "pro", api_tester: "pro",
   system_info: "pro", screen_vision: "pro", self_evolve: "pro", code_mode: "pro", mcp_websearch: "pro",
   x_atc_connect: "pro", x_atc_disconnect: "pro", x_atc_tune: "pro", x_atc_set_squawk: "pro",
   x_atc_request_clearance: "pro", x_atc_read_back: "pro", x_atc_declare_emergency: "pro",

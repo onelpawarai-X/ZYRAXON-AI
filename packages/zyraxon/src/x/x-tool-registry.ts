@@ -3898,7 +3898,7 @@ export const xToolRegistry: XToolDef[] = [
   // ═══════════════════════════════════════════════════════════════════════════
   // SUBSCRIPTION STATUS (1 tool — AI can always check its tier)
   // ═══════════════════════════════════════════════════════════════════════════
-  { id: "x_subscription_status", name: "Subscription Status", description: "Check current subscription tier, tools available, days remaining, and features unlocked. Always available regardless of tier.", parameters: {}, category: "subscription", execute: async () => { const { execute: subExec } = await import("./subscription-status"); return subExec({}); } },
+  { id: "x_subscription_status", name: "Subscription Status", description: "Check current subscription tier, how many tools are unlocked, days remaining, features, and a breakdown per tier. Optional \"tier\" parameter (free|pro|max|ultra) previews how many tools that tier would unlock — call once for the current tier, and optionally call with each tier name to compare plans. Always available regardless of tier.", parameters: { tier: { type: "string", description: "Optional tier to preview (free|pro|max|ultra). Omit to report the current tier.", required: false } }, category: "subscription", execute: async (args: any) => { const { execute: subExec } = await import("./subscription-status"); return subExec(args ?? {}); } },
 
   // ══════════════════════════════════════════════════════════════════════════════════════
   // MISSING EXTENDED CHEMISTRY TOOLS (5 tools)

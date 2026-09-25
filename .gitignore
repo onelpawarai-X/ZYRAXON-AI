@@ -25,6 +25,9 @@ target
 .scripts
 .direnv/
 
+# ZYRAXON runtime data
+.zyraxon-data/
+
 # Local dev files
 opencode-dev
 UPCOMING_CHANGELOG.md

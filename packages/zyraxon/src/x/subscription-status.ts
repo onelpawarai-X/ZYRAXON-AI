@@ -24,6 +24,9 @@ interface SubStatusResult {
     maxAgents: string
     memoryAllocation: string
     features: string
+    lockedTools: number
+    tiersBreakdown: { tier: Tier; unlocked: number; locked: number }[]
+    hint?: string
   }
   error?: string
 }
@@ -42,13 +45,28 @@ function readSubState(): SubState {
   }
 }
 
-function getToolCountForTier(tier: Tier): number {
+export function getToolTier(toolId: string): Tier {
+  if (toolId in TOOL_TIER_MAP) return TOOL_TIER_MAP[toolId]
+  if (toolId === "bash" || toolId === "read" || toolId === "glob" || toolId === "grep" || toolId === "edit" ||
+      toolId === "write" || toolId === "webfetch" || toolId === "websearch" || toolId === "todowrite" ||
+      toolId === "skill" || toolId === "memory" || toolId === "question" || toolId === "lsp") return "free"
+  return "max"
+}
+
+export function getToolCountForTier(tier: Tier): number {
   let count = 0
   for (const tool of xToolRegistry) {
-    const toolTier = TOOL_TIER_MAP[tool.id] ?? "max"
-    if (hasAccess(tier, toolTier)) count++
+    if (hasAccess(tier, getToolTier(tool.id))) count++
   }
   return count
+}
+
+export function getTiersBreakdown() {
+  return TIER_ORDER.map((tier) => ({
+    tier,
+    unlocked: getToolCountForTier(tier),
+    locked: xToolRegistry.length - getToolCountForTier(tier),
+  }))
 }
 
 const AGENT_INFO: Record<Tier, { agents: string; memory: string }> = {
@@ -65,10 +83,23 @@ const FEATURE_INFO: Record<Tier, string> = {
   ultra: "Everything in Max + Ultra Code Generator, Ultra Security, Ultra Performance, Ultra Refactoring, Ultra Test Gen, Ultra Auto-Deploy, Ultra Code Review, Ultra Quantum, Singularity AI, Guardian System, Custom Models, Priority Support, Early Access",
 }
 
-export function execute(_args: any): SubStatusResult {
+export function execute(args: any): SubStatusResult {
   const state = readSubState()
-  const tier = state.tier
+  const currentTier = state.tier
+  const activeTier = getCurrentTier()
+
+  let tier = currentTier
+  let hint: string | undefined
+  const requested = args?.tier ?? args?.subscription
+  if (typeof requested === "string") {
+    const candidate = TIER_ORDER.find((t) => requested.toLowerCase() === t)
+    if (candidate) {
+      tier = candidate
+      hint = `Simulated preview only: you are currently on "${currentTier}". To actually upgrade, tune subscription.json in ~/.zyraxon.`
+    }
+  }
   const toolCount = getToolCountForTier(tier)
+  const currentCount = getToolCountForTier(currentTier)
   const agentInfo = AGENT_INFO[tier]
 
   let daysRemaining: number | null = null
@@ -91,6 +122,9 @@ export function execute(_args: any): SubStatusResult {
       maxAgents: agentInfo.agents,
       memoryAllocation: agentInfo.memory,
       features: FEATURE_INFO[tier],
+      lockedTools: xToolRegistry.length - toolCount,
+      tiersBreakdown: getTiersBreakdown(),
+      hint,
     },
   }
 }
