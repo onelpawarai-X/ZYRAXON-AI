@@ -14,6 +14,11 @@ const dir = path.resolve(__dirname, "..")
 
 process.chdir(dir)
 
+const releaseVersion = "1.18.32"
+const pendingVersion = Script.version
+const installVersion = pendingVersion.startsWith("0.0.0-") ? releaseVersion : pendingVersion
+const installChannel = pendingVersion.startsWith("0.0.0-") ? "latest" : Script.channel
+
 // Fetch models.dev snapshot for provider catalog
 const modelsUrl = process.env.ZYRAXON_MODELS_URL || "https://models.dev"
 let modelsData = "({})"
@@ -49,9 +54,9 @@ const result = await Bun.build({
     "opentui-tree-sitter-worker.js": treeSitterWorker,
   },
   define: {
-    ZYRAXON_VERSION: `'${Script.version}'`,
+    ZYRAXON_VERSION: `'${installVersion}'`,
     ZYRAXON_MODELS_DEV: modelsData,
-    ZYRAXON_CHANNEL: `'${Script.channel}'`,
+    ZYRAXON_CHANNEL: `'${installChannel}'`,
     ZYRAXON_LIBC: "",
     OTUI_TREE_SITTER_WORKER_PATH: "/$bunfs/root/opentui-tree-sitter-worker.js",
     ZYRAXON_WORKER_PATH: "src/cli/tui/worker.ts",

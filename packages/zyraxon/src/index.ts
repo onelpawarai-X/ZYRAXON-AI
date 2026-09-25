@@ -29,8 +29,19 @@ import { DbCommand } from "./cli/cmd/db"
 import { errorMessage } from "./util/error"
 import { PluginCommand } from "./cli/cmd/plug"
 import { Heap } from "./cli/heap"
+import { captureLog } from "./util/capture-log"
+import { InstallationVersion, InstallationChannel } from "@zyraxon-ai/core/installation/version"
 
 const args = hideBin(process.argv)
+
+captureLog("startup", "zyraxon startup", {
+  argv: args,
+  installVersion: InstallationVersion,
+  channel: InstallationChannel,
+  platform: `${process.platform} ${process.arch}`,
+  nodeVersion: process.version,
+  pid: process.pid,
+})
 
 function show(out: string) {
   const text = out.trimStart()

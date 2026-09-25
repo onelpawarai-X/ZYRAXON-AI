@@ -220,14 +220,14 @@ const layer = Layer.effect(
       const snapshot = yield* loadSnapshot
       if (snapshot) return snapshot
       if (Flag.ZYRAXON_DISABLE_MODELS_FETCH) return {}
-      // Flock is cross-process: concurrent zyraxon CLIs can race on this cache file.
-      const text = yield* Effect.scoped(
-        Effect.gen(function* () {
-          yield* Flock.effect(lockKey)
-          return yield* fetchAndWrite()
-        }),
-      )
-      return JSON.parse(text) as Record<string, Provider>
+      // Cold cache (no models.json, no bundled snapshot): never let the first
+      // caller block a server request on the external models fetch (which can
+      // take seconds over a slow/blocked network and would stall bootstrap of
+      // a fresh directory). Return an empty catalog immediately; the layer-start
+      // forked refresh() (see below, 60min cadence) already performs the fetch
+      // in the background, writes the cache file, and invalidates the memoized
+      // placeholder so a later get() re-populates from disk without the network.
+      return {}
     }).pipe(Effect.withSpan("ModelsDev.populate"), Effect.orDie)
 
     const [cachedGet, invalidate] = yield* Effect.cachedInvalidateWithTTL(populate, Duration.infinity)
