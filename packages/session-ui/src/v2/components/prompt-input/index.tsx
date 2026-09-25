@@ -135,43 +135,6 @@ export function PromptInputV2(props: PromptInputV2Props) {
           />
         </Show>
 
-        <div
-          class="flex h-9 items-center gap-1 px-2 pt-1"
-          aria-hidden={state.mode === "shell"}
-          inert={state.mode === "shell" ? true : undefined}
-          style={buttons()}
-        >
-          <Show when={view.agent}>
-            {(control) => (
-              <PromptInputV2ConfiguredSelect title="Choose agent" keybind={["Mod", "."]} control={control()} />
-            )}
-          </Show>
-          <Show
-            when={props.modelControl}
-            fallback={
-              <Show when={view.model}>
-                {(control) => (
-                  <PromptInputV2ConfiguredSelect
-                    title="Choose model"
-                    keybind={["Mod", "M"]}
-                    control={control()}
-                    model
-                  />
-                )}
-              </Show>
-            }
-          >
-            {props.modelControl}
-          </Show>
-          <Show when={view.variant}>
-            {(control) => (
-              <Show when={control().options().length > 1}>
-                <PromptInputV2ConfiguredSelect title="Choose model variant" control={control()} />
-              </Show>
-            )}
-          </Show>
-        </div>
-
         <div class="relative min-h-[60px]">
           <div
             ref={(element) => {
@@ -243,6 +206,35 @@ export function PromptInputV2(props: PromptInputV2Props) {
               onContext={props.controller.openContext}
               onShell={props.controller.openShell}
             />
+            <Show when={view.agent}>
+              {(control) => (
+                <PromptInputV2ConfiguredSelect title="Choose agent" keybind={["Mod", "."]} control={control()} />
+              )}
+            </Show>
+            <Show
+              when={props.modelControl}
+              fallback={
+                <Show when={view.model}>
+                  {(control) => (
+                    <PromptInputV2ConfiguredSelect
+                      title="Choose model"
+                      keybind={["Mod", "M"]}
+                      control={control()}
+                      model
+                    />
+                  )}
+                </Show>
+              }
+            >
+              {props.modelControl}
+            </Show>
+            <Show when={view.variant}>
+              {(control) => (
+                <Show when={control().options().length > 1}>
+                  <PromptInputV2ConfiguredSelect title="Choose model variant" control={control()} />
+                </Show>
+              )}
+            </Show>
           </div>
           <PromptInputV2MicButton
             onTranscript={(text, _lang) => {

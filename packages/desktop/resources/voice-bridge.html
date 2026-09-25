@@ -132,6 +132,7 @@ var timerInterval = null;
 var recordStartTime = 0;
 var micStream = null, analyser = null, animFrame = null;
 var pollTimer = null;
+var fastPollUntil = 0;
 var silenceTimer = null;
 
 function $(id) { return document.getElementById(id); }
@@ -191,22 +192,39 @@ function onMessage(d) {
   }
   if (d.type === "set-language" && d.lang) pickLang(d.lang);
   if (d.type === "set-voice" && d.gender) pickGender(d.gender);
-  if (d.type === "start-listening" && !isRecording) startRecording();
+  if (d.type === "start-listening" && !isRecording) {
+    fastPollUntil = Date.now() + 2000;
+    startRecording();
+  }
   if (d.type === "stop-listening" && isRecording) stopRecording();
 }
 
 window._onMainMessage = function(d) { onMessage(d); };
 
+function scheduleNextPoll() {
+  if (pollTimer) clearTimeout(pollTimer);
+  var interval = Date.now() < fastPollUntil ? 15 : 50;
+  pollTimer = setTimeout(pollServer, interval);
+}
+
 function pollServer() {
+  if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+  var done = function() { scheduleNextPoll(); };
   fetch(API + "/api/poll").then(function(r) { return r.json() }).then(function(msgs) {
-    if (Array.isArray(msgs)) { for (var i = 0; i < msgs.length; i++) onMessage(msgs[i]); }
-  }).catch(function() {});
+    if (Array.isArray(msgs)) {
+      for (var i = 0; i < msgs.length; i++) {
+        if (msgs[i] && msgs[i].type === "start-listening") fastPollUntil = Date.now() + 2000;
+        onMessage(msgs[i]);
+      }
+    }
+    done();
+  }).catch(done);
 }
 
 function connect() {
   $("dot").className = "dot ok"; $("ctx").textContent = "Connected";
   send({ type: "ready" });
-  pollTimer = setInterval(pollServer, 50);
+  fastPollUntil = Date.now() + 2000;
   pollServer();
 }
 
