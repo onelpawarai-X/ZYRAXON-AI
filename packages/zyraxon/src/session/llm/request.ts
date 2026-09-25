@@ -1,6 +1,6 @@
-import { PermissionV1 } from "@zyraxon-ai/core/v1/permission"
+import { PermissionV1 } from "@opencode-ai/core/v1/permission"
 import type { Auth } from "@/auth"
-import { SessionV1 } from "@zyraxon-ai/core/v1/session"
+import { SessionV1 } from "@opencode-ai/core/v1/session"
 import type { RuntimeFlags } from "@/effect/runtime-flags"
 import { InstanceState } from "@/effect/instance-state"
 import { Permission } from "@/permission"
@@ -9,14 +9,13 @@ import type { MessageV2 } from "../message-v2"
 import type { Provider } from "@/provider/provider"
 import { ProviderTransform } from "@/provider/transform"
 import { SystemPrompt } from "../system"
-import { InstallationVersion, freeTierUserAgent } from "@zyraxon-ai/core/installation/version"
+import { InstallationVersion } from "@opencode-ai/core/installation/version"
 import { Effect, Record } from "effect"
 import { jsonSchema, tool as aiTool, type ModelMessage, type Tool } from "ai"
 import type { Plugin } from "@/plugin"
 import { mergeDeep } from "remeda"
 
 const USER_AGENT = `opencode/${InstallationVersion}`
-const OPENCODE_USER_AGENT = freeTierUserAgent()
 
 type PrepareInput = {
   readonly user: SessionV1.User
@@ -185,39 +184,31 @@ export const prepare = Effect.fn("LLMRequestPrep.prepare")(function* (input: Pre
     tools: Object.fromEntries(Object.entries(tools).toSorted(([a], [b]) => a.localeCompare(b))),
     params,
     messageTransformOptions: options,
-    headers: (() => {
-      const isOpencodeProvider = input.model.providerID.startsWith("opencode")
-      const merged: Record<string, string> = {
-        ...(!isOpencodeProvider
-          ? {
-              "x-session-affinity": input.sessionID,
-              "X-Session-Id": input.sessionID,
-            }
-          : {}),
-        ...(input.parentSessionID ? { "x-parent-session-id": input.parentSessionID } : {}),
-        ...input.model.headers,
-        ...headers,
-      }
-      if (isOpencodeProvider) {
-        if (opencodeProjectID) merged["x-opencode-project"] = opencodeProjectID
-        merged["x-opencode-session"] = input.sessionID
-        merged["x-opencode-request"] = input.user.id
-        merged["x-opencode-client"] = input.flags.client
-        merged["User-Agent"] = OPENCODE_USER_AGENT
-        delete merged["user-agent"]
-      } else {
-        merged["User-Agent"] = USER_AGENT
-        delete merged["user-agent"]
-      }
-      return merged
-    })(),
+    headers: {
+      ...(input.model.providerID.startsWith("opencode")
+        ? {
+            ...(opencodeProjectID ? { "x-opencode-project": opencodeProjectID } : {}),
+            "x-opencode-session": input.sessionID,
+            "x-opencode-request": input.user.id,
+            "x-opencode-client": input.flags.client,
+            "User-Agent": USER_AGENT,
+          }
+        : {
+            "x-session-affinity": input.sessionID,
+            "X-Session-Id": input.sessionID,
+            "User-Agent": USER_AGENT,
+          }),
+      ...(input.parentSessionID ? { "x-parent-session-id": input.parentSessionID } : {}),
+      ...input.model.headers,
+      ...headers,
+    },
   }
 })
 
 function resolveTools(input: Pick<PrepareInput, "tools" | "agent" | "permission" | "user">) {
   const disabled = Permission.disabled(
     Object.keys(input.tools),
-    Permission.merge(input.agent.permission ?? [], input.permission ?? []),
+    Permission.merge(input.agent.permission, input.permission ?? []),
   )
   return Record.filter(input.tools, (_, k) => input.user.tools?.[k] !== false && !disabled.has(k))
 }

@@ -1,59 +1,38 @@
-// ============================================================================
-// ZYRAXON Provider System
-// ============================================================================
-// Central provider management for 25+ AI providers.
-// This file handles SDK loading, model resolution, authentication,
-// and provider-specific configuration for all supported AI providers.
-//
-// Providers supported: OpenAI, Anthropic, Google, Azure, Bedrock, xAI,
-// Mistral, Groq, DeepInfra, Cerebras, Cohere, TogetherAI, Perplexity,
-// Vercel, Alibaba, GitHub Copilot, GitLab, Venice, OpenRouter, NVIDIA,
-// Snowflake, Cloudflare, SAP, and more.
-// ============================================================================
-
-import { LayerNode } from "@zyraxon-ai/core/effect/layer-node"
+import { LayerNode } from "@opencode-ai/core/effect/layer-node"
 import os from "os"
-import { ConfigV1 } from "@zyraxon-ai/core/v1/config/config"
+import { ConfigV1 } from "@opencode-ai/core/v1/config/config"
 import fuzzysort from "fuzzysort"
 import { Config } from "@/config/config"
 import { mapValues, mergeDeep, omit, pickBy, sortBy } from "remeda"
 import { NoSuchModelError, type Provider as SDK } from "ai"
-import { Npm } from "@zyraxon-ai/core/npm"
-import { Hash } from "@zyraxon-ai/core/util/hash"
+import { Npm } from "@opencode-ai/core/npm"
+import { Hash } from "@opencode-ai/core/util/hash"
 import { Plugin } from "../plugin"
-import { serviceUse } from "@zyraxon-ai/core/effect/service-use"
+import { serviceUse } from "@opencode-ai/core/effect/service-use"
 import { type LanguageModelV3 } from "@ai-sdk/provider"
-import { ModelsDev } from "@zyraxon-ai/core/models-dev"
+import { ModelsDev } from "@opencode-ai/core/models-dev"
 import { Auth } from "../auth"
 import { Env } from "../env"
-import { InstallationVersion, freeTierUserAgent } from "@zyraxon-ai/core/installation/version"
+import { InstallationVersion } from "@opencode-ai/core/installation/version"
 import { iife } from "@/util/iife"
-import { Global } from "@zyraxon-ai/core/global"
+import { Global } from "@opencode-ai/core/global"
 import path from "path"
 import { pathToFileURL } from "url"
 import { Effect, Layer, Context, Schema, Types } from "effect"
 import { EffectBridge } from "@/effect/bridge"
 import { InstanceState } from "@/effect/instance-state"
 import { EffectPromise } from "@/effect/promise"
-import { FSUtil } from "@zyraxon-ai/core/fs-util"
+import { FSUtil } from "@opencode-ai/core/fs-util"
 import { isRecord } from "@/util/record"
-import { optional } from "@zyraxon-ai/core/schema"
+import { optional } from "@opencode-ai/core/schema"
 import { ProviderTransform } from "./transform"
-import { ProviderV2 } from "@zyraxon-ai/core/provider"
-import { ModelV2 } from "@zyraxon-ai/core/model"
+import { ProviderV2 } from "@opencode-ai/core/provider"
+import { ModelV2 } from "@opencode-ai/core/model"
 import { ModelStatus } from "./model-status"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 import { ProviderError } from "./error"
 
-// ============================================================================
-// Constants
-// ============================================================================
-
 const OPENAI_HEADER_TIMEOUT_DEFAULT = 300_000
-
-// ============================================================================
-// SSE Stream Helpers
-// ============================================================================
 
 function wrapSSE(res: Response, ms: number, ctl: AbortController) {
   if (typeof ms !== "number" || ms <= 0) return res
@@ -67,7 +46,7 @@ function wrapSSE(res: Response, ms: number, ctl: AbortController) {
         const id = setTimeout(() => {
           const err = new ProviderError.ResponseStreamError("SSE read timed out")
           ctl.abort(err)
-          void reader.cancel(err)
+          reader.cancel(err).catch(() => {})
           reject(err)
         }, ms)
 
@@ -125,17 +104,6 @@ function googleVertexEndpoint(location: string) {
   return `${location}-aiplatform.googleapis.com`
 }
 
-function cloudflareGatewayNpm(providerID: string, modelID: string) {
-  if (providerID !== "cloudflare-ai-gateway") return undefined
-  if (modelID.startsWith("openai/")) return "@ai-sdk/openai"
-  if (modelID.startsWith("anthropic/")) return "@ai-sdk/anthropic"
-  return undefined
-}
-
-// ============================================================================
-// Bundled SDK Registry
-// ============================================================================
-
 type BundledSDK = {
   languageModel(modelId: string): LanguageModelV3
   chat?: (modelId: string) => LanguageModelV3
@@ -167,13 +135,9 @@ const BUNDLED_PROVIDERS: Record<string, () => Promise<(opts: any) => BundledSDK>
   "@ai-sdk/alibaba": () => import("@ai-sdk/alibaba").then((m) => m.createAlibaba),
   "gitlab-ai-provider": () => import("gitlab-ai-provider").then((m) => m.createGitLab),
   "@ai-sdk/github-copilot": () =>
-    import("@zyraxon-ai/core/github-copilot/copilot-provider").then((m) => m.createOpenaiCompatible),
+    import("@opencode-ai/core/github-copilot/copilot-provider").then((m) => m.createOpenaiCompatible),
   "venice-ai-sdk-provider": () => import("venice-ai-sdk-provider").then((m) => m.createVenice),
 }
-
-// ============================================================================
-// Custom Provider Loaders
-// ============================================================================
 
 type CustomModelLoader = (sdk: any, modelID: string, options?: Record<string, any>, model?: Model) => Promise<any>
 type CustomVarsLoader = (options: Record<string, any>) => Record<string, string>
@@ -238,12 +202,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
 
       return {
         autoload: Object.keys(input.models).length > 0,
-        options: {
-          ...(ok ? {} : { apiKey: "public" }),
-          // Zen free-tier gate reads User-Agent: opencode/<release> on every
-          // provider request; session prep layers x-opencode-* on top of this.
-          headers: { "User-Agent": freeTierUserAgent() },
-        },
+        options: ok ? {} : { apiKey: "public" },
       }
     }),
     openai: () =>
@@ -269,135 +228,6 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         },
         options: {},
       }),
-    local: Effect.fnUntraced(function* (input: Info) {
-      const { scanLocalModels, findLlamaServerPath } = yield* Effect.tryPromise({
-        try: async () => {
-          const mod = await import("./local")
-          return { scanLocalModels: mod.scanLocalModels, findLlamaServerPath: mod.findLlamaServer }
-        },
-        catch: () => ({ scanLocalModels: () => [], findLlamaServerPath: () => null }),
-      })
-
-      // Load pinned models and GGUF scan results
-      const { PINNED_MODELS, isModelDownloaded } = yield* Effect.tryPromise({
-        try: async () => {
-          const pinnedMod = await import("./pinned-models")
-          const dlMod = await import("./download-manager")
-          return { PINNED_MODELS: pinnedMod.PINNED_MODELS, isModelDownloaded: dlMod.isModelDownloaded }
-        },
-        catch: () => ({ PINNED_MODELS: [] as any[], isModelDownloaded: () => false }),
-      })
-
-      const localModels = scanLocalModels()
-      const hasServer = findLlamaServerPath() !== null
-
-      // Helper: create model entry
-      function makeModel(id: string, name: string, family: string, caps: any, context: number) {
-        return {
-          id: ModelV2.ID.make(id),
-          api: { id, npm: "@ai-sdk/openai-compatible", url: "http://127.0.0.1:11539/v1" },
-          name,
-          providerID: ProviderV2.ID.make("local"),
-          status: "active" as const,
-          capabilities: caps,
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          options: {},
-          limit: { context, input: undefined, output: 2048 },
-          headers: {},
-          family,
-          release_date: "",
-          variants: {},
-        }
-      }
-
-      const defaultCaps = {
-        temperature: true,
-        reasoning: false,
-        attachment: false,
-        toolcall: false,
-        input: { text: true, audio: false, image: false, video: false, pdf: false },
-        output: { text: true, audio: false, image: false, video: false, pdf: false },
-        interleaved: false,
-      }
-
-      // Register locally-downloaded GGUF models
-      for (const m of localModels) {
-        input.models[m.id] = makeModel(m.id, m.name, m.family, defaultCaps, 4096)
-      }
-
-      // Register pinned models (show them even if not downloaded — status shows download needed)
-      for (const pm of PINNED_MODELS) {
-        const downloaded = isModelDownloaded(pm)
-        const status = downloaded ? "active" : ("disabled" as const)
-
-        input.models[pm.id] = {
-          id: ModelV2.ID.make(pm.id),
-          api: { id: pm.id, npm: "@ai-sdk/openai-compatible", url: "http://127.0.0.1:11539/v1" },
-          name: `${pm.icon} ${pm.name}`,
-          providerID: ProviderV2.ID.make("local"),
-          status,
-          capabilities: {
-            temperature: true,
-            reasoning: pm.capabilities.reasoning,
-            attachment: pm.capabilities.imageInput,
-            toolcall: pm.capabilities.toolCall,
-            input: {
-              text: pm.capabilities.textInput,
-              audio: pm.capabilities.audioInput,
-              image: pm.capabilities.imageInput,
-              video: false,
-              pdf: false,
-            },
-            output: {
-              text: pm.capabilities.textOutput,
-              audio: pm.capabilities.audioOutput,
-              image: pm.capabilities.imageOutput,
-              video: pm.capabilities.videoOutput,
-              pdf: false,
-            },
-            interleaved: false,
-          },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          options: {
-            pinned: true,
-            category: pm.category,
-            expectedSize: pm.expectedSizeBytes,
-            downloaded,
-          },
-          limit: { context: pm.contextLength || 4096, input: undefined, output: 2048 },
-          headers: {},
-          family: pm.family,
-          release_date: "",
-          variants: {},
-        }
-      }
-
-      return {
-        autoload: hasServer && (localModels.length > 0 || PINNED_MODELS.length > 0),
-        discoverModels: async () => {
-          const fresh = scanLocalModels()
-          const result: Record<string, Model> = {}
-
-          // Re-discover local GGUF models
-          for (const m of fresh) {
-            result[m.id] = input.models[m.id] ?? makeModel(m.id, m.name, m.family, defaultCaps, 4096)
-          }
-
-          // Re-discover pinned models with fresh download status
-          for (const pm of PINNED_MODELS) {
-            const downloaded = isModelDownloaded(pm)
-            const existing = input.models[pm.id]
-            if (existing) {
-              existing.status = downloaded ? "active" : ("disabled" as const)
-              existing.options.downloaded = downloaded
-              result[pm.id] = existing
-            }
-          }
-
-          return result
-        },
-      }
-    }),
     "github-copilot": () =>
       Effect.succeed({
         autoload: false,
@@ -420,6 +250,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         return [
           provider.options?.resourceName,
           auth?.type === "api" ? auth.metadata?.resourceName : undefined,
+          auth?.type === "oauth" ? auth.accountId : undefined,
           env["AZURE_RESOURCE_NAME"],
         ].find((name) => typeof name === "string" && name.trim() !== "")
       })
@@ -545,13 +376,17 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
 
           // Skip region prefixing if model already has a cross-region inference profile prefix
           // Models from models.dev may already include prefixes like us., eu., global., etc.
+          if (modelID.startsWith("arn:")) {
+            return sdk.languageModel(modelID)
+          }
+
           const crossRegionPrefixes = ["global.", "us.", "eu.", "jp.", "apac.", "au."]
           if (crossRegionPrefixes.some((prefix) => modelID.startsWith(prefix))) {
             return sdk.languageModel(modelID)
           }
 
           // Region resolution precedence (highest to lowest):
-          // 1. options.region from zyraxon.json provider config
+          // 1. options.region from opencode.json provider config
           // 2. defaultRegion from AWS_REGION environment variable
           // 3. Default "us-east-1" (baked into defaultRegion)
           const region = options?.region ?? defaultRegion
@@ -567,7 +402,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
                 "nova-premier",
                 "nova-2",
                 "claude",
-                "deepseek",
+                "deepseek.r1",
               ].some((m) => modelID.includes(m))
               const isGovCloud = region.startsWith("us-gov")
               if (modelRequiresPrefix && !isGovCloud) {
@@ -657,7 +492,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
           headers: {
             "HTTP-Referer": "https://opencode.ai/",
             "X-Title": "opencode",
-            "X-BILLING-INVOKE-ORIGIN": "ZYRAXON",
+            "X-BILLING-INVOKE-ORIGIN": "OpenCode",
           },
         },
       }),
@@ -695,11 +530,10 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
       return {
         autoload: true,
         vars(_options: Record<string, any>) {
-          const endpoint = googleVertexEndpoint(location)
           return {
             ...(project && { GOOGLE_VERTEX_PROJECT: project }),
             GOOGLE_VERTEX_LOCATION: location,
-            GOOGLE_VERTEX_ENDPOINT: endpoint,
+            GOOGLE_VERTEX_ENDPOINT: googleVertexEndpoint(location),
           }
         },
         options: {
@@ -972,15 +806,15 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
       if (!apiToken) {
         throw new Error(
           "CLOUDFLARE_API_TOKEN (or CF_AIG_TOKEN) is required for Cloudflare AI Gateway. " +
-            "Set it via environment variable or run `zyraxon auth cloudflare-ai-gateway`.",
+            "Set it via environment variable or run `opencode auth cloudflare-ai-gateway`.",
         )
       }
 
-      // Use official ai-gateway-provider package (v2.x for AI SDK v5 compatibility)
       const { createAiGateway } = yield* Effect.promise(() => import("ai-gateway-provider"))
       const { createUnified } = yield* Effect.promise(() => import("ai-gateway-provider/providers/unified"))
       const { createOpenAI } = yield* Effect.promise(() => import("ai-gateway-provider/providers/openai"))
       const { createAnthropic } = yield* Effect.promise(() => import("ai-gateway-provider/providers/anthropic"))
+      const { createOpenAICompatible } = yield* Effect.promise(() => import("@ai-sdk/openai-compatible"))
 
       const metadata = iife(() => {
         if (input.options?.metadata) return input.options.metadata
@@ -1007,15 +841,43 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         apiKey: apiToken,
         ...(Object.values(opts).some((v) => v !== undefined) ? { options: opts } : {}),
       })
-
       return {
         autoload: true,
         async getModel(_sdk: any, modelID: string, _options?: Record<string, any>) {
+          // Model IDs use Unified API format: provider/model (e.g., "anthropic/claude-sonnet-4-5").
+          // OpenAI and Anthropic ride their native passthrough routes so agents get the Responses
+          // and Messages APIs; new OpenAI models reject tools+reasoning_effort on chat completions.
+          // The passthrough wrappers inject a CF_TEMP_TOKEN sentinel that the gateway strips before
+          // dispatch, so upstream billing stays on the gateway (Unified Billing / stored BYOK).
           if (modelID.startsWith("openai/")) return aigateway(createOpenAI()(modelID.slice("openai/".length)))
-          if (modelID.startsWith("anthropic/")) return aigateway(createAnthropic()(modelID.slice("anthropic/".length)))
+          // models.dev lists Anthropic ids with dotted versions (claude-haiku-4.5); Anthropic's
+          // Messages API expects dashed native slugs (claude-haiku-4-5), so translate before passing.
+          // No native Anthropic slug contains a dot, so the blanket replacement is lossless here -
+          // unlike OpenAI above, whose native ids (e.g. gpt-4.1) keep their dots and must not be touched.
+          if (modelID.startsWith("anthropic/"))
+            return aigateway(createAnthropic()(modelID.slice("anthropic/".length).replaceAll(".", "-")))
+          // Workers AI is the only first-party provider whose upstream is Cloudflare itself, so it is
+          // the only one that should receive the Cloudflare token as its upstream Authorization header.
+          // The Unified API addresses Workers AI both with the explicit "workers-ai/" prefix and as
+          // bare "@cf/..." ids. Third-party providers must not receive the token; they rely on the
+          // gateway's stored/BYOK keys instead.
+          // Workers AI is Cloudflare's own upstream, so it rides the unified compat route with the
+          // Cloudflare token as its upstream Authorization header.
           const isWorkersAi = modelID.startsWith("workers-ai/") || modelID.startsWith("@cf/")
-          const unified = createUnified(isWorkersAi ? { apiKey: apiToken } : {})
-          return aigateway(unified(modelID))
+          if (isWorkersAi) return aigateway(createUnified({ apiKey: apiToken })(modelID))
+
+          // Every other third-party provider (google, xai, alibaba, deepseek, moonshotai, …) is only
+          // served by Cloudflare's catalog-aware REST API. The universal/compat gateway route rejects
+          // them with "Invalid provider" (the gateway's compat endpoint doesn't front those upstreams),
+          // so point an OpenAI-compatible client at the REST endpoint and bind it to the gateway with
+          // cf-aig-gateway-id — that keeps requests gateway-routed (analytics/caching/BYOK), not a
+          // bypass. models.dev ids (provider/model, dotted) pass through unchanged.
+          return createOpenAICompatible({
+            name: "cloudflare-ai-gateway",
+            baseURL: `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1`,
+            apiKey: apiToken,
+            headers: { "cf-aig-gateway-id": gateway },
+          })(modelID)
         },
         options: {},
       }
@@ -1062,7 +924,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
           autoload: false,
           async getModel() {
             throw new Error(
-              `Snowflake Cortex: missing credentials (${missing}). Provide a bearer token (OAuth, JWT, or PAT) via env var, zyraxon auth, or provider options.`,
+              `Snowflake Cortex: missing credentials (${missing}). Provide a bearer token (OAuth, JWT, or PAT) via env var, opencode auth, or provider options.`,
             )
           },
         }
@@ -1141,10 +1003,6 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
     }),
   }
 }
-
-// ============================================================================
-// Schema Definitions — Provider & Model Types
-// ============================================================================
 
 const ProviderApiInfo = Schema.Struct({
   id: Schema.String,
@@ -1280,10 +1138,6 @@ export function defaultModelIDs<T extends { models: Record<string, { id: string 
   return mapValues(providers, (item) => sort(Object.values(item.models))[0].id)
 }
 
-// ============================================================================
-// Error Classes
-// ============================================================================
-
 export class ModelNotFoundError extends Schema.TaggedErrorClass<ModelNotFoundError>()("ProviderModelNotFoundError", {
   providerID: ProviderV2.ID,
   modelID: ModelV2.ID,
@@ -1338,10 +1192,6 @@ export class NoModelsError extends Schema.TaggedErrorClass<NoModelsError>()("Pro
 export type DefaultModelError = ModelNotFoundError | NoProvidersError | NoModelsError
 export type Error = ModelNotFoundError | InitError | NoProvidersError | NoModelsError
 
-// ============================================================================
-// Provider Service — Main Interface
-// ============================================================================
-
 export interface Interface {
   readonly list: () => Effect.Effect<Record<ProviderV2.ID, Info>>
   readonly getProvider: (providerID: ProviderV2.ID) => Effect.Effect<Info>
@@ -1364,13 +1214,9 @@ interface State {
   varsLoaders: Record<string, CustomVarsLoader>
 }
 
-export class Service extends Context.Service<Service, Interface>()("@zyraxon/Provider") {}
+export class Service extends Context.Service<Service, Interface>()("@opencode/Provider") {}
 
 export const use = serviceUse(Service)
-
-// ============================================================================
-// Models.dev Conversion Helpers
-// ============================================================================
 
 function cost(c: ModelsDev.Model["cost"]): Model["cost"] {
   const result: Model["cost"] = {
@@ -1405,6 +1251,17 @@ function cost(c: ModelsDev.Model["cost"]): Model["cost"] {
   return result
 }
 
+// Cloudflare AI Gateway routes OpenAI and Anthropic models through their native
+// passthrough SDKs (Responses / Messages APIs). Resolving the native npm before
+// variants are computed makes reasoning variants produce payloads the native
+// SDKs understand (e.g. anthropic `effort` instead of compat `reasoningEffort`).
+function cloudflareGatewayNpm(providerID: string, modelID: string) {
+  if (providerID !== "cloudflare-ai-gateway") return undefined
+  if (modelID.startsWith("openai/")) return "@ai-sdk/openai"
+  if (modelID.startsWith("anthropic/")) return "@ai-sdk/anthropic"
+  return undefined
+}
+
 function fromModelsDevModel(provider: ModelsDev.Provider, model: ModelsDev.Model): Model {
   const base: Model = {
     id: ModelV2.ID.make(model.id),
@@ -1414,7 +1271,11 @@ function fromModelsDevModel(provider: ModelsDev.Provider, model: ModelsDev.Model
     api: {
       id: model.id,
       url: model.provider?.api ?? provider.api ?? "",
-      npm: cloudflareGatewayNpm(provider.id, model.id) ?? model.provider?.npm ?? provider.npm ?? "@ai-sdk/openai-compatible",
+      npm:
+        cloudflareGatewayNpm(provider.id, model.id) ??
+        model.provider?.npm ??
+        provider.npm ??
+        "@ai-sdk/openai-compatible",
     },
     status: model.status ?? "active",
     headers: {},
@@ -1507,7 +1368,7 @@ function modelSuggestions(provider: Info | undefined, modelID: ModelV2.ID, enabl
     : []
   const fuzzy = fuzzysort.go(modelID, available, { limit: 3, threshold: -10000 }).map((m) => m.target)
   if (fuzzy.length) return fuzzy
-  const query = (modelID ?? "")
+  const query = modelID
     .toLowerCase()
     .split(/[^a-z0-9]+/)
     .filter((part) => part.length > 1)
@@ -1524,10 +1385,6 @@ function modelSuggestions(provider: Info | undefined, modelID: ModelV2.ID, enabl
     .slice(0, 3)
     .map((item) => item.id)
 }
-
-// ============================================================================
-// Provider Service Layer — Core Implementation
-// ============================================================================
 
 const layer = Layer.effect(
   Service,
@@ -1640,6 +1497,8 @@ const layer = Layer.effect(
               model.provider?.npm ??
               provider.npm ??
               existingModel?.api.npm ??
+              // Config-defined gateway models bypass fromModelsDevModel, so resolve the
+              // native passthrough npm here before falling back to the catalog default.
               cloudflareGatewayNpm(providerID, apiID) ??
               modelsDev[providerID]?.npm ??
               "@ai-sdk/openai-compatible"
@@ -1720,22 +1579,17 @@ const layer = Layer.effect(
           database[providerID] = parsed
         }
 
-        // load env — load providers whose env vars are set,
-        // providers with no env vars (e.g. builtin opencode),
-        // and always load "opencode" provider (has built-in free models)
+        // load env
         const envs = yield* env.all()
         for (const [id, provider] of Object.entries(database)) {
           const providerID = ProviderV2.ID.make(id)
           if (disabled.has(providerID)) continue
-          if (id === "opencode" || provider.env.length === 0) {
-            // Builtin/free provider — always load
-            mergeProvider(providerID, { source: "env", key: undefined })
-          } else {
-            const apiKey = provider.env.map((item) => envs[item]).find(Boolean)
-            if (apiKey) {
-              mergeProvider(providerID, { source: "env", key: apiKey })
-            }
-          }
+          const apiKey = provider.env.map((item) => envs[item]).find(Boolean)
+          if (!apiKey) continue
+          mergeProvider(providerID, {
+            source: "env",
+            key: provider.env.length === 1 ? apiKey : undefined,
+          })
         }
 
         // load apikeys
@@ -1825,6 +1679,7 @@ const layer = Layer.effect(
 
           for (const [modelID, model] of Object.entries(provider.models)) {
             model.api.id = model.api.id ?? model.id ?? modelID
+
             if (
               // These chat aliases are invalid for the special handling in the
               // built-in providers below, but custom providers may support them.
@@ -1875,10 +1730,6 @@ const layer = Layer.effect(
     )
 
     const list = Effect.fn("Provider.list")(() => InstanceState.use(state, (s) => s.providers))
-
-    // ========================================================================
-    // SDK Resolution — Dynamic loading of provider SDKs
-    // ========================================================================
 
     async function resolveSDK(model: Model, s: State, envs: Record<string, string | undefined>) {
       try {
@@ -1949,8 +1800,6 @@ const layer = Layer.effect(
         const headerTimeout = options["headerTimeout"] ?? 300_000
         delete options["chunkTimeout"]
         delete options["headerTimeout"]
-        const isOpencodeProvider = model.providerID.startsWith("opencode")
-        const freeTierUA = freeTierUserAgent()
 
         options["fetch"] = async (input: any, init?: BunFetchRequestInit) => {
           const fetchFn = customFetch ?? fetch
@@ -1968,13 +1817,6 @@ const layer = Layer.effect(
 
           const combined = signals.length === 0 ? null : signals.length === 1 ? signals[0] : AbortSignal.any(signals)
           if (combined) opts.signal = combined
-
-          if (isOpencodeProvider) {
-            const headers = new Headers(opts.headers)
-            headers.set("User-Agent", freeTierUA)
-            headers.delete("user-agent")
-            opts.headers = headers
-          }
 
           const res = await fetchFn(input, {
             ...opts,
@@ -2028,7 +1870,6 @@ const layer = Layer.effect(
     )
 
     const getModel = Effect.fn("Provider.getModel")(function* (providerID: ProviderV2.ID, modelID: ModelV2.ID) {
-      const _t = Date.now()
       const s = yield* InstanceState.get(state)
       const provider = s.providers[providerID]
       if (!provider) {
@@ -2038,7 +1879,6 @@ const layer = Layer.effect(
           : fuzzysort
               .go(providerID, Object.keys({ ...s.catalog, ...s.providers }), { limit: 3, threshold: -10000 })
               .map((m) => m.target)
-        yield* Effect.logWarning("provider.getModel: provider not found", { providerID, modelID, ms: Date.now() - _t })
         return yield* new ModelNotFoundError({ providerID, modelID, suggestions })
       }
 
@@ -2048,22 +1888,16 @@ const layer = Layer.effect(
         const suggestions = current.length
           ? current
           : modelSuggestions(s.catalog[providerID], modelID, runtimeFlags.enableExperimentalModels)
-        yield* Effect.logWarning("provider.getModel: model not found", { providerID, modelID, availableModels: Object.keys(provider.models).length, ms: Date.now() - _t })
         return yield* new ModelNotFoundError({ providerID, modelID, suggestions })
       }
-      yield* Effect.logInfo("provider.getModel: resolved", { providerID, modelID, ms: Date.now() - _t, capabilities: info.capabilities ? JSON.stringify(info.capabilities).substring(0, 200) : "none" })
       return info
     })
 
     const getLanguage = Effect.fn("Provider.getLanguage")(function* (model: Model) {
-      const _tLang = Date.now()
       const s = yield* InstanceState.get(state)
       const envs = yield* env.all()
       const key = `${model.providerID}/${model.id}`
-      if (s.models.has(key)) {
-        yield* Effect.logInfo("provider.getLanguage: cached", { providerID: model.providerID, modelID: model.id, ms: Date.now() - _tLang })
-        return s.models.get(key)!
-      }
+      if (s.models.has(key)) return s.models.get(key)!
 
       const provider = s.providers[model.providerID]
       return yield* EffectPromise.refineRejection(
@@ -2081,7 +1915,6 @@ const layer = Layer.effect(
               )
             : sdk.languageModel(model.api.id)
           s.models.set(key, language)
-          console.log(`[provider.getLanguage] resolved NEW: ${key} in ${Date.now() - _tLang}ms`)
           return language
         },
         (cause) =>
@@ -2210,10 +2043,6 @@ const layer = Layer.effect(
     return Service.of({ list, getProvider, getModel, getLanguage, closest, getSmallModel, defaultModel })
   }),
 )
-
-// ============================================================================
-// Model Priority & Sorting
-// ============================================================================
 
 const priority = ["gpt-5", "claude-sonnet-4", "big-pickle", "gemini-3-pro"]
 const smallModelFamilyPriority = ["gemini-flash", "gpt-nano", "claude-haiku"]

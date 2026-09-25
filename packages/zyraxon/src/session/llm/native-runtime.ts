@@ -15,8 +15,8 @@ import {
   toDefinitions,
   type JsonSchema,
   type LLMEvent,
-} from "@zyraxon-ai/llm"
-import type { LLMClientShape } from "@zyraxon-ai/llm/route"
+} from "@opencode-ai/llm"
+import type { LLMClientShape } from "@opencode-ai/llm/route"
 import { LLMNative } from "./native-request"
 
 export type RuntimeStatus =
@@ -76,7 +76,7 @@ export function stream(input: StreamInput): StreamResult {
   const current = statusWithFetch(input, fetch)
   if (current.type === "unsupported") return current
 
-  // Integration point with @zyraxon-ai/llm: native-request lowers session data
+  // Integration point with @opencode-ai/llm: native-request lowers session data
   // into an LLMRequest, then LLMClient handles route selection and transport.
   //
   // ProviderTransform.providerOptions builds AI-SDK-shaped options for the
@@ -170,8 +170,8 @@ export function nativeTools(tools: Record<string, Tool>, input: Pick<StreamInput
   return Object.fromEntries(
     Object.entries(tools).map(([name, item]) => [
       name,
-      // Tool execution remains zyraxon-owned. The native runtime only adapts
-      // the @zyraxon-ai/llm tool call back into the AI SDK Tool.execute shape.
+      // Tool execution remains opencode-owned. The native runtime only adapts
+      // the @opencode-ai/llm tool call back into the AI SDK Tool.execute shape.
       NativeTool.make({
         description: item.description ?? "",
         jsonSchema: nativeSchema(item.inputSchema),
