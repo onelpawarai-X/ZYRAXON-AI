@@ -394,8 +394,8 @@ export function registerIpcHandlers(deps: Deps) {
   })
 
   // Voice Bridge — Chrome speech recognition controls
-  // Auto-start the bridge on first use so mic activation never fails with
-  // "module not ready" when deferred startup is still in flight.
+  // resolve as soon as the module is registered so start-listening can queue
+  // while HTTP/Chrome finish warming in the background.
   let voiceBridgeStarting: Promise<boolean> | null = null
   async function ensureVoiceBridge(): Promise<typeof import("./voice-bridge") | null> {
     const existing = getVoiceBridgeModule()
@@ -414,7 +414,7 @@ export function registerIpcHandlers(deps: Deps) {
               }
             }
           })
-          await voiceBridge.startVoiceBridge()
+          void voiceBridge.startVoiceBridge()
           return true
         } catch (e) {
           console.error("[VoiceBridge] lazy start failed:", e)
