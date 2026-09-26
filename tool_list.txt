@@ -1,4 +1,4 @@
-﻿  [alert] (4 tools):
+  [alert] (4 tools):
     - Alert Create
     - Notification Add Channel
     - Escalation Create Policy
@@ -152,3 +152,4 @@
     - Singularity Learn
     - Singularity State
     - Singularity Evolution Steps
+History
