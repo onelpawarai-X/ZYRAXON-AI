@@ -1,4 +1,4 @@
-ZYRAXON TOOLS (200+ categories, 805+ registered tools):
+ZYRAXON TOOLS (224+ categories, 805+ registered tools):
 
 [agriculture] (15):
   - Add Soil Sample
