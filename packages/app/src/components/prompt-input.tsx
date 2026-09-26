@@ -50,6 +50,8 @@ import { useCommand } from "@/context/command"
 import { usePermission } from "@/context/permission"
 import { useLanguage } from "@/context/language"
 import { usePlatform } from "@/context/platform"
+import { ZYRAXON_AGENTS, type ZyraxonAgentDef } from "@/context/collab"
+import { useSubscription } from "@/context/subscription"
 import { createSessionTabs } from "@/pages/session/helpers"
 import { createTextFragment, getCursorPosition, setCursorPosition, setRangeEdge } from "./prompt-input/editor-dom"
 import { createPromptAttachments } from "./prompt-input/attachments"
@@ -127,6 +129,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   const permission = usePermission()
   const language = useLanguage()
   const platform = usePlatform()
+  const subscription = useSubscription()
   const tabs = () => props.controls.session.tabs
   let editorRef!: HTMLDivElement
   let fileInputRef: HTMLInputElement | undefined
@@ -578,6 +581,27 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
         }),
       ),
   )
+
+  const agentDefFor = (name: string): ZyraxonAgentDef =>
+    ZYRAXON_AGENTS.find((a) => a.id === name || a.name.toLowerCase() === name.toLowerCase()) ?? {
+      id: name,
+      name,
+      icon: "AG",
+      color: "#6B7280",
+      description: name,
+      capabilities: [],
+      canDelegateTo: [],
+      tier: "free",
+    }
+
+  const agentOptions = createMemo(() => {
+    const tier = subscription.tier()
+    return props.controls.agents.options.map((name) => ({
+      id: name,
+      def: agentDefFor(name),
+      locked: !subscription.hasAccess(tier, agentDefFor(name).tier),
+    }))
+  })
 
   const agentList = createMemo(() =>
     props.controls.agents.available
@@ -1658,10 +1682,44 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                     >
                       <Select
                         size="normal"
-                        options={props.controls.agents.options}
-                        current={props.controls.agents.current}
+                        options={agentOptions()}
+                        current={agentOptions().find((o) => o.id === props.controls.agents.current)}
+                        value={(o) => o.id}
+                        label={(o) => o.def.name}
+                        children={(o) => {
+                          if (!o) return null
+                          return (
+                            <span class="flex items-center gap-1.5">
+                              <Icon name={o.locked ? "lock" : "chevron-down"} size="small" />
+                              <span>{o.def.name}</span>
+                              <span
+                                class="rounded px-1 py-px text-[9px] font-bold uppercase tracking-wide leading-none"
+                                style={{
+                                  "background": "rgba(255,255,255,0.08)",
+                                  "color": o.locked
+                                    ? "#64748b"
+                                    : o.def.tier === "free"
+                                      ? "#34d399"
+                                      : o.def.tier === "pro"
+                                        ? "#38bdf8"
+                                        : o.def.tier === "max"
+                                          ? "#fbbf24"
+                                          : "#f472b6",
+                                }}
+                              >
+                                {o.locked ? "LOCK" : o.def.tier}
+                              </span>
+                            </span>
+                          )
+                        }}
                         onSelect={(value) => {
-                          props.controls.agents.select(value)
+                          const selected = agentOptions().find((o) => o.id === value?.id)
+                          if (selected?.locked) {
+                            subscription.requestToolAccess("locked_mode_" + selected.id)
+                            restoreFocus()
+                            return
+                          }
+                          props.controls.agents.select(value?.id)
                           restoreFocus()
                         }}
                         class="capitalize max-w-[160px] text-text-base"

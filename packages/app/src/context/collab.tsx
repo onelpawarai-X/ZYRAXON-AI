@@ -17,6 +17,7 @@ export interface ZyraxonAgentDef {
   description: string
   capabilities: string[]
   canDelegateTo: string[]
+  tier: "free" | "pro" | "max" | "ultra"
 }
 
 export const ZYRAXON_AGENTS: ZyraxonAgentDef[] = [
@@ -28,6 +29,7 @@ export const ZYRAXON_AGENTS: ZyraxonAgentDef[] = [
     description: "Full collaboration -- all agents work together. Can generate images, videos, audio, music.",
     capabilities: ["orchestrate", "delegate", "collaborate", "coordinate", "supervise", "image-gen", "video-gen", "audio-gen", "tts"],
     canDelegateTo: ["build", "plan", "beast", "pro", "apex", "dark-emperor", "pro-builder", "vision"],
+    tier: "free",
   },
   {
     id: "build",
@@ -37,6 +39,7 @@ export const ZYRAXON_AGENTS: ZyraxonAgentDef[] = [
     description: "Software engineering -- coding, debugging, refactoring. Can generate code diagrams as images.",
     capabilities: ["code", "debug", "refactor", "test", "fix", "image-gen"],
     canDelegateTo: ["plan", "pro", "explore"],
+    tier: "free",
   },
   {
     id: "plan",
@@ -46,6 +49,7 @@ export const ZYRAXON_AGENTS: ZyraxonAgentDef[] = [
     description: "Architecture analysis -- dependency mapping, risk assessment. Can generate architecture diagrams.",
     capabilities: ["analysis", "architecture", "planning", "review", "image-gen"],
     canDelegateTo: ["build", "explore"],
+    tier: "free",
   },
   {
     id: "beast",
@@ -55,6 +59,7 @@ export const ZYRAXON_AGENTS: ZyraxonAgentDef[] = [
     description: "Deep warfare coding -- subagent delegation, self-evolution. Full media generation.",
     capabilities: ["deep-code", "subagent", "auto-fix", "aggressive", "image-gen", "video-gen", "audio-gen"],
     canDelegateTo: ["build", "plan", "pro", "explore", "dark-emperor"],
+    tier: "max",
   },
   {
     id: "pro",
@@ -64,6 +69,7 @@ export const ZYRAXON_AGENTS: ZyraxonAgentDef[] = [
     description: "Professional intelligence -- pattern learning, code synthesis. Can generate professional media.",
     capabilities: ["quality", "patterns", "synthesis", "optimize", "image-gen", "video-gen", "audio-gen"],
     canDelegateTo: ["build", "plan", "explore"],
+    tier: "pro",
   },
   {
     id: "apex",
@@ -73,6 +79,7 @@ export const ZYRAXON_AGENTS: ZyraxonAgentDef[] = [
     description: "Predatory intelligence -- tool synthesis, self-optimization. Full media generation.",
     capabilities: ["predict", "synthesize", "optimize", "hunt", "image-gen", "video-gen", "audio-gen", "tts"],
     canDelegateTo: ["build", "plan", "pro", "beast", "explore"],
+    tier: "ultra",
   },
   {
     id: "dark-emperor",
@@ -82,6 +89,7 @@ export const ZYRAXON_AGENTS: ZyraxonAgentDef[] = [
     description: "Supreme sovereign -- reality warping, quantum omniscience. All media generation.",
     capabilities: ["warp", "omniscient", "annihilate", "supreme", "image-gen", "video-gen", "audio-gen", "tts"],
     canDelegateTo: ["build", "plan", "beast", "pro", "apex", "vision", "pro-builder", "explore"],
+    tier: "ultra",
   },
   {
     id: "pro-builder",
@@ -91,6 +99,7 @@ export const ZYRAXON_AGENTS: ZyraxonAgentDef[] = [
     description: "Website genesis -- natural language to complete websites. Generates UI mockups and assets.",
     capabilities: ["website", "deploy", "seo", "ui", "design", "image-gen"],
     canDelegateTo: ["build", "pro", "vision", "explore"],
+    tier: "pro",
   },
   {
     id: "vision",
@@ -100,6 +109,7 @@ export const ZYRAXON_AGENTS: ZyraxonAgentDef[] = [
     description: "AI's Eyes -- real-time screen awareness and memory. Image analysis and generation.",
     capabilities: ["vision", "screen", "analysis", "observe", "image-gen"],
     canDelegateTo: ["build", "plan", "explore"],
+    tier: "max",
   },
   {
     id: "general",
@@ -109,6 +119,7 @@ export const ZYRAXON_AGENTS: ZyraxonAgentDef[] = [
     description: "General-purpose sub-agent -- unlimited spawn, any role. All media generation.",
     capabilities: ["research", "analysis", "code", "any-task", "image-gen", "video-gen", "audio-gen", "tts"],
     canDelegateTo: [],
+    tier: "free",
   },
 ]
 

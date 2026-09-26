@@ -305,13 +305,20 @@ export function SettingsSubscription() {
         }}>
         <h3 class="text-sm font-bold text-[var(--text-strong)] mb-1">Secret Code Activation</h3>
         <p class="text-[11px] text-[var(--text-weak)] mb-3">Enter a secret code for permanent unlock — no expiry, no limitations</p>
+        <p class="text-[11px] text-[var(--text-weak)] mb-3">
+          Need a code? Join{" "}
+          <a href="https://zyraxon-group-x.lovable.app/" target="_blank" rel="noopener noreferrer" class="text-[#00D4FF] underline hover:opacity-80">
+            ZYRAXON GROUP X
+          </a>{" "}
+          to get one.
+        </p>
         <div class="flex gap-2">
           <input
             type="text"
             value={code()}
             onInput={(e) => setCode(e.currentTarget.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleActivateCode() }}
-            placeholder="ZYRAXON-ULTRA-2026"
+            placeholder="Enter access code"
             class="flex-1 px-3 py-2 rounded-lg text-xs font-mono bg-black/30 text-[var(--text-strong)] border border-white/10 focus:outline-none focus:border-white/30 placeholder:text-white/20"
           />
           <button

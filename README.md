@@ -1,3 +1,18 @@
+<!-- UNLOCK GROUP BANNER -->
+<div align="center">
+
+### 🔓 Access Code Membership
+
+Need a **secret access code** to unlock ZYRAXON **PRO / MAX / ULTRA** modes?
+
+👉 **Join our membership group first:** [**ZYRAXON GROUP X**](https://zyraxon-group-x.lovable.app/)
+
+Members receive the latest unlock codes from the community. Codes are **only** shared inside the group — secure, verified, and never posted publicly.
+
+</div>
+
+<hr/>
+
 <div align="center">
 
 <img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=900&size=32&duration=3000&pause=1000&color=00D4FF&center=true&vCenter=true&multiline=true&repeat=true&width=800&height=120&lines=%E2%9A%A1+What+if+your+AI+could+DO+everything%3F+%F0%9F%A4%A0;Not+just+talk.+But+build.+Code.+Deploy.+Think.+Act." alt="Typing SVG" />

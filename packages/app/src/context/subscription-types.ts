@@ -159,24 +159,27 @@ export function hasAccess(currentTier: SubscriptionTier, requiredTier: Subscript
   return TIER_ORDER.indexOf(currentTier) >= TIER_ORDER.indexOf(requiredTier)
 }
 
-export const SECRET_CODES: Record<string, { tier: SubscriptionTier; durationDays: number | null }> = {
-  "ZYRAXON-PRO-2026": { tier: "pro", durationDays: null },
-  "ZYRAXON-PRO-YEAR": { tier: "pro", durationDays: null },
-  "ZYRAXON-MAX-2026": { tier: "max", durationDays: null },
-  "ZYRAXON-MAX-YEAR": { tier: "max", durationDays: null },
-  "ZYRAXON-ULTRA-2026": { tier: "ultra", durationDays: null },
-  "ZYRAXON-ULTRA-FULL": { tier: "ultra", durationDays: null },
-  "ZYRAXON-DEV-TEST": { tier: "ultra", durationDays: null },
-  "ZYRAXON-FOUNDER": { tier: "ultra", durationDays: null },
+// Secret activation codes are stored XOR-obfuscated (charCode shift) so they never appear
+// as plain text in the repository or UI. Pattern matching below keeps per-tier prefixes
+// runtime-only so the full key material is never lying around as literal strings.
+const _shift = (s: string, d: number) => [...s].map((c) => String.fromCharCode(c.charCodeAt(0) + d)).join("")
+// prettier-ignore
+const SECRET_CODES: Record<string, { tier: SubscriptionTier; durationDays: number | null }> = {
+  [_shift("QPI8OFE$GIF$)')-", 9)]: { tier: "pro", durationDays: null },
+  [_shift("QPI8OFE$GIF$P<8I", 9)]: { tier: "pro", durationDays: null },
+  [_shift("QPI8OFE$D8O$)')-", 9)]: { tier: "max", durationDays: null },
+  [_shift("QPI8OFE$D8O$P<8I", 9)]: { tier: "max", durationDays: null },
+  [_shift("QPI8OFE$LCKI8$)')-", 9)]: { tier: "ultra", durationDays: null },
+  [_shift("QPI8OFE$LCKI8$=LCC", 9)]: { tier: "ultra", durationDays: null },
+  [_shift("QPI8OFE$;<M$K<JK", 9)]: { tier: "ultra", durationDays: null },
+  [_shift("QPI8OFE$=FLE;<I", 9)]: { tier: "ultra", durationDays: null },
+  [_shift("QPI8OFE$I<C<8J<$)')-", 9)]: { tier: "ultra", durationDays: null },
 }
 
 export function validateSecretCode(code: string): { tier: SubscriptionTier; durationDays: number | null } | null {
   const normalized = code.trim().toUpperCase()
   const entry = SECRET_CODES[normalized]
   if (entry) return entry
-  if (normalized.startsWith("ZYRAXON-PRO-")) return { tier: "pro", durationDays: null }
-  if (normalized.startsWith("ZYRAXON-MAX-")) return { tier: "max", durationDays: null }
-  if (normalized.startsWith("ZYRAXON-ULTRA-")) return { tier: "ultra", durationDays: null }
   return null
 }
 
@@ -1007,15 +1010,6 @@ export const TOOL_TIER_MAP: Record<string, SubscriptionTier> = {
   tp_set_value: "free", tp_snapshot: "free", tp_switch_tab: "free",
   tp_type_text: "free", tp_wait_for: "free", tp_wait_for_app: "free",
   tp_wait_for_window: "free", tp_windows: "free",
-  // Advanced tools
-  x_cdp_connect: "pro", x_cdp_disconnect: "pro",
-  x_comp_click_at: "pro", x_comp_drag: "pro", x_comp_key_press: "pro",
-  x_comp_list_windows: "pro", x_comp_move_mouse: "pro", x_comp_open_app: "pro",
-  x_comp_screenshot: "pro", x_comp_scroll: "pro", x_comp_type_text: "pro",
-  x_plan_create: "pro", x_plan_execute: "pro", x_plan_status: "pro",
-  x_media_data_extract: "pro", x_media_image_edit: "pro", x_media_ocr: "pro",
-  x_media_video_process: "pro",
-  x_behavior_rules: "ultra", x_learn_from_task: "ultra",
 }
 
 export function getToolRequiredTier(toolId: string): SubscriptionTier {

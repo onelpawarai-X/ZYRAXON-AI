@@ -109,6 +109,8 @@ const icons = {
   mic: `<rect x="7" y="2" width="6" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.5 9a5.5 5.5 0 0 0 11 0" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><line x1="10" y1="14.5" x2="10" y2="17.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><line x1="7.5" y1="17.5" x2="12.5" y2="17.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>`,
   "mic-off": `<rect x="7" y="2" width="6" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.5 9a5.5 5.5 0 0 0 11 0" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><line x1="10" y1="14.5" x2="10" y2="17.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><line x1="7.5" y1="17.5" x2="12.5" y2="17.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><line x1="2.5" y1="2.5" x2="17.5" y2="17.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>`,
   loader: `<path d="M10 2.5V5.5M14.5 5.5L12.5 7.5M17.5 10H14.5M14.5 14.5L12.5 12.5M10 17.5V14.5M5.5 14.5L7.5 12.5M2.5 10H5.5M5.5 5.5L7.5 7.5" stroke="currentColor" stroke-linecap="square"/>`,
+  lock: `<rect x="4" y="9" width="12" height="8" rx="1.5" stroke="currentColor" stroke-linecap="square"/><path d="M6.5 9V6.5a3.5 3.5 0 0 1 7 0V9" stroke="currentColor" stroke-linecap="square"/>`,
+  unlock: `<rect x="4" y="9" width="12" height="8" rx="1.5" stroke="currentColor" stroke-linecap="square"/><path d="M6.5 9V6.5a3.5 3.5 0 0 1 6.6-1.6" stroke="currentColor" stroke-linecap="square"/>`,
 }
 
 const spriteID = "zyraxon-icon-sprite"
