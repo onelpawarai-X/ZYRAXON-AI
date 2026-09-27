@@ -503,6 +503,8 @@ export function registerIpcHandlers(deps: Deps) {
       return
     }
     const vb = getVoiceBridgeModule()
+    // Mark TTS active for the whole synthesis so the mic cannot capture the echo
+    if (vb) vb.setVoiceTTSActive(true)
     const lang = vb?.getCurrentLanguage()?.split("-")[0] || "bn"
     const gender = vb?.getCurrentVoiceGender() === "male" ? "m" : "f"
 
@@ -550,8 +552,17 @@ export function registerIpcHandlers(deps: Deps) {
     }
   })
 
+  // Renderer TTS playback lifecycle — activates the echo guard in voice-bridge
+  // so assistant audio picked up by the mic is never treated as user speech.
+  ipcMain.on("voice-tts-active", (_event: IpcMainEvent, active: boolean) => {
+    const vb = getVoiceBridgeModule()
+    if (vb) vb.setVoiceTTSActive(!!active)
+  })
+
   ipcMain.handle("voice-tts-stop", () => {
     // Voice bridge no longer handles TTS — main app does
+    const vb = getVoiceBridgeModule()
+    if (vb) vb.setVoiceTTSActive(false)
     return true
   })
 

@@ -161,6 +161,7 @@ export type ElectronAPI = {
   voiceSendText: (text: string) => Promise<void>
   voiceTTSSpeak: (text: string) => void
   voiceTTSStop: () => Promise<void>
+  setVoiceTTSActive: (active: boolean) => void
   voiceTTSEnabled: (enabled: boolean) => Promise<void>
   onVoiceTTSAudio: (callback: (buffer: ArrayBuffer) => void) => () => void
   onVoiceTTSError: (callback: (error: string) => void) => () => void

@@ -192,6 +192,20 @@ function onMessage(d) {
   }
   if (d.type === "set-language" && d.lang) pickLang(d.lang);
   if (d.type === "set-voice" && d.gender) pickGender(d.gender);
+  if (d.type === "tts-speaking") {
+    if (d.active) {
+      // Assistant is speaking — stop the mic so its voice is never transcribed
+      if (isRecording) stopRecording();
+    }
+    return;
+  }
+  if (d.type === "clear-transcript") {
+    if (isRecording) stopRecording();
+    finalTranscript = ""; interimText = "";
+    $("tx").innerHTML = '<span class="ph">No speech detected. Click mic to try again</span>';
+    $("statusMsg").textContent = ""; $("sn").disabled = true;
+    return;
+  }
   if (d.type === "start-listening" && !isRecording) {
     fastPollUntil = Date.now() + 2000;
     startRecording();

@@ -19,6 +19,10 @@ let transcriptBuffer: Array<{ text: string; lang: string; timestamp: number }> =
 let accumulatedTranscript = ""
 const MAX_BUFFER_SIZE = 100
 
+// While TTS is playing, the mic hears the assistant voice back. Every transcript
+// from the bridge is echo, not user speech, so it must never reach the chat.
+let ttsSpeaking = false
+
 export function getAccumulatedTranscript(): string {
   return accumulatedTranscript
 }
@@ -26,6 +30,17 @@ export function getAccumulatedTranscript(): string {
 export function clearAccumulatedTranscript(): void {
   accumulatedTranscript = ""
   transcriptBuffer = []
+}
+
+export function setVoiceTTSActive(active: boolean) {
+  if (ttsSpeaking === active) return
+  ttsSpeaking = active
+  if (!active) return
+  clearAccumulatedTranscript()
+  pendingListening = false
+  pendingCommands.push({ type: "tts-speaking", active: true })
+  pendingCommands.push({ type: "clear-transcript" })
+  rendererCallback?.({ type: "voice-tts-state", active: true })
 }
 
 export function getTranscriptBuffer(): Array<{ text: string; lang: string; timestamp: number }> {
@@ -57,12 +72,17 @@ export function setVoiceGender(gender: string) {
 
 export function setVoiceListening(listening: boolean) {
   pendingListening = listening
+  // A new listening session must never rehydrate text from the previous one
+  if (listening) clearAccumulatedTranscript()
   pendingCommands.push({ type: listening ? "start-listening" : "stop-listening" })
   broadcastState()
 }
 
-export function sendVoiceTranscript(text: string) {
-  pendingCommands.push({ type: "transcript-display", text })
+// The renderer must never be able to push text back into the bridge transcript
+// or the accumulator — only real speech recognition may do that.
+export function clearVoiceTranscript() {
+  clearAccumulatedTranscript()
+  pendingCommands.push({ type: "clear-transcript" })
 }
 
 export function getCurrentLanguage() { return currentLanguage }
@@ -79,6 +99,8 @@ function handleMessage(raw: string) {
     }
     if (data.type === "ping") return
     if (data.type === "transcript") {
+      // Echo of the assistant voice while TTS plays — drop it, never forward
+      if (ttsSpeaking) return
       // Only accumulate finals — interim live-stream updates must not double-count
       if (data.final && data.text && data.text.trim()) {
         const entry = { text: data.text.trim(), lang: data.lang || currentLanguage, timestamp: Date.now() }
@@ -91,10 +113,10 @@ function handleMessage(raw: string) {
       rendererCallback?.({ type: "voice-transcript", text: data.text, fullText: data.fullText, isFinal: !!data.final, lang: data.lang })
     }
     else if (data.type === "send-to-chat") {
-      if (data.text && data.text.trim()) {
-        accumulatedTranscript += (accumulatedTranscript ? " " : "") + data.text.trim()
-      }
+      if (ttsSpeaking) return
       rendererCallback?.({ type: "voice-send", text: data.text, lang: data.lang })
+      // The utterance now lives in the chat — drop it so it can never come back
+      clearAccumulatedTranscript()
     }
     else if (data.type === "language-changed") { currentLanguage = data.lang; rendererCallback?.({ type: "voice-language", lang: data.lang }) }
     else if (data.type === "voice-changed") { currentVoiceGender = data.gender; rendererCallback?.({ type: "voice-gender", gender: data.gender }) }
