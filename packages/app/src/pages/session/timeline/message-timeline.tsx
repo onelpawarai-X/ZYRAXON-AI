@@ -347,55 +347,143 @@ export function MessageTimeline(props: {
   const TTS_SERVER = "http://127.0.0.1:19810"
 
   // TTS SERIAL queue — ONE audio at a time, never parallel
-  const ttsAudioQueue: ArrayBuffer[] = []
+  const ttsAudioQueue: Array<{ buffer: ArrayBuffer; text: string }> = []
   let ttsPlaying = false
   let ttsFetching = false
   let ttsAbortController: AbortController | null = null
-  let currentAudio: HTMLAudioElement | null = null
   // Text waiting to be sent to TTS — FIFO queue, never dropped
   const ttsPendingText: string[] = []
   // Safety: reset ttsFetching if stuck for more than 60 seconds
   let ttsLastFetchTime = 0
+  // Word-by-word live caption while speaking — floats above the chat box
+  const [ttsCaption, setTtsCaption] = createSignal("")
+  let ttsCaptionTimer: ReturnType<typeof setTimeout> | null = null
+
+  // Echo guard — mirrors main-process TTS state so the renderer never paints
+  // its own voice into the chat box or re-speaks itself while playing
+  function setRenderTTSActive(active: boolean) {
+    ;(window as any).__zyraxonTTSActiveRender = active
+    const api = (window as any).api
+    if (api?.setVoiceTTSActive) api.setVoiceTTSActive(active)
+  }
+
+  function revealCaption(text: string, durationMs: number) {
+    if (ttsCaptionTimer) { clearTimeout(ttsCaptionTimer); ttsCaptionTimer = null }
+    const tokens = text.split(/(\s+)/).filter((t) => t.trim())
+    if (tokens.length === 0) { setTtsCaption(""); return }
+    const step = Math.max(45, Math.floor(durationMs / tokens.length))
+    let idx = 0
+    setTtsCaption(tokens[0])
+    const tick = () => {
+      idx++
+      if (idx >= tokens.length) { setTtsCaption(""); return }
+      setTtsCaption(tokens.slice(0, idx + 1).join(" "))
+      ttsCaptionTimer = setTimeout(tick, step)
+    }
+    ttsCaptionTimer = setTimeout(tick, step)
+  }
 
   function stopAllTTS() {
+    ttsGeneration++
+    if (ttsCaptionTimer) { clearTimeout(ttsCaptionTimer); ttsCaptionTimer = null }
+    setTtsCaption("")
+    setRenderTTSActive(false)
     if (ttsAbortController) {
       ttsAbortController.abort()
       ttsAbortController = null
     }
-    if (currentAudio) {
-      try { currentAudio.pause(); currentAudio.currentTime = 0 } catch {}
-      currentAudio = null
+    if (ttsActiveSource) {
+      try { ttsActiveSource.onended = null; ttsActiveSource.stop() } catch {}
+      ttsActiveSource = null
     }
+    ttsNextStartAt = 0
     ttsAudioQueue.length = 0
     ttsPlaying = false
     ttsFetching = false
     ttsPendingText.length = 0
   }
 
-  function playNextInQueue() {
-    if (ttsAudioQueue.length === 0) { ttsPlaying = false; currentAudio = null; return }
-    ttsPlaying = true
-    const buffer = ttsAudioQueue.shift()!
-    try {
-      const blob = new Blob([buffer], { type: "audio/mpeg" })
-      const url = URL.createObjectURL(blob)
-      const audio = new Audio(url)
-      currentAudio = audio
-      audio.onended = () => { URL.revokeObjectURL(url); currentAudio = null; playNextInQueue() }
-      audio.onerror = () => { URL.revokeObjectURL(url); currentAudio = null; playNextInQueue() }
-      audio.play().catch(() => { URL.revokeObjectURL(url); currentAudio = null; playNextInQueue() })
-    } catch {
-      playNextInQueue()
-    }
+  // Gapless WebAudio scheduler — every chunk is scheduled at the exact end of the
+  // previous one, so speech is continuous and two voices can never overlap.
+  let ttsAudioContext: AudioContext | null = null
+  let ttsScheduling = false
+  let ttsGeneration = 0
+  let ttsNextStartAt = 0
+  let ttsActiveSource: AudioBufferSourceNode | null = null
+
+  function getTTSContext(): AudioContext {
+    if (!ttsAudioContext) ttsAudioContext = new AudioContext()
+    if (ttsAudioContext.state === "suspended") void ttsAudioContext.resume()
+    return ttsAudioContext
   }
 
-  function playTTSBuffer(buffer: ArrayBuffer) {
-    ttsAudioQueue.push(buffer)
-    if (!ttsPlaying) playNextInQueue()
+  function finishTTSPlayback(generation: number) {
+    if (ttsGeneration !== generation) return
+    ttsPlaying = false
+    ttsActiveSource = null
+    setTtsCaption("")
+    setRenderTTSActive(false)
+  }
+
+  async function scheduleFromQueue() {
+    if (ttsScheduling) return
+    ttsScheduling = true
+    const generation = ttsGeneration
+    try {
+      while (ttsAudioQueue.length > 0) {
+        const entry = ttsAudioQueue.shift()!
+        const ctx = getTTSContext()
+        let audio: AudioBuffer
+        try {
+          audio = await ctx.decodeAudioData(entry.buffer.slice(0))
+        } catch {
+          continue
+        }
+        if (ttsGeneration !== generation) return
+        const startAt = Math.max(ctx.currentTime + 0.02, ttsNextStartAt)
+        ttsNextStartAt = startAt + audio.duration
+        const source = ctx.createBufferSource()
+        source.buffer = audio
+        source.connect(ctx.destination)
+        source.start(startAt)
+        ttsActiveSource = source
+        revealCaption(entry.text, audio.duration * 1000)
+        source.onended = () => {
+          if (ttsGeneration !== generation) return
+          if (ttsAudioQueue.length > 0 || ttsScheduling) {
+            if (ttsAudioQueue.length > 0 && !ttsScheduling) void scheduleFromQueue()
+            return
+          }
+          finishTTSPlayback(generation)
+        }
+      }
+    } finally {
+      if (ttsGeneration === generation) ttsScheduling = false
+    }
+    if (ttsGeneration !== generation) return
+    if (ttsAudioQueue.length > 0) {
+      void scheduleFromQueue()
+      return
+    }
+    // Queue drained — playback continues until the last scheduled chunk ends
+    if (!ttsActiveSource) finishTTSPlayback(generation)
+  }
+
+  function playTTSBuffer(buffer: ArrayBuffer, text = "") {
+    ttsAudioQueue.push({ buffer, text })
+    ttsPlaying = true
+    setRenderTTSActive(true)
+    void scheduleFromQueue()
   }
 
   // Expose stopAllTTS globally
   ;(window as any).__stopTTS = stopAllTTS
+
+  // Play TTS audio delivered over IPC (e.g. the Settings "Test Voice" button)
+  // through the same serial queue so it can NEVER overlap the response TTS
+  const removeVoiceTTSAudio = (window as any).api?.onVoiceTTSAudio?.((buffer: ArrayBuffer) => {
+    playTTSBuffer(buffer, "")
+  }) as (() => void) | undefined
 
   function loadPersistedSpokenIds(): string[] {
     try {
@@ -565,7 +653,7 @@ export function MessageTimeline(props: {
         if (!resp.ok || controller.signal.aborted) continue
         const buf = await resp.arrayBuffer()
         if (buf && buf.byteLength > 100 && !controller.signal.aborted) {
-          playTTSBuffer(buf)
+          playTTSBuffer(buf, chunk)
         }
       } catch (e: any) {
         if (e?.name !== "AbortError") ttsServerHealthy = false
@@ -582,6 +670,12 @@ export function MessageTimeline(props: {
   const ttsActiveProcessing = new Set<string>()
   // Track last TTS chunk per message to prevent duplicate sends across retries
   const ttsLastChunkHash = new Map<string, string>()
+  // Real-time pacing: while the AI is still writing, speak short chunks on a fixed
+  // cadence so audio starts immediately instead of waiting for the whole reply.
+  const ttsLastFlushAt = new Map<string, number>()
+  const TTS_FLUSH_INTERVAL_MS = 120
+  const TTS_FLUSH_MIN_CHARS = 4
+  const TTS_FLUSH_MAX_CHARS = 60
 
   function processTTSForMessages() {
     if (ttsProcessingGuard) return
@@ -632,41 +726,31 @@ export function MessageTimeline(props: {
           // Mark as actively processing to prevent re-entry
           ttsActiveProcessing.add(msg.id)
 
-          // ACTIVE message: send each complete sentence immediately
+          // ACTIVE message: speak while the AI is still writing — flush whole words
+          // on a short cadence, never waiting for a sentence end.
           const unsentText = fullText.slice(alreadySent.length)
           if (unsentText.length < 1) { ttsActiveProcessing.delete(msg.id); continue }
 
-          // Find best sentence/phrase break point
-          const sentenceEnders = ["।", "॥", ".", "!", "?", "\n"]
-          let bestEnd = -1
-          let lastSpace = -1
-          for (let ci = 0; ci < unsentText.length; ci++) {
-            const ch = unsentText[ci]
-            if (ch === " ") lastSpace = ci
-            for (const sep of sentenceEnders) {
-              if (ch === sep) { bestEnd = ci; break }
+          const now = Date.now()
+          const sinceFlush = now - (ttsLastFlushAt.get(msg.id) ?? 0)
+          const endsAtWordBoundary = /\s/.test(unsentText[unsentText.length - 1] ?? "")
+          const sizeGate = sinceFlush >= TTS_FLUSH_INTERVAL_MS ? TTS_FLUSH_MIN_CHARS : TTS_FLUSH_MAX_CHARS
+          if (unsentText.length < sizeGate || !endsAtWordBoundary) {
+            // waiting for more words
+          } else {
+            let cut = unsentText.length
+            if (unsentText.length > TTS_FLUSH_MAX_CHARS) {
+              // never cut mid-word — back off to the last space inside the budget
+              const space = unsentText.lastIndexOf(" ", TTS_FLUSH_MAX_CHARS)
+              if (space > TTS_FLUSH_MIN_CHARS) cut = space
             }
-            if (bestEnd >= 0) break
-          }
-
-          let chunk = ""
-          if (bestEnd >= 0) {
-            // Found sentence boundary — send immediately
-            chunk = unsentText.slice(0, bestEnd + 1).trim()
-          } else if (unsentText.length >= 200) {
-            // No sentence boundary but very long — force send at word boundary
-            if (lastSpace > 20) {
-              chunk = unsentText.slice(0, lastSpace).trim()
-            } else {
-              chunk = unsentText.trim()
+            const chunk = unsentText.slice(0, cut).trim()
+            if (chunk.length >= 3) {
+              ttsSentText.set(msg.id, alreadySent + chunk)
+              ttsLastChunkHash.set(msg.id, textHash)
+              ttsLastFlushAt.set(msg.id, now)
+              sendTTSText(chunk)
             }
-          }
-          // else: waiting for sentence boundary or 200+ chars
-
-          if (chunk.length >= 3) {
-            ttsSentText.set(msg.id, alreadySent + chunk)
-            ttsLastChunkHash.set(msg.id, textHash)
-            sendTTSText(chunk)
           }
           // Release processing flag after a short delay to allow next cycle to check
           setTimeout(() => ttsActiveProcessing.delete(msg.id), 2000)
@@ -725,10 +809,10 @@ export function MessageTimeline(props: {
     }
   ))
 
-  // EFFECT 2: Polling — every 200ms for real-time TTS streaming
+  // EFFECT 2: Polling — 80ms so newly streamed words are picked up almost instantly
   const ttsPollInterval = setInterval(() => {
     processTTSForMessages()
-  }, 200)
+  }, 80)
 
   // Listen for TTS stop events (when user sends a new message)
   const handleTTSStop = () => stopAllTTS()
@@ -737,6 +821,7 @@ export function MessageTimeline(props: {
   onCleanup(() => {
     clearInterval(ttsPollInterval)
     window.removeEventListener("tts-stop", handleTTSStop)
+    if (removeVoiceTTSAudio) removeVoiceTTSAudio()
     delete (window as any).__stopTTS
     stopAllTTS()
   })
@@ -1730,6 +1815,19 @@ export function MessageTimeline(props: {
 
   return (
     <div class="relative w-full h-full min-w-0">
+      <Show when={ttsCaption()}>
+        <div class="absolute bottom-20 left-1/2 z-[70] -translate-x-1/2 pointer-events-none max-w-[70%]">
+          <div
+            class="px-4 py-2 rounded-xl text-[14px] leading-6 text-center text-v2-text-text-muted"
+            style={{
+              background: "color-mix(in srgb, var(--v2-background-bg-base) 94%, transparent)",
+              "box-shadow": "var(--v2-elevation-raised)",
+            }}
+          >
+            {ttsCaption()}
+          </div>
+        </div>
+      </Show>
       <div
         class="absolute left-1/2 -translate-x-1/2 z-[60] pointer-events-none transition-all duration-200 ease-out"
         classList={{
