@@ -7,6 +7,8 @@
     "module": "nodenext",
     "declaration": true,
     "moduleResolution": "nodenext",
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
     "lib": ["es2022", "dom", "dom.iterable"]
   },
   "include": ["src"]
