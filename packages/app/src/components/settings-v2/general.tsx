@@ -1,4 +1,5 @@
-import { Component, Show, createMemo, createResource, onMount } from "solid-js"
+﻿import { Component, Show, createMemo, createResource, onMount } from "solid-js"
+import { useParams } from "@solidjs/router"
 import { createMediaQuery } from "@solid-primitives/media"
 import { ButtonV2 } from "@zyraxon-ai/ui/v2/button-v2"
 import { SelectV2 } from "@zyraxon-ai/ui/v2/select-v2"
@@ -7,6 +8,7 @@ import { TextInputV2 } from "@zyraxon-ai/ui/v2/text-input-v2"
 import { useTheme, type ColorScheme } from "@zyraxon-ai/ui/theme/context"
 import { useDialog } from "@zyraxon-ai/ui/context/dialog"
 import { useLanguage } from "@/context/language"
+import { useLayout } from "@/context/layout"
 import { usePermission } from "@/context/permission"
 import { usePlatform } from "@/context/platform"
 import { useServerSync } from "@/context/server-sync"
@@ -24,6 +26,7 @@ import {
   terminalInput,
   useSettings,
 } from "@/context/settings"
+import { decode64 } from "@/utils/base64"
 import { playSoundById, SOUND_OPTIONS } from "@/utils/sound"
 import { Link } from "../link"
 import { SettingsListV2 } from "./parts/list"
@@ -53,6 +56,20 @@ type ShellSelectOption = {
   value: string
   label: string
 }
+
+type PermissionMode = "deny" | "allow" | "always"
+
+type PermissionModeOption = {
+  id: PermissionMode
+  value: PermissionMode
+  label: string
+}
+
+const PERMISSION_MODES: PermissionModeOption[] = [
+  { id: "deny", value: "deny", label: "Deny" },
+  { id: "allow", value: "allow", label: "Allow" },
+  { id: "always", value: "always", label: "Always" },
+]
 
 // To prevent audio from overlapping/playing very quickly when navigating the settings menus,
 // delay the playback by 100ms during quick selection changes and pause existing sounds.
@@ -86,57 +103,58 @@ export const SettingsGeneralV2: Component<{
 }> = (props) => {
   const theme = useTheme()
   const language = useLanguage()
+  const layout = useLayout()
   const permission = usePermission()
   const platform = usePlatform()
   const dialog = useDialog()
   const settings = useSettings()
   const serverSync = useServerSync()
   const serverSdk = useServerSDK()
+  const params = useParams<{ dir?: string }>()
   const mobile = createMediaQuery("(max-width: 767px)")
 
   const updater = useUpdaterAction()
 
-  const dir = createMemo(() => {
-    if (!props.sessionID) return undefined
-    return serverSync().session.lineage.peek(props.sessionID)?.session.directory
-  })
-
   const permDir = createMemo(() => {
-    try {
-      if (props.sessionID) {
-        return serverSync().session.lineage.peek(props.sessionID)?.session.directory
-      }
-      const sessions = Object.values(serverSync().session.data.info)
-      if (sessions.length > 0) return sessions[0]?.directory
-    } catch {}
-    return undefined
+    const sessionID = props.sessionID
+    if (sessionID) {
+      const directory = serverSync().session.lineage.peek(sessionID)?.session.directory
+      if (directory) return directory
+    }
+    const route = decode64(params.dir)
+    if (route) return route
+    return (
+      layout.home.selection().directory ??
+      layout.projects.list()[0]?.worktree ??
+      (serverSync().data.path.home || undefined)
+    )
   })
 
-  const permSessionID = createMemo(() => {
-    try {
-      if (props.sessionID) return props.sessionID
-      const sessions = Object.values(serverSync().session.data.info)
-      if (sessions.length > 0) return sessions[0]?.id
-    } catch {}
-    return undefined
-  })
-  const accepting = createMemo(() => {
-    const value = dir()
-    if (!value || !props.sessionID) return false
-    return permission.isAutoAccepting(props.sessionID, value)
+  // With no session and no known directory the mode applies app-wide, so the
+  // control must stay usable instead of being disabled.
+  const permGlobal = createMemo(() => !permDir())
+
+  const currentPermissionMode = createMemo<PermissionMode>(() => {
+    const directory = permDir()
+    if (!directory) return permission.getGlobalPermissionMode() as PermissionMode
+    const sessionID = props.sessionID
+    const mode = sessionID
+      ? permission.getPermissionMode(sessionID, directory)
+      : permission.getDirectoryPermissionMode(directory)
+    return PERMISSION_MODES.find((option) => option.value === mode)?.value ?? "allow"
   })
 
-  const toggleAccept = (checked: boolean) => {
-    const value = dir()
-    if (!value || !props.sessionID) return
-
-    if (checked) {
-      permission.enableAutoAccept(props.sessionID, value)
+  const setPermissionMode = (mode: PermissionMode) => {
+    const directory = permDir()
+    if (!directory) {
+      permission.setGlobalPermissionMode(mode)
       return
     }
-
-    permission.disableAutoAccept(props.sessionID, value)
+    permission.setDirectoryPermissionMode(directory, mode)
+    const sessionID = props.sessionID
+    if (sessionID) permission.setPermissionMode(sessionID, directory, mode)
   }
+
   const desktop = createMemo(() => platform.platform === "desktop")
 
   const themeOptions = createMemo<ThemeOption[]>(() => theme.ids().map((id) => ({ id, name: theme.name(id) })))
@@ -293,68 +311,23 @@ export const SettingsGeneralV2: Component<{
         </SettingsRowV2>
 
         <SettingsRowV2
-          title="Permission mode"
-          description="Control how AI permission requests are handled"
+          title="Permission"
+          description={
+            permGlobal()
+              ? "Allow, deny, or auto-approve AI requests for all projects"
+              : "Allow, deny, or auto-approve AI requests for this project"
+          }
         >
           <SelectV2
             appearance="inline"
             data-action="settings-permission-mode"
-            options={[
-              { id: "deny", value: "deny", label: "Deny — always ask permission" },
-              { id: "allow", value: "allow", label: "Allow — ask once per action" },
-              { id: "always", value: "always", label: "Always — never ask again" },
-            ]}
-            current={(() => {
-              try {
-                const directory = permDir()
-                const sid = permSessionID()
-                if (sid && directory) {
-                  const mode = permission.getPermissionMode(sid, directory)
-                  if (mode === "always") return { id: "always", value: "always", label: "Always — never ask again" }
-                  if (mode === "deny") return { id: "deny", value: "deny", label: "Deny — always ask permission" }
-                }
-                if (directory) {
-                  if (permission.isAutoAcceptingDirectory(directory)) {
-                    return { id: "always", value: "always", label: "Always — never ask again" }
-                  }
-                }
-              } catch {}
-              return { id: "allow", value: "allow", label: "Allow — ask once per action" }
-            })()}
-            value={(o) => o.value}
-            label={(o) => o.label}
+            options={PERMISSION_MODES}
+            current={PERMISSION_MODES.find((option) => option.value === currentPermissionMode())}
+            value={(option) => option.value}
+            label={(option) => option.label}
             onSelect={(option) => {
               if (!option) return
-              const directory = permDir()
-              const sid = permSessionID()
-              if (sid && directory) {
-                if (option.value === "always") {
-                  permission.enableAutoAccept(sid, directory)
-                  if (!permission.isAutoAcceptingDirectory(directory)) {
-                    permission.toggleAutoAcceptDirectory(directory)
-                  }
-                } else if (option.value === "deny") {
-                  permission.setPermissionMode(sid, directory, "deny")
-                  if (permission.isAutoAcceptingDirectory(directory)) {
-                    permission.toggleAutoAcceptDirectory(directory)
-                  }
-                } else {
-                  permission.setPermissionMode(sid, directory, "allow")
-                  if (permission.isAutoAcceptingDirectory(directory)) {
-                    permission.toggleAutoAcceptDirectory(directory)
-                  }
-                }
-              } else if (directory) {
-                if (option.value === "always") {
-                  if (!permission.isAutoAcceptingDirectory(directory)) {
-                    permission.toggleAutoAcceptDirectory(directory)
-                  }
-                } else {
-                  if (permission.isAutoAcceptingDirectory(directory)) {
-                    permission.toggleAutoAcceptDirectory(directory)
-                  }
-                }
-              }
+              setPermissionMode(option.value)
             }}
             placement="bottom-end"
             gutter={6}
@@ -742,7 +715,7 @@ export const SettingsGeneralV2: Component<{
           <div data-action="settings-voice-gender" class="flex gap-2">
             <ButtonV2
               size="normal"
-              variant={settings.general.voiceGender() === "male" ? "primary" : "neutral"}
+              variant={settings.general.voiceGender() === "male" ? "contrast" : "neutral"}
               onClick={() => {
                 settings.general.setVoiceGender("male")
                 try { ;(window as any).api?.voiceSetGender?.("male") } catch {}
@@ -752,7 +725,7 @@ export const SettingsGeneralV2: Component<{
             </ButtonV2>
             <ButtonV2
               size="normal"
-              variant={settings.general.voiceGender() === "female" ? "primary" : "neutral"}
+              variant={settings.general.voiceGender() === "female" ? "contrast" : "neutral"}
               onClick={() => {
                 settings.general.setVoiceGender("female")
                 try { ;(window as any).api?.voiceSetGender?.("female") } catch {}
@@ -846,9 +819,9 @@ export const SettingsGeneralV2: Component<{
               try {
                 const lang = settings.general.voiceLanguage()?.split("-")[0] || "en"
                 const testText = lang === "bn"
-                  ? "আমি ZYRAXON AI। আমি আপনার সাথে কথা বলতে পারি।"
+                  ? "à¦†à¦®à¦¿ ZYRAXON AIà¥¤ à¦†à¦®à¦¿ à¦†à¦ªà¦¨à¦¾à¦° à¦¸à¦¾à¦¥à§‡ à¦•à¦¥à¦¾ à¦¬à¦²à¦¤à§‡ à¦ªà¦¾à¦°à¦¿à¥¤"
                   : lang === "hi"
-                  ? "मैं ZYRAXON AI हूँ। मैं आपसे बात कर सकता हूँ।"
+                  ? "à¤®à¥ˆà¤‚ ZYRAXON AI à¤¹à¥‚à¤à¥¤ à¤®à¥ˆà¤‚ à¤†à¤ªà¤¸à¥‡ à¤¬à¤¾à¤¤ à¤•à¤° à¤¸à¤•à¤¤à¤¾ à¤¹à¥‚à¤à¥¤"
                   : "Hello! I am ZYRAXON AI. I can speak to you."
                 ;(window as any).api?.voiceTTSSpeak?.(testText)
               } catch (e) {
