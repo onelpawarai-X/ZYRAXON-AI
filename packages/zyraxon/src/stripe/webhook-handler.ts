@@ -128,9 +128,13 @@ function handleSubscriptionUpdated(event: WebhookEvent): Effect.Effect<void, Err
 
     if (!subscriptionId) return
 
+    const existing = yield* readSubscription()
+    if (existing.stripeSubscriptionId !== subscriptionId) return
+
     const items = obj.items as Record<string, unknown> | undefined
     const priceId = extractPriceId(items)
-    const tier = priceId ? (PRICE_TO_TIER[priceId] ?? "free") : "free"
+    // Never downgrade tier if the price mapping is missing; keep the last known tier.
+    const tier = priceId ? (PRICE_TO_TIER[priceId] ?? existing.tier) : existing.tier
 
     const currentPeriodStart = typeof obj.current_period_start === "number"
       ? new Date(obj.current_period_start * 1000).toISOString()
@@ -138,9 +142,6 @@ function handleSubscriptionUpdated(event: WebhookEvent): Effect.Effect<void, Err
     const currentPeriodEnd = typeof obj.current_period_end === "number"
       ? new Date(obj.current_period_end * 1000).toISOString()
       : null
-
-    const existing = yield* readSubscription()
-    if (existing.stripeSubscriptionId !== subscriptionId) return
 
     const mappedStatus: SubscriptionData["status"] =
       status === "active" ? "active" :

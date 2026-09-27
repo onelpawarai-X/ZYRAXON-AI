@@ -40,12 +40,12 @@ const MODE_TIER_REQUIREMENTS: Record<string, SubscriptionTier> = {
   explore: "free",
   compaction: "free",
   title: "free",
-  auto: "free",
+  auto: "ultra",
   pro: "pro",
   beast: "max",
   apex: "ultra",
   "dark-emperor": "ultra",
-  vision: "max",
+  vision: "free",
   "pro-builder": "pro",
 }
 
