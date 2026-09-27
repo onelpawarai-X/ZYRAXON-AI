@@ -23,6 +23,7 @@ export type PromptInputV2SelectControl = {
   options: Accessor<PromptInputV2Option[]>
   current: Accessor<string>
   onSelect: (id: string) => void
+  onLocked?: (id: string) => void
 }
 
 export type PromptInputV2ViewConfig = {
