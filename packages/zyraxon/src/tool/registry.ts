@@ -41,6 +41,7 @@ import { SvgGenerateTool } from "./svg_generate"
 import { SiteDomainTool } from "./site_domain"
 import { SitePreviewTool } from "./site_preview"
 import { GithubConnectTool } from "./github_connect"
+import { ModeSwitchTool } from "./mode-switch"
 import * as Truncate from "./truncate"
 import { ApplyPatchTool } from "./apply_patch"
 import { Glob } from "@zyraxon-ai/core/util/glob"
@@ -139,6 +140,7 @@ const layer = Layer.effect(
     const siteDomainToolDef = yield* SiteDomainTool
     const sitePreviewToolDef = yield* SitePreviewTool
     const githubConnectToolDef = yield* GithubConnectTool
+    const modeSwitchToolDef = yield* ModeSwitchTool
     const agent = yield* Agent.Service
     const codeMode = flags.experimentalCodeMode ? yield* Effect.promise(() => import("./code-mode")) : undefined
     const codeModeTool = codeMode ? yield* codeMode.CodeModeTool : undefined
@@ -364,6 +366,7 @@ const layer = Layer.effect(
           site_domain: Tool.init(siteDomainToolDef),
           site_preview: Tool.init(sitePreviewToolDef),
           github_connect: Tool.init(githubConnectToolDef),
+          x_mode_switch: Tool.init(modeSwitchToolDef),
           ...(codeModeTool ? { execute: Tool.init(codeModeTool) } : {}),
         })
 
@@ -398,6 +401,7 @@ const layer = Layer.effect(
             tool.site_domain,
             tool.site_preview,
             tool.github_connect,
+            tool.x_mode_switch,
             ...(tool.execute ? [tool.execute] : []),
             ...(flags.experimentalLspTool ? [tool.lsp] : []),
             ...(flags.experimentalPlanMode && flags.client === "cli" ? [tool.plan] : []),
