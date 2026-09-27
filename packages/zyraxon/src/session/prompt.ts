@@ -1433,12 +1433,13 @@ const layer = Layer.effect(
             yield* Effect.logInfo("loop_timing", { "session.id": sessionID, step, op: "autoInjectContext", ms: Date.now() - _tAutoCtx })
             if (autoCtx) system.push(autoCtx)
 
-            // AUTO VISION: Inject latest daemon screenshot as image for vision-capable models only
-            // 24/7 daemon captures every 3s — only the latest single frame exists
-            // Non-vision models skip this to avoid provider slowness
+            // AUTO VISION: Inject latest daemon screenshot as image ONLY in VISION mode
+            // The daemon is started ONLY when the user is in VISION mode (see Agent.Activate).
+            // Non-vision modes must never inject screen frames automatically.
             let finalMessages = [...modelMsgs]
             const supportsImage = model.capabilities?.input?.image ?? false
-            if (supportsImage) {
+            const isVisionMode = lastUser.agent === "vision"
+            if (isVisionMode && supportsImage) {
               try {
               const { capture: daemonCap, buffer: daemonBuf } = autoScreenVision.getLatestCapture()
               if (daemonCap && daemonBuf && daemonBuf.length > 500 && daemonCap.filepath) {
@@ -1475,7 +1476,8 @@ const layer = Layer.effect(
               yield* Effect.logError("auto-vision injection failed", { error: e })
             }
             } else {
-              yield* Effect.logInfo("auto-vision skipped — model does not support image input", {
+              yield* Effect.logInfo("auto-vision skipped — non-vision mode or model does not support image input", {
+                agent: lastUser.agent,
                 model: `${model.providerID}/${model.id}`,
               })
             }
