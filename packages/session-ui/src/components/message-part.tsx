@@ -269,6 +269,22 @@ function next(text: string, start: number) {
   return end
 }
 
+const textSegmenter =
+  typeof Intl.Segmenter === "undefined"
+    ? undefined
+    : new Intl.Segmenter(undefined, { granularity: "grapheme" })
+
+// Advance `index` to the next grapheme boundary so the streaming pacer never
+// slices mid-cluster (breaks Bengali conjuncts/combining marks and ZWJ emoji).
+function graphemeCeil(text: string, index: number) {
+  if (index >= text.length) return text.length
+  if (!textSegmenter) return index
+  for (const part of textSegmenter.segment(text)) {
+    if (part.index + part.segment.length >= index) return part.index + part.segment.length
+  }
+  return text.length
+}
+
 function createPacedValue(getValue: () => string, live?: () => boolean) {
   const [value, setValue] = createSignal(getValue())
   let shown = getValue()
@@ -300,7 +316,7 @@ function createPacedValue(getValue: () => string, live?: () => boolean) {
       sync(text)
       return
     }
-    const end = next(text, shown.length)
+    const end = graphemeCeil(text, next(text, shown.length))
     sync(text.slice(0, end))
     if (end < text.length) timeout = setTimeout(run, TEXT_RENDER_PACE_MS)
   }

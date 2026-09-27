@@ -33,7 +33,7 @@ let daemonInterval: NodeJS.Timeout | null = null
 let daemonRunning = false
 let latestCapture: ScreenCapture | null = null
 let latestBuffer: Buffer | null = null
-const CAPTURE_INTERVAL_MS = 1000 // 1 second — FAST
+const CAPTURE_INTERVAL_MS = 2000 // 2 seconds — VISION MODE capture rate
 
 // Cached PowerShell script for maximum speed (compiled once, reused)
 let cachedPsScript: string | null = null

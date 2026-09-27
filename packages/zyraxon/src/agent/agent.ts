@@ -198,7 +198,7 @@ const layer = Layer.effect(
           },
           plan: {
             name: "plan",
-            description: "PLAN MODE — Read-only architecture and planning mode. Can read files, grep, glob, and browse the web for research. Cannot write, edit, or execute shell commands. All file modifications are denied except plan documents in .zyraxon/plans/. Designed for analysis, architecture decisions, and change planning before implementation.",
+            description: "PLAN MODE — Read-only architecture and planning mode. Can read files, grep, glob, browse the web, and run non-destructive PowerShell tests for research/verification. CANNOT write, edit, or modify any file. All file writes/edits are hard-denied except plan documents in .zyraxon/plans/. CAN switch to another mode (build/beast/pro/etc.) at any time to continue working with the right permissions. Designed for analysis, architecture decisions, and change planning before implementation.",
             options: {},
             prompt: PROMPT_PLAN,
             permission: Permission.merge(
@@ -218,7 +218,7 @@ const layer = Layer.effect(
                   [path.relative(ctx.worktree, path.join(Global.Path.data, path.join("plans", "*.md")))]: "allow",
                 },
                 write: "deny",
-                shell: "deny",
+                shell: "allow",
                 self_evolve: "deny",
                 memory: "deny",
               }),
@@ -367,7 +367,7 @@ const layer = Layer.effect(
           },
           vision: {
             name: "vision",
-            description: "VISION MODE — Real-time screen analysis mode with continuous screen capture, frame analysis, scene change detection, and activity tracking. Has read access to files and shell for executing observed actions. Write and edit are denied to prevent unintended modifications. Auto-starts the vision context daemon when activated.",
+            description: "VISION MODE — Real-time screen analysis mode with continuous 2-second screen capture, frame analysis, scene change detection, and activity tracking. Has read access to files and shell for executing observed actions. Write and edit are denied to prevent unintended modifications. Auto-starts the vision context daemon when activated.",
             options: {},
             color: "#8B5CF6",
             prompt: PROMPT_VISION,
