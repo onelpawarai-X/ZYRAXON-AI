@@ -1,7 +1,4 @@
-import { readFileSync, existsSync } from "node:fs"
-import { join } from "node:path"
-import { homedir } from "node:os"
-import { getCurrentTier, hasAccess, TIER_ORDER, type Tier, TOOL_TIER_MAP } from "../subscription/canonical"
+import { getCurrentTier, hasAccess, readSubState, TIER_ORDER, type Tier, TOOL_TIER_MAP } from "../subscription/canonical"
 import { xToolRegistry } from "./x-tool-registry"
 
 interface SubState {
@@ -10,6 +7,7 @@ interface SubState {
   expiresAt: number | null
   secretCode: string | null
   stripeSessionId: string | null
+  status?: string
 }
 
 interface SubStatusResult {
@@ -31,17 +29,15 @@ interface SubStatusResult {
   error?: string
 }
 
-function readSubState(): SubState {
-  const freeState: SubState = { tier: "free", activatedAt: null, expiresAt: null, secretCode: null, stripeSessionId: null }
-  try {
-    const filePath = join(homedir(), ".zyraxon", "subscription.json")
-    if (!existsSync(filePath)) return freeState
-    const data = JSON.parse(readFileSync(filePath, "utf-8"))
-    if (data.expiresAt && Date.now() > data.expiresAt) return freeState
-    if (TIER_ORDER.includes(data.tier)) return data as SubState
-    return freeState
-  } catch {
-    return freeState
+function readSubStateLocal(): SubState {
+  const state = readSubState()
+  return {
+    tier: state.tier,
+    activatedAt: state.activatedAt,
+    expiresAt: state.expiresAt,
+    secretCode: state.secretCode,
+    stripeSessionId: state.stripeSessionId,
+    status: state.status,
   }
 }
 
@@ -84,7 +80,7 @@ const FEATURE_INFO: Record<Tier, string> = {
 }
 
 export function execute(args: any): SubStatusResult {
-  const state = readSubState()
+  const state = readSubStateLocal()
   const currentTier = state.tier
   const activeTier = getCurrentTier()
 
