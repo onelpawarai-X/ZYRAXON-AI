@@ -17,9 +17,11 @@ import { createPromptSubmit } from "@/components/prompt-input/submit"
 import { selectionFromLines, type SelectedLineRange, useFile } from "@/context/file"
 import { useComments } from "@/context/comments"
 import { useCommand } from "@/context/command"
+import { ZYRAXON_AGENTS, type ZyraxonAgentDef } from "@/context/collab"
 import { useLanguage } from "@/context/language"
 import { useLayout } from "@/context/layout"
 import { usePermission } from "@/context/permission"
+import { useSubscription } from "@/context/subscription"
 import { type ImageAttachmentPart, usePrompt } from "@/context/prompt"
 import { usePlatform } from "@/context/platform"
 import { useSDK } from "@/context/sdk"
@@ -189,6 +191,7 @@ export function usePromptInputV2Controller(props: PromptInputV2ControllerProps):
   const language = useLanguage()
   const platform = usePlatform()
   const prompt = props.state ?? usePrompt()
+  const subscription = useSubscription()
   let editor: HTMLDivElement | undefined
 
   const interaction = createPromptInputV2State()
@@ -237,6 +240,20 @@ export function usePromptInputV2Controller(props: PromptInputV2ControllerProps):
     }),
   )
   const designPlaceholder = () => promptDesignPlaceholder(mode(), placeholder())
+
+  const agentDefFor = (name: string): ZyraxonAgentDef =>
+    ZYRAXON_AGENTS.find((a) => a.id === name || a.name.toLowerCase() === name.toLowerCase()) ?? {
+      id: name,
+      name,
+      icon: "AG",
+      color: "#6B7280",
+      description: name,
+      capabilities: [],
+      canDelegateTo: [],
+      tier: "free",
+    }
+
+  const agentLocked = (name: string) => !subscription.hasAccess(subscription.tier(), agentDefFor(name).tier)
 
   const historyComments = () => {
     const byID = new Map(comments.all().map((item) => [`${item.file}\n${item.id}`, item] as const))
@@ -481,9 +498,21 @@ export function usePromptInputV2Controller(props: PromptInputV2ControllerProps):
       agent:
         props.controls.agents.visible && props.controls.agents.options.length > 0
           ? {
-              options: () => props.controls.agents.options.map((name) => ({ id: name, label: name })),
+              options: () =>
+                props.controls.agents.options.map((name) => ({
+                  id: name,
+                  label: name,
+                  locked: agentLocked(name),
+                })),
               current: () => props.controls.agents.current,
-              onSelect: props.controls.agents.select,
+              onSelect: (name) => {
+                if (agentLocked(name)) {
+                  subscription.requestToolAccess(`locked_mode_${name}`)
+                  return
+                }
+                props.controls.agents.select(name)
+              },
+              onLocked: (name) => subscription.requestToolAccess(`locked_mode_${name}`),
             }
           : undefined,
       variant: {

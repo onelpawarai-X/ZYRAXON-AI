@@ -135,6 +135,59 @@ export function PromptInputV2(props: PromptInputV2Props) {
           />
         </Show>
 
+        <div
+          class="flex h-10 shrink-0 items-center gap-1 px-2"
+          aria-hidden={state.mode === "shell"}
+          inert={state.mode === "shell" ? true : undefined}
+          style={buttons()}
+        >
+          <Show when={view.agent}>
+            {(control) => (
+              <PromptInputV2ConfiguredSelect title="Choose agent" keybind={["Mod", "."]} control={control()} />
+            )}
+          </Show>
+          <Show
+            when={props.modelControl}
+            fallback={
+              <Show when={view.model}>
+                {(control) => (
+                  <PromptInputV2ConfiguredSelect
+                    title="Choose model"
+                    keybind={["Mod", "M"]}
+                    control={control()}
+                    model
+                  />
+                )}
+              </Show>
+            }
+          >
+            {props.modelControl}
+          </Show>
+          <Show when={view.variant}>
+            {(control) => (
+              <Show when={control().options().length > 1}>
+                <PromptInputV2ConfiguredSelect title="Choose model variant" control={control()} />
+              </Show>
+            )}
+          </Show>
+          <div class="flex-1" />
+          <PromptInputV2MicButton
+            onTranscript={(text, _lang) => {
+              // Final settle only — live text already streamed via onLiveText; never auto-send
+              props.controller.setText(text)
+              requestAnimationFrame(() => editor?.focus())
+            }}
+            onLiveText={(text) => {
+              // Interim speech streams straight into the chat box as the user speaks
+              props.controller.setText(text)
+            }}
+            onError={(err) => console.error("[Mic]", err)}
+            disabled={state.mode === "shell"}
+            language={props.language}
+            onLanguageChange={props.onLanguageChange}
+          />
+        </div>
+
         <div class="relative min-h-[60px]">
           <div
             ref={(element) => {
@@ -206,51 +259,7 @@ export function PromptInputV2(props: PromptInputV2Props) {
               onContext={props.controller.openContext}
               onShell={props.controller.openShell}
             />
-            <Show when={view.agent}>
-              {(control) => (
-                <PromptInputV2ConfiguredSelect title="Choose agent" keybind={["Mod", "."]} control={control()} />
-              )}
-            </Show>
-            <Show
-              when={props.modelControl}
-              fallback={
-                <Show when={view.model}>
-                  {(control) => (
-                    <PromptInputV2ConfiguredSelect
-                      title="Choose model"
-                      keybind={["Mod", "M"]}
-                      control={control()}
-                      model
-                    />
-                  )}
-                </Show>
-              }
-            >
-              {props.modelControl}
-            </Show>
-            <Show when={view.variant}>
-              {(control) => (
-                <Show when={control().options().length > 1}>
-                  <PromptInputV2ConfiguredSelect title="Choose model variant" control={control()} />
-                </Show>
-              )}
-            </Show>
           </div>
-          <PromptInputV2MicButton
-            onTranscript={(text, _lang) => {
-              // Final settle only — live text already streamed via onLiveText; never auto-send
-              props.controller.setText(text)
-              requestAnimationFrame(() => editor?.focus())
-            }}
-            onLiveText={(text) => {
-              // Interim speech streams straight into the chat box as the user speaks
-              props.controller.setText(text)
-            }}
-            onError={(err) => console.error("[Mic]", err)}
-            disabled={state.mode === "shell"}
-            language={props.language}
-            onLanguageChange={props.onLanguageChange}
-          />
           <PromptInputV2SubmitButton
             mode={state.mode}
             stopping={view.submit.stopping()}
@@ -534,6 +543,7 @@ function PromptInputV2ConfiguredSelect(props: {
         </Show>
       }
       onSelect={props.control.onSelect}
+      onLocked={props.control.onLocked}
     />
   )
 }
@@ -546,8 +556,18 @@ export function PromptInputV2Select(props: {
   currentIcon?: JSX.Element
   class?: string
   onOpenChange?: (open: boolean) => void
+  onLocked?: (id: string) => void
   onSelect: (id: string) => void
 }) {
+  const currentLocked = () => props.options.find((option) => option.id === props.current)?.locked
+  const handleSelect = (id: string) => {
+    const option = props.options.find((option) => option.id === id)
+    if (option?.locked) {
+      props.onLocked?.(id)
+      return
+    }
+    props.onSelect(id)
+  }
   return (
     <MenuV2 gutter={6} modal={false} placement="top-start" onOpenChange={props.onOpenChange}>
       <MenuV2.Trigger
@@ -561,17 +581,34 @@ export function PromptInputV2Select(props: {
         <span class="truncate capitalize leading-5">
           {props.options.find((option) => option.id === props.current)?.label ?? props.current}
         </span>
+        <Show when={currentLocked()}>
+          <span class="flex shrink-0 items-center gap-1 rounded-[4px] bg-v2-overlay-simple-overlay-active px-1.5 text-[10px] font-semibold uppercase tracking-wide text-v2-icon-icon-muted">
+            <Icon name="lock" size="small" class="-ml-0.5" />
+            Locked
+          </span>
+        </Show>
         <span class="-ml-0.5 -mr-1 flex shrink-0">
           <IconV2 name="chevron-down" />
         </span>
       </MenuV2.Trigger>
       <MenuV2.Portal>
         <MenuV2.Content>
-          <MenuV2.RadioGroup value={props.current} onChange={props.onSelect}>
+          <MenuV2.RadioGroup value={props.current} onChange={handleSelect}>
             <For each={props.options}>
               {(option) => (
-                <MenuV2.RadioItem value={option.id} class="capitalize" closeOnSelect>
-                  {option.label}
+                <MenuV2.RadioItem value={option.id} class="capitalize" closeOnSelect={!option.locked}>
+                  <span class="flex w-full items-center justify-between gap-2">
+                    <span>{option.label}</span>
+                    <Show when={option.locked}>
+                      <span
+                        data-lock-badge
+                        class="flex shrink-0 items-center gap-1 rounded-[4px] bg-v2-overlay-simple-overlay-active px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-v2-icon-icon-muted"
+                      >
+                        <Icon name="lock" size="small" />
+                        Locked
+                      </span>
+                    </Show>
+                  </span>
                 </MenuV2.RadioItem>
               )}
             </For>

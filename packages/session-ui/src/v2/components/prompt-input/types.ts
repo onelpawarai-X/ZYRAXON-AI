@@ -90,6 +90,7 @@ export type PromptInputV2Option = {
   id: string
   label: string
   providerID?: string
+  locked?: boolean
 }
 
 export type PromptInputV2Suggestion = {
