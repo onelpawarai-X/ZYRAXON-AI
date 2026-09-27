@@ -9,9 +9,27 @@ export function directoryAcceptKey(directory: string) {
   return `${base64Encode(directory)}/*`
 }
 
+// Key used when no session or directory is known — applies app-wide so a mode can be
+// chosen from Settings without opening a session first.
+export const globalAcceptKey = "*"
+
 function accepted(autoAccept: Record<string, string>, sessionID: string, directory?: string): string | undefined {
   const key = acceptKey(sessionID, directory)
-  return autoAccept[key] ?? autoAccept[sessionID]
+  const direct = autoAccept[key] ?? autoAccept[sessionID]
+  if (direct !== undefined) return direct
+  if (directory) {
+    const mode = autoAccept[directoryAcceptKey(directory)]
+    if (mode !== undefined) return mode
+  }
+  return autoAccept[globalAcceptKey]
+}
+
+export function directoryPermissionMode(autoAccept: Record<string, string>, directory: string): string | undefined {
+  return autoAccept[directoryAcceptKey(directory)] ?? autoAccept[globalAcceptKey]
+}
+
+export function globalPermissionMode(autoAccept: Record<string, string>): string | undefined {
+  return autoAccept[globalAcceptKey]
 }
 
 export function isDirectoryAutoAccepting(autoAccept: Record<string, string>, directory: string) {
@@ -37,15 +55,24 @@ function sessionLineage(session: { id: string; parentID?: string }[], sessionID:
   return ids
 }
 
-export function autoRespondsPermission(
+export function isSessionAutoAccepting(
   autoAccept: Record<string, string>,
   session: { id: string; parentID?: string }[],
   permission: { sessionID: string },
   directory?: string,
 ) {
+  return sessionAutoAccept(autoAccept, session, permission, directory) === "always"
+}
+
+export function permissionAutoResponse(
+  autoAccept: Record<string, string>,
+  session: { id: string; parentID?: string }[],
+  permission: { sessionID: string },
+  directory?: string,
+): "once" | "reject" | undefined {
   const value = sessionAutoAccept(autoAccept, session, permission, directory)
-  if (value === "deny") return false
-  if (value === "always") return true
+  if (value === "always") return "once"
+  if (value === "deny") return "reject"
   return undefined
 }
 
