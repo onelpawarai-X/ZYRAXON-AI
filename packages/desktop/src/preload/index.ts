@@ -198,6 +198,7 @@ const api: ElectronAPI = {
   voiceSendText: (text: string) => ipcRenderer.invoke("voice-send-text", text),
   voiceTTSSpeak: (text: string) => ipcRenderer.send("voice-tts-speak", text),
   voiceTTSStop: () => ipcRenderer.invoke("voice-tts-stop"),
+  setVoiceTTSActive: (active: boolean) => ipcRenderer.send("voice-tts-active", active),
   voiceTTSEnabled: (enabled: boolean) => ipcRenderer.invoke("voice-tts-enabled", enabled),
   onVoiceTTSAudio: (callback: (buffer: ArrayBuffer) => void) => {
     const wrapper = (_event: any, buffer: ArrayBuffer) => callback(buffer)
