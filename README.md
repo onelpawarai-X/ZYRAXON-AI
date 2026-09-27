@@ -58,7 +58,7 @@ Members receive the latest unlock codes from the community. Codes are **only** s
 
 <br/>
 
-**9 Agent Modes** · **805+ Tools** · **Eternal Memory** · **Self-Healing** · **Voice Bridge** · **Self-Evolution**
+**10 Agent Modes** · **805 Tools** · **Eternal Memory** · **Self-Healing** · **Voice Bridge** · **Self-Evolution**
 
 </div>
 
@@ -78,7 +78,7 @@ ZYRAXON is not a chatbot. It's a **desktop AI agent** that reads your files, wri
 
 <div align="center">
 
-### THE 9 MODES OF POWER
+### THE 10 MODES OF POWER
 
 </div>
 
@@ -89,11 +89,12 @@ ZYRAXON is not a chatbot. It's a **desktop AI agent** that reads your files, wri
 | **Build** | ★★★ | Full filesystem + persistent memory. The reliable workhorse. |
 | **Plan** | ★★☆ | Read-only strategic analysis. Plans before action. |
 | **Beast** | ★★★★ | Mission Control (3-level subagents) + Self-Evolution + Subagent Army |
-| **PRO** | ★★★★ | Unlimited memory + auto screen vision + Self-Healing |
+| **PRO** | ★★★★ | Strict quality + security scans + Self-Healing |
 | **APEX PREDATOR** | ★★★★★ | Omega Command Center + Eternal Memory + Annihilation Engine |
 | **DARK EMPEROR** | ★★★★★ | Supreme Sovereignty + 8 ULTRA tools. **Zero Refusal.** |
-| **Vision** | ★★★ | AI's Eyes — real-time screen streaming, frame memory, scene analysis |
+| **Vision** | ★★★ | AI's Eyes — 2s continuous screen capture, frame memory, scene analysis |
 | **Pro Builder** | ★★★★ | Website genesis from natural language. Auto-deploys to GitHub Pages. |
+| **AUTO** | ★★★★★ | Autonomous orchestrator — analyzes tasks, delegates to a parallel sub-agent army, coordinates, delivers. |
 | **General** | ★★☆ | Subagent for delegated tasks. |
 
 <br/>
@@ -165,7 +166,7 @@ Advanced debugging engine with stack trace analysis
 
 <div align="center">
 
-### 805+ TOOLS ACROSS 42+ DOMAINS
+### 805 TOOLS ACROSS 63 CATEGORIES
 
 </div>
 
@@ -175,7 +176,7 @@ Advanced debugging engine with stack trace analysis
 <tr>
 <td width="50%">
 
-#### Core Engine (31)
+#### Core Engine (28)
 | Tool | Purpose |
 |:-----|:--------|
 | shell | Execute terminal commands |
@@ -211,48 +212,18 @@ Advanced debugging engine with stack trace analysis
 </td>
 <td width="50%">
 
-#### Domain Tools (521)
-| Category | Count |
-|:---------|:-----:|
-| Aviation | 24 |
-| Ground (Autonomous) | 18 |
-| Drone / UAV | 21 |
-| Space | 22 |
-| Helicopter / VTOL | 19 |
-| Medical | 9 |
-| Industrial | 15 |
-| Infrastructure | 15 |
-| Security | 15 |
-| Survey | 14 |
-| Agriculture | 15 |
-| Marine | 15 |
-| Construction | 15 |
-| Physical Interface | 8 |
-| Sensors | 8 |
-| SDR (Radio) | 7 |
-| Safety | 7 |
-| Machine Learning | 6 |
-| Digital Twin | 5 |
-| Dashboard | 5 |
-| Alerts | 4 |
-| Data Logger | 5 |
-| Remote Control | 6 |
-| Predictive Maint. | 6 |
-| Decision Support | 6 |
-| Authorization | 6 |
-| Common Sense | 6 |
-| Ethics | 5 |
-| Creativity | 5 |
-| Vehicles | 56 |
-| Extended Math | 38 |
-| Extended Physics | 38 |
-| Extended Chemistry | 22 |
-| Extended Biology | 12 |
-| Extended Engineering | 41 |
-| Extended Finance | 23 |
-| Extended Data Science | 36 |
-| Extended Security | 19 |
-| Extended Daily Life | 37 |
+#### Registered Tools by Tier (805 total)
+| Tier | Tools | What It Unlocks |
+|:-----|:-----:|:----------------|
+| **Free** | 126 | Core engine + life/math/docs/memory basics |
+| **Pro** | 304 | Domain math, chemistry, finance, games, networking, robotics |
+| **Max** | 337 | Vehicles, aviation, drone, marine, security, construction |
+| **Ultra** | 38 | OMNI-KERNEL, ULTRA suite, guardian, singularity, rockets, satellites |
+
+**63 tool categories** in the ecosystem (aircraft, car, drone,
+boat, rocket, robot, vehicles, security, aviation, marine,
+agriculture, construction, industrial, infrastructure, medical,
+survey, sensors, SDR, space, and more).
 
 </td>
 </tr>
@@ -351,14 +322,14 @@ Mic → Chrome → SpeechRecognition → AI → Edge TTS → You hear it.
 |:-----------|:-----------:|:------:|:-------:|:-----:|:---------:|
 | Desktop App | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Embedded VS Code Editor | ✅ | ✅ | ✅ | ❌ | ❌ |
-| 9 Agent Modes | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 10 Agent Modes | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Self-Healing | ✅ | ❌ | ❌ | ⚠️ | ⚠️ |
 | Self-Evolution | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Eternal Memory (50K+) | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
 | Desktop Automation | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Screen Vision | ✅ | ❌ | ❌ | ⚠️ | ❌ |
 | Voice Communication | ✅ | ❌ | ❌ | ❌ | ❌ |
-| 805+ Tools Built-in | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
+| 805 Tools Built-in | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
 | 25+ AI Providers | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
 | Free & Open Source | ✅ | ❌ | ❌ | ❌ | ✅ |
 
@@ -376,12 +347,12 @@ Mic → Chrome → SpeechRecognition → AI → Edge TTS → You hear it.
 
 <br/>
 
-| Tier | Price | Tools | Features |
-|:-----|:------|:-----:|:---------|
-| **Free** | $0 / forever | 57 | Core tools + basic AI |
-| **Pro** | $5 / 15 days | 113 | + Screen Vision, Self-Healing, Memory |
-| **Max** | $15 / 2 months | 370 | + All domain tools, DARK EMPEROR, ULTRA |
-| **Ultra** | $99 / year | 805+ | Everything. Forever. |
+| Tier | Price | Modes | Tools |
+|:-----|:------|:-----:|:-----:|
+| **Free** | $0 / forever | general, build, plan, explore, vision | 126 |
+| **Pro** | $5 / 15 days | + pro, pro-builder | 304 |
+| **Max** | $15 / 2 months | + beast | 337 |
+| **Ultra** | $99 / year | + auto, apex, dark-emperor | 38 ULTRA + everything |
 
 **Secret codes** unlock permanent access. No server. No internet. Pure local.
 
@@ -468,7 +439,7 @@ console.log(response.text)
 | Feature | Description |
 |:--------|:------------|
 | **AI Chat** | converse with 25+ LLM providers |
-| **Tool Execution** | Run 805+ tools programmatically |
+| **Tool Execution** | Run 805 tools programmatically |
 | **Session Management** | Create and manage AI sessions |
 | **Memory** | Store and retrieve memories |
 | **Voice** | Speech recognition & TTS |
@@ -558,10 +529,10 @@ ZYRAXON-AI/
 ├── packages/
 │   ├── zyraxon/          # Core AI engine
 │   │   ├── src/
-│   │   │   ├── agent/    # 9 agent modes
+│   │   │   ├── agent/    # 10 agent modes
 │   │   │   ├── mcp/      # MCP servers + tools
 │   │   │   ├── tool/     # Core tools
-│   │   │   ├── x/        # 758+ domain tools
+│   │   │   ├── x/        # 805 registered tools
 │   │   │   ├── session/  # LLM streaming
 │   │   │   ├── screen/   # Vision system
 │   │   │   └── memory/   # Eternal memory

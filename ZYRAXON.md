@@ -51,16 +51,16 @@ ZYRAXON is not a chatbot. It's not an autocomplete. It's not a sidebar.
 | Capability | ZYRAXON | Cursor | Copilot | Devin | Claude Code | Windsurf |
 |---|---|---|---|---|---|---|
 | **Full Desktop Control** | ✅ Click, type, scroll, open apps | ❌ Editor only | ❌ Sidebar | ⚠️ Cloud browser | ❌ Terminal only | ❌ Editor only |
-| **Real Vehicle Control** | ✅ 224 tools — aircraft, car, drone, boat, rocket, robot | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Real Vehicle Control** | ✅ 805 tools — aircraft, car, drone, boat, rocket, robot | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Autonomous Flight** | ✅ Autoland, GCAS, TCAS, Approach | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Autonomous Driving** | ✅ Sensor Fusion, AEB, Lane, Parking | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Self-Healing** | ✅ Auto-installs missing tools | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Self-Evolution** | ✅ Builds tools at runtime | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Eternal Memory** | ✅ 50,000+ memories with compression | ❌ | ❌ | ⚠️ Session only | ❌ | ❌ |
-| **9 Agent Modes** | ✅ General → APEX PREDATOR | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **10 Agent Modes** | ✅ General → APEX PREDATOR | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **YouTube Live Streaming** | ✅ APP/SCR capture, RTMP | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Screen Vision** | ✅ Real-time capture + OCR | ❌ | ❌ | ⚠️ Screenshots | ❌ | ❌ |
-| **224+ Control Tools** | ✅ | ❌ | ⚠️ MCP only | ⚠️ MCP only | ⚠️ Few | ⚠️ MCP only |
+| **805 Control Tools** | ✅ | ❌ | ⚠️ MCP only | ⚠️ MCP only | ⚠️ Few | ⚠️ MCP only |
 | **25+ AI Provider Routing** | ✅ Auto | ⚠️ Sub only | ⚠️ Sub only | ⚠️ Sub only | ⚠️ Internal | ⚠️ BYO key |
 | **Full Security Toolkit** | ✅ 20+ tools | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Free & Open Source** | ✅ ZSL-X | ❌ Paid | ❌ Paid | ❌ Paid | ❌ Paid | ❌ Paid |
@@ -78,7 +78,7 @@ ZYRAXON is not a chatbot. It's not an autocomplete. It's not a sidebar.
 
 ---
 
-## 224 Tools — Complete List
+## 805 Tools — Control System Modules
 
 ### Aircraft (63 classes) — Full Autonomous Flight
 
@@ -302,7 +302,7 @@ Digital Twin Engine, Predictive Maintenance, Energy Management, Climate Control,
 ```
 ZYRAXON
 ├── Desktop App (Electron + SolidJS)
-│   ├── 9 Agent Modes (General → APEX PREDATOR)
+│   ├── 10 Agent Modes (General → APEX PREDATOR)
 │   ├── Screen Vision + Voice + YouTube Streaming
 ├── Control Systems (224 classes)
 │   ├── Aircraft (63) — FCS, Autopilot, GCAS, Autoland
@@ -315,7 +315,7 @@ ZYRAXON
 │   ├── Core Tools (68) — Telemetry, Sensors, Actuators
 │   └── Systems (19) — Voice, Memory, Behavior, IoT
 ├── Knowledge Base (200+ PDFs)
-├── MCP Servers (11)
+├── MCP Servers (4)
 ├── Self-Healing + Self-Evolution
 └── Eternal Memory (50,000+)
 ```
@@ -328,7 +328,7 @@ ZYRAXON
 
 **ChatGPT? No. Claude? No. Copilot? No. Cursor? No. Devin? No.**
 
-**ZYRAXON? Yes. 224 tools. Real algorithms. Real physics. Real control.**
+**ZYRAXON? Yes. 805 tools. Real algorithms. Real physics. Real control.**
 
 ---
 
