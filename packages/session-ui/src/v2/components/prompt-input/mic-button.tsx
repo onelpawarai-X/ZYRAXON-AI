@@ -92,6 +92,9 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
   // voice-send and voice-mic-state can both arrive for the same utterance;
   // dropping the second delivery prevents the transcript from being inserted twice.
   let transcriptDelivered = false
+  // Only speech we painted ourselves may be wiped when the mic re-opens, so a
+  // hand-typed draft in the chat box survives untouched.
+  let livePainted = false
   const deliverOnce = (text: string, lang: string) => {
     if (transcriptDelivered) return
     const trimmed = text.trim()
@@ -99,6 +102,7 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     transcriptDelivered = true
     clearSafetyTimeout()
     cleanupListener()
+    livePainted = true
     props.onTranscript(trimmed, lang)
     setState("idle")
   }
@@ -112,6 +116,7 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     finalText = ""
     if (text) {
       transcriptDelivered = true
+      livePainted = true
       props.onTranscript(text, selectedLang())
     }
     setState("idle")
@@ -125,6 +130,9 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     if (!api?.onVoiceEvent) return
 
     removeVoiceListener = api.onVoiceEvent((event: any) => {
+      // While the assistant is speaking, the mic captures its own voice. Those
+      // transcripts are echo — never paint them into the chat box.
+      if ((window as any).__zyraxonTTSActiveRender && event.type === "voice-transcript") return
       if (event.type === "voice-transcript") {
         const t = (event.fullText || event.text || "").trim()
         if (t) {
@@ -132,6 +140,7 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
           finalText = t
           clearSafetyTimeout()
           // Stream interim text into the chat box as the user speaks — no waiting for stop
+          livePainted = true
           props.onLiveText?.(t)
         }
       } else if (event.type === "voice-mic-state") {
@@ -149,6 +158,11 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
 
   const startListening = async () => {
     finalText = ""
+    // Re-opening the mic must never replay what was said in a previous session.
+    if (livePainted) {
+      livePainted = false
+      props.onLiveText?.("")
+    }
 
     if (isInsideIframe) {
       const bridgeId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
