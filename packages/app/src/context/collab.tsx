@@ -29,7 +29,7 @@ export const ZYRAXON_AGENTS: ZyraxonAgentDef[] = [
     description: "Full collaboration -- all agents work together. Can generate images, videos, audio, music.",
     capabilities: ["orchestrate", "delegate", "collaborate", "coordinate", "supervise", "image-gen", "video-gen", "audio-gen", "tts"],
     canDelegateTo: ["build", "plan", "beast", "pro", "apex", "dark-emperor", "pro-builder", "vision"],
-    tier: "free",
+    tier: "ultra",
   },
   {
     id: "build",
@@ -109,7 +109,7 @@ export const ZYRAXON_AGENTS: ZyraxonAgentDef[] = [
     description: "AI's Eyes -- real-time screen awareness and memory. Image analysis and generation.",
     capabilities: ["vision", "screen", "analysis", "observe", "image-gen"],
     canDelegateTo: ["build", "plan", "explore"],
-    tier: "max",
+    tier: "free",
   },
   {
     id: "general",
