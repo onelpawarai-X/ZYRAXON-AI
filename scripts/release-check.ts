@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 const p = Bun.spawn(
   ["gh", "release", "view", "v19.0.5", "--json", "name,tagName,isDraft,isPrerelease,publishedAt,url,assets"],
   { stdout: "pipe", stderr: "pipe" },

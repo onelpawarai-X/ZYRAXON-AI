@@ -1,4 +1,7 @@
 #!/usr/bin/env bun
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /** Commit the two sync helper scripts that were written after the last sync. */
 
 import { gitAsync } from "./sync-plan"
