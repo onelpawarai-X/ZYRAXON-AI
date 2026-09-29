@@ -1,0 +1,80 @@
+name: Copyright Headers
+
+# Fails a pull request that adds a source file without the ZSL-X notice, or
+# edits the year away from the one the notices already carry.
+#
+# The check reports and explains. It never rewrites a contributor's branch
+# behind their back, and it never edits a file that cannot legally hold a
+# comment (JSON, images, lockfiles, generated output).
+
+on:
+  pull_request:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: copyright-headers-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  headers:
+    name: Check headers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Report files missing a notice
+        run: |
+          set +e
+          bun run scripts/copyright-header.ts --check > /tmp/headers.txt 2>&1
+          code=$?
+          set -e
+          cat /tmp/headers.txt
+          if [ "$code" -ne 0 ] && [ "$code" -ne 1 ]; then
+            echo "::error::copyright-header.ts itself failed with exit $code"
+            exit "$code"
+          fi
+          if [ "$code" -eq 1 ]; then
+            echo "::error::One or more files are missing the copyright header, or carry a stale year. See the list above."
+            exit 1
+          fi
+          echo "All tracked files carry a current notice."
+
+      - name: Report the copyright year
+        run: |
+          set +e
+          bun run scripts/copyright-year.ts --check
+          code=$?
+          set -e
+          if [ "$code" -ne 0 ] && [ "$code" -ne 1 ]; then
+            echo "::error::copyright-year.ts itself failed with exit $code"
+            exit "$code"
+          fi
+          if [ "$code" -eq 1 ]; then
+            echo "::error::The copyright year does not match the current year. Run: bun run scripts/copyright-year.ts"
+            exit 1
+          fi
+          echo "Copyright year is current."
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### Copyright" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "SPDX: \`LicenseRef-ZYRAXON-ZSL-X\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Owner: \`onelpawarai\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Year: \`$(date -u +%Y)\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Add the header to a new source file with:" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo '// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X' >> "$GITHUB_STEP_SUMMARY"
+          echo "// Copyright (c) $(date -u +%Y) onelpawarai. All rights reserved." >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

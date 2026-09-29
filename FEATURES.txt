@@ -1,0 +1,221 @@
+================================================================================
+                    Z Y R A X O N
+        THE AGENT THAT ACTUALLY DOES THE WORK
+================================================================================
+
+  Own it. Change it. Build anything on it. Just don't sell it.
+
+  Owner        onelpawarai
+  Licence      ZSL-X — free to use, free to change, not for sale
+  Repository   https://github.com/onelpawarai-X/ZYRAXON-AI
+  Contribute   CONTRIBUTING.md
+
+================================================================================
+
+
+--------------------------------------------------------------------------------
+WHAT ZYRAXON IS
+--------------------------------------------------------------------------------
+
+Most AI tools give you an answer. ZYRAXON gives you an agent that does the work.
+
+It sees your screen. It moves your mouse and types on your keyboard. It edits your
+images, your video, and your documents. It reads text off your screen in two
+languages. It plans multi-step work and actually runs the tools. It drives a real
+browser. And it keeps the lessons it learns, so it gets sharper every time you
+use it.
+
+It is not a chat box with a personality. It is an agent with hands.
+
+
+--------------------------------------------------------------------------------
+WHY FREE AND OPEN
+--------------------------------------------------------------------------------
+
+Use it for anything. Personal or company. Modify it however you like. Build
+products with it and charge your own customers for those. Contribute back and
+every bit of it counts.
+
+The only three things we ask: don't sell ZYRAXON itself, don't republish a
+modified copy as your own, and don't remove the credit.
+
+That is the whole arrangement. Millions of people can build on this. We keep the
+right to sell it ourselves, and we keep the right to say who built it.
+
+
+--------------------------------------------------------------------------------
+WHAT IT DOES TODAY
+--------------------------------------------------------------------------------
+
+COMPUTER CONTROL — 10 tools, all live
+  See the screen. Click. Type. Press keys. Scroll. Move the mouse. Drag. Open
+  apps. List windows. Read screen geometry. Real input into your real desktop,
+  verified on Windows, and written for macOS and Linux too.
+
+MEDIA — 5 tools, all live
+  Resize, crop, rotate, adjust brightness and contrast, grayscale, blur, overlay
+  text on images. Extract frames from video, trim, compress, pull the audio out,
+  grab subtitles. Read a real PDF. Parse JSON, CSV, TSV. Read text off an image
+  in English or Bengali. Inspect any media file properly.
+
+PLANNING AND LEARNING — 5 tools, all live
+  Break a goal into real steps. Run them with real tool bindings. Watch status,
+  attempts, timing and results. Record a lesson. Get the rules back, including
+  everything the agent has learned from you.
+
+BROWSER AUTOMATION — 2 tools, all live
+  Open a real Chrome DevTools Protocol session and drive the browser. Close it
+  cleanly when done.
+
+IT REMEMBERS
+  Plans live in ~/.zyraxon/plans
+  Lessons live in ~/.zyraxon/learning/lessons.jsonl
+
+All of the above is covered by tests that fail if the implementation is removed.
+Not aspirational. Not a mock. Real.
+
+THE PROOF
+  Computer control      25 tests passing
+  Media and planning    53 tests passing
+  Security              17 tests passing
+  Whole package        152 passing, 0 failing
+
+We would rather show you the number than ask you to trust us.
+
+
+--------------------------------------------------------------------------------
+THE NINE MODES
+--------------------------------------------------------------------------------
+
+  General         the everyday one. Answers, conversation, getting things done.
+  Build           full software engineering. Code, debug, refactor, own the repo.
+  Plan            architecture and planning. Explore freely, change nothing.
+  Beast           deep coding with aggressive file operations and auto-testing.
+  PRO             professional mode. Strict quality, security scanning, docs.
+  APEX PREDATOR   maximum reach. 805+ tools, self-healing, autonomous operation.
+  DARK EMPEROR    the heavy tier. Code generation, deployment, deep debugging.
+  VISION          the agent's eyes. Live screen capture, scene analysis, memory.
+  PRO BUILDER     describes a website in plain language and builds the whole thing.
+
+One agent, nine ways of working. Pick the one that fits the job.
+
+
+--------------------------------------------------------------------------------
+WHERE WE ARE GOING
+--------------------------------------------------------------------------------
+
+This is the part we actually care about.
+
+OUR OWN PROVIDER
+  We are building our own inference provider. ZYRAXON running on our own models,
+  our own routing, our own failover, our own cost model. No dependency on anyone
+  else's roadmap. If we control the intelligence, we control the product.
+  This is the biggest thing we are building and it is happening now.
+
+OUR OWN COMPANY
+  A provider is step one. Step two is a company around it. A place where the
+  model, the agent, the tools, and the people who use them all belong to the same
+  effort instead of five separate vendors. We are building that.
+
+THE WORLD'S MOST POWERFUL AGENT
+  That is the actual goal. Not the largest. The most powerful. An agent that
+  genuinely handles a whole job rather than a slice of one, that operates real
+  systems, that keeps learning, and that anyone can use because it is free.
+
+THE CONTROL SYSTEMS
+  We are bringing 224+ control system classes online across 29 files:
+
+    Aircraft   63    flight control, autopilot, GCAS, TCAS, autoland, fuel,
+                      engine health
+    Car        18    ECU, ABS, ESC, sensor fusion, AEB, lane, parking
+    Drone      15    motor mixing, flight controller, formation, payload, RTH,
+                      tracking
+    Boat       15    marine control, dynamic positioning, radar, AIS, COLREGS
+    Rocket     12    guidance, navigation, control, orbit, propulsion, launch
+    Robot      10    inverse kinematics, SLAM, force control, task scheduling
+    Algorithms 10    PID, Kalman, A*, FFT, graph, matrix
+    Core tools 68    telemetry, sensors, actuators, communication
+    Systems     19    voice, memory, behaviour, IoT, physical
+
+  These are real interfaces in real code, and they are being wired to live
+  subsystems. An agent that can fly a drone, drive a car, hold a boat on
+  station, land an aircraft, or walk a robot is a different kind of software
+  from one that writes text. That is the direction.
+
+CLOUD AGENTS
+  Agents that run for you. You give it a job and it works. Scheduled runs,
+  long-running tasks, background execution. The hard part is not the scheduling.
+  It is permissions that are explicit, visible and revocable, so an agent that
+  can take real actions stays accountable for every one of them.
+
+THE MARKETPLACE, REBUILT
+  The marketplace exists and it is the weakest part of the product, which makes it
+  the most open door. Better search and ranking. Real install and update flows.
+  Verification that a listed package actually works. Previews and screenshots in
+  the listing. Honest descriptions, so you know what you are installing before
+  you install it.
+
+
+--------------------------------------------------------------------------------
+HOW YOU CAN BE PART OF IT
+--------------------------------------------------------------------------------
+
+There is no application. There is no gate. There is no waiting list. Everything
+below counts and all of it is credited.
+
+  Fix a bug.                          Open a pull request.
+  Review a pull request.              Report a broken tool precisely.
+  Write documentation.                Translate anything.
+  Add a tool.                         Add a test.
+  Build a provider.                   Help someone else get started.
+  Test a release.                     Tell us where we overclaimed.
+
+You are credited in the changelog, in the release notes, and in the repository.
+
+PARTNERSHIP
+  We are open to partnership, sponsorship, and paid collaboration. If you want to
+  build a provider, improve the marketplace, wire up a control system, or take
+  this somewhere we have not thought of, talk to us. We say yes to good ideas
+  quickly.
+
+A gap you find between what we promised and what the code does is worth more to
+us than a polished pull request, and we treat it that way.
+
+
+--------------------------------------------------------------------------------
+HOW YOU BUILD ON IT
+--------------------------------------------------------------------------------
+
+  git clone https://github.com/onelpawarai-X/ZYRAXON-AI
+  cd ZYRAXON-AI
+  bun install
+  bun run dev
+
+Everything you need is in CONTRIBUTING.md.
+
+Two rules that keep this project honest, and that we ask every agent to follow:
+
+  If your machine cannot build it, GitHub Actions builds it. A local machine being
+  unsupported is never a reason to stop. The runners are different machines.
+  Publishing through Actions is unlimited.
+
+  Nothing is done until it is 100% tested. Open it. Watch for a loader that
+  never finishes. Check the schema. Confirm nothing is broken, nothing is stuck,
+  nothing is spinning. Only when every check passes is it done.
+
+Both rules are written into every agent prompt in this repository. See
+.github/CRITICAL-RULES.md.
+
+
+--------------------------------------------------------------------------------
+ONE THING WE ASK OF YOU
+--------------------------------------------------------------------------------
+
+Be accurate. If something is broken, say it is broken. If a tool cannot do the
+work, it should tell you it cannot rather than return something that looks
+right. A fake result is worse than a missing feature, because you cannot tell the
+difference from the outside.
+
+We would rather be honestly understood than generously described. Build on this,
+make something real, and tell us what you find.
+================================================================================
