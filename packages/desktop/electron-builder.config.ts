@@ -235,7 +235,7 @@ function getConfig() {
         ...base,
         appId,
         productName: "ZYRAXON Dev",
-        publish: { provider: "github", owner: "onelpawarai", repo: "ZYRAXON-AI", channel: "latest" },
+        publish: { provider: "github", owner: "onelpawarai-X", repo: "ZYRAXON-AI", channel: "latest" },
         rpm: { packageName: "zyraxon-dev" },
       }
     }
@@ -245,7 +245,7 @@ function getConfig() {
         appId,
         productName: "ZYRAXON Beta",
         protocols: { name: "ZYRAXON Beta", schemes: ["zyraxon"] },
-        publish: { provider: "github", owner: "onelpawarai", repo: "ZYRAXON-AI", channel: "latest" },
+        publish: { provider: "github", owner: "onelpawarai-X", repo: "ZYRAXON-AI", channel: "latest" },
         rpm: { packageName: "zyraxon-beta" },
       }
     }
@@ -255,7 +255,7 @@ function getConfig() {
         appId,
         productName: "ZYRAXON",
         protocols: { name: "ZYRAXON", schemes: ["zyraxon"] },
-        publish: { provider: "github", owner: "onelpawarai", repo: "ZYRAXON-AI", channel: "latest" },
+        publish: { provider: "github", owner: "onelpawarai-X", repo: "ZYRAXON-AI", channel: "latest" },
         deb: { fpm: [legacyDesktopEntryFpm] },
         rpm: { packageName: "zyraxon", fpm: [legacyDesktopEntryFpm] },
       }

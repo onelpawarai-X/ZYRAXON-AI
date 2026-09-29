@@ -81,7 +81,11 @@ jobs:
 
       - name: Package the macOS installer
         working-directory: packages/desktop
-        run: bunx electron-builder --mac --${{ matrix.arch }} --config electron-builder.config.ts
+        # --publish never: the build config names a GitHub publisher, so
+        # electron-builder would try to upload the release itself and fail on a
+        # missing token. This workflow owns the upload, via the release asset
+        # step below.
+        run: bunx electron-builder --mac --${{ matrix.arch }} --config electron-builder.config.ts --publish never
 
       - name: Attach to the release
         env:
