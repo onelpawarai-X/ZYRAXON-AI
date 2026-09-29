@@ -60,3 +60,9 @@ packages/desktop/electron.vite.config.*.mjs
 .sync-manifest.txt
 .git/sync-verify-index
 .git/sync-verify-result
+
+# --- Ad hoc sync shell wrappers and logs -------------------------------
+# The sync scripts live in scripts/; their one-off wrappers and logs do not.
+/.sync-*.log
+/.sync-*.ps1
+/.pr-body.md
