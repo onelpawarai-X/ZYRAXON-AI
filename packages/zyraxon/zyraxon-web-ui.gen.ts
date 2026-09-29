@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import file_0 from './_headers' with { type: 'file' };
 import file_1 from './apple-touch-icon.png' with { type: 'file' };
 import file_2 from './apple-touch-icon-v3.png' with { type: 'file' };

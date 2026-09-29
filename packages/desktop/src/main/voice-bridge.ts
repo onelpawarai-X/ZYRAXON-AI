@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { join } from "path"
 import { existsSync, readFileSync } from "fs"
 import { execSync, spawn, ChildProcess } from "child_process"

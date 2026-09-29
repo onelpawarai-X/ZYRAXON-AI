@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Config, Context, Effect, Layer } from "effect"
 
 type ConfigMap = Record<string, Config.Config<unknown>>

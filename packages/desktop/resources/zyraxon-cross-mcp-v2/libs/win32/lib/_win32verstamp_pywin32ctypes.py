@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 A pure-python re-implementation of methods used by win32verstamp.
 This is to avoid a bootstraping problem where win32verstamp is used during build,

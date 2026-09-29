@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 CLIENT_SUPPORT = (
     "FastMCP client support is not installed. Install `fastmcp` or "
     "`fastmcp-slim[client]`."

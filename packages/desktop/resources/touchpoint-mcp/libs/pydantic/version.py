@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """The `version` module holds the version information for Pydantic."""
 
 from __future__ import annotations as _annotations

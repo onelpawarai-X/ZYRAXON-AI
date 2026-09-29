@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # -- coding: utf-8 --
 '''
 Module of Windows API for creating taskbar balloon tip

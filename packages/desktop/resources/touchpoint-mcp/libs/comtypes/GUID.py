@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """comtypes.GUID module"""
 
 from ctypes import HRESULT, POINTER, OleDLL, Structure, WinDLL, byref, c_wchar_p

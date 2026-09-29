@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Context-aware memory stream wrappers.
 
 anyio memory streams do not propagate ``contextvars.Context`` across task

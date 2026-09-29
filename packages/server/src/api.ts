@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { makeDefaultApi } from "@zyraxon-ai/protocol/api"
 import { LocationMiddleware } from "./location"
 import { SessionLocationMiddleware } from "./middleware/session-location"

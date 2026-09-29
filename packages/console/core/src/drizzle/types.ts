@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { sql } from "drizzle-orm"
 import { bigint, timestamp, varchar } from "drizzle-orm/mysql-core"
 

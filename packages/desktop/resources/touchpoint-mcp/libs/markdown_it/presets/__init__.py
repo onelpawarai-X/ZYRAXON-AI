@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 __all__ = ("commonmark", "default", "gfm_like", "gfm_like2", "js_default", "zero")
 
 from ..utils import PresetType

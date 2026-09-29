@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Shell completion generation for Cyclopts applications."""
 
 from cyclopts.completion.detect import ShellDetectionError, detect_shell

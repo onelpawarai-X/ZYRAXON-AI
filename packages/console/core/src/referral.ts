@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { z } from "zod"
 import { and, asc, eq, inArray, isNull, sql, Database } from "./drizzle"
 import { Actor } from "./actor"

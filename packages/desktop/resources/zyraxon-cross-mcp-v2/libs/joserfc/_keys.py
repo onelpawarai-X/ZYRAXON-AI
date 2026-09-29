@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import typing as t
 import random
 from ._rfc7517.types import AnyKey, KeyParameters, DictKey

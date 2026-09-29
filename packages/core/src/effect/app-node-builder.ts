@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { buildLocationServiceMap } from "../location-services"
 import { LocationServiceMap } from "../location-service-map"
 import { LayerNode } from "./layer-node"

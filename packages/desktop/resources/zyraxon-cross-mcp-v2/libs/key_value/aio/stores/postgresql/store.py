@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """PostgreSQL-based key-value store using asyncpg.
 
 Note: SQL queries in this module use f-strings for table names, which triggers S608 warnings.

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Lazy helpers for FastMCP's optional Prefab UI integration."""
 
 from __future__ import annotations

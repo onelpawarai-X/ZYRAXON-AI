@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Client-side response caching primitives (SEP-2549, protocol revision 2026-07-28)."""
 
 from __future__ import annotations

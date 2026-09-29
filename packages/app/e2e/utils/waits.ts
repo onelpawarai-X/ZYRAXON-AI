@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { expect, type Locator, type Page } from "@playwright/test"
 
 export const APP_READY_TIMEOUT = 30_000

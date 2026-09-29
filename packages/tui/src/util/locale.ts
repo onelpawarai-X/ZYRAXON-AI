@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export function titlecase(str: string) {
   return str.replace(/\b\w/g, (c) => c.toUpperCase())
 }

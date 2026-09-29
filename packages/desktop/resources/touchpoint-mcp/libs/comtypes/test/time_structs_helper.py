@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from ctypes import POINTER, Structure, WinDLL, byref
 from ctypes.wintypes import BOOL, FILETIME, LONG, WORD
 from typing import Literal

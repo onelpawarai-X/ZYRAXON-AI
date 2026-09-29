@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from IPython.core.magic import Magics, line_magic, magics_class  # type: ignore
 from IPython.core.magic_arguments import (
     argument,

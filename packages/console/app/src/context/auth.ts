@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { getRequestEvent } from "solid-js/web"
 import { and, Database, eq, inArray, isNull, sql } from "@zyraxon-ai/console-core/drizzle/index.js"
 import { UserTable } from "@zyraxon-ai/console-core/schema/user.sql.js"

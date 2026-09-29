@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { attachSpring, motionValue } from "motion"
 import type { SpringOptions } from "motion"
 import { createComputed, createEffect, createSignal, onCleanup } from "solid-js"

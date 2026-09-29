@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { dlopen, ptr } from "bun:ffi"
 import type { ReadStream } from "node:tty"
 

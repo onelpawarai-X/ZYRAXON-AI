@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ZYRAXON Pro Builder MCP Tools
 // Website creation, publishing, and management tools
 // Supports: HTML, React, Vue, Astro, Svelte, Tailwind, TypeScript

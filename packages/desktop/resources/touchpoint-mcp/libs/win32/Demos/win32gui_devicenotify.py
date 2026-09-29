@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Demo RegisterDeviceNotification etc.  Creates a hidden window to receive
 # notifications.  See serviceEvents.py for an example of a service doing
 # that.

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Composition, registerRoot } from "remotion"
 import { GLM52Rise } from "./video"
 import { NZSheep } from "./sheep"

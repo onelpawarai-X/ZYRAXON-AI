@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Transport-specific metadata attached to each inbound message.
 
 `TransportContext` is the base; each transport defines its own subclass with

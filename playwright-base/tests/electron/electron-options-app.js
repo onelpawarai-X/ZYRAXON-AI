@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Demonstrates the migration paths from removed launch options to
 // built-in Electron APIs. Behavior is configured via PWTEST_OPTION_* env vars.
 

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """This module defines the funtions byref_at(cobj, offset)
 and cast_field(struct, fieldname, fieldtype).
 """

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Process html tags
 from ..common.html_re import HTML_TAG_RE
 from ..common.utils import isLinkClose, isLinkOpen

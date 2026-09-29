@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # A little test server, complete with typelib, we can use for testing.
 # Originally submitted with bug:
 # [ 753154 ] memory leak wrapping object having _typelib_guid_ attribute

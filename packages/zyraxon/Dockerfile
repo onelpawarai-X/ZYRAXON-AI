@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 FROM alpine AS base
 
 # Disable the runtime transpiler cache by default inside Docker containers.

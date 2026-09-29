@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Connect-time era negotiation for ``mode='auto'``.
 
 The ``server/discover`` probe is sent at the newest modern version. Anything

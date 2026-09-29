@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { MonthlyLimitSection } from "./monthly-limit-section"
 import { BillingSection } from "./billing-section"
 import { ReloadSection } from "./reload-section"

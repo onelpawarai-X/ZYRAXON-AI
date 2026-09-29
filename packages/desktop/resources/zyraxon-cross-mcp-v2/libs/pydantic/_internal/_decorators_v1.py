@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Logic for V1 validators, e.g. `@validator` and `@root_validator`."""
 
 from __future__ import annotations as _annotations

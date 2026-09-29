@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export const MAX_TITLEBAR_HISTORY = 100
 
 export type TitlebarAction = "back" | "forward" | undefined

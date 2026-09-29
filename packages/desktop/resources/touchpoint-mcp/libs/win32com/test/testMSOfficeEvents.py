@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # OfficeEvents - test/demonstrate events with Word and Excel.
 import msvcrt
 import sys

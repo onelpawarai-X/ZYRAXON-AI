@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Visibility transform for marking component visibility state.
 
 Each Visibility instance marks components via internal metadata. Multiple

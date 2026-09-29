@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import unittest
 from ctypes import POINTER, PyDLL, byref, c_void_p, py_object
 from ctypes.wintypes import BOOL

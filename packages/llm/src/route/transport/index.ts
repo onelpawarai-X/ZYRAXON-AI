@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { Effect, Stream } from "effect"
 import type { Endpoint } from "../endpoint"
 import type { Auth } from "../auth"

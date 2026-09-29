@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export type { PluginContext } from "./context.js"
 export type { PluginOptions } from "../options.js"
 export { define } from "./plugin.js"

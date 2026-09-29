@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export function prefix(tokens: string[]) {
   for (let len = tokens.length; len > 0; len--) {
     const prefix = tokens.slice(0, len).join(" ")

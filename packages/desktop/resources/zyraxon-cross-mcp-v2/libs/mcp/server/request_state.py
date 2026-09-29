@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Integrity protection for the multi-round-trip `requestState` (MCP 2026-07-28).
 
 The spec requires servers to treat the client-echoed `requestState` as

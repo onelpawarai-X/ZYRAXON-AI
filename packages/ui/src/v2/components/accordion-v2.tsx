@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Accordion as Kobalte } from "@kobalte/core/accordion"
 import { Show, splitProps, type Component, type ComponentProps, type ParentProps } from "solid-js"
 import "./accordion-v2.css"

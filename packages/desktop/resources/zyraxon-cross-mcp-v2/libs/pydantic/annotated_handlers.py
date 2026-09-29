@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Type annotations to use with `__get_pydantic_core_schema__` and `__get_pydantic_json_schema__`."""
 
 from __future__ import annotations as _annotations

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # This extension is used mainly for testing purposes - it is not
 # designed to be a simple sample, but instead is a hotch-potch of things
 # that attempts to exercise the framework.

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Numpydoc-style docstring parsing.
 
 :see: https://numpydoc.readthedocs.io/en/latest/format.html

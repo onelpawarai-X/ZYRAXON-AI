@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """MCP Client module."""
 
 from mcp.client._input_required import InputRequiredRoundsExceededError

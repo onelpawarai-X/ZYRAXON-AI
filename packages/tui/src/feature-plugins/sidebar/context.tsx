@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { AssistantMessage } from "@zyraxon-ai/sdk/v2"
 import type { TuiPlugin, TuiPluginApi } from "@zyraxon-ai/plugin/tui"
 import type { BuiltinTuiPlugin } from "../builtins"

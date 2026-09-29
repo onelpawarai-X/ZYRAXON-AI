@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 const assert = require('node:assert/strict');
 const { app, protocol } = require('electron');
 const path = require('path');

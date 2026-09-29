@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Providers for dynamic MCP components.
 
 This module provides the `Provider` abstraction for providing tools,

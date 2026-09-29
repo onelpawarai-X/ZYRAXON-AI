@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { TuiDialogSelectOption, TuiPluginApi, TuiSlotProps } from "@zyraxon-ai/plugin/tui"
 import type { TuiConfig } from "../config"
 import type { useEvent } from "../context/event"

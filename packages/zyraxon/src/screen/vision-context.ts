@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ZYRAXON Vision System — Vision Context Manager
 // Singleton that holds latest frame IMAGE + analysis for automatic injection
 // "AI sees screen as IMAGE — not text description"

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Utility file for generating PyIEnum support.
 
 This is almost a 'template' file.  It simplay contains almost full

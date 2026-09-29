@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { BrowserWindow } from "electron"
 import type { DesktopMenuAction } from "@zyraxon-ai/app/desktop-menu"
 import { createMainWindow, updateTitlebar } from "./windows"

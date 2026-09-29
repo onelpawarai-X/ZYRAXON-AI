@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # This is part of the Python test suite.
 # The object is registered when you first run the test suite.
 # (and hopefully unregistered once done ;-)

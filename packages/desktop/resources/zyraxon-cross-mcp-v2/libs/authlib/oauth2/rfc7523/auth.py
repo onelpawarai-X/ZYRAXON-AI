@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from joserfc.jwk import OctKey
 from joserfc.jwk import RSAKey
 from joserfc.jwk import ECKey

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { defineMiddleware } from "astro:middleware"
 import { exactLocale, matchLocale } from "./i18n/locales"
 

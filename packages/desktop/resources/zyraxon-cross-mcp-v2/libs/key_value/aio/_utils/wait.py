@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Async wait utilities for testing and polling.
 
 This module provides utilities for waiting on conditions, primarily used

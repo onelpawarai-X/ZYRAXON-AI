@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Meta, Title } from "@solidjs/meta"
 import { createAsync, useParams } from "@solidjs/router"
 import { createMemo, Show } from "solid-js"

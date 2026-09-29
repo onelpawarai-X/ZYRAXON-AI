@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Match, Show, Switch, createMemo, type ComponentProps, type JSX } from "solid-js"
 import { ProgressCircle } from "@zyraxon-ai/ui/progress-circle"
 import { ProgressCircleV2 } from "@zyraxon-ai/ui/v2/progress-circle-v2"

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 name = "Authlib"
 version = "1.8.0"
 author = "Hsiaoming Yang <me@lepture.com>"

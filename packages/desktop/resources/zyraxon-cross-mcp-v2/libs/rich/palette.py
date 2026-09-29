@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from math import sqrt
 from functools import lru_cache
 from typing import Sequence, Tuple, TYPE_CHECKING

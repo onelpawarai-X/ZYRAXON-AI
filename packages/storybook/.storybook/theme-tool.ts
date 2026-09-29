@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createElement } from "react"
 import { useGlobals } from "storybook/manager-api"
 import { ToggleButton } from "storybook/internal/components"

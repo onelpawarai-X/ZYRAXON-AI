@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 class ClientMixin:
     def get_default_redirect_uri(self):
         """A method to get client default redirect_uri. For instance, the

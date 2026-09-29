@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * Model-facing V2 file-write leaf. Relative paths resolve within the active
  * Location. Absolute paths inside that Location are accepted, while explicit

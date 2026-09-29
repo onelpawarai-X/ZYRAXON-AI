@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { SessionID } from "@/session/schema"
 
 type Rule = { method?: string; path: string; exact?: boolean; action: "local" | "forward" }

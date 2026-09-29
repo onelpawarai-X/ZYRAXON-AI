@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Tool name validation utilities according to SEP-986.
 
 Tool names SHOULD be between 1 and 128 characters in length (inclusive).

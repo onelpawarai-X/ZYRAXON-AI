@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Context, Effect, Layer, Option } from "effect"
 import { LayerNode } from "@zyraxon-ai/core/effect/layer-node"
 import * as Socket from "effect/unstable/socket/Socket"

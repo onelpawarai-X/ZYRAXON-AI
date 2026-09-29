@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """login -- PythonWin user ID and password dialog box
 
 (Adapted from originally distributed with Mark Hammond's PythonWin -

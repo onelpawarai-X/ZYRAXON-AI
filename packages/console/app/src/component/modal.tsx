@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Dialog as Kobalte } from "@kobalte/core/dialog"
 import { JSX, Show } from "solid-js"
 import "./modal.css"

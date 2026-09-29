@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { $ } from "bun"
 import path from "node:path"
 import { Octokit } from "@octokit/rest"

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 declare module "ws" {
   class WebSocket {
     constructor(url: string, options?: { [key: string]: unknown })

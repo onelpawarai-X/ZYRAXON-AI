@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Epyoc-style docstring parsing.
 
 .. seealso:: http://epydoc.sourceforge.net/manual-fields.html

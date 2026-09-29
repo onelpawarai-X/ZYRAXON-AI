@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """File-tree based store for visual inspection and testing."""
 
 from key_value.aio.stores.filetree.store import (

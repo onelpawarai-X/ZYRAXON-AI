@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Shared helpers for provider cache-marker lowering. Anthropic and Bedrock
 // both enforce a 4-breakpoint cap per request and accept the same `5m`/`1h`
 // TTL buckets, so the counter and TTL mapping live here.

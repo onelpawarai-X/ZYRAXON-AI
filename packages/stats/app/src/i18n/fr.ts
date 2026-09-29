@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export const dict = {
   "app.title": "Classements d'utilisation des modèles d'IA | ZYRAXON Data",
   "app.description":

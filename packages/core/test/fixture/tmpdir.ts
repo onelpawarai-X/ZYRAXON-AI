@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import fs from "fs/promises"
 import { tmpdir as osTmpdir } from "os"
 import path from "path"

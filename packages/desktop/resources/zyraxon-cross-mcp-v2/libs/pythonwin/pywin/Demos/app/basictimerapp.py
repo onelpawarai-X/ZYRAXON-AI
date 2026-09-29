@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # basictimerapp - a really simple timer application.
 # This should be run using the command line:
 # pythonwin /app demos\basictimerapp.py

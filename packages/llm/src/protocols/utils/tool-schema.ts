@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { JsonSchema, ModelToolSchemaCompatibility } from "../../schema"
 import { isRecord } from "../../utils/record"
 import { GeminiToolSchema } from "./gemini-tool-schema"

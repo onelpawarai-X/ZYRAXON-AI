@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Registry for FastMCP-internal client extensions (SEP-2133).
 
 Core ships the client wiring for opt-in extensions but no extension of its own.

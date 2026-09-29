@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * Voice Bridge Singleton — ensures ONE module instance across all imports.
  * Both ipc.ts and index.ts MUST use this instead of direct require/import.

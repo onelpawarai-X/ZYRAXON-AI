@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """OAuth Proxy Models and Constants.
 
 This module contains all Pydantic models and constants used by the OAuth proxy.

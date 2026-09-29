@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Server-side caching hints (SEP-2549, protocol revision 2026-07-28).
 
 Results for the cacheable methods carry `ttlMs`/`cacheScope` freshness hints.

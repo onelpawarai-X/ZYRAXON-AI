@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from authlib.common.encoding import json_b64encode
 from authlib.common.encoding import to_bytes
 from authlib.common.encoding import to_unicode

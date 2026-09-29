@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from typing import Any, Optional
 
 from .main import dotenv_values, find_dotenv, get_key, load_dotenv, set_key, unset_key

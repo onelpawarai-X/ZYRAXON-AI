@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """The MCP method registry, as the `mcp.types.methods` namespace.
 
 A mirror of `mcp_types.methods` (every name is the same object), so code that

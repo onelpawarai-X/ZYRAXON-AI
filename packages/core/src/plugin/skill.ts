@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /// <reference path="../markdown.d.ts" />
 
 export * as SkillPlugin from "./skill"

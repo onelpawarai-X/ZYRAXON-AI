@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 Temporary shim module to indirect the bits of distutils we need from setuptools/distutils while providing useful
 error messages beyond `No module named 'distutils' on Python >= 3.12, or when setuptools' vendored distutils is broken.

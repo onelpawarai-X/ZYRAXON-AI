@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # flake8: noqa
 from pydantic.v1 import dataclasses
 from pydantic.v1.annotated_types import create_model_from_namedtuple, create_model_from_typeddict

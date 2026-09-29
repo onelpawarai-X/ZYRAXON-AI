@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * Bundled marketplace data — used as fallback when GitHub API is unreachable
  * This is auto-generated from marketplace/published/index.json at build time

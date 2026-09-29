@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Utilities for validating client redirect URIs in OAuth flows.
 
 This module provides secure redirect URI validation with wildcard support,

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export { SessionHeader } from "./session-header"
 export { SessionContextTab } from "./session-context-tab"
 export { SortableTab, FileVisual } from "./session-sortable-tab"

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Schema } from "effect"
 
 /** Safe operational refusal from a standard tool pack, reported as `ToolFailure`. */

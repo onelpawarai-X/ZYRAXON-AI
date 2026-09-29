@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # http://www.microsoft.com/technet/scriptcenter/funzone/games/sapi.mspx
 # ../gen/_C866CA3A_32F7_11D2_9602_00C04F8EE628_0_5_0
 # http://thread.gmane.org/gmane.comp.python.ctypes.user/1485

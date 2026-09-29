@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Database, eq } from "@zyraxon-ai/console-core/drizzle/index.js"
 import { ModelStickyProviderTable } from "@zyraxon-ai/console-core/schema/ip.sql.js"
 

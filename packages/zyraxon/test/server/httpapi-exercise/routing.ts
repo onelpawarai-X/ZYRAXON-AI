@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Duration } from "effect"
 import { OpenApiMethods, type OpenApiSpec, type Options, type Result, type Scenario } from "./types"
 

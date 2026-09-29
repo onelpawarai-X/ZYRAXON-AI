@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Layer, ManagedRuntime } from "effect"
 import { AppConfig } from "./config"
 import { layer as databaseLayer } from "./database"

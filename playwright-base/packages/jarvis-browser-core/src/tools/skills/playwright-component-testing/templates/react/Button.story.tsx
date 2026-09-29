@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Example story file. Stories live next to the component they exercise:
 // this file is src/components/Button.story.tsx for src/components/Button.tsx.
 // Each named export is one story: a scenario-specific wrapper around the

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Implements _both_ a connectable client, and a connectable server.
 #
 # Note that we cheat just a little - the Server in this demo is not created

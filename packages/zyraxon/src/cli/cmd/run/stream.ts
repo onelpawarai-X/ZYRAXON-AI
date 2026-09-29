@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Thin bridge between reducer output and the footer API.
 //
 // The reducers produce StreamCommit[] and an optional FooterOutput (patch +

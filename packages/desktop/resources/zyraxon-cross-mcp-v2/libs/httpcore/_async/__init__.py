@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from .connection import AsyncHTTPConnection
 from .connection_pool import AsyncConnectionPool
 from .http11 import AsyncHTTP11Connection

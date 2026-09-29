@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Dev-only JSONL event trace for direct interactive mode.
 //
 // Enable with ZYRAXON_DIRECT_TRACE=1. Writes one JSON line per event to

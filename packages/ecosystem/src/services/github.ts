@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { EcosystemItem, CategoryInfo, EcosystemStats, RecentActivity, User, Comment } from "../types"
 import { getAuthState } from "./auth"
 import { GITHUB_API, MAIN_REPO, DATA_REPO, getGithubToken } from "../config"

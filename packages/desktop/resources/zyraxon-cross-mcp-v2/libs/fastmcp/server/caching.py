@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Server-level cache hints for FastMCP (SEP-2549).
 
 A FastMCP server opts every SDK-cacheable result it emits into client-side

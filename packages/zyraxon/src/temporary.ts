@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import yargs from "yargs"
 import { TuiThreadCommand } from "./cli/cmd/tui"
 import { InstallationVersion } from "@zyraxon-ai/core/installation/version"

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { type Component, createSignal, Show, For, createResource, onMount } from "solid-js"
 import type { User, EcosystemItem } from "../types"
 import { getItemsByAuthor } from "../services/github"

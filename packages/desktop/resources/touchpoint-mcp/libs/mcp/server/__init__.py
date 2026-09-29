@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from .fastmcp import FastMCP
 from .lowlevel import NotificationOptions, Server
 from .models import InitializationOptions

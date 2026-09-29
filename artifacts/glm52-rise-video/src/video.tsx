@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import React from "react"
 import { AbsoluteFill, Easing, interpolate, useCurrentFrame, useVideoConfig } from "remotion"
 import { days, launchIndex, glmWeekTokensT, segments } from "./data"

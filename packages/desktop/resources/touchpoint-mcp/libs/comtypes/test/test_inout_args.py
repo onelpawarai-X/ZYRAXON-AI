@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import unittest as ut
 from collections.abc import Callable
 from ctypes import HRESULT, POINTER, Structure, c_int, c_ulong, c_wchar_p, pointer

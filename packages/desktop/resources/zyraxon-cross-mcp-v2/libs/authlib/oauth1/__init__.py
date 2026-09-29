@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from .rfc5849 import SIGNATURE_HMAC_SHA1
 from .rfc5849 import SIGNATURE_PLAINTEXT
 from .rfc5849 import SIGNATURE_RSA_SHA1

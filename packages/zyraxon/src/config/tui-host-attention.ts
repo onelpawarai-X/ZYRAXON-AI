@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { TuiConfig } from "@zyraxon-ai/tui/config"
 import { isRecord } from "@zyraxon-ai/tui/util/record"
 import { Filesystem } from "@/util/filesystem"

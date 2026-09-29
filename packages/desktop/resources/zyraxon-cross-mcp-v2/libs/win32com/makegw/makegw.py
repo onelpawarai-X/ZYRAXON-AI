@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Utility functions for writing out gateway C++ files
 
 This module will generate a C++/Python binding for a specific COM

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Discord OAuth provider for FastMCP.
 
 This module provides a complete Discord OAuth integration that's ready to use

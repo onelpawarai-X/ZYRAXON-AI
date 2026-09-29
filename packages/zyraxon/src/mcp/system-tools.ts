@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ZYRAXON MCP Server 1: System Intelligence (Cross-Platform)
 // 20 real working tools — Windows, Linux, Mac ALL supported
 

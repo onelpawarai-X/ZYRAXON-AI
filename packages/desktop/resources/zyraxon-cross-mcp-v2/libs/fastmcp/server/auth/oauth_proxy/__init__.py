@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """OAuth Proxy Provider for FastMCP.
 
 This package provides OAuth proxy functionality split across multiple modules:

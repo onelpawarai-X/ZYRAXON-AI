@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Post-filtering and sorting helpers for element lists.
 
 Pure functions — no module-level state or side effects.

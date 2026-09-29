@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from win32com.propsys import propsys, pscon
 
 print("propsys was imported (sorry - that is the extent of the tests,")

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Complete keyring backends for `keyring -b` from `keyring --list-backends`
 # # keyring -b <TAB>
 # keyring.backends.chainer.ChainerBackend keyring.backends.fail.Keyring ...

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 //Args:  input-file style-file output-file
 var xml  = WScript.CreateObject("Microsoft.XMLDOM");          //input
 xml.validateOnParse=false;

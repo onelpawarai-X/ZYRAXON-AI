@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # This file must be kept very simple, because it is consumed from several
 # places -- it is imported by h11/__init__.py, execfile'd by setup.py, etc.
 

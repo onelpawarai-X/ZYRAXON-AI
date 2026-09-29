@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export function createLatestWorkerQueue<T extends { key: string }>(input: {
   run: (request: T) => Promise<void>
   supersede: (request: T) => void

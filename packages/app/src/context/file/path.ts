@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export function stripFileProtocol(input: string) {
   if (!input.startsWith("file://")) return input
   return input.slice("file://".length)

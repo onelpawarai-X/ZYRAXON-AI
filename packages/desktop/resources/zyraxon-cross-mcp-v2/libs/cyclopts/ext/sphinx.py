@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Sphinx extension for automatic Cyclopts CLI documentation."""
 
 from typing import TYPE_CHECKING, Any

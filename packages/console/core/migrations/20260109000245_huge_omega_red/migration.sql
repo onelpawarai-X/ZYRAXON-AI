@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+-- Copyright (c) 2026 onelpawarai. All rights reserved.
+
 CREATE INDEX `workspace_user_id` ON `subscription` (`workspace_id`,`user_id`);--> statement-breakpoint
 ALTER TABLE `user` DROP COLUMN `time_subscribed`;--> statement-breakpoint
 ALTER TABLE `user` DROP COLUMN `sub_interval_usage`;--> statement-breakpoint

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """OCI OIDC provider for FastMCP.
 
 The pull request for the provider is submitted to fastmcp.

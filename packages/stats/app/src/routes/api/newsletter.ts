@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Resource } from "sst/resource"
 
 const listId = "8b9bb82c-9d5f-11f0-975f-0df6fd1e4945"

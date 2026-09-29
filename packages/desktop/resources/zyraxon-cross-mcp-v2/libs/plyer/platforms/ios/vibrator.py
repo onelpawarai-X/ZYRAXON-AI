@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 '''Implementation Vibrator for iOS.
 
 Install: Add AudioToolbox framework to your application.

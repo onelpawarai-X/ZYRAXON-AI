@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Effect, Ref, Context } from "effect"
 import type { AgentID, Task, PipelineStatus, CollabEvent } from "./types"
 

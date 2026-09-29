@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Switch as Kobalte } from "@kobalte/core/switch"
 import { Show, splitProps } from "solid-js"
 import type { ComponentProps, ParentProps } from "solid-js"

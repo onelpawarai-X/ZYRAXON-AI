@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { APIEvent } from "@solidjs/start/server"
 import { handler } from "~/routes/zen/util/handler"
 import { parseAnthropicVariant } from "~/routes/zen/util/variant"

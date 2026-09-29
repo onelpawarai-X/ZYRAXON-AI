@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { LocalProject } from "@/context/layout"
 import { getProjectAvatarVariant } from "@/context/layout"
 import type { ServerConnection } from "@/context/server"

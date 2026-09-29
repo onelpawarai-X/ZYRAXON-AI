@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """The protocol-version registry, as the `mcp.types.version` namespace.
 
 A mirror of `mcp_types.version` (every name is the same object), so code that

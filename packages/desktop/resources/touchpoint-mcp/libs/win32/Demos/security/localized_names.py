@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # A Python port of the MS knowledge base article Q157234
 # "How to deal with localized and renamed user and group names"
 # https://www.betaarchive.com/wiki/index.php?title=Microsoft_KB_Archive/157234

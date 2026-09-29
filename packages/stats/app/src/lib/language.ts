@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { route as localeRoute, strip as localeStrip } from "../../../../console/app/src/lib/language"
 import type { Locale } from "../../../../console/app/src/lib/language"
 

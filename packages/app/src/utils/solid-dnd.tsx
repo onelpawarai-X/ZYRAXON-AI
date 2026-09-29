@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { useDragDropContext } from "@thisbeyond/solid-dnd"
 import type { Transformer } from "@thisbeyond/solid-dnd"
 import { createRoot, onCleanup, type JSXElement } from "solid-js"

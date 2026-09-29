@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from . import model
 from .commontypes import COMMON_TYPES, resolve_common_type
 from .error import FFIError, CDefError

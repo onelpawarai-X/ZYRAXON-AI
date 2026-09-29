@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * KERNEL 12: Silent Precompile
  * Algorithm: Syntax Tree Validation + Import Graph Analysis + Complexity Metrics

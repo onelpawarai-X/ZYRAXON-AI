@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+   Copyright (c) 2026 onelpawarai. All rights reserved. */
+
 [data-component="text-shimmer"] {
   --text-shimmer-step: 35ms;
   --text-shimmer-duration: 900ms;

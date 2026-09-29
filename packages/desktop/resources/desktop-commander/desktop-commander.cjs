@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ZYRAXON Desktop Commander — 9,503★ All-in-one desktop control
 // Terminal, Files, Processes, Search, Edit, Docker, Excel, PDF, DOCX
 // Cross-platform: Windows, Linux, macOS

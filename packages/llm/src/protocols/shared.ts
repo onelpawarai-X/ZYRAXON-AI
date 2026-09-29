@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Buffer } from "node:buffer"
 import { Effect, Schema, Stream } from "effect"
 import * as Sse from "effect/unstable/encoding/Sse"

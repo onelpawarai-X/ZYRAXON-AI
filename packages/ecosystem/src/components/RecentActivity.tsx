@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { type Component, For, Show } from "solid-js"
 import type { RecentActivity as RecentActivityType } from "../types"
 

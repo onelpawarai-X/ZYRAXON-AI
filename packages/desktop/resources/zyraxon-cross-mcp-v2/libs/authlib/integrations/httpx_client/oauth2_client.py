@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # ruff: noqa: I001
 # The import order below is intentional: httpx compatibility must be loaded
 # before anyio so import errors refer to httpx.

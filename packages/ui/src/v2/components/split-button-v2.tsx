@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { splitProps, type ComponentProps, type ParentProps } from "solid-js"
 import "./split-button-v2.css"
 

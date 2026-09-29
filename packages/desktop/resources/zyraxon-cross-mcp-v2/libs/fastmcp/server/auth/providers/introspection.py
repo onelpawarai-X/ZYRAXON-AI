@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """OAuth 2.0 Token Introspection (RFC 7662) provider for FastMCP.
 
 This module provides token verification for opaque tokens using the OAuth 2.0

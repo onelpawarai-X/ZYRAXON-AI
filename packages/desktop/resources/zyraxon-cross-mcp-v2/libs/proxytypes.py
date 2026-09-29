@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 Based on the implementation here by Phillip J. Eby:
 https://pypi.python.org/pypi/ProxyTypes

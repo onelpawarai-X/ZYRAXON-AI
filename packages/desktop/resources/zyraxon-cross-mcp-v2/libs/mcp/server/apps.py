@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """MCP Apps extension (`io.modelcontextprotocol/ui`).
 
 MCP Apps lets a tool carry a reference to an interactive UI: the tool's

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """SEP-2322 client-side multi-round-trip driver.
 
 When a server returns `InputRequiredResult` instead of the normal result of a

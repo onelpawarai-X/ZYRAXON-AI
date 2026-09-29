@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Effect, Schema } from "effect"
 import { InstanceRef, WorkspaceRef } from "@/effect/instance-ref"
 import { type WorkspaceAdapter, type WorkspaceAdapterContext, WorkspaceInfo } from "../types"

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ZYRAXON MCP Server — Ultra Tool Registry
 // Provides unified access to all tool categories including DARK EMPEROR ULTRA tools
 // and OMNI-KERNEL ULTRA-15 mechanisms

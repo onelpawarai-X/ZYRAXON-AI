@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # We use native strings for all the re patterns, to take advantage of string
 # formatting, and then convert to bytestrings when compiling the final re
 # objects.

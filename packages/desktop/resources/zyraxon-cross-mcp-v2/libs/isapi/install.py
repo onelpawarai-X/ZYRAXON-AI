@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Installation utilities for Python ISAPI filters and extensions."""
 
 # this code adapted from "Tomcat JK2 ISAPI redirector", part of Apache

@@ -1,4 +1,7 @@
 #!/usr/bin/env bun
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * Build ZYRAXON Cross-Platform MCP v2 — Wrapper in resources/zyraxon-cross-mcp-v2/
  * Bundles server.py + libs/ + run.py for offline use (no pip install at runtime)

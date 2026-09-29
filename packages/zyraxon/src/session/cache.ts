@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // LRU Session Cache — Instant session loading
 // Caches recently accessed sessions in memory.
 // Hit = sub-millisecond. Miss = single DB read, then cached.

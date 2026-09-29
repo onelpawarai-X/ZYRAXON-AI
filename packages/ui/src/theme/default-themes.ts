@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { DesktopTheme } from "./types"
 import oc2ThemeJson from "./themes/oc-2.json"
 import amoledThemeJson from "./themes/amoled.json"

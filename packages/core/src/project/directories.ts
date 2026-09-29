@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export * as ProjectDirectories from "./directories"
 
 import { and, asc, desc, eq, isNotNull, isNull, ne, or } from "drizzle-orm"

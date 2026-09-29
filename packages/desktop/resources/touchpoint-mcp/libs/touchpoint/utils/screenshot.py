@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Screenshot utility for Touchpoint.
 
 Captures screen pixels and returns a ``PIL.Image.Image`` object.

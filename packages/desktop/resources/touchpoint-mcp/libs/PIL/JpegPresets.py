@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 JPEG quality settings equivalent to the Photoshop settings.
 Can be used when saving JPEG files.

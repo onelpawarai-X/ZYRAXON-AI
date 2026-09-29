@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """AggregateProvider for combining multiple providers into one.
 
 This module provides `AggregateProvider`, a utility class that presents

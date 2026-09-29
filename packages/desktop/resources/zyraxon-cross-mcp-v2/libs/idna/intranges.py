@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 Given a list of integers, made up of (hopefully) a small number of long runs
 of consecutive integers, compute a representation of the form

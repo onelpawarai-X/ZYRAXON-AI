@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import windowState from "electron-window-state"
 import { resolveThemeVariant } from "@zyraxon-ai/ui/theme/resolve"
 import type { DesktopTheme } from "@zyraxon-ai/ui/theme/types"

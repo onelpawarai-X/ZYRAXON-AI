@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Context } from "effect"
 import type { InstanceContext } from "@/project/instance-context"
 import type { WorkspaceV2 } from "@zyraxon-ai/core/workspace"

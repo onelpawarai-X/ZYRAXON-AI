@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { DateTime, Option, Schema, SchemaGetter } from "effect"
 
 export const PositiveInt = Schema.Int.check(Schema.isGreaterThan(0))

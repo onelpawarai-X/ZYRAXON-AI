@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { A } from "@solidjs/router"
 import { LanguagePicker } from "~/component/language-picker"
 import { useI18n } from "~/context/i18n"

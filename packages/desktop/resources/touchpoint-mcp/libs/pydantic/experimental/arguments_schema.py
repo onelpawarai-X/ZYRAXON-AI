@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Experimental module exposing a function to generate a core schema that validates callable arguments."""
 
 from __future__ import annotations

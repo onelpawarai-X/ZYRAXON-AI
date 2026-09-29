@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Server-side identity assertion (ID-JAG) support for FastMCP (SEP-990).
 
 .. warning::

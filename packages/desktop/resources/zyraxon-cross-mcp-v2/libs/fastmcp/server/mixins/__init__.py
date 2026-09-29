@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Server mixins for FastMCP."""
 
 from fastmcp.server.mixins.lifespan import LifespanMixin

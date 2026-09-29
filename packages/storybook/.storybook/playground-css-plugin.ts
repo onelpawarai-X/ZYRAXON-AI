@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * Vite plugin that exposes a POST endpoint for the timeline playground
  * to write CSS changes back to source files on disk.

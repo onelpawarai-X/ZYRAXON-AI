@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Effect, Option, Ref, Scope, Semaphore, Stream, SynchronizedRef } from "effect"
 import type { Headers } from "effect/unstable/http"
 import * as CassetteService from "./cassette.js"

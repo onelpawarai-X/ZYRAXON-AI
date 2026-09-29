@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 const defaults: Record<string, string> = {
   ask: "var(--icon-agent-ask-base)",
   build: "var(--icon-agent-build-base)",

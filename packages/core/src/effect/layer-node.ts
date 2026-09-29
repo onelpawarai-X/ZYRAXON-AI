@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Brand, Context, Layer } from "effect"
 
 type AnyNode = Node<unknown, unknown, any>

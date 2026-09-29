@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ZYRAXON Vision System — Vision Mode
 // The "AI's Eyes" — continuous screen awareness with memory
 // "আমি সবকিছু দেখতে পারি, সবকিছু মনে রাখি"

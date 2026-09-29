@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Skills providers for exposing agent skills as MCP resources.
 
 This module provides a two-layer architecture for skill discovery:

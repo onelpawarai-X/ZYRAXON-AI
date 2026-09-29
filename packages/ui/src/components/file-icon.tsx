@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { Component, JSX } from "solid-js"
 import { createMemo, createUniqueId, splitProps, Show } from "solid-js"
 import sprite from "./file-icons/sprite.svg"

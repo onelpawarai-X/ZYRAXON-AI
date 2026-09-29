@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 ADS_ATTR_CLEAR = 1
 ADS_ATTR_UPDATE = 2
 ADS_ATTR_APPEND = 3

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ZYRAXON OMNI-KERNEL — 15 ULTRA MECHANISM TOOLS
 // Real executable tools that power the ULTRA-15 architecture
 // Available in DARK EMPEROR, APEX PREDATOR, and BEAST modes

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createSignal, Show, onCleanup, onMount } from "solid-js"
 import { startDeviceFlow, pollDeviceCode, completeDeviceFlowLogin } from "../services/auth"
 import { IconLoader, IconCheck, IconX, IconDeviceCode, IconCopy } from "./Icons"

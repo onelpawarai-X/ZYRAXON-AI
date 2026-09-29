@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Subprocess test harness for the zyraxon CLI. Spawns the real binary against
 // a TestLLMServer running in-process at a random port, with full env isolation.
 //

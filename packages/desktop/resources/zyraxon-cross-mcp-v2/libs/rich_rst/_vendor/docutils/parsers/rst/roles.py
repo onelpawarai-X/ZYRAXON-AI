@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # $Id: roles.py 10136 2025-05-20 15:48:27Z milde $
 # Author: Edward Loper <edloper@gradient.cis.upenn.edu>
 # Copyright: This module has been placed in the public domain.

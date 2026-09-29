@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+-- Copyright (c) 2026 onelpawarai. All rights reserved.
+
 CREATE TABLE `model_tps_rate_limit` (
 	`id` varchar(255) NOT NULL,
 	`interval` bigint NOT NULL,

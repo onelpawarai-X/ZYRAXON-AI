@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { z } from "zod"
 
 export function fn<T extends z.ZodType, Result>(schema: T, cb: (input: z.infer<T>) => Result) {

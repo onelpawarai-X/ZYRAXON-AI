@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """FastMCP - A more ergonomic interface for MCP servers."""
 
 from __future__ import annotations as _annotations

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 const make = (directory: string) => ({
   session: {
     create: async () => ({ data: { id: "story-session" } }),

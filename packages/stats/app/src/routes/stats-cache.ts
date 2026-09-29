@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { LOCALE_HEADER } from "../lib/language"
 
 const statsPageCacheControl = "public, max-age=60, s-maxage=300, stale-while-revalidate=86400"

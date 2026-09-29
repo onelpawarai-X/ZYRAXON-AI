@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export * as PtyProtocol from "./protocol"
 
 // Wire protocol for PTY websocket transports. The PTY domain service is transport-free; server

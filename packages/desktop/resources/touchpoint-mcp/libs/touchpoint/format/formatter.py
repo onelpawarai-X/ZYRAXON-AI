@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Output formatting for UI element lists.
 
 Converts a list of :class:`~touchpoint.core.element.Element` instances

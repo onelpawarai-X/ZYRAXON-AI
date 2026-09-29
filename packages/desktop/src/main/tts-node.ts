@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createServer, IncomingMessage, ServerResponse } from "http"
 import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts"
 import { join } from "path"

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Bash completion script generator.
 
 Generates static bash completion scripts using COMPREPLY and compgen.

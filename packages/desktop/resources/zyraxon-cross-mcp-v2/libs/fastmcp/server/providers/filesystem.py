@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """FileSystemProvider for filesystem-based component discovery.
 
 FileSystemProvider scans a directory for Python files, imports them, and

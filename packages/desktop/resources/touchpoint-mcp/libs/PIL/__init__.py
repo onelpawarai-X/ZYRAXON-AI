@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Pillow (Fork of the Python Imaging Library)
 
 Pillow is the friendly PIL fork by Jeffrey 'Alex' Clark and contributors.

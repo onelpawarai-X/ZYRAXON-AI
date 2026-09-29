@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { V2ColorValue } from "../types"
 
 /** Default v2 hue ramps from `v2/styles/colors.css` (OC-2). Alpha ramps live in CSS only. */

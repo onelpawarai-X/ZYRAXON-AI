@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { type SelectedLineRange } from "@pierre/diffs"
 
 type SelectionKey = "ui.sessionReview.selection.line" | "ui.sessionReview.selection.lines"

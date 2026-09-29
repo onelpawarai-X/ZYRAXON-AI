@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # A demo plugin for Microsoft Outlook (NOT Outlook Express)
 #
 # This addin simply adds a new button to the main Outlook toolbar,

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from types import TracebackType
 from typing import IO, Iterable, Iterator, List, Optional, Type
 

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """JWT token issuance and verification for FastMCP OAuth Proxy.
 
 This module implements the token factory pattern for OAuth proxies, where the proxy

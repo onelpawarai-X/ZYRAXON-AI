@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Late-bound tool names in Prefab UI payloads.
 
 A Prefab UI is serialized during the entry tool's call, deep inside whatever

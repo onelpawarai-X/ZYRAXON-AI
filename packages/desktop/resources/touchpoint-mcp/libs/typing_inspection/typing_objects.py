@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Low-level introspection utilities for [`typing`][] members.
 
 The provided functions in this module check against both the [`typing`][] and [`typing_extensions`][]

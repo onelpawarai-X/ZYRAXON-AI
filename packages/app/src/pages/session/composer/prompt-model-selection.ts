@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { batch, createMemo, startTransition } from "solid-js"
 import { useModels } from "@/context/models"
 import type { ModelKey, ModelSelection } from "@/context/local"

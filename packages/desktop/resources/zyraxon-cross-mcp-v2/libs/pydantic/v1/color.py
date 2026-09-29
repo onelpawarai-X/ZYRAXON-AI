@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 Color definitions are  used as per CSS3 specification:
 http://www.w3.org/TR/css3-color/#svg-color

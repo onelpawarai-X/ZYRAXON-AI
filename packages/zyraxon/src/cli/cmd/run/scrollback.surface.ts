@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Retained streaming append logic for direct-mode scrollback.
 //
 // Static entries are rendered through `scrollback.writer.tsx`. This file only

@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Bring up ios_webkit_debug_proxy against the booted iOS Simulator and exec
 # whatever command is passed (defaulting to playwright test against the webview
 # config). Endpoint discovery and Mobile Safari freshness are owned by the

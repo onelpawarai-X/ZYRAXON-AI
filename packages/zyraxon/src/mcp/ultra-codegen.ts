@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ultra-codegen.ts — Code Generation Engine with Advanced Mathematical Analysis
 // 2000+ lines of REAL algorithmic logic — AST analysis, complexity theory, graph theory,
 // information theory, formal verification, type theory, category theory

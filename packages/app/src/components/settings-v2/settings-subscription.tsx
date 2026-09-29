@@ -1,11 +1,9 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createSignal, For, Show } from "solid-js"
+import { useSubscription } from "@/context/subscription"
 import {
-  loadSubState,
-  activateWithCode,
-  activateTier,
-  resetToFree,
-  lockSubscription,
-  getDaysRemaining,
   openStripeCheckout,
   isStripeReady,
   isAdminUnlocked,
@@ -13,7 +11,6 @@ import {
   TIER_ORDER,
   SUBSCRIPTION_PLANS,
   type SubscriptionTier,
-  type SubscriptionState,
 } from "@/utils/subscription-store"
 
 const TIER_COLORS: Record<SubscriptionTier, string> = {
@@ -30,7 +27,7 @@ const TIER_DURATION: Record<string, { label: string; price: number }> = {
 }
 
 export function SettingsSubscription() {
-  const [state, setState] = createSignal<SubscriptionState>(loadSubState())
+  const subscription = useSubscription()
   const [code, setCode] = createSignal("")
   const [codeMessage, setCodeMessage] = createSignal("")
   const [showSuccess, setShowSuccess] = createSignal(false)
@@ -41,9 +38,9 @@ export function SettingsSubscription() {
   const [adminTier, setAdminTier] = createSignal("")
   const [adminMsg, setAdminMsg] = createSignal("")
 
-  const currentTier = (): SubscriptionTier => state().tier
-  const currentPlan = () => SUBSCRIPTION_PLANS[state().tier]
-  const daysRemaining = () => getDaysRemaining(state())
+  const currentTier = (): SubscriptionTier => subscription.tier()
+  const currentPlan = () => SUBSCRIPTION_PLANS[currentTier()]
+  const daysRemaining = () => subscription.daysRemaining()
 
   function handleZySubmit() {
     if (zyInput().trim().toUpperCase() === "ZYRAXON") {
@@ -61,12 +58,10 @@ export function SettingsSubscription() {
       setAdminOpen(true)
       setAdminMsg("Admin panel unlocked!")
     } else if (tier === "lock") {
-      const newState = lockSubscription()
-      setState(newState)
+      subscription.resetToFree()
       setAdminMsg("All subscriptions locked to Free!")
     } else if (["pro", "max", "ultra"].includes(tier)) {
-      const newState = activateTier(tier as SubscriptionTier)
-      setState(newState)
+      subscription.activateTier(tier as SubscriptionTier, null)
       setAdminMsg(`${SUBSCRIPTION_PLANS[tier as SubscriptionTier].name} activated!`)
     } else {
       setAdminMsg("Invalid. Use: UNLOCK, PRO, MAX, ULTRA, LOCK")
@@ -76,9 +71,8 @@ export function SettingsSubscription() {
   }
 
   function handleActivateCode() {
-    const result = activateWithCode(code())
+    const result = subscription.activateWithCode(code())
     setCodeMessage(result.message)
-    setState(result.state)
     if (result.success) {
       setCode("")
       setShowSuccess(true)
@@ -90,15 +84,17 @@ export function SettingsSubscription() {
   function handleStripePay(tier: SubscriptionTier) {
     if (isStripeReady()) {
       openStripeCheckout(tier)
-    } else {
-      setCodeMessage("Stripe not configured yet. Use secret code to activate.")
-      setTimeout(() => setCodeMessage(""), 3000)
+      return
     }
+    setCodeMessage("Stripe not configured yet. Use secret code to activate.")
+    setTimeout(() => setCodeMessage(""), 3000)
   }
 
   function handleReset() {
-    const newState = resetToFree()
-    setState(newState)
+    // resetToFree in the shared store cannot reach this module's admin key, so a full
+    // local reset has to clear both or the admin panel stays open after a reset.
+    subscription.resetToFree()
+    setAdminUnlocked(false)
   }
 
   return (
@@ -188,6 +184,15 @@ export function SettingsSubscription() {
         </div>
       </Show>
 
+      <Show when={subscription.restoreProblem()}>
+        {(problem) => (
+          <div class="rounded-xl p-3 text-xs border border-red-500/20 bg-red-500/10 text-red-300">
+            Saved subscription could not be read ({problem()}). Access is currently Free — re-enter your
+            activation code to restore it.
+          </div>
+        )}
+      </Show>
+
       {/* Current Plan Badge */}
       <div class="rounded-xl p-4 border border-white/5"
         style={{
@@ -208,7 +213,7 @@ export function SettingsSubscription() {
               <Show when={daysRemaining() !== null}>
                 <span class="text-[11px] text-[var(--text-weak)] ml-2 font-normal">{daysRemaining()} days remaining</span>
               </Show>
-              <Show when={!daysRemaining() && currentTier() !== "free"}>
+              <Show when={subscription.isPermanentUnlock()}>
                 <span class="text-[11px] text-emerald-400 ml-2 font-normal">Permanent unlock</span>
               </Show>
             </div>
@@ -358,7 +363,7 @@ export function SettingsSubscription() {
             <div><span class="text-[var(--text-weak)]">Tools: </span><span class="text-[var(--text-strong)]">{currentPlan().toolCount}</span></div>
             <div><span class="text-[var(--text-weak)]">Memory: </span><span class="text-[var(--text-strong)]">{currentPlan().memoryOptimization}</span></div>
             <div><span class="text-[var(--text-weak)]">Expiry: </span><span class="text-[var(--text-strong)]">{daysRemaining() !== null ? `${daysRemaining()} days` : "Never (permanent)"}</span></div>
-            <div><span class="text-[var(--text-weak)]">Type: </span><span class="text-[var(--text-strong)]">{state().secretCode ? "Secret Code" : state().stripeSessionId ? "Stripe" : "Free"}</span></div>
+            <div><span class="text-[var(--text-weak)]">Type: </span><span class="text-[var(--text-strong)]">{subscription.secretCode() ? "Secret Code" : subscription.stripeSessionId() ? "Stripe" : "Free"}</span></div>
           </div>
         </div>
       </Show>

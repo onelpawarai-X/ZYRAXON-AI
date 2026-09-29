@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Dispatcher Protocol - the call/return boundary between transports and handlers.
 
 A Dispatcher turns a duplex message channel into two things:

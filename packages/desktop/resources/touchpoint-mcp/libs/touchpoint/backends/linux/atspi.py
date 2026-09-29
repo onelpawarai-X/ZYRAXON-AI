@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """AT-SPI2 backend for Linux.
 
 Uses ``gi.repository.Atspi`` (PyGObject) to read the accessibility

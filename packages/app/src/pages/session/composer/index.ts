@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export { SessionComposerRegion } from "./session-composer-region"
 export { createPromptInputController, createPromptProjectControls } from "./session-composer-controls"
 export { createSessionComposerController } from "./session-composer-state"

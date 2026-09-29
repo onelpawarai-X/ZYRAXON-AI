@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // TODO: Keep additional network capabilities inside Schema and Protocol as the client grows; /effect must never import
 // Core or Server. Preserve these datatype exports so internal model reorganizations do not require caller migrations.
 export * from "./generated-effect/index"

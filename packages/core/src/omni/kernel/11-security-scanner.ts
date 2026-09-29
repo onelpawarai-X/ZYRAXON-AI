@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * KERNEL 11: Security Scanner
  * Algorithm: OWASP Pattern Matching + Shannon Entropy Analysis + Regex Fingerprinting

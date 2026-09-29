@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """ZYRAXON Touchpoint MCP — 47 tools, accessibility-based, cross-platform."""
 import sys, os
 from pathlib import Path

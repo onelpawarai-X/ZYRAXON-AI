@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """`functools.lru_cache` compatible memoizing function decorators."""
 
 __all__ = ("fifo_cache", "lfu_cache", "lru_cache", "rr_cache", "ttl_cache")

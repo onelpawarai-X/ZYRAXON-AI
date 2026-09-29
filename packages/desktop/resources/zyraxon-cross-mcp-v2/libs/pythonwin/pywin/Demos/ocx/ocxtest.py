@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # OCX Tester for Pythonwin
 #
 # This file _is_ ready to run.  All that is required is that the OCXs being tested

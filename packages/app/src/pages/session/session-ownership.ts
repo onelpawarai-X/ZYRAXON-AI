@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createComputed, onCleanup } from "solid-js"
 
 export function createSessionOwnership(sessionKey: () => string) {

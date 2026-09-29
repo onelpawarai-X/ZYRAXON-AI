@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 class EmailNotValidError(ValueError):
     """Parent class of all exceptions raised by this module."""
     pass

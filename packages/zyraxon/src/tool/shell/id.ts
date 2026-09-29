@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 const kinds = ["bash", "pwsh", "powershell", "cmd", "zsh", "fish", "elvish", "nu", "xonsh", "oil"] as const
 export type Kind = (typeof kinds)[number]
 

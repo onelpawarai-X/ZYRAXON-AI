@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Route, type RouteRoutedModelInput } from "../route/client"
 import { Endpoint } from "../route/endpoint"
 import { Framing } from "../route/framing"

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Top-level orchestrator for `zyraxon --mini`.
 //
 // Wires the boot sequence, lifecycle (renderer + footer), stream transport,

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export * from "./gen/types.gen.js"
 export type { FileSystemEntry as LocationFileSystemEntry } from "./gen/types.gen.js"
 

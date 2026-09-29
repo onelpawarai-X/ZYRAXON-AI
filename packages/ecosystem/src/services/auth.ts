@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { initGitHubStorage, clearGitHubStorage, getGitHubStorage } from "./github-data"
 import { getAIConnection, clearAIConnection } from "./ai-connection"
 import { storeUserToken, retrieveUserToken, hasStoredToken } from "./token-storage"

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 ## demonstrates using BackupRead and BackupWrite to copy all of a file's data streams
 
 import ntsecuritycon

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # link.py
 # From a demo by Mark Hammond, corrupted by Mike Fletcher
 # (and re-corrupted by Mark Hammond :-)

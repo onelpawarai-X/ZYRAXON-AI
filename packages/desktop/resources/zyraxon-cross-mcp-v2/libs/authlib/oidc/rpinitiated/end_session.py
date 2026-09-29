@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """OpenID Connect RP-Initiated Logout 1.0 implementation.
 
 https://openid.net/specs/openid-connect-rpinitiated-1_0.html

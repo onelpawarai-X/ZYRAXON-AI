@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Azure Table Storage async key-value store.
 
 Backs the AsyncKeyValue protocol with Azure Table Storage. One Storage

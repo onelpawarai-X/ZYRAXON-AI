@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { Plugin } from "@zyraxon-ai/plugin"
 import { rename, writeFile } from "node:fs/promises"
 import { randomInt } from "node:crypto"

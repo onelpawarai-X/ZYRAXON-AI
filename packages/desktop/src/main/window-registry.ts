@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Tracks open windows and the persisted window id list used to restore
 // windows (and their per-window persisted state) across app launches.
 export function createWindowRegistry<W>(persistence: {

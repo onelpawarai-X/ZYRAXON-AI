@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Resource } from "@zyraxon-ai/console-resource"
 import { Actor } from "@zyraxon-ai/console-core/actor.js"
 import { action, json, query } from "@solidjs/router"

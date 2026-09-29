@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from .authorization_server import BaseServer
 from .authorization_server import CacheAuthorizationServer
 from .resource_protector import ResourceProtector

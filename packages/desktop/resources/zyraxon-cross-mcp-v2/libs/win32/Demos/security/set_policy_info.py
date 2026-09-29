@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import win32security
 
 policy_handle = win32security.GetPolicyHandle("rupole", win32security.POLICY_ALL_ACCESS)

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ZYRAXON Vision System — Vision Analyzer
 // AI-powered frame analysis using vision models
 // "আমি দেখতে পারি আপনার স্ক্রিনে কী আছে"

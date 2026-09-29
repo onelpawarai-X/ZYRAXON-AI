@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # typedesc.py - classes representing C type descriptions
 from typing import Any, Optional, SupportsInt
 from typing import Union as _UnionT

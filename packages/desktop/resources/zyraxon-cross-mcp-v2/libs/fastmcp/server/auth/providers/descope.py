@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Descope authentication provider for FastMCP.
 
 This module provides DescopeProvider - a complete authentication solution that integrates

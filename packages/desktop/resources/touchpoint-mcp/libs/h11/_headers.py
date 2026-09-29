@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import re
 from typing import AnyStr, cast, List, overload, Sequence, Tuple, TYPE_CHECKING, Union
 

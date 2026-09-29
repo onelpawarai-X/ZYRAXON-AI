@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { solidStart } from "@solidjs/start/config"
 import { nitro } from "nitro/vite"
 import { defineConfig, type PluginOption } from "vite"

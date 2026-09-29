@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 This module acts as a test that type checkers will allow each validator
 class to be assigned to a variable of type `type[Validator]`

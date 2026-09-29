@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /** Additional JSON metadata stored with a cassette. */
 export type CassetteMetadata = Record<string, unknown>
 

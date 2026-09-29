@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ZYRAXON Tool Counter — Multi-pattern verification
 // Usage: node verify-tool-count.cjs
 // Any AI or user can run this to get the SAME number

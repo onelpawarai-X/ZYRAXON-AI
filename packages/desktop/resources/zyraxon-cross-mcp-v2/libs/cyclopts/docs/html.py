@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """HTML documentation generation for cyclopts apps."""
 
 from typing import TYPE_CHECKING

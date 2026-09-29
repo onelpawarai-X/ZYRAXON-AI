@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { ServerConnection, useServer, useSettings, useTabs } from "@zyraxon-ai/app"
 import { onMount } from "solid-js"
 

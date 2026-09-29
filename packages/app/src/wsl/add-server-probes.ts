@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { useMutation } from "@tanstack/solid-query"
 import { createEffect } from "solid-js"
 import type { Accessor } from "solid-js"

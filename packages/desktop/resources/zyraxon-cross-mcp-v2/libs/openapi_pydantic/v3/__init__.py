@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from .parser import parse_obj as parse_obj
 from .v3_1 import XML as XML
 from .v3_1 import Callback as Callback

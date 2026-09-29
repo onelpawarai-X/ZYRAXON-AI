@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Excel IRTDServer implementation.
 
 This module is a functional example of how to implement the IRTDServer interface

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export const dict = {
   "ui.sessionReview.title": "セッションの変更",
   "ui.sessionReview.title.git": "Gitの変更",

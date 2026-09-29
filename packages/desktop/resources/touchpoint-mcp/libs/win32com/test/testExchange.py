@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # TestExchange = Exchange Server Dump
 # Note that this code uses "CDO", which is unlikely to get the best choice.
 # You should use the Outlook object model, or

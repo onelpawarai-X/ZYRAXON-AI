@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from ._jwe_algorithms import JWE_DRAFT_ALG_ALGORITHMS
 from ._jwe_enc_cryptography import C20PEncAlgorithm
 

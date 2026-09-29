@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """EventStore implementation backed by AsyncKeyValue.
 
 This module provides an EventStore implementation that enables SSE polling/resumability

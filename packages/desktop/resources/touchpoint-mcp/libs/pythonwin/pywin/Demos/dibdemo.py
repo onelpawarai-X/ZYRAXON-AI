@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # A demo which creates a view and a frame which displays a PPM format bitmap
 #
 # This hasnnt been run in a while, as I don't have many of that format around!

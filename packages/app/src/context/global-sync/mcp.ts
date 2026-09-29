@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { McpStatus } from "@zyraxon-ai/sdk/v2/client"
 
 export async function toggleMcp(input: {

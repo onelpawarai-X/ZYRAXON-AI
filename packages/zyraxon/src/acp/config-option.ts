@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { SessionConfigOption } from "@agentclientprotocol/sdk"
 
 export const DEFAULT_VARIANT_VALUE = "default"

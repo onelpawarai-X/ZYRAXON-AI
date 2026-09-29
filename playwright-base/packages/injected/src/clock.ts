@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * Copyright (c) 2010-2014, Christian Johansen, christian@cjohansen.no. All rights reserved.
  * Modifications copyright (c) ZYRAXON AI.

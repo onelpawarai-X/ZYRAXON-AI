@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """This module includes classes and functions designed specifically for use with the mypy plugin."""
 
 from __future__ import annotations

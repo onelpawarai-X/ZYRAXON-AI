@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # This is a helper for the win32trace module
 
 # If imported from a normal Python program, it sets up sys.stdout and sys.stderr

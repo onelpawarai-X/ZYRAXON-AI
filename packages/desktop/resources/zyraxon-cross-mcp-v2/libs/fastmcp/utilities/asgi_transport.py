@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """An in-process, full-duplex HTTP transport for driving ASGI applications from httpx.
 
 Ported from the MCP Python SDK's test suite (`tests/interaction/transports/_bridge.py`,

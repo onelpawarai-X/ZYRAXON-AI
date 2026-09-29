@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Copyright (c) Microsoft Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
