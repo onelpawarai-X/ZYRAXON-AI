@@ -79,6 +79,16 @@ const APP_IDS = {
   prod: "ai.zyraxon.desktop",
 } as const
 
+// The display name carries a space ("ZYRAXON Dev"), but a space in a release
+// asset name becomes a dot in the GitHub download URL while electron-updater
+// looks the asset up under the sanitized name written into latest.yml. Keep a
+// space-free slug for file names and use it for the installer artifact.
+const PRODUCT_SLUGS = {
+  dev: "ZYRAXON-Dev",
+  beta: "ZYRAXON-Beta",
+  prod: "ZYRAXON",
+} as const
+
 const getBase = (appId: string): Configuration => ({
   afterPack,
   artifactName: "zyraxon-desktop-${os}-${arch}.${ext}",
@@ -194,7 +204,11 @@ const getBase = (appId: string): Configuration => ({
     perMachine: false,
     installerIcon: `resources/icons/icon.ico`,
     installerHeaderIcon: `resources/icons/icon.ico`,
-    artifactName: "${productName}-${os}-installer.${ext}",
+    // ${productName} carries the channel name with a space in it ("ZYRAXON Dev"),
+    // and spaces in a release asset name become dots in the GitHub download URL
+    // while electron-updater looks the asset up under the sanitized name written
+    // into latest.yml. Build the name from the channel directly so both agree.
+    artifactName: `${PRODUCT_SLUGS[channel]}-\${os}-installer.\${ext}`,
   },
   linux: {
     icon: `resources/icons`,
