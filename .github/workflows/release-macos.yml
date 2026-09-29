@@ -26,18 +26,9 @@ concurrency:
 
 jobs:
   macos:
-    name: macOS (${{ matrix.arch }})
-    runs-on: ${{ matrix.runner }}
+    name: macOS (arm64 + x64)
+    runs-on: macos-latest
     timeout-minutes: 90
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: arm64
-            runner: macos-latest
-          - arch: x64
-            runner: macos-13
 
     env:
       ZYRAXON_CHANNEL: dev
@@ -70,8 +61,8 @@ jobs:
             ~/.bun/install/cache
             ~/Library/Caches/electron
             ~/Library/Caches/electron-builder
-          key: release-macos-${{ matrix.arch }}-${{ hashFiles('bun.lock') }}
-          restore-keys: release-macos-${{ matrix.arch }}-
+          key: release-macos-both-${{ hashFiles('bun.lock') }}
+          restore-keys: release-macos-both-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -81,11 +72,17 @@ jobs:
 
       - name: Package the macOS installer
         working-directory: packages/desktop
+        # Both architectures from one runner. electron-builder downloads the
+        # matching Electron build for each target, so an arm64 runner can
+        # produce an Intel app as well. A separate Intel runner would double the
+        # wall clock for no benefit and depends on a runner image that is being
+        # retired.
+        #
         # --publish never: the build config names a GitHub publisher, so
         # electron-builder would try to upload the release itself and fail on a
         # missing token. This workflow owns the upload, via the release asset
         # step below.
-        run: bunx electron-builder --mac --${{ matrix.arch }} --config electron-builder.config.ts --publish never
+        run: bunx electron-builder --mac --x64 --arm64 --config electron-builder.config.ts --publish never
 
       - name: Attach to the release
         env:
