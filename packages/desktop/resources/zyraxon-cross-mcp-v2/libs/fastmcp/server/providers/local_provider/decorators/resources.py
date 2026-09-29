@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Resource decorator mixin for LocalProvider.
 
 This module provides the ResourceDecoratorMixin class that adds resource

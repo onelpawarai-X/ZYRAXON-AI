@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // @ts-nocheck
 import * as mod from "./message-part"
 import { create } from "@zyraxon-ai/ui/storybook/scaffold"

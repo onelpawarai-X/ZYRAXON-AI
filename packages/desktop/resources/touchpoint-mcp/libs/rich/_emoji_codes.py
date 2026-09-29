@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 EMOJI = {
     "1st_place_medal": "🥇",
     "2nd_place_medal": "🥈",

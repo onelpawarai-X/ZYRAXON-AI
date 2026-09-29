@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { SyntaxStyle, TextAttributes, type ColorInput } from "@opentui/core"
 import { type RunEntryTheme, type RunTheme } from "./theme"
 import type { StreamCommit } from "./types"

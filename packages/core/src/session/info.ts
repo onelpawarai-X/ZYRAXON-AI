@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { DateTime } from "effect"
 import { AgentV2 } from "../agent"
 import { Location } from "../location"

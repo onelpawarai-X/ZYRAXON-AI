@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Config, Effect, Formatter, Layer, Schema, Stream } from "effect"
 import { LLM, LLMClient, Message, ProviderID, Tool, ToolRuntime } from "@zyraxon-ai/llm"
 import { Route, Auth, Endpoint, Framing, Protocol, RequestExecutor, WebSocketExecutor } from "@zyraxon-ai/llm/route"

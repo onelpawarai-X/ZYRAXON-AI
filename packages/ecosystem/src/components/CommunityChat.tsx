@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { type Component, createSignal, For, Show, onMount, onCleanup, createEffect, createMemo } from "solid-js"
 import Peer, { type MediaConnection, type DataConnection } from "peerjs"
 import type { ChatMessage } from "../types"

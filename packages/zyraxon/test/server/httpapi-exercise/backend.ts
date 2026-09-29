@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { ConfigProvider, Effect, Layer } from "effect"
 import { HttpRouter } from "effect/unstable/http"
 import { parse } from "./assertions"

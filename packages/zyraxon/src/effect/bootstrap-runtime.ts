@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Layer, ManagedRuntime } from "effect"
 import { AppNodeBuilder } from "@zyraxon-ai/core/effect/app-node-builder"
 import { LayerNode } from "@zyraxon-ai/core/effect/layer-node"

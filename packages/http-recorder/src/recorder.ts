@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Effect, Scope, SynchronizedRef } from "effect"
 import type * as CassetteService from "./cassette.js"
 import type { CassetteNotFoundError } from "./cassette.js"

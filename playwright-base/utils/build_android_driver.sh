@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 
 (cd packages/playwright-core/src/server/android/driver ; ./gradlew assemble)
 if [ "$?" -ne "0" ]; then

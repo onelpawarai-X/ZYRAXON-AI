@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 Demonstrates prompting for credentials, saving, and loggging on with marshalled credential.
 Also shows how to load user's profile

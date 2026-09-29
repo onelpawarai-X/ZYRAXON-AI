@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { FileSystem } from "@zyraxon-ai/schema/filesystem"
 import { Location } from "@zyraxon-ai/schema/location"
 import { PositiveInt, RelativePath } from "@zyraxon-ai/schema/schema"

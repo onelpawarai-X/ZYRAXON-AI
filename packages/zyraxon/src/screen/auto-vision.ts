@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ZYRAXON Auto Screen Vision v5 — FAST SINGLE FRAME
 // 24/7 SILENT background daemon — keeps ONLY the latest frame
 // Every 1 second: capture new → delete old → keep only latest

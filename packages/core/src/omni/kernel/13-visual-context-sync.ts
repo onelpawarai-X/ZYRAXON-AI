@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * KERNEL 13: Visual Context Sync
  * Algorithm: Error Pattern Detection + UI Element Extraction + Frame Similarity via Cosine

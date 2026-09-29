@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { NodeFileSystem } from "@effect/platform-node"
 import { Deferred, Effect, Layer, Option, Ref } from "effect"
 import {

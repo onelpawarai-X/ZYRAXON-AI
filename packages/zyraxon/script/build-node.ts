@@ -1,4 +1,7 @@
 #!/usr/bin/env bun
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * Builds the ZYRAXON server as a Bun-compatible ESM bundle for Node runtime.
  * Output: dist/node/node.js — imported by the desktop sidecar at runtime.

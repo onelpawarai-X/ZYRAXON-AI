@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * ZYRAXON X - Vehicle Control System
  * Drones (MAVLink), Cars (CAN/OBD), Boats, Rockets, Satellites

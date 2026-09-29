@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * Marketplace Auto-Install Service
  * AI reads marketplace items and auto-installs/sets them up in the system

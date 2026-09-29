@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { observeElementOffset, type Virtualizer } from "@tanstack/solid-virtual"
 
 export function observeElementOffsetReconnectAware<TScrollElement extends Element, TItemElement extends Element>(

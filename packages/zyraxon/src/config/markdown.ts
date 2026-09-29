@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Filesystem } from "@/util/filesystem"
 import { FrontmatterError } from "@zyraxon-ai/core/v1/config/error"
 import { ConfigMarkdown as ConfigMarkdownCore } from "@zyraxon-ai/core/config/markdown"

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /// <reference path="../env.d.ts" />
 import { tool } from "@zyraxon-ai/plugin"
 

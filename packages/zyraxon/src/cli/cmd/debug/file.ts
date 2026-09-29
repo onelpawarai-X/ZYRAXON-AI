@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { EOL } from "os"
 import { Effect } from "effect"
 import { FileSystem } from "@zyraxon-ai/core/filesystem"

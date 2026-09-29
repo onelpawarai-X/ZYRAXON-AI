@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 interface ImportMetaEnv {
   readonly VITE_ZYRAXON_SERVER_HOST: string
   readonly VITE_ZYRAXON_SERVER_PORT: string

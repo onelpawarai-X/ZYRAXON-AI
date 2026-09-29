@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { marked, type MarkedExtension, type Tokens } from "marked"
 import markedShiki from "marked-shiki"
 import katex from "katex"

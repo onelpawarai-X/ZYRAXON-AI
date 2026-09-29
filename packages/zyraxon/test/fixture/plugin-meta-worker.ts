@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 const raw = process.argv[2]
 if (!raw) throw new Error("Missing worker payload")
 

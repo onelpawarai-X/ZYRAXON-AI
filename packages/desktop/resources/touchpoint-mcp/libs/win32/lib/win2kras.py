@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """\
 win2kras used to be an extension module with wrapped the "new" RAS functions \
 in Windows 2000, so win32ras could still be used on NT/etc.

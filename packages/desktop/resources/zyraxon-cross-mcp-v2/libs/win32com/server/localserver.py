@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # LocalServer .EXE support for Python.
 #
 # This is designed to be used as a _script_ file by pythonw.exe

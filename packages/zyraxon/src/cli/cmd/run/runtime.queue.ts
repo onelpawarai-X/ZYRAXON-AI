@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Serial prompt queue for direct interactive mode.
 //
 // Prompts arrive from the footer (user types and hits enter) and queue up

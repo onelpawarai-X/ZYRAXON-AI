@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { checksum } from "@zyraxon-ai/core/util/encode"
 import DOMPurify from "dompurify"
 import { project } from "./markdown-stream"

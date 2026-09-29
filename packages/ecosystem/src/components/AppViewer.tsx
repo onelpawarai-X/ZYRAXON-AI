@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * In-App Viewer Component
  * Renders HTML games, websites, and interactive content inside the ZYRAXON app

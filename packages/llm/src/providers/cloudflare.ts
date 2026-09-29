@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { Config, Redacted } from "effect"
 import * as OpenAICompatibleChat from "../protocols/openai-compatible-chat"
 import { Auth } from "../route/auth"

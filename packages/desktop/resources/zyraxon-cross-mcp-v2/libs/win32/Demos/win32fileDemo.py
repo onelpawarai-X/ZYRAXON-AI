@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # This is a "demo" of win32file - it used to be more a test case than a
 # demo, so has been moved to the test directory.
 

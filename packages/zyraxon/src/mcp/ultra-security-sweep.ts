@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ═══════════════════════════════════════════════════════════════════════════
 // ULTRA SECURITY SWEEP — Real Cryptographic & Security Analysis Engine
 // 2000+ lines of REAL mathematical/scientific security analysis

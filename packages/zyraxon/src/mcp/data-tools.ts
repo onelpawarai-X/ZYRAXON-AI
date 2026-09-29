@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ZYRAXON MCP Server 3: Data Processing
 // 20 real working tools for data manipulation
 

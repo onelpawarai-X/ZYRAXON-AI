@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import http.server, json, os, tempfile, asyncio, hashlib, threading
 from urllib.parse import urlparse, parse_qs
 from concurrent.futures import ThreadPoolExecutor

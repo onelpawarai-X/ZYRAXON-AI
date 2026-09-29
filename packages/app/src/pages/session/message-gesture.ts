@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export const normalizeWheelDelta = (input: { deltaY: number; deltaMode: number; rootHeight: number }) => {
   if (input.deltaMode === 1) return input.deltaY * 40
   if (input.deltaMode === 2) return input.deltaY * input.rootHeight

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createEffect, createMemo, createSignal, onCleanup, Show } from "solid-js"
 import { useTheme } from "../context/theme"
 import { Spinner } from "./spinner"

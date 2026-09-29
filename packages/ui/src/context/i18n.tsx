@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createContext, useContext, type Accessor, type ParentProps } from "solid-js"
 import { dict as en } from "../i18n/en"
 

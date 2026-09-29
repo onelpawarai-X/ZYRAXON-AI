@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createContext, createSignal, splitProps, useContext } from "solid-js"
 import type { JSX } from "solid-js/jsx-runtime"
 import { makeResizeObserver } from "@solid-primitives/resize-observer"

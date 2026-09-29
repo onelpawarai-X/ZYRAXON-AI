@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import plyer.platforms.win.libs.wifi_defs as wifi_lib
 from plyer.facades import Wifi
 

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Contains knowledge to build a COM object definition.
 
 This module is used by both the @dynamic@ and @makepy@ modules to build

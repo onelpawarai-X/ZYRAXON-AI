@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { app, ipcMain } from "electron"
 import type { IpcMainInvokeEvent } from "electron"
 import type { WslServersController } from "./servers"

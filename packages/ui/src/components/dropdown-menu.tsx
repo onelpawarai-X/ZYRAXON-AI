@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { DropdownMenu as Kobalte } from "@kobalte/core/dropdown-menu"
 import { splitProps } from "solid-js"
 import type { ComponentProps, ParentProps } from "solid-js"

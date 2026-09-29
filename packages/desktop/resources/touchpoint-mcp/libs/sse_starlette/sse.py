@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Server-Sent Events response for Starlette / FastAPI.
 
 Intentional divergence from ``starlette.responses.StreamingResponse``

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Low-level string sanitization functions.
 
 This module provides low-level functions for sanitizing strings by replacing

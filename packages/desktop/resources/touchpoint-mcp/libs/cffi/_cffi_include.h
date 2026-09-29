@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 #define _CFFI_
 
 /* We try to define Py_LIMITED_API before including Python.h.

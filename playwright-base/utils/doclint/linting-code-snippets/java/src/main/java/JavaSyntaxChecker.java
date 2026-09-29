@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.github.javaparser.JavaParser;

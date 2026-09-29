@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Touchpoint MCP server.
 
 Exposes Touchpoint's UI-automation API as an MCP (Model Context

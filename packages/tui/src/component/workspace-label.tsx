@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { useTheme } from "../context/theme"
 
 export type WorkspaceStatus = "connected" | "connecting" | "disconnected" | "error"

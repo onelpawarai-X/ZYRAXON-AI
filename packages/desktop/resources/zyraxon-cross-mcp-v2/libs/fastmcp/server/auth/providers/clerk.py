@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Clerk OAuth provider for FastMCP.
 
 This module provides a complete Clerk OAuth integration that's ready to use

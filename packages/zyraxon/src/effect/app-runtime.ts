@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Layer, ManagedRuntime } from "effect"
 import { attach } from "./run-service"
 import * as Observability from "@zyraxon-ai/core/observability"

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export const regexpMethods = new Set(["test", "exec", "toString"])
 
 export const regexpProperties = new Set([

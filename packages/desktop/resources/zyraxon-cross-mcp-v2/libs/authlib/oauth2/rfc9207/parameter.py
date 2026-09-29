@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from authlib.common.urls import add_params_to_uri
 from authlib.deprecate import deprecate
 from authlib.oauth2.rfc6749.grants import BaseGrant

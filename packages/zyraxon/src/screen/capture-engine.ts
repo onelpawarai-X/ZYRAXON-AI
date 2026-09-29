@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ZYRAXON Vision System — Capture Engine
 // 24/7 continuous screen capture daemon
 // Non-blocking, memory-efficient, auto-recovering

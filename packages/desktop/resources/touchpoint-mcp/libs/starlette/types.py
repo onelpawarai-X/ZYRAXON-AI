@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from collections.abc import Awaitable, Callable, Mapping, MutableMapping
 from contextlib import AbstractAsyncContextManager
 from typing import TYPE_CHECKING, Any, TypeVar

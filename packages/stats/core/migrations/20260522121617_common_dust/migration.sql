@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+-- Copyright (c) 2026 onelpawarai. All rights reserved.
+
 CREATE TABLE `stat` (
 	`id` bigint AUTO_INCREMENT PRIMARY KEY,
 	`grain` varchar(16) NOT NULL,

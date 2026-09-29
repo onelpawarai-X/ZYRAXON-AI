@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # This module contains a single function, `c3linear_merge`.
 # The function is generic enough to be in its own module.
 #

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createMiddleware } from "@solidjs/start/middleware"
 import { LOCALE_HEADER, cookie, fromPathname, strip } from "~/lib/language"
 import { normalizeReferralCode, referralCookie } from "~/lib/referral-invite"

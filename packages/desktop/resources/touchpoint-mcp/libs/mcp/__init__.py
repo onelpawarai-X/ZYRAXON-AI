@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from .client.session import ClientSession
 from .client.session_group import ClientSessionGroup
 from .client.stdio import StdioServerParameters, stdio_client

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Originally contributed by Stefan Schukat as part of this arbitrary-sized
 # arrays patch.
 from __future__ import annotations

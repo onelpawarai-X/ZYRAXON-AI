@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import * as InstanceState from "@/effect/instance-state"
 import { FileSystem } from "@zyraxon-ai/core/filesystem"
 import { LocationServiceMap, locationServiceMapLayer } from "@zyraxon-ai/core/location-services"

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # dlgappdemo - a demo of a dialog application.
 # This is a demonstration of both a custom "application" module,
 # and a Python program in a dialog box.

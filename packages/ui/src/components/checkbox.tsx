@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Checkbox as Kobalte } from "@kobalte/core/checkbox"
 import { Show, splitProps } from "solid-js"
 import type { ComponentProps, JSX, ParentProps } from "solid-js"

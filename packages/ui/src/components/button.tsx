@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Button as Kobalte } from "@kobalte/core/button"
 import { type ComponentProps, Show, splitProps } from "solid-js"
 import { Icon, IconProps } from "./icon"

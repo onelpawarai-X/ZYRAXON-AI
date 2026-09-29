@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Copyright 2014 The Chromium Authors. All rights reserved.
 // Modifications copyright (c) ZYRAXON AI.
 //

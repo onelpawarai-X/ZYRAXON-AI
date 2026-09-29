@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export function decodeDataUrl(url: string) {
   const idx = url.indexOf(",")
   if (idx === -1) return ""

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { defineCollection, z } from "astro:content"
 import { docsLoader, i18nLoader } from "@astrojs/starlight/loaders"
 import { docsSchema, i18nSchema } from "@astrojs/starlight/schema"

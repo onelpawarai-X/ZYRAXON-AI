@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { bundledLanguagesInfo } from "shiki"
 import { getFilename } from "@zyraxon-ai/core/util/path"
 import type { FilePart } from "@zyraxon-ai/sdk/v2"

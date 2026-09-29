@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // The review pane has no width of its own: it takes whatever the chat panel
 // leaves behind. Instead of capping the chat panel at a fraction of the window
 // (which forces the review pane to grow with the monitor), reserve a fixed

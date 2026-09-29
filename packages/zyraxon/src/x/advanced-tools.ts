@@ -1,4 +1,33 @@
-import type { XToolDef } from "../x-tool-registry"
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
+import type { XToolDef } from "./x-tool-registry"
+import {
+  captureScreen,
+  clickAt,
+  currentPlatform,
+  desktopInfo,
+  dragMouse,
+  listWindows,
+  moveMouse,
+  openApp,
+  pressKeys,
+  scrollAt,
+  typeText,
+} from "./desktop-control"
+import { editImage, extractData, probeMedia, processVideo, runOcr } from "./media-processing"
+import {
+  applyStepResult,
+  behaviourRules,
+  claimNextStep,
+  createPlan,
+  listPlans,
+  markSkipped,
+  readPlan,
+  recordLesson,
+  summarise,
+  writePlan,
+} from "./plan-engine"
 
 // ═══════════════════════════════════════════════════════════════
 // CDP CONNECTION STATE — Shared across all browser tools
@@ -265,149 +294,210 @@ export const computerControlTools: XToolDef[] = [
   {
     id: "x_comp_screenshot",
     name: "Computer Screenshot",
-    description: "Take a screenshot of the entire screen or a specific window. Used for screen vision to control any app.",
+    description:
+      "Capture the real screen (or a region) as a PNG and return the image data with its true size. Works on Windows, macOS and Linux.",
     parameters: {
-      region: { type: "string", description: "Optional region: 'full', 'active', or 'x,y,w,h'", required: false },
+      region: { type: "string", description: "Optional 'x,y,w,h' region. Omit for the whole screen.", required: false },
     },
     category: "max",
     execute: async (args) => {
-      return {
-        ok: true,
-        data: {
-          action: "screenshot",
-          region: args.region || "full",
-          message: "Screenshot captured. Use with vision AI to identify UI elements for click/type.",
-        },
+      try {
+        const region = parseRegion(args.region)
+        const shot = await captureScreen(region)
+        return {
+          ok: true,
+          data: {
+            platform: currentPlatform(),
+            width: shot.width,
+            height: shot.height,
+            path: shot.path,
+            format: "png",
+            base64: shot.base64,
+            imageUrl: `data:image/png;base64,${shot.base64}`,
+          },
+        }
+      } catch (err: any) {
+        return { ok: false, error: `Screenshot failed: ${err.message}` }
       }
     },
   },
   {
     id: "x_comp_click_at",
     name: "Computer Click",
-    description: "Click at screen coordinates on ANY desktop application. Use after screenshot + vision analysis.",
+    description:
+      "Click at screen coordinates on any desktop application. Moves the real cursor first so the target sees the true pointer position.",
     parameters: {
       x: { type: "number", description: "Screen X coordinate", required: true },
       y: { type: "number", description: "Screen Y coordinate", required: true },
       button: { type: "string", description: "left, right, or middle (default: left)", required: false },
+      clicks: { type: "number", description: "Number of clicks, 1-5 (default: 1)", required: false },
     },
     category: "max",
     execute: async (args) => {
-      return {
-        ok: true,
-        data: { action: "click", x: args.x, y: args.y, button: args.button || "left" },
-      }
+      const result = await clickAt(args.x, args.y, args.button ?? "left", args.clicks ?? 1)
+      return result.ok
+        ? { ok: true, data: result.data }
+        : { ok: false, error: result.error }
     },
   },
   {
     id: "x_comp_type_text",
     name: "Computer Type Text",
-    description: "Type text at the current cursor position on ANY desktop app",
+    description:
+      "Type text at the current cursor position on any desktop app. Preserves every Unicode character.",
     parameters: {
       text: { type: "string", description: "Text to type", required: true },
-      interval: { type: "number", description: "Delay between keystrokes in ms (default: 0)", required: false },
+      interval: { type: "number", description: "Extra delay in ms, 0-1000 (default: 0)", required: false },
     },
     category: "max",
     execute: async (args) => {
-      return {
-        ok: true,
-        data: { action: "type", text: args.text, interval: args.interval || 0 },
-      }
+      const result = await typeText(args.text, args.interval ?? 0)
+      return result.ok
+        ? { ok: true, data: result.data }
+        : { ok: false, error: result.error }
     },
   },
   {
     id: "x_comp_key_press",
     name: "Computer Key Press",
-    description: "Press a keyboard shortcut on ANY desktop app (e.g., ctrl+c, alt+tab, enter)",
+    description:
+      "Press a real keyboard combination on any desktop app, e.g. 'ctrl+c', 'alt+tab', 'enter', 'win+d'.",
     parameters: {
       keys: { type: "string", description: "Key combo like 'ctrl+c', 'enter', 'alt+tab'", required: true },
     },
     category: "max",
     execute: async (args) => {
-      return {
-        ok: true,
-        data: { action: "key_press", keys: args.keys },
-      }
+      const result = await pressKeys(args.keys)
+      return result.ok
+        ? { ok: true, data: result.data }
+        : { ok: false, error: result.error }
     },
   },
   {
     id: "x_comp_scroll",
     name: "Computer Scroll",
-    description: "Scroll on ANY desktop application at current mouse position",
+    description: "Scroll on any desktop application, at the current or a given mouse position.",
     parameters: {
       direction: { type: "string", description: "up, down, left, or right", required: true },
-      amount: { type: "number", description: "Scroll amount (default: 3)", required: false },
+      amount: { type: "number", description: "Notches to scroll, 1-50 (default: 3)", required: false },
+      x: { type: "number", description: "Optional X to move the cursor to first", required: false },
+      y: { type: "number", description: "Optional Y to move the cursor to first", required: false },
     },
     category: "max",
     execute: async (args) => {
-      return {
-        ok: true,
-        data: { action: "scroll", direction: args.direction, amount: args.amount || 3 },
-      }
+      const result = await scrollAt(args.direction, args.amount ?? 3, args.x, args.y)
+      return result.ok
+        ? { ok: true, data: result.data }
+        : { ok: false, error: result.error }
     },
   },
   {
     id: "x_comp_move_mouse",
     name: "Computer Move Mouse",
-    description: "Move the mouse cursor to specific screen coordinates",
+    description: "Move the mouse cursor to specific screen coordinates without clicking.",
     parameters: {
       x: { type: "number", description: "Target X coordinate", required: true },
       y: { type: "number", description: "Target Y coordinate", required: true },
     },
     category: "max",
     execute: async (args) => {
-      return {
-        ok: true,
-        data: { action: "move", x: args.x, y: args.y },
-      }
+      const result = await moveMouse(args.x, args.y)
+      return result.ok
+        ? { ok: true, data: result.data }
+        : { ok: false, error: result.error }
     },
   },
   {
     id: "x_comp_drag",
     name: "Computer Drag",
-    description: "Click and drag from one point to another on ANY desktop app",
+    description:
+      "Press, move the real cursor in steps, and release — a genuine drag on any desktop app.",
     parameters: {
       fromX: { type: "number", description: "Start X", required: true },
       fromY: { type: "number", description: "Start Y", required: true },
       toX: { type: "number", description: "End X", required: true },
       toY: { type: "number", description: "End Y", required: true },
+      steps: { type: "number", description: "Intermediate moves, 2-200 (default: 20)", required: false },
     },
     category: "max",
     execute: async (args) => {
-      return {
-        ok: true,
-        data: { action: "drag", from: { x: args.fromX, y: args.fromY }, to: { x: args.toX, y: args.toY } },
-      }
+      const result = await dragMouse(args.fromX, args.fromY, args.toX, args.toY, args.steps ?? 20)
+      return result.ok
+        ? { ok: true, data: result.data }
+        : { ok: false, error: result.error }
     },
   },
   {
     id: "x_comp_open_app",
     name: "Computer Open App",
-    description: "Open any desktop application by name or path",
+    description:
+      "Open a desktop application by name or absolute path, the same way the platform's launcher would.",
     parameters: {
-      app: { type: "string", description: "App name or path (e.g., 'chrome', 'notepad', 'C:\\...\\app.exe')", required: true },
+      app: {
+        type: "string",
+        description: "App name or absolute path (e.g. 'chrome', 'notepad', 'C:\\\\...\\\\app.exe')",
+        required: true,
+      },
     },
     category: "max",
     execute: async (args) => {
-      return {
-        ok: true,
-        data: { action: "open_app", app: args.app },
-      }
+      const result = await openApp(args.app)
+      return result.ok
+        ? { ok: true, data: result.data }
+        : { ok: false, error: result.error }
     },
   },
   {
     id: "x_comp_list_windows",
     name: "Computer List Windows",
-    description: "List all currently open windows on the desktop",
+    description:
+      "List every visible open window with its real title, owning process id, class and geometry.",
     parameters: {},
     category: "max",
     execute: async () => {
-      return {
-        ok: true,
-        data: { action: "list_windows", message: "Lists all open windows with titles and positions" },
+      try {
+        const windows = await listWindows()
+        return { ok: true, data: { platform: currentPlatform(), count: windows.length, windows } }
+      } catch (err: any) {
+        return { ok: false, error: `Could not list windows: ${err.message}` }
       }
     },
   },
+  {
+    id: "x_comp_desktop_info",
+    name: "Computer Desktop Info",
+    description:
+      "Report the live desktop environment: platform, user, hostname and screen size.",
+    parameters: {},
+    category: "max",
+    execute: async () => {
+      const result = await desktopInfo()
+      return result.ok
+        ? { ok: true, data: result.data }
+        : { ok: false, error: result.error }
+    },
+  },
 ]
+
+// Accepts "x,y,w,h" and validates it before any capture is attempted.
+function parseRegion(value: unknown): { x: number; y: number; w: number; h: number } | undefined {
+  if (value === undefined || value === null || value === "") return undefined
+  if (typeof value === "object" && value !== null) {
+    const rect = value as Record<string, unknown>
+    const nums = [rect.x, rect.y, rect.w ?? rect.width, rect.h ?? rect.height].map(Number)
+    if (nums.every(Number.isFinite) && nums[2] > 0 && nums[3] > 0)
+      return { x: nums[0], y: nums[1], w: nums[2], h: nums[3] }
+    throw new Error("region object needs numeric x, y and positive width and height")
+  }
+  if (typeof value !== "string") throw new Error("region must be 'x,y,w,h' or an object")
+  if (value === "full" || value === "active") return undefined
+  const parts = value.split(",").map((p) => Number(p.trim()))
+  if (parts.length !== 4 || !parts.every(Number.isFinite))
+    throw new Error(`region must be 'x,y,w,h', received: ${value}`)
+  const [x, y, w, h] = parts as [number, number, number, number]
+  if (w <= 0 || h <= 0) throw new Error("region width and height must be positive")
+  return { x, y, w, h }
+}
 
 // ═══════════════════════════════════════════════════════════════
 // MULTI-STEP PLANNING TOOLS
@@ -417,46 +507,152 @@ export const planningTools: XToolDef[] = [
   {
     id: "x_plan_create",
     name: "Plan Create Task",
-    description: "Create a multi-step execution plan for complex tasks. AI breaks down goals into ordered steps.",
+    description:
+      "Create a persistent multi-step plan on disk. Supply an explicit steps array, or let the goal be split on newlines and 'then' phrases. Returns a real plan id for x_plan_execute and x_plan_status.",
     parameters: {
       goal: { type: "string", description: "The high-level goal to plan", required: true },
       context: { type: "string", description: "Additional context or constraints", required: false },
+      steps: { type: "array", description: "Ordered steps. Each may be a string, or an object { title, tool, args } to bind a real tool and its arguments.", required: false },
     },
     category: "pro",
     execute: async (args) => {
-      return {
-        ok: true,
-        data: { goal: args.goal, message: "Multi-step plan created." },
+      try {
+        const plan = createPlan(String(args.goal), args.context ? String(args.context) : undefined, args.steps)
+        await writePlan(plan)
+        return {
+          ok: true,
+          data: {
+            planId: plan.id,
+            goal: plan.goal,
+            stepCount: plan.steps.length,
+            steps: plan.steps.map((s) => ({ index: s.index, title: s.title, tool: s.tool ?? null })),
+            summary: summarise(plan),
+            storedAt: "~/.zyraxon/plans",
+          },
+        }
+      } catch (err: any) {
+        return { ok: false, error: `Plan creation failed: ${err.message}` }
       }
     },
   },
   {
     id: "x_plan_execute",
     name: "Plan Execute Step",
-    description: "Execute the next step in an active plan with automatic error recovery",
+    description:
+      "Run the next pending step of a stored plan and persist the real outcome. A step may name a registered tool in its params to have that tool executed and its result recorded.",
     parameters: {
       planId: { type: "string", description: "Plan ID to continue", required: true },
+      skip: { type: "boolean", description: "Skip the next step instead of running it", required: false },
     },
     category: "pro",
     execute: async (args) => {
-      return {
-        ok: true,
-        data: { planId: args.planId, message: "Executing next step in plan..." },
+      try {
+        const planId = String(args.planId)
+        const plan = await readPlan(planId)
+        if (!plan) return { ok: false, error: `No plan found with id ${planId}` }
+        if (plan.status !== "active")
+          return { ok: false, error: `Plan ${planId} is already ${plan.status}` }
+
+        const next = claimNextStep(plan)
+        if (!next) return { ok: false, error: `Plan ${planId} has no pending step left` }
+
+        if (args.skip) {
+          markSkipped(plan, next.index, "skipped by caller")
+          await writePlan(plan)
+          return { ok: true, data: { planId, skippedStep: next.index, title: next.title, summary: summarise(plan) } }
+        }
+
+        const started = Date.now()
+        // An explicitly bound tool always wins, because the caller supplied real
+        // arguments for it. Otherwise a bare tool name in the title is honoured
+        // only when that tool needs no arguments.
+        const boundTool = next.tool
+        const autorunTool = boundTool ? null : matchToolInTitle(next.title)
+        const toolName = boundTool ?? autorunTool
+
+        let outcome: { ok: boolean; result?: unknown; error?: string; note?: string }
+        if (toolName) {
+          const outcomeOfTool = await runRegisteredTool(toolName, next.args ?? {})
+          outcome = {
+            ok: outcomeOfTool.ok,
+            result: outcomeOfTool.data,
+            error: outcomeOfTool.error,
+            note: `invoked ${toolName}${next.args ? " with bound arguments" : " (no arguments required)"}`,
+          }
+        } else {
+          const named = TOOL_KEYWORDS.find((n) => next.title.toLowerCase().includes(n))
+          outcome = {
+            ok: true,
+            note: named
+              ? `recorded without running: ${named} needs arguments, so bind it as { title, tool, args } in the steps array`
+              : "recorded without side effects — name an argument-free tool in the step, or bind { title, tool, args }",
+            result: { title: next.title, recognisedTool: named ?? null },
+          }
+        }
+
+        applyStepResult(plan, next.index, outcome)
+        await writePlan(plan)
+        return {
+          ok: true,
+          data: {
+            planId,
+            step: next.index,
+            title: next.title,
+            stepStatus: outcome.ok ? "done" : "failed",
+            durationMs: Date.now() - started,
+            detail: outcome,
+            summary: summarise(plan),
+          },
+        }
+      } catch (err: any) {
+        return { ok: false, error: `Plan execution failed: ${err.message}` }
       }
     },
   },
   {
     id: "x_plan_status",
     name: "Plan Status",
-    description: "Check the status of an active multi-step plan",
+    description: "Read a stored plan from disk and report its real per-step state and progress. Omit planId to list every plan.",
     parameters: {
-      planId: { type: "string", description: "Plan ID to check", required: true },
+      planId: { type: "string", description: "Plan ID to check. Omit to list all plans.", required: false },
     },
     category: "pro",
     execute: async (args) => {
-      return {
-        ok: true,
-        data: { planId: args.planId, message: "Plan status retrieved" },
+      try {
+        if (args.planId) {
+          const plan = await readPlan(String(args.planId))
+          if (!plan) return { ok: false, error: `No plan found with id ${args.planId}` }
+          return {
+            ok: true,
+            data: {
+              planId: plan.id,
+              goal: plan.goal,
+              status: plan.status,
+              createdAt: plan.createdAt,
+              updatedAt: plan.updatedAt,
+              summary: summarise(plan),
+              steps: plan.steps.map((s) => ({
+                index: s.index,
+                title: s.title,
+                status: s.status,
+                attempts: s.attempts,
+                durationMs: s.durationMs ?? null,
+                note: s.note ?? null,
+                error: s.error ?? null,
+              })),
+            },
+          }
+        }
+        const plans = await listPlans()
+        return {
+          ok: true,
+          data: {
+            count: plans.length,
+            plans: plans.map((p) => ({ planId: p.id, goal: p.goal, status: p.status, summary: summarise(p) })),
+          },
+        }
+      } catch (err: any) {
+        return { ok: false, error: `Plan status failed: ${err.message}` }
       }
     },
   },
@@ -470,69 +666,105 @@ export const mediaTools: XToolDef[] = [
   {
     id: "x_media_image_edit",
     name: "Image Edit",
-    description: "Edit an image: resize, crop, rotate, adjust brightness/contrast, apply filters, add text overlay",
+    description:
+      "Really edit an image: resize, crop, rotate, adjust brightness/contrast, apply a grayscale/invert/sepia/blur filter, or burn text into it. PNG runs in-process; other formats are decoded with ffmpeg. Writes a new file and reports the real before/after size.",
     parameters: {
-      inputPath: { type: "string", description: "Path to input image", required: true },
+      inputPath: { type: "string", description: "Path to input image (png, jpg, webp, bmp, gif, tiff)", required: true },
       operation: { type: "string", description: "resize, crop, rotate, brightness, contrast, filter, text_overlay", required: true },
       params: { type: "string", description: "JSON params for the operation", required: false },
-      outputPath: { type: "string", description: "Path for output image", required: false },
+      outputPath: { type: "string", description: "Path for output image (default: derived beside the input)", required: false },
     },
     category: "pro",
     execute: async (args) => {
-      return {
-        ok: true,
-        data: { input: args.inputPath, operation: args.operation, output: args.outputPath || args.inputPath },
-      }
+      const params = parseParams(args.params)
+      if (params.outputPath === undefined && args.outputPath) params.outputPath = String(args.outputPath)
+      const result = await editImage(String(args.inputPath), String(args.operation), params)
+      return result.ok === true ? { ok: true, data: result.data } : { ok: false, error: result.error }
     },
   },
   {
     id: "x_media_video_process",
     name: "Video Process",
-    description: "Process video: extract frames, trim, compress, convert format, extract audio, add subtitles",
+    description:
+      "Really process media with ffmpeg: extract frames, trim, compress to a target quality, convert codecs, pull out the audio track, or extract/burn-in subtitles.",
     parameters: {
       inputPath: { type: "string", description: "Path to input video", required: true },
       operation: { type: "string", description: "extract_frames, trim, compress, convert, extract_audio, subtitle", required: true },
       params: { type: "string", description: "JSON params", required: false },
-      outputPath: { type: "string", description: "Path for output video", required: false },
+      outputPath: { type: "string", description: "Path for output", required: false },
     },
     category: "pro",
     execute: async (args) => {
-      return {
-        ok: true,
-        data: { input: args.inputPath, operation: args.operation, output: args.outputPath || args.inputPath },
-      }
+      const params = parseParams(args.params)
+      if (params.outputPath === undefined && args.outputPath) params.outputPath = String(args.outputPath)
+      const result = await processVideo(String(args.inputPath), String(args.operation), params)
+      return result.ok === true ? { ok: true, data: result.data } : { ok: false, error: result.error }
     },
   },
   {
     id: "x_media_data_extract",
     name: "Data Extract from File",
-    description: "Extract structured data from any file: PDF tables, Excel data, image text (OCR), audio transcription",
+    description:
+      "Pull real data out of a file: JSON is parsed, CSV/TSV is tabularised, PDF text is decoded from its content streams (pdftotext used when the PDF has no text layer), images are sent through OCR, and media reports true stream metadata.",
     parameters: {
-      filePath: { type: "string", description: "Path to file (PDF, Excel, image, audio)", required: true },
-      format: { type: "string", description: "Expected output: json, csv, text, table", required: false },
+      filePath: { type: "string", description: "Path to file (JSON, CSV, TSV, PDF, image, audio, video, text)", required: true },
+      format: { type: "string", description: "Expected output: json, csv, text (default: inferred from the extension)", required: false },
       pages: { type: "string", description: "Page range for PDFs (e.g., '1-5')", required: false },
     },
     category: "pro",
     execute: async (args) => {
-      return {
-        ok: true,
-        data: { file: args.filePath, format: args.format || "json" },
-      }
+      const result = await extractData(String(args.filePath), args.format ? String(args.format) : "auto", args.pages ? String(args.pages) : undefined)
+      return result.ok === true ? { ok: true, data: result.data } : { ok: false, error: result.error }
     },
   },
   {
     id: "x_media_ocr",
     name: "OCR Text Recognition",
-    description: "Extract text from images using OCR (Optical Character Recognition)",
+    description:
+      "Extract real text from an image with tesseract, including the per-word mean confidence. Bengali (ben) and English (eng) are installed on this machine. Falls back to a clear install instruction when tesseract is absent.",
     parameters: {
       imagePath: { type: "string", description: "Path to image file", required: true },
-      language: { type: "string", description: "Language for OCR (eng, ben, hin, etc.)", required: false },
+      language: { type: "string", description: "Language code (eng, ben, or eng+ben)", required: false },
     },
     category: "pro",
     execute: async (args) => {
-      return {
-        ok: true,
-        data: { image: args.imagePath, language: args.language || "eng" },
+      const result = await runOcr(String(args.imagePath), args.language ? String(args.language) : "eng")
+      return result.ok === true ? { ok: true, data: result.data } : { ok: false, error: result.error }
+    },
+  },
+  {
+    id: "x_media_probe",
+    name: "Media Probe",
+    description: "Report the real codec, duration and size of a media file using ffprobe.",
+    parameters: {
+      filePath: { type: "string", description: "Path to the media file", required: true },
+    },
+    category: "pro",
+    execute: async (args) => {
+      try {
+        const probe = (await probeMedia(String(args.filePath))) as {
+          streams?: { codec_type: string; codec_name: string; width?: number; height?: number; duration?: string }[]
+          format?: { duration?: string; size?: string; bit_rate?: string; format_name?: string }
+        }
+        return {
+          ok: true,
+          data: {
+            file: args.filePath,
+            container: probe.format?.format_name,
+            durationSeconds: probe.format?.duration,
+            sizeBytes: probe.format?.size,
+            bitRate: probe.format?.bit_rate,
+            streams: probe.streams?.map((s) => ({
+              type: s.codec_type,
+              codec: s.codec_name,
+              width: s.width,
+              height: s.height,
+              duration: s.duration,
+            })),
+          },
+        }
+      } catch (err: any) {
+        return { ok: false, error: `Media probe failed: ${err.message}` }
       }
     },
   },
@@ -546,7 +778,8 @@ export const selfImproveTools: XToolDef[] = [
   {
     id: "x_learn_from_task",
     name: "Learn from Task",
-    description: "AI learns from completed tasks and improves its own behavior rules for future similar tasks",
+    description:
+      "Record what actually happened during a task into a durable lesson log at ~/.zyraxon/learning/lessons.jsonl. What worked and what failed are both kept, and x_behavior_rules reports the recurring findings from that log.",
     parameters: {
       taskDescription: { type: "string", description: "What was accomplished", required: true },
       whatWorked: { type: "string", description: "What worked well", required: false },
@@ -554,31 +787,116 @@ export const selfImproveTools: XToolDef[] = [
     },
     category: "ultra",
     execute: async (args) => {
-      return {
-        ok: true,
-        data: { message: "Learning recorded.", task: args.taskDescription },
+      try {
+        const task = String(args.taskDescription ?? "").trim()
+        if (!task) return { ok: false, error: "taskDescription is required" }
+        const lesson = await recordLesson(task, args.whatWorked ? String(args.whatWorked) : undefined, args.whatFailed ? String(args.whatFailed) : undefined)
+        return {
+          ok: true,
+          data: {
+            lessonId: lesson.id,
+            recordedAt: lesson.at,
+            tags: lesson.tags,
+            hasWorked: Boolean(lesson.worked),
+            hasFailed: Boolean(lesson.failed),
+            storedAt: "~/.zyraxon/learning/lessons.jsonl",
+          },
+        }
+      } catch (err: any) {
+        return { ok: false, error: `Could not record the lesson: ${err.message}` }
       }
     },
   },
   {
     id: "x_behavior_rules",
     name: "View Behavior Rules",
-    description: "View the AI's current behavior rules that guide all task execution",
-    parameters: {},
+    description:
+      "Show the behaviour rules that actually guide execution: the built-in rules plus patterns learned from the real lesson log, with the most recent lessons attached.",
+    parameters: {
+      limit: { type: "number", description: "How many recent lessons to attach (default: 10)", required: false },
+    },
     category: "ultra",
-    execute: async () => {
-      return {
-        ok: true,
-        data: {
-          rules: [
-            "Always verify before destructive operations",
-            "Use screenshots before clicking on unknown UIs",
-            "Prefer native tools over manual workarounds",
-            "Log all actions for debugging",
-            "Recover from errors automatically when possible",
-          ],
-        },
+    execute: async (args) => {
+      try {
+        const limit = args.limit ? Math.max(1, Math.min(200, Number(args.limit))) : 10
+        const report = await behaviourRules()
+        return {
+          ok: true,
+          data: {
+            ruleCount: report.rules.length,
+            baseRuleCount: report.rules.length - report.learned.length,
+            rules: report.rules,
+            learnedFromLessons: report.learned,
+            lessonCount: report.lessonCount,
+            recentLessons: report.recentLessons.slice(0, limit),
+          },
+        }
+      } catch (err: any) {
+        return { ok: false, error: `Could not read behaviour rules: ${err.message}` }
       }
     },
   },
 ]
+
+// ── helpers ────────────────────────────────────────────────────────────────────
+
+function parseParams(value: unknown): Record<string, unknown> {
+  if (value === undefined || value === null || value === "") return {}
+  if (typeof value === "object") return value as Record<string, unknown>
+  const text = String(value).trim()
+  try {
+    const parsed = JSON.parse(text)
+    if (parsed && typeof parsed === "object") return parsed as Record<string, unknown>
+  } catch {
+    // A bare key:value or key=value string is accepted too, since model output is often not JSON.
+  }
+  const out: Record<string, unknown> = {}
+  for (const pair of text.split(/[,;]/)) {
+    const index = pair.search(/[:=]/)
+    if (index === -1) continue
+    const key = pair.slice(0, index).trim()
+    const raw = pair.slice(index + 1).trim()
+    if (!key) continue
+    const asNumber = Number(raw)
+    out[key] = raw !== "" && Number.isFinite(asNumber) ? asNumber : raw.replace(/^["']|["']$/g, "")
+  }
+  return out
+}
+
+const TOOL_KEYWORDS = [
+  "x_comp_screenshot","x_comp_click_at","x_comp_type_text","x_comp_key_press","x_comp_scroll","x_comp_move_mouse","x_comp_drag","x_comp_open_app","x_comp_list_windows","x_comp_desktop_info",
+  "x_media_image_edit","x_media_video_process","x_media_data_extract","x_media_ocr","x_media_probe",
+  "x_plan_create","x_plan_execute","x_plan_status",
+  "x_learn_from_task","x_behavior_rules",
+  "x_cdp_connect","x_cdp_disconnect",
+]
+
+// Only these are safe to fire from a bare step title, because none of them need
+// arguments. Anything else must be bound explicitly through the steps array.
+const AUTORUN_TOOLS = new Set([
+  "x_comp_screenshot",
+  "x_comp_list_windows",
+  "x_comp_desktop_info",
+  "x_behavior_rules",
+  "x_plan_status",
+])
+
+function matchToolInTitle(title: string): string | null {
+  const lower = title.toLowerCase()
+  const found = TOOL_KEYWORDS.find((name) => lower.includes(name)) ?? null
+  return found !== null && AUTORUN_TOOLS.has(found) ? found : null
+}
+
+async function runRegisteredTool(
+  name: string,
+  args: Record<string, unknown>,
+): Promise<{ ok: boolean; data?: unknown; error?: string }> {
+  try {
+    const { getToolById } = await import("./x-tool-registry")
+    const tool = getToolById(name)
+    if (!tool) return { ok: false, error: `no registered tool named ${name}` }
+    return (await tool.execute(args)) as { ok: boolean; data?: unknown; error?: string }
+  } catch (err: any) {
+    return { ok: false, error: `could not run ${name}: ${err.message}` }
+  }
+}

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # GFM table, https://github.github.com/gfm/#tables-extension-
 from __future__ import annotations
 

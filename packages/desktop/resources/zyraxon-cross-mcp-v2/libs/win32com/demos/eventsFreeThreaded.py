@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # A sample originally provided by Richard Bell, and modified by Mark Hammond.
 
 # This sample demonstrates how to use COM events in a free-threaded world.

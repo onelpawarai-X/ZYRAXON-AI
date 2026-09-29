@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export const dict: Record<string, string> = {
   "ui.sessionReview.title": "Session changes",
   "ui.sessionReview.title.git": "Git changes",

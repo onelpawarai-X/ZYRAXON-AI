@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # dojobapp - do a job, show the result in a dialog, and exit.
 #
 # Very simple - faily minimal dialog based app.

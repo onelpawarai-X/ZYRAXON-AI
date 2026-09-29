@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { parseCommentNote, readCommentMetadata } from "@/utils/comment-note"
 import { AssistantMessage, Part, SessionStatus, UserMessage } from "@zyraxon-ai/sdk/v2"
 import { groupParts, renderable, type PartGroup } from "@zyraxon-ai/session-ui/message-part"

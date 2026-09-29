@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from .ec_key import ECKey
 from .jwe_algs import JWE_ALG_ALGORITHMS
 from .jwe_algs import AESAlgorithm

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # A Test Program for pipeTestService.py
 #
 # Install and start the Pipe Test service, then run this test

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """`Connection` - per-client connection state and the standalone outbound channel.
 
 Always present on `Context` (never `None`), even in stateless deployments.

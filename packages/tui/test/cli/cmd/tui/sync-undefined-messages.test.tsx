@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /** @jsxImportSource @opentui/solid */
 /**
  * Reproducer for #26560 — TUI crashes with

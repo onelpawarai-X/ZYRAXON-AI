@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+-- Copyright (c) 2026 onelpawarai. All rights reserved.
+
 ALTER TABLE `billing` ADD `subscription_id` varchar(28);--> statement-breakpoint
 ALTER TABLE `usage` ADD `data` json;--> statement-breakpoint
 ALTER TABLE `user` ADD `time_subscribed` timestamp(3);--> statement-breakpoint

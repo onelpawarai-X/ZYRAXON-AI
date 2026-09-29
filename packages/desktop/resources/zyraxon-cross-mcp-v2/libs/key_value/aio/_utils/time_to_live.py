@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """TTL handling and datetime utilities.
 
 This module provides functions for working with TTL (time-to-live) values

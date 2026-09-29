@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { TuiPluginApi, TuiSlotContext, TuiSlotMap, TuiSlotProps } from "@zyraxon-ai/plugin/tui"
 import { createSlot, createSolidSlotRegistry, type JSX, type SolidPlugin } from "@opentui/solid"
 import { createSignal } from "solid-js"

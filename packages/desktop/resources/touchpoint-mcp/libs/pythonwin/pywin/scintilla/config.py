@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # config.py - deals with loading configuration information.
 
 # Loads config data from a .cfg file.  Also caches the compiled

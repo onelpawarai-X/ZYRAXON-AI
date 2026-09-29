@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // This is generated from /utils/protocol-types-generator/index.js
 type binary = string;
 export namespace Protocol {

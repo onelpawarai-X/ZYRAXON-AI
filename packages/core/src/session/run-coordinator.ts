@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export * as SessionRunCoordinator from "./run-coordinator"
 
 import { Deferred, Effect, Exit, Fiber, FiberSet, Scope } from "effect"

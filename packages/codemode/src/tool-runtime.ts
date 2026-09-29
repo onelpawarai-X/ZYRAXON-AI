@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Cause, Effect, Schema } from "effect"
 import { ToolError, toolError } from "./tool-error.js"
 import {

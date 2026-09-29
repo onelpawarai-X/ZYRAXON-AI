@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Dev server for previewing FastMCPApp UIs locally.
 
 Starts the user's MCP server on a configurable port, then starts a lightweight

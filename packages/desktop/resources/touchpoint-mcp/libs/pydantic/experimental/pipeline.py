@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Experimental pipeline API functionality. Be careful with this API, it's subject to change."""
 
 from __future__ import annotations

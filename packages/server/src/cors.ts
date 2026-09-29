@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Context } from "effect"
 
 const zyraxonOrigin = /^https:\/\/([a-z0-9-]+\.)*zyraxon\.ai$/

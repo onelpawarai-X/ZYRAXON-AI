@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Canonical MCP Configuration Format.
 
 This module defines the standard configuration format for Model Context Protocol (MCP) servers.

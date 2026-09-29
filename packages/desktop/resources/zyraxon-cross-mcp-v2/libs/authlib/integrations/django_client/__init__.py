@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from ..base_client import BaseOAuth
 from ..base_client import OAuthError
 from .apps import DjangoOAuth1App

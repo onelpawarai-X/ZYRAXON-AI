@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """`ServerSession`: server-to-client requests and notifications.
 
 A per-request proxy built by the kernel for each inbound request. Exposes the

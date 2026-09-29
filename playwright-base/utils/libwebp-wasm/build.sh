@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 #
 # Build libwebp to a self-contained WASM module exposing a minimal RGBA
 # encode/decode API (see webp_wasm.c). Emits everything the shipped codec needs

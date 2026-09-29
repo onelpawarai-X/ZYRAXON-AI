@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { codeToHtml, bundledLanguages } from "shiki"
 import { createResource, Suspense } from "solid-js"
 import style from "./content-code.module.css"

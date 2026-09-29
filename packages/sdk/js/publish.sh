@@ -1,4 +1,7 @@
 #!/bin/bash
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 
 # ZYRAXON SDK Publish Script
 # Usage: ./publish.sh [version]

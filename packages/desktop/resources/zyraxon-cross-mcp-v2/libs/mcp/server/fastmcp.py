@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Removed in mcp 2: `FastMCP` is now `mcp.server.mcpserver.MCPServer`.
 
 This module has no API. Importing it, or anything below it, raises

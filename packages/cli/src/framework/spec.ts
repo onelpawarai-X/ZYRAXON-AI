@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import * as Command from "effect/unstable/cli/Command"
 
 type Options<Config extends Command.Command.Config, Commands extends ReadonlyArray<Any>> = {

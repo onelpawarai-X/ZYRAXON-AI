@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Database, and, eq, inArray, isNotNull, sql } from "../src/drizzle/index.js"
 import { BillingTable, BlackPlans, SubscriptionTable, UsageTable } from "../src/schema/billing.sql.js"
 

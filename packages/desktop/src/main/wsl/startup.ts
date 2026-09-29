@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export function wslServerIdsToStartOnInitialize(servers: { id: string }[]) {
   return servers.map((server) => server.id)
 }

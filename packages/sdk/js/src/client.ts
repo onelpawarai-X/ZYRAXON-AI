@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export * from "./gen/types.gen.js"
 
 import { createClient } from "./gen/client/client.gen.js"

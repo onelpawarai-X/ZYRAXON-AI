@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+-- Copyright (c) 2026 onelpawarai. All rights reserved.
+
 ALTER TABLE `geo_stat` ADD `provider` varchar(128) DEFAULT 'all' NOT NULL;--> statement-breakpoint
 ALTER TABLE `geo_stat` ADD `model` varchar(256) DEFAULT 'all' NOT NULL;--> statement-breakpoint
 ALTER TABLE `geo_stat` DROP INDEX `uniq_country_period`;--> statement-breakpoint

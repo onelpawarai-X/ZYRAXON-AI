@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { RadioGroup as Kobalte } from "@kobalte/core/radio-group"
 import { Show, splitProps, type JSX } from "solid-js"
 import type { ComponentProps, ParentProps } from "solid-js"

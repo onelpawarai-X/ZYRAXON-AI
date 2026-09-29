@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * ZYRAXON X — Local Model Provider
  * Runs GGUF models locally via llama-server.exe (OpenAI-compatible API).

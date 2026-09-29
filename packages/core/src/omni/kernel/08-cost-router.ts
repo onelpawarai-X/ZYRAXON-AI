@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * KERNEL 08: Cost Router
  * Algorithm: Multi-Criteria Weighted Scoring + Bayesian Model Selection + Context-Aware Routing + Performance Tracking

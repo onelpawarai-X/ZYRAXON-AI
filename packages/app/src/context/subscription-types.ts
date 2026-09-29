@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export type SubscriptionTier = "free" | "pro" | "max" | "ultra"
 
 export interface SubscriptionPlan {
@@ -26,6 +29,65 @@ export const TIER_ORDER: SubscriptionTier[] = ["free", "pro", "max", "ultra"]
 
 export function hasAccess(currentTier: SubscriptionTier, requiredTier: SubscriptionTier): boolean {
   return TIER_ORDER.indexOf(currentTier) >= TIER_ORDER.indexOf(requiredTier)
+}
+
+export const FREE_STATE: SubscriptionState = {
+  tier: "free",
+  activatedAt: null,
+  expiresAt: null,
+  secretCode: null,
+  stripeSessionId: null,
+}
+
+export type SubscriptionParse =
+  | { ok: true; state: SubscriptionState }
+  | { ok: false; reason: string }
+
+function toMs(value: unknown): number | null | undefined {
+  if (value === null || value === undefined || value === "") return null
+  if (typeof value === "number") return Number.isFinite(value) ? value : undefined
+  if (typeof value !== "string") return undefined
+  const asNumber = Number(value)
+  if (!Number.isNaN(asNumber)) return asNumber
+  const asDate = Date.parse(value)
+  return Number.isNaN(asDate) ? undefined : asDate
+}
+
+function toStr(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null
+}
+
+// Persisted state survives across app versions and is also written by the Stripe webhook
+// bridge, so the stored shape can differ from SubscriptionState (ISO dates instead of ms,
+// different tier casing, extra fields). Normalize all of those instead of falling back to
+// free, which used to silently strip a paid user's unlock. Anything genuinely unreadable
+// is reported so the caller can surface it rather than downgrade quietly.
+export function parseSubscriptionState(raw: unknown): SubscriptionParse {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { ok: false, reason: "state is not an object" }
+  const obj = raw as Record<string, unknown>
+  if (typeof obj.tier !== "string") return { ok: false, reason: "state is missing a string tier field" }
+  const tier = obj.tier.trim().toLowerCase() as SubscriptionTier
+  if (!TIER_ORDER.includes(tier)) {
+    return { ok: false, reason: `unknown tier "${obj.tier}", expected one of ${TIER_ORDER.join(", ")}` }
+  }
+  const activatedAt = toMs(obj.activatedAt)
+  if (activatedAt === undefined) {
+    return { ok: false, reason: `activatedAt is not a timestamp: ${JSON.stringify(obj.activatedAt)}` }
+  }
+  const expiresAt = toMs(obj.expiresAt)
+  if (expiresAt === undefined) {
+    return { ok: false, reason: `expiresAt is not a timestamp: ${JSON.stringify(obj.expiresAt)}` }
+  }
+  return {
+    ok: true,
+    state: {
+      tier,
+      activatedAt,
+      expiresAt,
+      secretCode: toStr(obj.secretCode),
+      stripeSessionId: toStr(obj.stripeSessionId),
+    },
+  }
 }
 
 // Secret activation codes are stored XOR-obfuscated (charCode shift) so they never appear

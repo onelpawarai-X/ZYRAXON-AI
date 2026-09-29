@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Sanitization strategies for key and collection names.
 
 This module provides strategies for sanitizing keys and collection names to comply

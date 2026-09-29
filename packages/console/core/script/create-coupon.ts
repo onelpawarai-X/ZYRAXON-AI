@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Database } from "../src/drizzle/index.js"
 import { CouponTable, CouponType } from "../src/schema/billing.sql.js"
 

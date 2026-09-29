@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { centsToMicroCents } from "@zyraxon-ai/console-core/util/price.js"
 import { buildRateLimitKey, getRedis } from "./redis"
 import { logger } from "./logger"

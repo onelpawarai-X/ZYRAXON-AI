@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { DateTime, Effect } from "effect"
 import { Resource } from "sst/resource"
 import { Athena, AthenaQueryError, AthenaQueryTimeoutError } from "./athena"

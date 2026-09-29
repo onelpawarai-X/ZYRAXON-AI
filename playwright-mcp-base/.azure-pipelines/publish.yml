@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Publishes @test (alpha) version of @playwright/mcp via ESRP. Manual trigger only.
 trigger: none
 

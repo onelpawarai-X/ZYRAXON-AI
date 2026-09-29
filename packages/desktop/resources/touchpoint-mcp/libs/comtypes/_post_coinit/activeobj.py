@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from ctypes import HRESULT, POINTER, OleDLL, byref, c_ulong, c_void_p
 from ctypes.wintypes import DWORD, LPVOID
 from typing import TYPE_CHECKING, Optional, TypeVar, overload

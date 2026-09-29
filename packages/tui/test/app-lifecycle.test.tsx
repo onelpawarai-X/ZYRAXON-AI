@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { expect, mock, test } from "bun:test"
 import type { TuiPluginApi } from "@zyraxon-ai/plugin/tui"
 import { createTestRenderer } from "@opentui/core/testing"

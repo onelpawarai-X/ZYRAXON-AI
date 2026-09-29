@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { type Component, createSignal, Show, onCleanup, For } from "solid-js"
 import { IconStar, IconDownload, IconExternalLink, IconX, IconHeart } from "./Icons"
 import { getRating, setRating, getLikeCount, toggleLike, getComments, addComment, type SharedComment } from "../services/shared-data"

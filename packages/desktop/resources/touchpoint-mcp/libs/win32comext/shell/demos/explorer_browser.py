@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # A sample of using IExplorerBrowser interfaces...
 # Currently doesn't quite work:
 # * CPU sits at 100% while running.

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createSignal } from "solid-js"
 import { Dropdown } from "~/component/dropdown"
 import "./role-dropdown.css"

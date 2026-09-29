@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /*
  * Copyright (C) 2006, 2008, 2013-2015 Apple Inc.  All rights reserved.
  * Copyright (C) 2009, 2011 Brent Fulgham.  All rights reserved.

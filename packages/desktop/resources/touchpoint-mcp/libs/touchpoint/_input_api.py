@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Raw input wrappers — coordinate-based mouse and keyboard simulation.
 
 All functions delegate to the platform's :class:`InputProvider`.

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Theme resolution for direct interactive mode.
 //
 // Derives scrollback and footer colors from the terminal's actual palette.

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # A sample icon handler.  Sets the icon for Python files to a random
 # ICO file.  ICO files are found in the Python directory - generally there will
 # be 3 icons found.

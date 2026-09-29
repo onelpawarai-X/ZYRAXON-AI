@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { TooltipV2 } from "./tooltip-v2"
 import { KeybindV2 } from "./keybind-v2"
 

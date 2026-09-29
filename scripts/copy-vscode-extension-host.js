@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 
 /**
  * ZYRAXON - Copy VS Code Extension Host Source Files

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Code that allows Pythonwin to pretend it is IDLE
 # (at least as far as most IDLE extensions are concerned)
 

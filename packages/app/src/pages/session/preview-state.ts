@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * Shared preview state for in-app website preview.
  * Used by session header (toggle button) and session side panel (preview tab).

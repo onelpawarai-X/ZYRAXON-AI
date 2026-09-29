@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { QuestionV1 } from "@zyraxon-ai/schema/question-v1"
 
 export const QuestionID = QuestionV1.ID

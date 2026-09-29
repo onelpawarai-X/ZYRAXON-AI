@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * Wrap whatever the generated client decoded from a non-2xx error body
  * into a real `Error` so downstream formatters (TUI, plugins) get a

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { getStatsHomeData } from "@zyraxon-ai/stats-core/domain/home"
 import { runtime } from "@zyraxon-ai/stats-core/runtime"
 import {

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { Agent, Project, ProviderListResponse } from "@zyraxon-ai/sdk/v2/client"
 import { NormalizedProviderListResponse } from "@zyraxon-ai/session-ui/context"
 export { pathKey as directoryKey, type PathKey as DirectoryKey } from "@/utils/path-key"

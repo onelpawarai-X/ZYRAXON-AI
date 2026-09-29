@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createMemo, Show } from "solid-js"
 import type { JSX } from "solid-js"
 import { useSortable } from "@dnd-kit/solid/sortable"

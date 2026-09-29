@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export * as ConfigExternalPlugin from "./external"
 
 import type { Plugin as EffectPlugin } from "@zyraxon-ai/plugin/v2/effect"

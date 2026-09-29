@@ -1,4 +1,7 @@
 #!/usr/bin/env bun
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * Build Jarvis Browser MCP — Copy @playwright/mcp + deps to resources
  * Then create wrapper that sets NODE_PATH at runtime

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 This demonstrates the creation of miniversions of a file during a transaction.
 The FSCTL_TXFS_CREATE_MINIVERSION control code saves any changes to a new

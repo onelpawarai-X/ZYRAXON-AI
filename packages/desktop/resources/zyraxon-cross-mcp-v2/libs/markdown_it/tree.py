@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """A tree representation of a linear markdown-it token stream.
 
 This module is not part of upstream JavaScript markdown-it.

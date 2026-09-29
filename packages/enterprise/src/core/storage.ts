@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { AwsClient } from "aws4fetch"
 import { lazy } from "@zyraxon-ai/core/util/lazy"
 

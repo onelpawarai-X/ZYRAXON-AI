@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 Click is a simple Python module inspired by the stdlib optparse to make
 writing command line scripts fun. Unlike other modules, it's based

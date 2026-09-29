@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from authlib.oauth2.rfc8414 import AuthorizationServerMetadata
 from authlib.oauth2.rfc8414.models import validate_array_value
 from authlib.oauth2.rfc8414.models import validate_boolean_value

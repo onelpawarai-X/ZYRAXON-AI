@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { JSONSchema7 } from "@ai-sdk/provider"
 
 export type OpenAIResponsesInput = Array<OpenAIResponsesInputItem>

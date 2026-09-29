@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Attribute docstrings parsing.
 
 .. seealso:: https://peps.python.org/pep-0257/#what-is-a-docstring

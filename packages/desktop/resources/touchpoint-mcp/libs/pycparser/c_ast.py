@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # -----------------------------------------------------------------
 # ** ATTENTION **
 # This code was automatically generated from _c_ast.cfg

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """stdio client transport.
 
 Runs an MCP server as a subprocess and exchanges newline-delimited JSON-RPC

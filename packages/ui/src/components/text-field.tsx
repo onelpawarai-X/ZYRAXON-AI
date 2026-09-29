@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { TextField as Kobalte } from "@kobalte/core/text-field"
 import { createSignal, Show, splitProps } from "solid-js"
 import type { ComponentProps } from "solid-js"

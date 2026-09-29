@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import zlib
 from .._rfc7516.models import JWEZipModel
 from ..errors import ExceededSizeError

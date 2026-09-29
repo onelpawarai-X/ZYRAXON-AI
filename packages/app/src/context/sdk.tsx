@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createSimpleContext } from "@zyraxon-ai/ui/context"
 import { type Accessor, createMemo } from "solid-js"
 import { type ServerSDK, useServerSDK } from "./server-sdk"

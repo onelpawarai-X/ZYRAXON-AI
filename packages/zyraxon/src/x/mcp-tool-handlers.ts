@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { execFile, spawn, type ChildProcess } from "child_process"
 import { promisify } from "util"
 import * as fs from "fs"
@@ -275,10 +278,9 @@ $bytes = [System.IO.File]::ReadAllBytes($path)
 $enc = [Convert]::ToBase64String($bytes)
 Write-Output ($path + '|' + $width + '|' + $height + '|' + $enc)`
   const out = await runPs(script, 20000)
-  const firstPipe = out.indexOf("|")
-  if (firstPipe < 0) throw new Error("Screenshot capture produced no output")
-  const rest = out.slice(firstPipe + 1)
-  const parts = rest.split("|")
+  // path|width|height|base64 — split the whole line, the first field is the path.
+  const parts = out.split("|")
+  if (parts.length < 4) throw new Error("Screenshot capture produced no output")
   const filePath = parts[0]
   const width = Number(parts[1])
   const height = Number(parts[2])

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { SessionV1 } from "@zyraxon-ai/core/v1/session"
 import { Effect, Schema } from "effect"
 import * as Tool from "./tool"
@@ -6,25 +9,13 @@ import { Provider } from "@/provider/provider"
 import { InstanceState } from "@/effect/instance-state"
 import { MessageID, PartID } from "../session/schema"
 import { getCurrentTier, hasAccess } from "../subscription/canonical"
-import type { Tier } from "../subscription/canonical"
+import { getAgentModeRequiredTier, listAgentModes } from "../subscription/agent-tiers"
 
 export const Parameters = Schema.Struct({
   mode: Schema.String,
 })
 
-const MODE_TIERS: Record<string, Tier> = {
-  general: "free",
-  build: "free",
-  plan: "free",
-  explore: "free",
-  vision: "free",
-  pro: "pro",
-  "pro-builder": "pro",
-  beast: "max",
-  auto: "ultra",
-  apex: "ultra",
-  "dark-emperor": "ultra",
-}
+const VALID_MODES = listAgentModes().join(", ")
 
 export const ModeSwitchTool = Tool.define(
   "x_mode_switch",
@@ -40,14 +31,12 @@ export const ModeSwitchTool = Tool.define(
         Effect.gen(function* () {
           const mode = params.mode.trim().toLowerCase()
           if (!mode) {
-            return yield* Effect.fail(
-              new Error("Mode is required. Choose: general, build, plan, explore, vision, pro, pro-builder, beast, auto, apex, or dark-emperor."),
-            )
+            return yield* Effect.fail(new Error(`Mode is required. Choose: ${VALID_MODES}.`))
           }
 
-          const required = MODE_TIERS[mode]
+          const required = getAgentModeRequiredTier(mode)
           if (!required) {
-            return yield* Effect.fail(new Error(`Unknown mode "${params.mode}". Valid modes: general, build, plan, explore, vision, pro, pro-builder, beast, auto, apex, dark-emperor.`))
+            return yield* Effect.fail(new Error(`Unknown mode "${params.mode}". Valid modes: ${VALID_MODES}.`))
           }
 
           const current = getCurrentTier()

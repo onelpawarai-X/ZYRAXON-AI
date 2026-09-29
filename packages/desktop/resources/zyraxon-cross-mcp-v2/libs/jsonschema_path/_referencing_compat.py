@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Compatibility shim for the ``referencing`` library's private API.
 
 This module is the *only* place in jsonschema-path that touches

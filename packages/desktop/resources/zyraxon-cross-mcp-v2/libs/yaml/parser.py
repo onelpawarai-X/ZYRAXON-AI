@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 
 # The following YAML grammar is LL(1) and is parsed by a recursive descent
 # parser.

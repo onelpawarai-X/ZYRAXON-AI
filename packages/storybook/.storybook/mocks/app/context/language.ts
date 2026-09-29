@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 const dict: Record<string, string> = {
   "session.todo.title": "Todos",
   "session.todo.collapse": "Collapse todos",

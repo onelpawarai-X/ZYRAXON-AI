@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import logoLight from "../asset/logo-ornate-light.svg"
 import logoDark from "../asset/logo-ornate-dark.svg"
 import copyLogoLight from "../asset/lander/logo-light.svg"

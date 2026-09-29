@@ -1,4 +1,7 @@
 #! /usr/bin/env python3
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 Vendored from https://github.com/python/cpython/blob/3.8/Tools/scripts/h2py.py
 

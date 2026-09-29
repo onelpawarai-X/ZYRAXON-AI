@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """JSON-RPC `Dispatcher` over the `SessionMessage` stream contract all transports speak.
 
 Owns request-id correlation, the receive loop, per-request task isolation,

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from ._api import EventSource, aconnect_sse, connect_sse
 from ._exceptions import SSEError
 from ._models import ServerSentEvent

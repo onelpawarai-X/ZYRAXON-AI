@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createEffect, createSignal, onCleanup, onMount, Show } from "solid-js"
 import type * as Monaco from "monaco-editor"
 import { useTheme } from "@zyraxon-ai/ui/theme/context"

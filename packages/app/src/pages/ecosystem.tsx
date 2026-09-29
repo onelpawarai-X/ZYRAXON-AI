@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { useNavigate } from "@solidjs/router"
 
 const MARKETPLACE_URL = "https://agent-ecosystem-hub.lovable.app"

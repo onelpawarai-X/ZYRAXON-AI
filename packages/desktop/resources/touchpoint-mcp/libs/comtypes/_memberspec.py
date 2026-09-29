@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import ctypes
 from collections.abc import Callable, Iterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional

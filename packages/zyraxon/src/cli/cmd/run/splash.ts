@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Entry and exit splash banners for direct interactive mode scrollback.
 //
 // Renders the full ZYRAXON entry logo and a compact [Z] exit badge, plus

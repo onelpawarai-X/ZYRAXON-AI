@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """OpenTelemetry instrumentation for FastMCP.
 
 This module provides native OpenTelemetry integration for FastMCP servers and clients.

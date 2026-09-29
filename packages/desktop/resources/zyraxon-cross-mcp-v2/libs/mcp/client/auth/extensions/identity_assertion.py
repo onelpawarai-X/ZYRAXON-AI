@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """SEP-990 Identity Assertion Authorization Grant (RFC 7523 jwt-bearer) client provider.
 
 `IdentityAssertionOAuthProvider` is the client side of SEP-990 leg 2: it presents an Identity

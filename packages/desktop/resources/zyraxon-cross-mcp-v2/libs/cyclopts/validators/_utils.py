@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from collections.abc import Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from typing import Any

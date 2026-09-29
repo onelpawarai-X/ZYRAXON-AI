@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # A highish-level implementation of the HTTP/1.1 wire protocol (RFC 7230),
 # containing no networking code at all, loosely modelled on hyper-h2's generic
 # implementation of HTTP/2 (and in particular the h2.connection.H2Connection

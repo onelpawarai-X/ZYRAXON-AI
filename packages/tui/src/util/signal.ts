@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createEffect, createSignal, on, onCleanup, type Accessor } from "solid-js"
 
 export function createDebouncedSignal<T>(value: T, ms: number): [Accessor<T>, (value: T) => void] {

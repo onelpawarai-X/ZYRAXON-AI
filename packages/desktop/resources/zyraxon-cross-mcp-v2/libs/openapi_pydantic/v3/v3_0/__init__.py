@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 OpenAPI v3.0 schema types, created according to the specification:
 https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.4.md

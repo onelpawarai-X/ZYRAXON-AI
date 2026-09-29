@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export function collapseToolOutput(output: string, maxLines: number, maxChars: number) {
   const lines = output.split("\n")
   if (lines.length <= maxLines && Array.from(output).length <= maxChars) {

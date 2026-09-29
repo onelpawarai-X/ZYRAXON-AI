@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 FROM ubuntu:24.04
 
 ARG DEBIAN_FRONTEND=noninteractive

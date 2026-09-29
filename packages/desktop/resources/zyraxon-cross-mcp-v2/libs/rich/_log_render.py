@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from datetime import datetime
 from typing import Iterable, List, Optional, TYPE_CHECKING, Union, Callable
 

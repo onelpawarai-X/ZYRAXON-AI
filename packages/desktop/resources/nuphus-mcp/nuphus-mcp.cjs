@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Nuphus MCP — ZYRAXON Desktop Automation (38 tools)
 // Desktop: screenshot, window control, mouse, keyboard, clipboard, OCR, vision
 // Browser: CDP Chrome control — navigate, snapshot, click, type, exec, cookies

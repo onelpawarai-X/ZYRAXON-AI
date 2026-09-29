@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import map from "lang-map"
 import { DateTime } from "luxon"
 import { For, Show, Match, Switch, type JSX, createMemo, createSignal, type ParentProps } from "solid-js"

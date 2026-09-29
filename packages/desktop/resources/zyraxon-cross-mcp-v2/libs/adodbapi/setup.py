@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """adodbapi -- a pure Python PEP 249 DB-API package using Microsoft ADO
 
 Adodbapi can be run on CPython 3.8 and later.

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { APIEvent } from "@solidjs/start/server"
 import { AWS } from "@zyraxon-ai/console-core/aws.js"
 import { Resource } from "@zyraxon-ai/console-resource"

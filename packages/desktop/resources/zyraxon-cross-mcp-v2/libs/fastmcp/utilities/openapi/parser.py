@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """OpenAPI parsing logic for converting OpenAPI specs to HTTPRoute objects."""
 
 from typing import Any, Generic, TypeVar

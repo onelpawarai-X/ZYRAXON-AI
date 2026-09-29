@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """!!! abstract "Usage Documentation"
     [Build a Plugin](../concepts/plugins.md#build-a-plugin)
 

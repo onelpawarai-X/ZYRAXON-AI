@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core"
 import * as DatabasePath from "../database/path"
 import { Timestamps } from "../database/schema.sql"

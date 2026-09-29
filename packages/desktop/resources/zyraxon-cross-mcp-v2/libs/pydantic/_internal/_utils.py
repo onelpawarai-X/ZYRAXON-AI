@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Bucket of reusable internal utilities.
 
 This should be reduced as much as possible with functions only used in one place, moved to that place.

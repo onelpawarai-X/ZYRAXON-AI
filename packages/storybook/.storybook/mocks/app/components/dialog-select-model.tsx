@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { splitProps } from "solid-js"
 
 export function ModelSelectorPopover(props: { triggerAs: any; triggerProps?: Record<string, unknown>; children: any }) {

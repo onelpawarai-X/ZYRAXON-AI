@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Zyraxon publish boundary for core events. Attach routed instance location
 // so direct EventV2 consumers can isolate directory/workspace streams.
 import { LayerNode } from "@zyraxon-ai/core/effect/layer-node"

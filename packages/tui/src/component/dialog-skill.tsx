@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { TextAttributes } from "@opentui/core"
 import { DialogSelect, type DialogSelectOption } from "../ui/dialog-select"
 import { createResource, createMemo, createSignal } from "solid-js"

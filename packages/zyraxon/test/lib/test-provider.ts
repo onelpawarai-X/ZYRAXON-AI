@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Shared provider config for tests that need zyraxon to talk to a fake LLM
 // over a real HTTP endpoint. Registers a single provider `test` with a single
 // model `test-model` (i.e. `--model test/test-model`), pointed at the URL the

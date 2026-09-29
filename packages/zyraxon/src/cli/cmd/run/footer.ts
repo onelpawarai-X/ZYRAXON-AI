@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // RunFooter -- the mutable control surface for direct interactive mode.
 //
 // In the split-footer architecture, scrollback is immutable (append-only)

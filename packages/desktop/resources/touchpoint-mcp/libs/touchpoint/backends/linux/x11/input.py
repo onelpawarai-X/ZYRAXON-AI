@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Linux X11 input simulation via ``xdotool``.
 
 Provides raw keyboard and mouse input by shelling out to the

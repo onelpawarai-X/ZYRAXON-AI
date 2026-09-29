@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { sql } from "drizzle-orm"
 
 export const UPSERT_CHUNK_SIZE = 500

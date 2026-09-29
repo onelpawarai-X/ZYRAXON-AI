@@ -550,7 +550,13 @@ ZYRAXON-AI/
 
 <div align="center">
 
-### CONTRIBUTING
+### CONTRIBUTE
+
+**Everything we are building, and everything we plan to build:**
+[FEATURES.txt](blob/main/FEATURES.txt)
+
+**Full contribution guide:**
+[CONTRIBUTING.md](blob/main/CONTRIBUTING.md)
 
 </div>
 
@@ -558,10 +564,10 @@ ZYRAXON-AI/
 2. **Clone**: `git clone https://github.com/onelpawarai-X/ZYRAXON-AI.git`
 3. **Install**: `bun install`
 4. **Build**: `cd packages/zyraxon && bun run dev`
-5. **Branch**: `git checkout -b feat/my-feature`
+5. **Branch**: `git checkout -b my-feature` (three words max, no slashes, no type prefix)
 6. **Commit**: `git commit -m "feat: add my feature"`
-7. **Push**: `git push origin feat/my-feature`
-8. **Open PR**
+7. **Push**: `git push origin my-feature`
+8. **Open PR** against `dev`
 
 ---
 
@@ -576,8 +582,6 @@ ZYRAXON-AI/
 | Project | Description |
 |:--------|:------------|
 | [ZYRAXON AI](https://github.com/onelpawarai-X/ZYRAXON-AI) | Desktop AI agent — the main project |
-| [Myra Agent](https://github.com/onelpawarai-X/Myra-Agent) | Android voice assistant |
-| [Zyraxon Code](https://github.com/onelpawarai-X/Zyraxon-Code) | AI-powered code editor (Monaco fork) |
 | [ZYRAXON Website](https://zyraxonai.lovable.app) | Main website |
 | [Cloud Agent](https://zyraxon-pro-x.lovable.app) | Cloud-based agent interface |
 

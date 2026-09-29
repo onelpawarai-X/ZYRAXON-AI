@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 let nav: ((href: string) => void) | undefined
 
 export const setNavigate = (fn: (href: string) => void) => {

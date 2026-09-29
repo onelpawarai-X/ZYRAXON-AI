@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { type ContextItem, type Prompt, type usePrompt } from "@/context/prompt"
 
 type PromptTarget = ReturnType<ReturnType<typeof usePrompt>["capture"]>

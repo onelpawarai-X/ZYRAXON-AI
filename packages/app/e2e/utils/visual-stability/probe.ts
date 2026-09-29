@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { Page } from "@playwright/test"
 import { startVisualCapture, stopVisualCapture, type VisualCapture } from "./capture"
 import type { VisualMarker, VisualObservation, VisualProbeResult } from "./model"

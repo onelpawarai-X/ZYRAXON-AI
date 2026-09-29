@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # :Author: Georg Brandl; Lea Wiemann; Günter Milde
 # :Date: $Date: 2025-05-20 17:48:27 +0200 (Di, 20. Mai 2025) $
 # :Copyright: This module has been placed in the public domain.

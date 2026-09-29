@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Workarounds for CPython interpreter bugs the SDK papers over."""
 
 import anyio.lowlevel

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { type ComponentProps, createMemo, splitProps } from "solid-js"
 import "./progress-circle-v2.css"
 

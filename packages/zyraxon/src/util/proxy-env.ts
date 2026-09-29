@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /*
  * Adapted from proxy-from-env: https://github.com/Rob--W/proxy-from-env
  *

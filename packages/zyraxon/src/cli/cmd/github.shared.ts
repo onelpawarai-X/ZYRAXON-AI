@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { SessionV1 } from "@zyraxon-ai/core/v1/session"
 
 export { parseGitHubRemote } from "@/util/repository"

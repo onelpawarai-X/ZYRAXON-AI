@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Pure state machine for the permission UI.
 //
 // Lives outside the JSX component so it can be tested independently. The

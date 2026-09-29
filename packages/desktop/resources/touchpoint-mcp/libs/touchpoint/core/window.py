@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Core data model for windows.
 
 Defines the :class:`Window` dataclass — returned by ``tp.windows()``

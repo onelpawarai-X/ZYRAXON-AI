@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { HttpRecorderInternal } from "@zyraxon-ai/http-recorder/internal"
 import { Effect, Layer } from "effect"
 import { WebSocketExecutor } from "../src/route"

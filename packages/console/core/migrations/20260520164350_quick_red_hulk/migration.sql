@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+-- Copyright (c) 2026 onelpawarai. All rights reserved.
+
 CREATE TABLE `referral_code` (
 	`workspace_id` varchar(30) PRIMARY KEY,
 	`code` varchar(10) NOT NULL,

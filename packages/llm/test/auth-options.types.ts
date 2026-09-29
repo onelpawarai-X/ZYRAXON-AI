@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Config } from "effect"
 import type { Auth } from "../src/route/auth"
 import type { ModelFactory } from "../src/route/auth-options"

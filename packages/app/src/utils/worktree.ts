@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { ScopedKey, type ServerScope } from "@/utils/server-scope"
 
 const normalize = (directory: string) => directory.replace(/[\\/]+$/, "")

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """OAuth client credential extensions for MCP.
 
 Provides OAuth providers for machine-to-machine authentication flows:

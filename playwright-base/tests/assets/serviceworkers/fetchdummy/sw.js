@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 self.addEventListener('fetch', event => {
   if (event.request.url.endsWith('.html') || event.request.url.includes('passthrough')) {
     event.respondWith(fetch(event.request));

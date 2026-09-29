@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { BorderSides, ColorInput } from "@opentui/core"
 import type { JSX } from "@opentui/solid"
 import { useTheme } from "../../context/theme"

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Anthropic sampling handler for FastMCP."""
 
 from collections.abc import Iterator, Sequence

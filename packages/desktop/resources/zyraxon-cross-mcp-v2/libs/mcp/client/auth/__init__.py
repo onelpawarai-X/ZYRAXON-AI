@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """OAuth2 Authentication implementation for httpx2.
 
 Implements authorization code flow with PKCE and automatic token refresh.

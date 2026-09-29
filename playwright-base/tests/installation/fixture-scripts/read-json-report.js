@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 const report = require(process.argv[2]);
 if (report.suites[0].specs[0].title !== 'sample test') {
   console.log(`Wrong spec title`);

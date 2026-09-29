@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Effect, Schema } from "effect"
 import type { JSONSchema7 } from "@ai-sdk/provider"
 import { getCurrentTier, hasAccess, getToolRequiredTier, TIER_ORDER, type Tier } from "../subscription/canonical"
@@ -63,6 +66,21 @@ export function getXToolRegistry(): XToolDef[] {
   _xToolRegistryCache = xToolRegistry
   return _xToolRegistryCache
 }
+
+// Stateful security helpers must survive between tool calls: a camera registered by
+// x_surveillance_add_camera has to still exist when x_surveillance_detect_motion runs, and
+// the prior per-call `new` made every follow-up call operate on an empty instance.
+let _surveillance: SurveillanceSystem | null = null
+let _accessControl: AccessControlSystem | null = null
+let _intrusion: IntrusionDetector | null = null
+let _cyberSecurity: CyberSecurityMonitor | null = null
+let _encryption: EncryptionEngine | null = null
+
+const surveillanceSystem = () => (_surveillance ??= new SurveillanceSystem())
+const accessControlSystem = () => (_accessControl ??= new AccessControlSystem())
+const intrusionDetector = () => (_intrusion ??= new IntrusionDetector())
+const cyberSecurityMonitor = () => (_cyberSecurity ??= new CyberSecurityMonitor())
+const encryptionEngine = () => (_encryption ??= new EncryptionEngine())
 
 export const xToolRegistry: XToolDef[] = [
 
@@ -2063,21 +2081,23 @@ export const xToolRegistry: XToolDef[] = [
     },
     category: "security",
     execute: async (args) => {
-      const ss = new SurveillanceSystem()
+      const ss = surveillanceSystem()
       return ss.addCamera(args.id, args.location)
     },
   },
   {
     id: "x_surveillance_detect_motion",
     name: "Detect Motion",
-    description: "Check for motion on a surveillance camera.",
+    description: "Measure real motion on the live capture by differencing two actual frames.",
     parameters: {
       cameraId: { type: "string", description: "Camera ID", required: true },
+      sensitivity: { type: "number", description: "Mean pixel difference (0-255) treated as motion", required: false },
+      sampleMs: { type: "number", description: "Gap between the two captured frames", required: false },
     },
     category: "security",
     execute: async (args) => {
-      const ss = new SurveillanceSystem()
-      return ss.detectMotion(args.cameraId)
+      const ss = surveillanceSystem()
+      return ss.detectMotion(args.cameraId, args.sensitivity ?? 12, args.sampleMs ?? 400)
     },
   },
   {
@@ -2090,7 +2110,7 @@ export const xToolRegistry: XToolDef[] = [
     },
     category: "security",
     execute: async (args) => {
-      const ss = new SurveillanceSystem()
+      const ss = surveillanceSystem()
       return ss.setRecording(args.cameraId, args.on)
     },
   },
@@ -2105,7 +2125,7 @@ export const xToolRegistry: XToolDef[] = [
     },
     category: "security",
     execute: async (args) => {
-      const acs = new AccessControlSystem()
+      const acs = accessControlSystem()
       return acs.grantAccess(args.personId, args.entryId, args.duration)
     },
   },
@@ -2119,7 +2139,7 @@ export const xToolRegistry: XToolDef[] = [
     },
     category: "security",
     execute: async (args) => {
-      const acs = new AccessControlSystem()
+      const acs = accessControlSystem()
       return acs.revokeAccess(args.personId, args.entryId)
     },
   },
@@ -2133,7 +2153,7 @@ export const xToolRegistry: XToolDef[] = [
     },
     category: "security",
     execute: async (args) => {
-      const acs = new AccessControlSystem()
+      const acs = accessControlSystem()
       return acs.checkAccess(args.personId, args.entryId)
     },
   },
@@ -2148,7 +2168,7 @@ export const xToolRegistry: XToolDef[] = [
     },
     category: "security",
     execute: async (args) => {
-      const id = new IntrusionDetector()
+      const id = intrusionDetector()
       return id.setZone(args.id, args.type, args.coordinates)
     },
   },
@@ -2161,7 +2181,7 @@ export const xToolRegistry: XToolDef[] = [
     },
     category: "security",
     execute: async (args) => {
-      const id = new IntrusionDetector()
+      const id = intrusionDetector()
       return id.armZone(args.id)
     },
   },
@@ -2175,34 +2195,39 @@ export const xToolRegistry: XToolDef[] = [
     },
     category: "security",
     execute: async (args) => {
-      const id = new IntrusionDetector()
+      const id = intrusionDetector()
       return id.checkBreach(args.zoneId, args.sensorData)
     },
   },
   {
     id: "x_cyber_detect_port_scan",
-    name: "Detect Port Scan",
-    description: "Detect port scanning activity on a host.",
+    name: "Probe Host Ports",
+    description: "Probe real TCP ports on a registered host and report the actual connection results (open, filtered, closed). This checks reachability; it does not watch for incoming scanners.",
     parameters: {
       hostId: { type: "string", description: "Host ID", required: true },
+      ports: { type: "array", description: "Port numbers to probe (max 256)", required: true },
+      timeoutMs: { type: "number", description: "Per-port connect timeout", required: false },
     },
     category: "security",
     execute: async (args) => {
-      const csm = new CyberSecurityMonitor()
-      return csm.detectPortScan(args.hostId)
+      const csm = cyberSecurityMonitor()
+      return csm.probeHostPorts(args.hostId, args.ports, args.timeoutMs ?? 800)
     },
   },
   {
     id: "x_cyber_detect_brute_force",
     name: "Detect Brute Force",
-    description: "Detect brute force attack on a host.",
+    description: "Analyze a real authentication log and report actual failed-login bursts.",
     parameters: {
       hostId: { type: "string", description: "Host ID", required: true },
+      logPath: { type: "string", description: "Path to the auth log to analyze", required: true },
+      windowSeconds: { type: "number", description: "Time window in seconds", required: false },
+      threshold: { type: "number", description: "Failures from one source needed to count as brute force", required: false },
     },
     category: "security",
     execute: async (args) => {
-      const csm = new CyberSecurityMonitor()
-      return csm.detectBruteForce(args.hostId)
+      const csm = cyberSecurityMonitor()
+      return csm.detectBruteForce(args.hostId, args.logPath, args.windowSeconds ?? 300, args.threshold ?? 5)
     },
   },
   {
@@ -2214,7 +2239,7 @@ export const xToolRegistry: XToolDef[] = [
     },
     category: "security",
     execute: async (args) => {
-      const csm = new CyberSecurityMonitor()
+      const csm = cyberSecurityMonitor()
       return csm.blockIP(args.ip)
     },
   },
@@ -2228,7 +2253,7 @@ export const xToolRegistry: XToolDef[] = [
     },
     category: "security",
     execute: async (args) => {
-      const ee = new EncryptionEngine()
+      const ee = encryptionEngine()
       return ee.encrypt(args.data, args.algorithm)
     },
   },
@@ -2243,7 +2268,7 @@ export const xToolRegistry: XToolDef[] = [
     },
     category: "security",
     execute: async (args) => {
-      const ee = new EncryptionEngine()
+      const ee = encryptionEngine()
       return ee.decrypt(args.ciphertext, args.key, args.algorithm)
     },
   },
@@ -2257,7 +2282,7 @@ export const xToolRegistry: XToolDef[] = [
     },
     category: "security",
     execute: async (args) => {
-      const ee = new EncryptionEngine()
+      const ee = encryptionEngine()
       return ee.hash(args.data, args.algorithm)
     },
   },

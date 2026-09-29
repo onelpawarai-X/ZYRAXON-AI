@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Context, Effect, FileSystem, Layer, Schema, Semaphore } from "effect"
 import * as fs from "node:fs"
 import * as path from "node:path"

@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+-- Copyright (c) 2026 onelpawarai. All rights reserved.
+
 DROP TABLE `referral_code`;--> statement-breakpoint
 DROP INDEX `referral_reward_referral_source` ON `referral_reward`;--> statement-breakpoint
 DROP INDEX `referral_stripe_subscription_id` ON `referral`;--> statement-breakpoint

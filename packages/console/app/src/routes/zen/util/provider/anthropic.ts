@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { EventStreamCodec } from "@smithy/eventstream-codec"
 import { ProviderHelper, CommonRequest, CommonResponse, CommonChunk } from "./provider"
 import { fromUtf8, toUtf8 } from "@smithy/util-utf8"

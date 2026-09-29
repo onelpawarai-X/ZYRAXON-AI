@@ -1,6 +1,139 @@
+
+<!-- CRITICAL-RULES:BEGIN -->
+
+## CRITICAL RULES (from .github/CRITICAL-RULES.md)
+
+Every `AGENTS.md` and every system prompt in this repository carries these rules.
+The copy inside this file is the canonical one.
+
+---
+
+## CRITICAL RULE 1 — If the machine cannot build it, GitHub Actions builds it
+
+**Never report a task as impossible because the local machine cannot do it.**
+
+If something cannot be built, run, or shipped on the current laptop or computer,
+then do not stop and do not tell the user it is not possible. Build it with
+GitHub Actions instead. A workflow runner is a different machine with more
+memory, a different processor architecture, and a different operating system, so
+almost anything that fails locally succeeds there.
+
+Specifically:
+
+- The local machine cannot run the target architecture, or runs out of memory, or
+  the needed toolchain is unavailable, or a native module will not compile. Use a
+  GitHub Actions workflow.
+- Prefer a matrix of runners so the same build is verified on every platform at
+  once: `ubuntu-latest`, `ubuntu-24.04-arm`, `macos-latest`, `windows-latest`.
+- Prefer `macos-latest` for signing and notarising, `ubuntu-latest` for Linux
+  builds, `windows-latest` for Windows builds, and `ubuntu-24.04-arm` for ARM.
+- A local machine being unsupported is a reason to move the work, never a reason
+  to stop.
+
+This repository already has the workflows for this. They live in
+`.github/workflows/`, including `test.yml`, `typecheck.yml`, `publish.yml`,
+`publish-sdk.yml`, `publish-vscode.yml`, `beta.yml`, `release-github-action.yml`
+and `publish-github-action.yml`.
+
+**Publishing through GitHub Actions is unlimited.** There is no cap on how many
+builds or releases a workflow can produce. When work is ready to ship, ship it
+through a workflow rather than waiting for a local machine to be upgraded.
+
+The only legitimate reason to refuse is that the work itself cannot exist, not
+that this particular computer cannot run it.
+
+---
+
+## CRITICAL RULE 2 — Nothing is finished until it is 100% tested
+
+**Never stop after building a website, an application, or anything else, and never
+tell the user it is done, until it has been tested to 100% and every check passed.**
+
+A build that compiles is not a working product. Compilation proves syntax, not
+behaviour.
+
+Before saying anything is finished, actually open it and verify all of the
+following, every time:
+
+1. **It opens.** Launch it for real. A build that produces a file is not proof
+   that the file runs.
+2. **It loads completely.** Watch for a screen that never leaves a loading state.
+   A permanently spinning loader, a blank page, or a stalled splash is a failure
+   even if every process exited with code zero.
+3. **Nothing is broken.** Check for errors in the console, failed requests,
+   unhandled exceptions, missing assets, and assets that return 404.
+4. **The schema is correct.** If there is structured data, validate it. Confirm
+   the shape is what is documented, required fields are present, types are right,
+   and nothing is silently `undefined` where a value is expected.
+5. **It renders.** Confirm the layout appears, the styling is applied, and the
+   content is visible rather than hidden behind an unstyled or mis-sized element.
+6. **It does not loop.** Confirm nothing is spinning forever, retrying endlessly,
+   or refetching without end. A page that never settles is a failure.
+7. **It is not frozen.** Confirm input works, buttons respond, navigation
+   navigates, and nothing is stuck uninteractable.
+8. **The whole flow works end to end.** Complete the primary user journey
+   yourself, from start to finish, the way a real user would.
+
+Run the automated tests as well. Both are required: the automated suite and the
+real run.
+
+**Only when every check passes may the agent say it is all correct.** Until then,
+keep going and fix what is broken. Report honestly what passed and what did not.
+Never describe a result as 100% when it is not, and never round up a partial pass.
+
+---
+
+## CRITICAL RULE 3 — Contribution is open, and it is credited
+
+Everyone may contribute, at every level, and every kind of help is credited.
+
+There is no gate on contributing and no application to fill in. Any of the
+following counts, and all of them are genuinely valuable:
+
+- Fixing a bug
+- Opening a pull request
+- Reviewing a pull request
+- Reporting a bug or a broken tool precisely
+- Writing or translating documentation
+- Adding a tool, a test, or a provider
+- Reviewing and testing a release
+- Answering another user's question
+- Spreading the word
+
+Credit is given in the changelog, in the release notes, and in the repository
+wherever it is appropriate to do so. Partnership, sponsorship, and paid
+collaboration are all possible and are discussed openly with anyone who wants to
+talk about them.
+
+**Overstating a capability to look good is a violation of this file.** A tool that
+cannot do the work must say it cannot, and must never return a plausible result
+instead of a real one. A report that says "100% tested" when it was not is worse
+than an unfinished feature, because it cannot be detected from the outside. Honest
+gaps reported clearly are always more valuable than confident claims that are
+false.
+
+---
+
+## Where these rules live
+
+| File | What it is |
+| --- | --- |
+| `.github/CRITICAL-RULES.md` | This file. The canonical text. |
+| `AGENTS.md` | Repository root agent instructions. |
+| `packages/*/AGENTS.md` | Per-package agent instructions. |
+| `packages/zyraxon/src/agent/prompt/*.txt` | System prompts shipped to the agent. |
+
+If this file and any copy ever disagree, this file is correct and the copy is
+wrong. Fix the copy.
+
+<!-- CRITICAL-RULES:END -->
+
+
 # LLM Package Guide
 
-## Effect
+#
+
+# Effect
 
 - Prefer `HttpClient.HttpClient` / `HttpClientResponse.HttpClientResponse` over web `fetch` / `Response` at package boundaries.
 - Use `Stream.Stream` for streaming data flow. Avoid ad hoc async generators or manual web reader loops unless an Effect `Stream` API cannot model the behavior.
@@ -8,16 +141,22 @@
 - In `Effect.gen`, yield yieldable errors directly (`return yield* new MyError(...)`) instead of `Effect.fail(new MyError(...))`.
 - Use `Effect.void` instead of `Effect.succeed(undefined)` when the successful value is intentionally void.
 
-## Conventions
+#
+
+# Conventions
 
 Per-type constructors live on the type, not as top-level re-exports. Use `Message.system(...)`, `Message.user(...)`, `Message.assistant(...)`, `Message.tool(...)`, `Model.make(...)`, `ToolDefinition.make(...)`, `ToolCallPart.make(...)`, `ToolResultPart.make(...)`, `ToolChoice.make(...)`, `ToolChoice.named(...)`, `SystemPart.make(...)`, and `GenerationOptions.make(...)` directly. The top-level `LLM` namespace is reserved for request-shaped call APIs: `LLM.request`, `LLM.generate`, `LLM.stream`, `LLM.updateRequest`, and `LLM.generateObject`. Two ways to construct the same thing is one too many.
 
-## Tests
+#
+
+# Tests
 
 - Use `testEffect(...)` from `test/lib/effect.ts` for tests requiring Effect layers.
 - Keep provider tests fixture-first. Live provider calls must stay behind `RECORD=true` and required API-key checks.
 
-## Architecture
+#
+
+# Architecture
 
 This package is an Effect Schema-first LLM core. The Schema classes in `src/schema/` are the canonical runtime data model. Convenience functions in `src/llm.ts` are thin constructors that return those same Schema class instances; they should improve callsites without creating a second model.
 
@@ -30,7 +169,10 @@ Primary in-repo integration point:
 
 Keep this package independent of session concerns. Session auth, permissions, plugins, telemetry headers, and runtime selection belong in `packages/ZYRAXON/src/session/llm.ts` and its local adapters.
 
-### Request Flow
+#
+#
+
+# Request Flow
 
 The intended callsite is:
 
@@ -50,7 +192,10 @@ Use `LLMClient.stream(request)` when callers want incremental `LLMEvent`s. Use `
 
 Filter or narrow `LLMEvent` streams with `LLMEvent.is.*` (camelCase guards, e.g. `events.filter(LLMEvent.is.toolCall)`). The kebab-case `LLMEvent.guards["tool-call"]` form also works but prefer `is.*` in new code.
 
-### Routes
+#
+#
+
+# Routes
 
 A route is the registered, runnable composition of four orthogonal pieces:
 
@@ -80,13 +225,19 @@ The four-axis decomposition is the reason DeepSeek, TogetherAI, Cerebras, Basete
 
 When a provider ships a non-HTTP transport (OpenAI's WebSocket Responses backend, hypothetical bidirectional streaming APIs), the seam is `Transport` — `WebSocketTransport.jsonTransport.with(...)` constructs an IO template whose `prepare` receives the route endpoint/auth at compile time, builds a WebSocket URL and message, and whose `frames` yields decoded text from the socket. Same protocol and endpoint source, different transport.
 
-### URL Construction
+#
+#
+
+# URL Construction
 
 `Endpoint` owns `{ baseURL, path, query }`. Each protocol route includes a canonical endpoint when the provider has one (e.g. `https://api.openai.com/v1`); provider helpers override endpoint fields by configuring the route before selecting a model. Routes that have no canonical URL (OpenAI-compatible Chat, GitHub Copilot) require configuration before execution.
 
 For providers where the URL is derived from typed inputs (Azure resource name, Bedrock region), the provider helper configures the route endpoint before calling `.model(...)`. Use `AtLeastOne<T>` from `route/auth-options.ts` for inputs that accept either of two derivation paths (Azure: `resourceName` or `baseURL`).
 
-### Provider Facades
+#
+#
+
+# Provider Facades
 
 Provider-facing APIs are configured facades over route values. Endpoint/auth/resource/API-version setup happens before model selection, and model selectors accept only a model or deployment id:
 
@@ -113,7 +264,10 @@ Keep provider facades small and explicit:
 
 `Provider.make(...)` remains available for simple static provider definitions, but new built-in providers should prefer plain configured facades unless a helper removes real duplication without adding runtime behavior.
 
-### Folder layout
+#
+#
+
+# Folder layout
 
 ```
 packages/llm/src/
@@ -158,7 +312,10 @@ packages/llm/src/
 
 The dependency arrow points down: `providers/*.ts` files import protocol routes and auth-option utilities; protocol modules import `endpoint`, `auth`, `framing`, and transport pieces. Protocols do not import provider facades. Lower-level modules know nothing about provider catalog metadata.
 
-### Shared protocol helpers
+#
+#
+
+# Shared protocol helpers
 
 `ProviderShared` exports a small toolkit used inside protocol implementations to keep them focused on provider-native shapes:
 
@@ -171,7 +328,10 @@ The dependency arrow points down: `providers/*.ts` files import protocol routes 
 
 If you find yourself copying a 3-to-5-line snippet between two protocols, lift it into `ProviderShared` next to these helpers rather than duplicating.
 
-### Chronological System Updates
+#
+#
+
+# Chronological System Updates
 
 `LLMRequest.system` is the initial privileged prompt that applies ahead of the conversation. `Message.system(...)` is a separate, provider-neutral chronological operator update inside `LLMRequest.messages`; it applies only from its position in history onward and accepts text content only.
 
@@ -185,7 +345,10 @@ Native chronological system messages are route/model-specific. Anthropic Message
 
 The wrapped-user fallback preserves ordering while visibly lowering authority. Never silently pass a raw chronological `role: "system"` through a route that might reject it. Do not insert raw retrieved documents, tool output, or web content into privileged chronological system updates; keep untrusted content in ordinary user/tool channels.
 
-### Tools
+#
+#
+
+# Tools
 
 Tool loops are represented in common messages and events:
 
@@ -201,7 +364,10 @@ const followUp = LLM.request({
 
 Routes lower these into provider-native assistant tool-call messages and tool-result messages. Streaming providers should emit `tool-input-delta` events while arguments arrive, then a final `tool-call` event with parsed input.
 
-### Tool dispatch
+#
+#
+
+# Tool dispatch
 
 `LLM.stream(request)` and `LLM.generate(request)` each run exactly one provider turn. Add tool schemas to `request.tools` with `Tool.toDefinitions(tools)`. When a caller wants the package's typed one-call execution behavior, pass each canonical local `tool-call` event to `ToolRuntime.dispatch(tools, call)`.
 
@@ -253,11 +419,16 @@ Provider-defined / hosted tools (Anthropic `web_search` / `code_execution` / `we
 
 Add provider-defined tools to `request.tools` (no runtime entry needed). The matching route must know how to lower the tool definition into the provider-native shape; right now Anthropic accepts `web_search` / `code_execution` / `web_fetch` and OpenAI Responses accepts the hosted tool names listed above.
 
-## Protocol File Style
+#
+
+# Protocol File Style
 
 Protocol files should look self-similar. Provider quirks belong behind named helpers so a new route can be reviewed by comparing the same sections across files.
 
-### Section order
+#
+#
+
+# Section order
 
 Use this order for every protocol module:
 
@@ -270,7 +441,10 @@ Use this order for every protocol module:
 7. Protocol and route
 8. Protocol route export
 
-### Rules
+#
+#
+
+# Rules
 
 - Keep protocol files focused on the protocol. Move provider-specific projection, signing, media normalization, or other bulky transformations into `src/protocols/utils/*`.
 - Use `Effect.fn("Provider.fromRequest")` for request body construction entrypoints. Use `Effect.fn(...)` for event handlers that yield effects; keep purely synchronous handlers as plain functions returning a `StepResult` that the dispatcher lifts via `Effect.succeed(...)`.
@@ -281,7 +455,10 @@ Use this order for every protocol module:
 - Prefer dispatched per-event handlers (`onMessageStart`, `onContentBlockDelta`, ...) called from a small top-level `step` switch over a long if-chain. The dispatcher keeps the event surface visible at a glance.
 - Keep tests in the same conceptual order as the protocol: basic prepare, tools prepare, unsupported lowering, text/usage parsing, tool streaming, finish reasons, provider errors.
 
-### Review checklist
+#
+#
+
+# Review checklist
 
 - Can the file be skimmed side-by-side with `openai-chat.ts` without hunting for equivalent sections?
 - Are provider quirks named, isolated, and covered by focused tests?
@@ -289,7 +466,9 @@ Use this order for every protocol module:
 - Does stream parsing emit stable common events without leaking provider event order to callers?
 - Does `toolChoice: "none"` behavior read as intentional?
 
-## Recording Tests
+#
+
+# Recording Tests
 
 Recorded tests use one cassette file per scenario. A cassette holds an ordered array of `{ request, response }` interactions, so multi-step flows (tool loops, retries, polling) record into a single file. Use `recordedTests({ prefix, requires })` and let the helper derive cassette names from test names:
 
@@ -319,3 +498,4 @@ Filters apply in replay and record mode. Combine them with `RECORD=true` when re
 **Matching strategy.** Replay walks the cassette in record order via an internal cursor: the Nth runtime request is served by the Nth recorded interaction, and each one is validated by comparing method, URL, allow-listed headers, and the canonical JSON body. This handles tool loops (each round's request differs as history grows) and retry/polling scenarios (successive byte-identical requests with different responses) uniformly. If a test reorders its requests, re-record the cassette. `scriptedResponses` (in `test/lib/http.ts`) is the deterministic counterpart for tests that don't need a live provider; it scripts response bodies in order without reading from disk.
 
 Do not blanket re-record an entire test file when adding one cassette. `RECORD=true` rewrites every recorded case that runs, and provider streams contain volatile IDs, timestamps, fingerprints, and obfuscation fields. Prefer deleting the one cassette you intend to refresh, or run a focused test pattern that only registers the scenario you want to record. Keep stable existing cassettes unchanged unless their request shape or expected behavior changed.
+

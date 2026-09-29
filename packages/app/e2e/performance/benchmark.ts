@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { expect, test as base, type Browser, type Page, type TestInfo } from "@playwright/test"
 import { startChromeTrace } from "./chrome-trace"
 

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Lifecycle management for the split-footer renderer.
 //
 // Creates the OpenTUI CliRenderer in split-footer mode, resolves the theme

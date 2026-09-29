@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createZyraxonClient, createZyraxonServer } from "@zyraxon-ai/sdk"
 import { pathToFileURL } from "bun"
 

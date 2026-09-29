@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Server-side argument completion for FastMCP.
 
 A completion request names a reference — a specific prompt or resource

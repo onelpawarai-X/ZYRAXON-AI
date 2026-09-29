@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Reusable CI triage for PR test failures. Callable from other repos
 # (e.g. microsoft/playwright-browsers) via workflow_call.
 name: PR CI Triage

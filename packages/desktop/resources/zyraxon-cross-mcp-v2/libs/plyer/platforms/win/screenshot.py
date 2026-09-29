@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 '''
 https://docs.microsoft.com/en-us/windows/desktop/api/wingdi/nf-wingdi-bitblt
 https://www.bugs.python.org/issue33656

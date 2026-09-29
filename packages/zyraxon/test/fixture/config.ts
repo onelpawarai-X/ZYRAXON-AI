@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Config } from "@/config/config"
 import { emptyConsoleState } from "@zyraxon-ai/core/v1/config/console-state"
 import { Effect, Layer } from "effect"

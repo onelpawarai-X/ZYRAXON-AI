@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Filesystem path safety primitives for resource handlers.
 
 These functions help MCP servers reject paths that would resolve

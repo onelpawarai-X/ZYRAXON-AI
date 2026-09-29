@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from starlette.datastructures import URL
 from starlette.responses import RedirectResponse
 from starlette.types import ASGIApp, Receive, Scope, Send

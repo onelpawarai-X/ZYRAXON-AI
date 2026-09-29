@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import os from "os"
 import { InstallationVersion } from "../../installation/version"
 import { Effect, Option, Schema } from "effect"

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { z } from "zod"
 import { eq, and } from "drizzle-orm"
 import { Database } from "./drizzle"

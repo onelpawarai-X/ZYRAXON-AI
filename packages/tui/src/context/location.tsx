@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { LocationRef } from "@zyraxon-ai/sdk/v2"
 import { createContext, useContext, type Accessor, type ParentProps } from "solid-js"
 

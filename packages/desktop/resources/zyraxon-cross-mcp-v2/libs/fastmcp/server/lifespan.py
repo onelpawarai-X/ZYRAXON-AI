@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Composable lifespans for FastMCP servers.
 
 This module provides a `@lifespan` decorator for creating composable server lifespans

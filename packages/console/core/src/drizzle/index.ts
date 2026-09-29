@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { drizzle } from "drizzle-orm/planetscale-serverless"
 import { Resource } from "@zyraxon-ai/console-resource"
 export * from "drizzle-orm"

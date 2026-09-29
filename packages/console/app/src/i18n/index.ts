@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { Locale } from "~/lib/language"
 import { dict as en } from "~/i18n/en"
 import { dict as zh } from "~/i18n/zh"

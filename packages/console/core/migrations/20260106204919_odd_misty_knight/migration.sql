@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+-- Copyright (c) 2026 onelpawarai. All rights reserved.
+
 CREATE TABLE `ip_rate_limit` (
 	`ip` varchar(45) NOT NULL,
 	`interval` varchar(10) NOT NULL,

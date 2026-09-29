@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Command Handlers for the debugger.
 
 # Not in the debugger package, as I always want these interfaces to be

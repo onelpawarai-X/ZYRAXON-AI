@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export const PTY_CONNECT_TICKET_QUERY = "ticket"
 export const PTY_CONNECT_TOKEN_HEADER = "x-zyraxon-ticket"
 export const PTY_CONNECT_TOKEN_HEADER_VALUE = "1"

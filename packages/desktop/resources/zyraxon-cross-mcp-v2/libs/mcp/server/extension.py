@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Pluggable extension interface for MCP servers (SEP-2133).
 
 An extension is a self-contained, opt-in bundle of MCP behaviour, identified by

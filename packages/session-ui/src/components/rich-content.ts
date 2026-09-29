@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * Rich Content Renderer — Mermaid, HTML+CSS, SVG, Video, Audio, Notebook Paper
  * Renders special code blocks as visual content in chat messages

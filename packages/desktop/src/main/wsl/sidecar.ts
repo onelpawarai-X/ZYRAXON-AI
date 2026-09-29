@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { spawn } from "node:child_process"
 import { randomUUID } from "node:crypto"
 import { createServer } from "node:net"

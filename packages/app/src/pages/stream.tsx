@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createSignal, createEffect, onCleanup, Show, For } from "solid-js"
 import { Button } from "@zyraxon-ai/ui/button"
 import { showToast } from "@/utils/toast"

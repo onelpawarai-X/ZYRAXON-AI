@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """FastMCP-native server extension API (SEP-2133).
 
 An MCP extension is an opt-in, capability-negotiated bundle of protocol

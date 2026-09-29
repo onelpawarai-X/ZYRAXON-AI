@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 
 """module to send mail with Extended MAPI using the pywin32 mapi wrappers..."""
 

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # $Id: __init__.py 10045 2025-03-09 01:02:23Z aa-turner $
 # Author: David Goodger <goodger@python.org>
 # Copyright: This module has been placed in the public domain.

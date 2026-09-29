@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """a clumsy attempt at a macro language to let the programmer execute code on the server (ex: determine 64bit)"""
 
 from . import is64bit

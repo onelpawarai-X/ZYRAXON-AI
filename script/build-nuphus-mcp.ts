@@ -1,4 +1,7 @@
 #!/usr/bin/env bun
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * Build Nuphus MCP — Create wrapper script in resources/nuphus-mcp/
  * The wrapper uses npx to auto-download and run @nuphus/nuphus-mcp

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # This is a simple serial port terminal demo.
 #
 # Its primary purpose is to demonstrate the native serial port access offered via

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Internal utilities and types for key-value store implementations.
 
 This package provides internal utilities used across store implementations:

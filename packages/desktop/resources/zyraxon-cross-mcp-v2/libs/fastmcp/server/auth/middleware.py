@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Enhanced authentication middleware with better error messages.
 
 This module provides enhanced versions of MCP SDK authentication middleware

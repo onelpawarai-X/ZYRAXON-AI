@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export * as Anthropic from "./anthropic"
 export * as AmazonBedrock from "./amazon-bedrock"
 export * as Azure from "./azure"

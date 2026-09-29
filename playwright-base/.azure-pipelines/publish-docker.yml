@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Trigger: any `v*` release tag (e.g. v1.40.0).
 # Can also be queued manually from the ADO UI.
 trigger:

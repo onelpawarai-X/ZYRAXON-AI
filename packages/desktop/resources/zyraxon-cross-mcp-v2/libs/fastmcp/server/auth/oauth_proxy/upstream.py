@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """httpx2-based upstream OAuth2 token client.
 
 Replaces `authlib.integrations.httpx_client.AsyncOAuth2Client` for the OAuth

@@ -1,3 +1,6 @@
+<# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+   Copyright (c) 2026 onelpawarai. All rights reserved. #>
+
 $ErrorActionPreference = 'Stop'
 
 # This script sets up a WSL distribution that will be used to run WebKit.

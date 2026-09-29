@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Core reducer for direct interactive mode.
 //
 // Takes raw SDK events and produces two outputs:

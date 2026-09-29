@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from collections.abc import Awaitable, Callable
 from typing import Any
 from urllib.parse import urlparse

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 type RecordValue = Record<string, unknown>
 
 const isRecord = (value: unknown): value is RecordValue => {

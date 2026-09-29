@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { Tier } from "./canonical"
 
 // Single source of truth for every tool's required tier. Sorted by tier.

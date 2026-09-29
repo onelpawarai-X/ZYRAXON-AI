@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from ctypes import HRESULT, POINTER, c_ubyte, c_ulong, pointer
 from typing import TYPE_CHECKING
 

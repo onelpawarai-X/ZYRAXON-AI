@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Error classes for key-value store operations.
 
 This module provides a hierarchy of exception classes used throughout the key-value

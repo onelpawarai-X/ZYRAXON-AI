@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { BrowserWindow, Menu, shell } from "electron"
 import type { MenuItemConstructorOptions } from "electron"
 import {

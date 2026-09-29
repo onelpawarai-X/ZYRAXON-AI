@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { NotFoundError as StorageNotFoundError } from "@/storage/storage"
 import type { Session } from "@/session/session"
 import { Effect } from "effect"

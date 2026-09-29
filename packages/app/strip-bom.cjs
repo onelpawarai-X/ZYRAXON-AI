@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // strip-bom.js — Removes BOM from all JSON files in node_modules
 // This fixes the Vite PostCSS config loading error caused by
 // BOM characters (0xEF 0xBB 0xBF) in upstream @zyraxon-ai packages

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Enhanced authorization handler with improved error responses.
 
 This module provides an enhanced authorization handler that wraps the MCP SDK's

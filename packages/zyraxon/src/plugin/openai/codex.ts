@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { Hooks, PluginInput } from "@zyraxon-ai/plugin"
 import { InstallationVersion } from "@zyraxon-ai/core/installation/version"
 import { OAUTH_DUMMY_KEY } from "../../auth"

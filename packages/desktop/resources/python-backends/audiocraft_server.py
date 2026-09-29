@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 ZYRAXON Audiocraft Server — MusicGen Music Generation
 Runs as a standalone FastAPI server. Called by BackendManager.

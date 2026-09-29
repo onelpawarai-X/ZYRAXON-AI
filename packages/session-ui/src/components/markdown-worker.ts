@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import MarkdownShikiWorkerUrl from "./markdown-shiki.worker.ts?worker&url"
 import { ZyraxonTheme } from "@zyraxon-ai/ui/context/marked"
 import {

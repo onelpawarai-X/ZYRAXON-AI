@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * SharedData — Central GitHub storage for likes, comments, ratings, downloads
  * All data stored in onelpawarai/ZYRAXON-DATA/marketplace/data/

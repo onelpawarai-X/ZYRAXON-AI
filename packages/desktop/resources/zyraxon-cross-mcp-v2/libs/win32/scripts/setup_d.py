@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Install and register pythonXX_d.dll, pywintypesXX_d.dll and pythoncomXX_d.dll
 #
 # Assumes the _d files can be found in the same directory as this script

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from collections.abc import Sequence
 from dataclasses import is_dataclass
 from typing import Any, TypeVar, get_args, get_origin

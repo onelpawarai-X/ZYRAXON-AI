@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # NOTE - Still seems to be a leak here somewhere
 # gateway count doesn't hit zero.  Hence the print statements!
 

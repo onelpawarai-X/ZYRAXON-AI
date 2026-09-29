@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Config } from "@/config/config"
 import { AppRuntime } from "@/effect/app-runtime"
 import { Flag } from "@zyraxon-ai/core/flag/flag"

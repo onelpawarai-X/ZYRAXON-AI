@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Config, ConfigProvider, Effect, Layer, Schema } from "effect"
 import * as Context from "effect/Context"
 import { Resource } from "sst/resource"

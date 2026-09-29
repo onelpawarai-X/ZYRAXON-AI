@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export * as ToolRegistry from "./registry"
 
 import { ToolOutput, type ToolCall, type ToolDefinition, type ToolResultValue } from "@zyraxon-ai/llm"

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { DIFFS_TAG_NAME, FileDiff, VirtualizedFileDiff } from "@pierre/diffs"
 import { type PreloadFileDiffResult, type PreloadMultiFileDiffResult } from "@pierre/diffs/ssr"
 import { createEffect, onCleanup, onMount, Show, splitProps } from "solid-js"

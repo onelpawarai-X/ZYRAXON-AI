@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # This test requires that the Agilent IVI-COM Driver for Agilent546XX
 # is installed.  It is not requires to have a physical instrument
 # connected, the driver is used in simulation mode.

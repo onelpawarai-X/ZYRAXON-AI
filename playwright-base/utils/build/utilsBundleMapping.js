@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Single source of truth for the mapping between idiomatic npm imports and
 // the keys exported from `jarvis-core/lib/utilsBundle`.
 //

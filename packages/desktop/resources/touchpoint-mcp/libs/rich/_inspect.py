@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import inspect
 from inspect import cleandoc, getdoc, getfile, isclass, ismodule, signature
 from typing import Any, Collection, Iterable, Optional, Tuple, Type, Union

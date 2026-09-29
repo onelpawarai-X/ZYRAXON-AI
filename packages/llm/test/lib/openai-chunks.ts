@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * Shared chunk shapes for OpenAI Chat / OpenAI-compatible Chat fixture tests.
  * Multiple test files build the same `{ id, choices: [{ delta, finish_reason }], usage }`

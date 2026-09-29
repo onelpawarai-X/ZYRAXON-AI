@@ -1,4 +1,7 @@
 #!/usr/bin/python2
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Configure this in order to run the testcases.
 "setuptestframework.py v 2.6.0.8"
 

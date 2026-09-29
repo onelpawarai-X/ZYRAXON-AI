@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createMemo, createResource } from "solid-js"
 import { DialogSelect } from "../ui/dialog-select"
 import { useDialog } from "../ui/dialog"

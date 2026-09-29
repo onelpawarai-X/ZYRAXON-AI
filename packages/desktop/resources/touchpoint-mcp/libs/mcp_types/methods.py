@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Per-version method maps and parse/serialize functions for MCP traffic.
 
 This module is supported public API; the `mcp_types._v*` packages it draws on

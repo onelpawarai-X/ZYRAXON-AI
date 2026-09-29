@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { IconButton } from "@zyraxon-ai/ui/icon-button"
 import { useI18n } from "@zyraxon-ai/ui/context/i18n"
 import { SegmentedControlItemV2, SegmentedControlV2 } from "@zyraxon-ai/ui/v2/segmented-control-v2"

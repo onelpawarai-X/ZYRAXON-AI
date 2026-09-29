@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from authlib.oauth2.rfc7521 import AssertionClient as _AssertionClient
 from authlib.oauth2.rfc7523 import JWTBearerGrant
 

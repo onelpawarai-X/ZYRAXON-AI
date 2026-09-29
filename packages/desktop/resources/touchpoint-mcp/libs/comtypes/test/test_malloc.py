@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import unittest as ut
 from ctypes import HRESULT, POINTER, OleDLL, byref
 from ctypes.wintypes import DWORD, HANDLE, LPWSTR

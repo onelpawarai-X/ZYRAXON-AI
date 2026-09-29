@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from typing import IO, Dict, List, Mapping, Optional
 
 from .default_styles import DEFAULT_STYLES

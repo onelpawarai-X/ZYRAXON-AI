@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Hono } from "hono"
 import { DurableObject } from "cloudflare:workers"
 import { randomUUID } from "node:crypto"

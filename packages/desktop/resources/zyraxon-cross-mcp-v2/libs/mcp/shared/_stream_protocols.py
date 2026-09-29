@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Stream protocols for MCP transports.
 
 These are general-purpose protocols satisfied by both ``MemoryObjectSendStream``/

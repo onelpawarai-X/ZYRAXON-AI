@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """On-demand Prefab renderer resource synthesis.
 
 Tools marked as Prefab (via ``app=True``, ``PrefabAppConfig``, etc.) carry

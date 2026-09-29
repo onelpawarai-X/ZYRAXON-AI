@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ZYRAXON Vision System — Frame Memory
 // Ring buffer + key frame storage + intelligent recall
 // "আমি আপনার স্ক্রিন ৫ মিনিট আগে দেখতে পারি"

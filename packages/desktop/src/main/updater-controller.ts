@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { UpdaterState } from "@zyraxon-ai/app/updater"
 
 export type { UpdaterState } from "@zyraxon-ai/app/updater"
