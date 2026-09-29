@@ -34,6 +34,10 @@ jobs:
       ZYRAXON_CHANNEL: dev
       # husky would install and try to wire git hooks, which CI does not need.
       HUSKY: "0"
+      # The chained build runs tsc and vite over the whole monorepo. The macOS
+      # runner ran out of heap without this, so both platforms now say so
+      # explicitly rather than relying on the default.
+      NODE_OPTIONS: --max-old-space-size=8192
 
     steps:
       - name: Check out

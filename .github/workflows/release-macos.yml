@@ -33,6 +33,10 @@ jobs:
     env:
       ZYRAXON_CHANNEL: dev
       HUSKY: "0"
+      # The chained build runs tsc and vite over the whole monorepo, which
+      # outgrew node's default heap and aborted with an OOM. The runner has the
+      # memory for it, node was simply never told.
+      NODE_OPTIONS: --max-old-space-size=8192
       # Leave empty to build unsigned. Populate these to ship a signed build
       # that opens without the Gatekeeper prompt.
       APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
