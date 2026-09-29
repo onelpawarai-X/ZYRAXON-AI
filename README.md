@@ -54,6 +54,73 @@ Members receive the latest unlock codes from the community. Codes are **only** s
 
 <div align="center">
 
+## 🌍 Our Mission — Help Us Get to 100,000 Stars
+
+**ZYRAXON is an agent engine today. It is a family of companies tomorrow.**
+
+We are building toward something we can be completely honest about today: a future in which **we run our own models, through our own provider, inside our own company** — and the path there runs straight through this repository.
+
+That future is not a slogan. It is the entire reason the architecture looks the way it does.
+
+</div>
+
+<br/>
+
+<div align="center">
+
+### Why this is technically reachable
+
+ZYRAXON is **provider-agnostic by design**. OpenAI, Anthropic, Google, Groq, OpenRouter, Ollama, Mistral and the Chinese open-weight ecosystem are all plug-ins behind one interface. The engine never hardcodes a vendor — it routes.
+
+That single architectural decision means:
+
+- **We can ship our own models without breaking a single existing user.** Nothing in the codebase assumes somebody else's weights.
+- **Nobody can switch us off.** There is no one company that can raise the price, throttle access, or shut the door. That is a promise, not marketing.
+- **Every user benefit from better routing today**, whether or not our own model ever arrives.
+
+</div>
+
+<br/>
+
+<div align="center">
+
+### 🆓 The commitment that matters most — free for the people
+
+Think mobile data. The airtime costs money, and yet people use the internet every single day anyway. That is how ZYRAXON will work.
+
+**On the free tier, people can do everything.** Chat, tools, sub-agents, code, automation, everything. The full engine, not a crippled demo. If you want more power, more scale, more speed — that is what the subscription is for. But **nobody gets locked out.**
+
+We are not in this to squeeze the people who use us. We are in this to put an open AI into every hand that wants one.
+
+</div>
+
+<br/>
+
+<div align="center">
+
+### 🚀 What we are asking for
+
+**If this project reaches 100,000 stars, we commit to the following:**
+
+- 🧠 **Our own model** — our own weights, trained on our own infrastructure
+- 🔌 **Our own provider** — zero dependency on any other company
+- 🌐 **Our own ecosystem** — tools, SDK, marketplace, integrations
+- 🏢 **Our own company** — built to last, owned by the people who build it
+
+<div align="center">
+
+**⭐ <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/stargazers">Star ZYRAXON</a> and help us get there. ⭐**
+
+Every star is one vote for the version of the future we described above.
+
+</div>
+
+---
+
+<br/>
+
+<div align="center">
+
 ## *"A chatbot talks. ZYRAXON acts."*
 
 <br/>
