@@ -1,0 +1,109 @@
+# Builds the macOS installer when a release is published, and attaches it to
+# that same release.
+#
+# macOS runners are free on public repositories, so this costs nothing. The
+# builds are unsigned, which means macOS Gatekeeper will ask the user to confirm
+# the first launch with a right click -> Open. Signing needs an Apple Developer
+# ID, and the secret is wired in below for whenever that exists.
+name: Release (macOS)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to build and attach to
+        required: true
+        default: v19.0.5
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-macos-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  macos:
+    name: macOS (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-latest
+          - arch: x64
+            runner: macos-13
+
+    env:
+      ZYRAXON_CHANNEL: dev
+      HUSKY: "0"
+      # Leave empty to build unsigned. Populate these to ship a signed build
+      # that opens without the Gatekeeper prompt.
+      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      APPLE_IDENTITY: ${{ vars.APPLE_IDENTITY }}
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun modules and Electron downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+            ~/Library/Caches/electron
+            ~/Library/Caches/electron-builder
+          key: release-macos-${{ matrix.arch }}-${{ hashFiles('bun.lock') }}
+          restore-keys: release-macos-${{ matrix.arch }}-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build the engine, node bundle, app and desktop
+        run: bun run zyraxon:build
+
+      - name: Package the macOS installer
+        working-directory: packages/desktop
+        run: bunx electron-builder --mac --${{ matrix.arch }} --config electron-builder.config.ts
+
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd packages/desktop/dist
+          files=(*.dmg *.zip *.blockmap latest-mac.yml)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No macOS artifacts were produced."
+            ls -la
+            exit 1
+          fi
+          printf '  %s\n' "${files[@]}"
+          gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+
+      - name: Verify the release now carries macOS assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --json assets --jq '.assets[].name' | sed 's/^/  /'

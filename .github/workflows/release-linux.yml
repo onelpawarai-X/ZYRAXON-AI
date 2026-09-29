@@ -1,0 +1,106 @@
+# Builds the Linux installer when a release is published, and attaches it to
+# that same release.
+#
+# The Windows installer is uploaded by the release script, which publishes the
+# release in the same step. `on.release.published` therefore fires once the
+# release exists and the Windows assets are already attached, and this workflow
+# appends the Linux ones without anyone touching it by hand.
+name: Release (Linux)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to build and attach to
+        required: true
+        default: v19.0.5
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-linux-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  linux:
+    name: Linux x64
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      ZYRAXON_CHANNEL: dev
+      # husky would install and try to wire git hooks, which CI does not need.
+      HUSKY: "0"
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun modules and Electron downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+            ~/.cache/electron
+            ~/.cache/electron-builder
+          key: release-linux-x64-${{ hashFiles('bun.lock') }}
+          restore-keys: release-linux-x64-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Linux packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            rpm \
+            libfuse2 \
+            libgtk-3-0 \
+            libnotify4 \
+            libnss3 \
+            libxss1 \
+            libxtst6 \
+            xvfb \
+            xdg-utils
+
+      - name: Build the engine, node bundle, app and desktop
+        run: bun run zyraxon:build
+
+      - name: Package the Linux installer
+        run: bun run zyraxon:package:linux
+
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd packages/desktop/dist
+          files=(*.AppImage *.deb *.rpm *.blockmap latest-linux.yml)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No Linux artifacts were produced."
+            ls -la
+            exit 1
+          fi
+          printf '  %s\n' "${files[@]}"
+          gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+
+      - name: Verify the release now carries Linux assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --json assets --jq '.assets[].name' | sed 's/^/  /'
