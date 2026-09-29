@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { Tier } from "./canonical"
 
 // Agent modes are gated by tier at runtime by x_mode_switch. Kept beside tier-map.ts

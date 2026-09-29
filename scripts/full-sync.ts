@@ -1,4 +1,7 @@
 #!/usr/bin/env bun
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * ZYRAXON full sync: push the entire local project to GitHub as a series of
  * small, system-scoped commits grouped into a set of pull requests.

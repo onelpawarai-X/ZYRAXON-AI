@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test"
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"

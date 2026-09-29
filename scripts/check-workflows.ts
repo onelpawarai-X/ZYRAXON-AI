@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /** Parse the two release workflows so a syntax error cannot reach main. */
 
 import { parse } from "yaml"
