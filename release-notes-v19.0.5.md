@@ -95,11 +95,22 @@ We are not here to squeeze the people who use us. We are here to put an open AI 
 
 ### Installation
 
-1. Download `ZYRAXON-Dev-win-installer.exe` from the assets below
-2. Run it and let Windows complete the install
-3. Launch ZYRAXON and sign in to your provider of choice
+This release carries all three desktop platforms.
 
-Existing installs pick this build up automatically through the in-app updater.
+| Platform | File | Arch |
+|:---------|:-----|:----:|
+| Windows | `ZYRAXON-Dev-win-installer.exe` | x64 |
+| macOS | `zyraxon-desktop-mac-arm64.dmg` | Apple Silicon |
+| macOS | `zyraxon-desktop-mac-x64.dmg` | Intel |
+| Linux | `zyraxon-desktop-linux-x86_64.AppImage` | x64, no install needed |
+| Linux | `zyraxon-desktop-linux-amd64.deb` | Debian, Ubuntu |
+| Linux | `zyraxon-desktop-linux-x86_64.rpm` | Fedora |
+
+**macOS:** the build is not signed with an Apple Developer ID yet, so Gatekeeper stops the first launch. Right click the app and choose **Open**, then confirm. One time only.
+
+**Linux:** the AppImage needs no install. `chmod +x` it and run it. The `deb` is for Debian and Ubuntu, the `rpm` for Fedora.
+
+Existing Windows installs pick this build up automatically through the in-app updater.
 
 ### License
 

@@ -534,13 +534,22 @@ See **[SDK.md](./SDK.md)** for complete API reference, examples, and guides.
 
 | Platform | File | Arch |
 |:---------|:-----|:----:|
-| Windows | `ZYRAXON Dev-win-installer.exe` | x64 |
-| Linux | `zyraxon-desktop-linux-amd64.deb` | x64 |
+| Windows | `ZYRAXON-Dev-win-installer.exe` | x64 |
+| macOS | `zyraxon-desktop-mac-arm64.dmg` | Apple Silicon |
+| macOS | `zyraxon-desktop-mac-x64.dmg` | Intel |
 | Linux | `zyraxon-desktop-linux-x86_64.AppImage` | x64 |
-| Linux | `zyraxon-linux-x64.tar.gz` | x64 |
-| Linux | `zyraxon-linux-arm64.tar.gz` | arm64 |
+| Linux | `zyraxon-desktop-linux-amd64.deb` | x64 |
+| Linux | `zyraxon-desktop-linux-x86_64.rpm` | x64 |
 
 Download from **[Releases](https://github.com/onelpawarai-X/ZYRAXON-AI/releases)**
+
+> **macOS:** the build is not signed with an Apple Developer ID yet, so Gatekeeper
+> will stop the first launch. Right click the app and choose **Open**, then
+> confirm. It is a one time thing and it only happens once.
+>
+> **Linux:** the AppImage needs no install at all. Make it executable with
+> `chmod +x`, then run it. The `deb` is for Debian and Ubuntu, the `rpm` for
+> Fedora.
 
 ---
 
