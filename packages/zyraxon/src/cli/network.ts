@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { Argv, InferredOptionTypes } from "yargs"
 import { ConfigV1 } from "@zyraxon-ai/core/v1/config/config"
 import type { Config } from "@/config/config"

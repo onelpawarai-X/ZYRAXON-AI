@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 
 const childProcess = require("child_process")
 const fs = require("fs")

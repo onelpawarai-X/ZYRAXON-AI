@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Argument and ArgumentCollection classes for CLI parsing."""
 
 from cyclopts.annotations import get_choices_from_hint

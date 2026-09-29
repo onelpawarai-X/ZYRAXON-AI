@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export namespace Binary {
   export function search<T>(array: T[], id: string, compare: (item: T) => string): { found: boolean; index: number } {
     let left = 0

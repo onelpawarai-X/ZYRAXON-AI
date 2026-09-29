@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createContext, Show, useContext, type ParentProps } from "solid-js"
 
 export function createSimpleContext<T, Props extends Record<string, any>>(input: {

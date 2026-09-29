@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Static UI assets the browser fetches without app-managed credentials, e.g.
 // the manifest link in <head>. These bypass auth so the page can install/render
 // the manifest icons even when a server password is configured.

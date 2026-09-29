@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # 'Request' example added jjk  11/20/98
 
 import win32ui  # isort: skip # Must be imported before dde !

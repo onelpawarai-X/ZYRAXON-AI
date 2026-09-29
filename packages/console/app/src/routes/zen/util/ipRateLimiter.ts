@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { FreeUsageLimitError } from "./error"
 import { logger } from "./logger"
 import { buildRateLimitKey, getRedis } from "./redis"

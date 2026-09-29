@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from authlib.common.errors import ContinueIteration
 from authlib.oauth2.rfc6750.errors import InvalidTokenError
 from authlib.oauth2.rfc9068.token_validator import JWTBearerTokenValidator

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import subprocess
 from os.path import join
 from plyer.facades import Screenshot

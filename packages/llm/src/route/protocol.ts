@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Schema, type Effect } from "effect"
 import type { LLMError, LLMEvent, LLMRequest, ProtocolID } from "../schema"
 

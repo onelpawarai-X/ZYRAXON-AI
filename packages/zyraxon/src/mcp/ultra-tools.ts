@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ZYRAXON DARK EMPEROR — 8 ULTRA TOOLS
 // The most powerful tools ever created for a coding AI
 // Only available in DARK EMPEROR mode

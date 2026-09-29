@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { AgentSideConnection, Usage } from "@agentclientprotocol/sdk"
 import type { AssistantMessage as ZyraxonAssistantMessage, Message } from "@zyraxon-ai/sdk/v2"
 import { InstanceRef } from "@/effect/instance-ref"

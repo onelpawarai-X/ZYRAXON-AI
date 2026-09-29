@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 #
 # bulkstamp.py:
 #    Stamp versions on all files that can be found in a given tree.

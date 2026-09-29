@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Apply an `LLMRequest.cache` policy by injecting `CacheHint`s onto the parts
 // the policy designates. Runs once at compile time, before the per-protocol
 // body builder, so the existing inline-hint lowering path handles the rest.

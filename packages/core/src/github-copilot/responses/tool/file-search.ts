@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createProviderToolFactoryWithOutputSchema } from "@ai-sdk/provider-utils"
 import type {
   OpenAIResponsesFileSearchToolComparisonFilter,

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { test, type TestOptions } from "bun:test"
 import { Cause, Effect, Exit, Layer } from "effect"
 import type * as Scope from "effect/Scope"

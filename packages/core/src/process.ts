@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Context, Duration, Effect, Fiber, Layer, Schema, Stream } from "effect"
 import type { PlatformError } from "effect/PlatformError"
 import { ChildProcess } from "effect/unstable/process"

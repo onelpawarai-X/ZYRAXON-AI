@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { type ChildProcess, spawnSync } from "node:child_process"
 
 // Duplicated from `packages/zyraxon/src/util/process.ts` because the SDK cannot

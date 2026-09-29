@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Stateless session state: server-side per-user and per-session storage.
 
 Modern (2026-07-28) MCP connections are stateless by construction — every

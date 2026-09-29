@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export * as ConfigProviderOptionsV1 from "./provider-options"
 
 type Options = Readonly<Record<string, unknown>>

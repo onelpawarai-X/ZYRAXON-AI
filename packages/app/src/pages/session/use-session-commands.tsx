@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { useNavigate } from "@solidjs/router"
 import { useCommand, type CommandOption } from "@/context/command"
 import { useDialog } from "@zyraxon-ai/ui/context/dialog"

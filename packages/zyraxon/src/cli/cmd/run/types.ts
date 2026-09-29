@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Shared type vocabulary for the direct interactive mode (`zyraxon --mini`).
 //
 // Direct mode uses a split-footer terminal layout: immutable scrollback for the

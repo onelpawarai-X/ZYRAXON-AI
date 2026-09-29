@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 Demonstrates how to propagate a folder's view state to all its subfolders
 The format of the ColInfo stream is apparently undocumented, but

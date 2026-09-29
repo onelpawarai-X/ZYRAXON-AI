@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export * as ConfigMCPV1 from "./mcp"
 
 import { Schema } from "effect"

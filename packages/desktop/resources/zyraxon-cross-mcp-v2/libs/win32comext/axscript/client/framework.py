@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """AXScript Client Framework
 
 This module provides a core framework for an ActiveX Scripting client.

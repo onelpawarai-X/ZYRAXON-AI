@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createSignal } from "solid-js"
 import { ButtonV2 } from "@zyraxon-ai/ui/v2/button-v2"
 import { ToolErrorCardV2, type ToolErrorCardV2Props } from "./tool-error-card-v2"

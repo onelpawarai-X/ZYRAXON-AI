@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Billing } from "@zyraxon-ai/console-core/billing.js"
 import { query, action, useParams, createAsync, useAction } from "@solidjs/router"
 import { For, Match, Show, Switch } from "solid-js"

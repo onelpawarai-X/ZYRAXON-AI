@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { randomUUID } from "node:crypto"
 import { mkdirSync, rmSync, writeFileSync, existsSync, readFileSync } from "node:fs"
 import * as http from "node:http"

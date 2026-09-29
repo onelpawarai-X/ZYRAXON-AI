@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Cause, Context, Effect, Layer, Queue, Stream } from "effect"
 import { Headers } from "effect/unstable/http"
 import { LLMError, TransportReason } from "../../schema"

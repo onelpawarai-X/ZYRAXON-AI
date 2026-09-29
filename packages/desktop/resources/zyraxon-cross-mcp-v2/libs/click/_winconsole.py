@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # This module is based on the excellent work by Adam Bartoš who
 # provided a lot of what went into the implementation here in
 # the discussion to issue1602 in the Python bug tracker.

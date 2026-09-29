@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Session message extraction and prompt history.
 //
 // Fetches session messages from the SDK and extracts user turn text for

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createEffect, createMemo, createSignal, onCleanup, type ValidComponent } from "solid-js"
 import { Dynamic } from "solid-js/web"
 import "./text-shimmer-v2.css"

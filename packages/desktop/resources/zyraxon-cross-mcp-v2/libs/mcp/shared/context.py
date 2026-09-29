@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """`BaseContext` - the user-facing per-request context.
 
 Composition over a `DispatchContext`: forwards the transport metadata, the

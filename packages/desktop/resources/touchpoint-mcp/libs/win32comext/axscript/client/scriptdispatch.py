@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """dynamic dispatch objects for AX Script.
 
 This is an IDispatch object that a scripting host may use to

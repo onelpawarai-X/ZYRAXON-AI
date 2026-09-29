@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createEffect, createMemo, createSignal, onCleanup } from "solid-js"
 import { useDialog } from "../../ui/dialog"
 import { useSDK } from "../../context/sdk"

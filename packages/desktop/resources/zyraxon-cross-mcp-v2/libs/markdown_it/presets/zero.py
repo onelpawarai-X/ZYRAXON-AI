@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 "Zero" preset, with nothing enabled. Useful for manual configuring of simple
 modes. For example, to parse bold/italic only.

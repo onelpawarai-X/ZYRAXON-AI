@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from typing import Any, Literal, cast
 from abc import ABCMeta, abstractmethod
 from cryptography.x509 import load_pem_x509_certificate

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # DockingBar.py
 
 # Ported directly (comments and all) from the samples at www.codeguru.com

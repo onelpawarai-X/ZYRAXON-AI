@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createEffect, Suspense, type ParentProps } from "solid-js"
 import { useNavigate } from "@solidjs/router"
 import { DebugBar } from "@/components/debug-bar"

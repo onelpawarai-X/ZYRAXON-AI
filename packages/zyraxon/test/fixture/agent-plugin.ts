@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Every export in this file must be a plugin function — `getLegacyPlugins`
 // (src/plugin/index.ts) throws on anything else. Test constants live in
 // `agent-plugin.constants.ts`.

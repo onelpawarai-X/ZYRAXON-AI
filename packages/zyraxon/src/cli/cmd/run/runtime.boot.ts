@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Boot-time resolution for direct interactive mode.
 //
 // These functions run concurrently at startup to gather everything the runtime

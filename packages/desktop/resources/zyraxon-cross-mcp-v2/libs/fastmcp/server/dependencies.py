@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Dependency injection for FastMCP.
 
 DI features (Depends, CurrentContext, CurrentFastMCP) work without pydocket

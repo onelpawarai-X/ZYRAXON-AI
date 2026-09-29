@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createEffect, createMemo, createSignal, For, Show, type Accessor, type JSX } from "solid-js"
 import { FileIcon } from "@zyraxon-ai/ui/file-icon"
 import { Icon } from "@zyraxon-ai/ui/icon"

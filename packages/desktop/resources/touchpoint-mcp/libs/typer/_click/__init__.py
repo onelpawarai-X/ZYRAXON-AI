@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 Code taken and adapted from Click: https://github.com/pallets/click/releases/tag/8.3.1
 """

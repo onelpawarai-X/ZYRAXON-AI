@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Internal wire-shape models for protocol 2025-11-25. Generated; do not edit.
 
 Regenerate with `scripts/gen_surface_types.py` from `schema/2025-11-25.json`

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 declare module "lang-map" {
   /** Returned by calling `map()` */
   export interface MapReturn {

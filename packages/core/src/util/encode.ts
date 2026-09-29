@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export function base64Encode(value: string) {
   const bytes = new TextEncoder().encode(value)
   const binary = Array.from(bytes, (b) => String.fromCharCode(b)).join("")

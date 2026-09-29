@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Database } from "@zyraxon-ai/core/database/database"
 import { LayerNode } from "@zyraxon-ai/core/effect/layer-node"
 import { httpClient } from "@zyraxon-ai/core/effect/app-node-platform"

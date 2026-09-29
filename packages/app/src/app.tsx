@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 ﻿import "@/index.css"
 import * as Sentry from "@sentry/solid"
 import { I18nProvider } from "@zyraxon-ai/ui/context"
@@ -254,6 +257,7 @@ declare global {
       installEditorExtension?: (sourceDir: string) => Promise<{ ok: boolean; error?: string }>
       installVsix?: (vsixUrl: string, extensionId: string, meta?: { displayName?: string; version?: string; publisher?: string; description?: string; icon?: string }) => Promise<{ ok: boolean; error?: string }>
       getEditorState?: () => Promise<{ active: boolean }>
+      setSubscriptionState?: (stateJson: string) => Promise<void>
     }
   }
 }

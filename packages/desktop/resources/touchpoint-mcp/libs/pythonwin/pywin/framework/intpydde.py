@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # DDE support for Pythonwin
 #
 # Seems to work fine (in the context that IE4 seems to have broken

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Prompt composer and its state machine for direct interactive mode.
 //
 // createPromptState() wires keymap command layers, history navigation, and

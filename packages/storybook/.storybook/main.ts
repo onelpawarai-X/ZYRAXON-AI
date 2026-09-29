@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { defineMain } from "storybook-solidjs-vite"
 import path from "node:path"
 import { fileURLToPath } from "node:url"

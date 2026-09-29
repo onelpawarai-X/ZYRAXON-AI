@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { Stripe } from "stripe"
 import { Billing } from "@zyraxon-ai/console-core/billing.js"
 import type { APIEvent } from "@solidjs/start/server"

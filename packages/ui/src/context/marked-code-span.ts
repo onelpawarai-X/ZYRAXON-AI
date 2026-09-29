@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { MarkedExtension } from "marked"
 
 // Keep adjacent tilde and backtick runs separate until markedjs/marked#4011 is released.

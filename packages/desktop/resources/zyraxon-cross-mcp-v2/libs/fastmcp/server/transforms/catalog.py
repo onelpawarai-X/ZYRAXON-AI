@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Base class for transforms that need to read the real component catalog.
 
 Some transforms replace ``list_tools()`` output with synthetic components

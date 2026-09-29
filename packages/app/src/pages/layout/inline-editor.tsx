@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createStore } from "solid-js/store"
 import { onCleanup, Show, type Accessor } from "solid-js"
 import { InlineInput } from "@zyraxon-ai/ui/inline-input"

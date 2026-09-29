@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Compatibility layer to make this package usable with Pydantic 1 or 2"""
 
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple

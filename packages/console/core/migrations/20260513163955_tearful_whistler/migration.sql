@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+-- Copyright (c) 2026 onelpawarai. All rights reserved.
+
 CREATE TABLE `model_sticky_provider` (
 	`id` varchar(255) PRIMARY KEY,
 	`time_created` timestamp(3) NOT NULL DEFAULT (now()),

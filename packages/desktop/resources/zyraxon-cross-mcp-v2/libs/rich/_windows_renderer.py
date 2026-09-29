@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from typing import Iterable, Sequence, Tuple, cast
 
 from rich._win32_console import LegacyWindowsTerm, WindowsCoordinates

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import logging
 from typing import TYPE_CHECKING, Any, Optional, TypeVar, overload
 from typing import Union as _UnionT

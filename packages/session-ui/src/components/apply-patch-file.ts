@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { normalize, type ViewDiff } from "./session-diff"
 
 type Kind = "add" | "update" | "delete" | "move"

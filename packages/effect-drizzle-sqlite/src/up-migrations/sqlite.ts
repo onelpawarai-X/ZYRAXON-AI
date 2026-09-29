@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /* oxlint-disable */
 import type { TablesRelationalConfig } from "drizzle-orm/_relations"
 import type { MigrationMeta } from "drizzle-orm/migrator"

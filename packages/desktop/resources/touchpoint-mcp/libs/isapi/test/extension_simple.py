@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # This is an ISAPI extension purely for testing purposes.  It is NOT
 # a 'demo' (even though it may be useful!)
 #

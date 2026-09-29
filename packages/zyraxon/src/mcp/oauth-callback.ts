@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createConnection } from "net"
 import { createServer } from "http"
 import { OauthCallbackPage } from "@zyraxon-ai/core/oauth/page"

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from pathlib import Path
 from json import loads, dumps
 from typing import Any, Callable, Optional, Union

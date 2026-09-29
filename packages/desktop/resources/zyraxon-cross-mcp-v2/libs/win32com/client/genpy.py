@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """genpy.py - The worker for makepy.  See makepy.py for more details
 
 This code was moved simply to speed Python in normal circumstances.  As the makepy.py

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createComputed, on, type Accessor } from "solid-js"
 import { createStore, type SetStoreFunction } from "solid-js/store"
 import type { PromptHistoryEntry } from "./history"

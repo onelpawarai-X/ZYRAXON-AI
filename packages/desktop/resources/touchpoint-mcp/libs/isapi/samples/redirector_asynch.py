@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # This is a sample ISAPI extension written in Python.
 
 # This is like the other 'redirector' samples, but uses asnch IO when writing

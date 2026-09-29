@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 const keybinds: Record<string, string> = {
   "file.attach": "mod+u",
   "prompt.mode.shell": "mod+shift+x",

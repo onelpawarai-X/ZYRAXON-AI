@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { SnapshotFileDiff, VcsFileDiff } from "@zyraxon-ai/sdk/v2"
 import type { Kind } from "@/components/file-tree-v2"
 import { normalizeFileTreeV2Path } from "@/components/file-tree-v2-model"

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export function memo<T>(fn: () => T, cleanup?: (input: T) => Promise<void>) {
   let value: T | undefined
   let loaded = false

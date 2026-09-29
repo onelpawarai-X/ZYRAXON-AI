@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /* oxlint-disable */
 import { Effect } from "effect"
 import type { SqlError } from "effect/unstable/sql/SqlError"

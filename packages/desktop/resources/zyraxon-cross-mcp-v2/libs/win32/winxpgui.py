@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """\
 The `winxpgui` module is obsolete and has been completely replaced \
 by `win32gui` and `win32console.GetConsoleWindow`. Use those instead. \

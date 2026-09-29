@@ -1,4 +1,7 @@
 #!/usr/bin/env bun
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 
 import { V2_PRIMITIVES_DEFAULT } from "../src/theme/v2/default-primitives"
 import type { DesktopTheme } from "../src/theme/types"

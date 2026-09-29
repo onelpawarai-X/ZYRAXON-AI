@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { ContentBlock, ContentChunk, ResourceLink, Role } from "@agentclientprotocol/sdk"
 import path from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"

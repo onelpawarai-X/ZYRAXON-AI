@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Effect, Schema } from "effect"
 import { executeWithLimits } from "./interpreter/runtime.js"
 import { type HostTools, type Services, type ToolDescription, ToolRuntime } from "./tool-runtime.js"

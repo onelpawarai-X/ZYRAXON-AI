@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from sse_starlette.event import ServerSentEvent, JSONServerSentEvent
 from sse_starlette.sse import EventSourceResponse
 

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export { CassetteNotFoundError, hasCassetteSync, UnsafeCassetteError } from "./cassette.js"
 export { cassetteLayer, recordingLayer, type RecordReplayMode, type RecordReplayOptions } from "./internal-effect.js"
 export { redactHeaders, redactUrl, secretFindings, type SecretFinding } from "./redaction.js"

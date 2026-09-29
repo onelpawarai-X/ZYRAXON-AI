@@ -1,4 +1,7 @@
 #!/usr/bin/env bun
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { readdir, writeFile } from "fs/promises"
 import { join, dirname } from "path"
 import { fileURLToPath } from "url"

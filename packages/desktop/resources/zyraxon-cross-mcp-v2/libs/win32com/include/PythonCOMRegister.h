@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Support for PythonCOM and its extensions to register the interfaces,
 // gateways and IIDs it supports.
 //

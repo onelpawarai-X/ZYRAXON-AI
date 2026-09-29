@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from .filters import BaseFilter, DefaultFilter, PythonFilter
 from .main import Change, awatch, watch
 from .run import arun_process, run_process

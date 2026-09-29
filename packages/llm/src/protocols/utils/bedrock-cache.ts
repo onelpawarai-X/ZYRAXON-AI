@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Schema } from "effect"
 import type { CacheHint } from "../../schema"
 import { newBreakpoints, ttlBucket, type Breakpoints } from "./cache"

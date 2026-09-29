@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # $Id: misc.py 10214 2025-08-20 09:39:58Z milde $
 # Authors: David Goodger <goodger@python.org>; Dethe Elza
 # Copyright: This module has been placed in the public domain.

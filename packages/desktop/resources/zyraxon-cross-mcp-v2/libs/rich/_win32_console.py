@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Light wrapper around the Win32 Console API - this module should only be imported on Windows
 
 The API that this module wraps is documented at https://docs.microsoft.com/en-us/windows/console/console-functions

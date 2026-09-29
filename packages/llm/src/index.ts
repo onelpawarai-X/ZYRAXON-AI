@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export { LLMClient } from "./route/client"
 export { Auth } from "./route/auth"
 export { Provider } from "./provider"

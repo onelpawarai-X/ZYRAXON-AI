@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """In-memory `Dispatcher` that wires two peers together with no transport.
 
 `DirectDispatcher` is the simplest possible `Dispatcher` implementation: a

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from typing import Iterator, List, Optional, Tuple
 
 from ._loop import loop_first, loop_last

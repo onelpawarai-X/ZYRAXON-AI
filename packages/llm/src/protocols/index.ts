@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export * as AnthropicMessages from "./anthropic-messages"
 export * as BedrockConverse from "./bedrock-converse"
 export * as Gemini from "./gemini"

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { CDPSession, Page } from "@playwright/test"
 import path from "node:path"
 import { mkdir, open, rename } from "node:fs/promises"

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { TextareaRenderable, TextAttributes } from "@opentui/core"
 import { useTheme } from "../context/theme"
 import { useDialog, type DialogContext } from "./dialog"

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Deterministic tool hashing for backend-tool routing and per-tool resources.
 
 Each FastMCPApp backend tool gets a deterministic hash computed from its

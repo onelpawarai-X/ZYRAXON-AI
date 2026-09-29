@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Typed MCP request sugar over an `Outbound`.
 
 `ClientPeer` wraps any `Outbound` (anything with `send_raw_request` and

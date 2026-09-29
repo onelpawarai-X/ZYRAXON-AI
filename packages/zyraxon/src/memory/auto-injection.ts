@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ZYRAXON ETERNAL MEMORY v5 — Token-Based Compaction, 50,000 Year Preservation
 // OpenCode-inspired but 100x better: token-based selection, incremental LLM summaries,
 // structured summary (Objective/Work State/Next Move), 500-message buffer.

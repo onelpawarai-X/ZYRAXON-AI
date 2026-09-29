@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Popover as Kobalte } from "@kobalte/core/popover"
 import { ComponentProps, JSXElement, ParentProps, Show, createEffect, splitProps, ValidComponent } from "solid-js"
 import { createStore } from "solid-js/store"

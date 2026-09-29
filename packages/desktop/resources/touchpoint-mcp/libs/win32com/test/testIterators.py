@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Some raw iter tests.  Some "high-level" iterator tests can be found in
 # testvb.py and testOutlook.py
 import sys

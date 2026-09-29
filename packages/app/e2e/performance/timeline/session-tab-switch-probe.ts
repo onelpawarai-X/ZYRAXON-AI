@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { expect, type Page } from "@playwright/test"
 import { classifySessionSwitch, isStableDestination, type SessionSwitchSample } from "./session-tab-switch-metrics"
 

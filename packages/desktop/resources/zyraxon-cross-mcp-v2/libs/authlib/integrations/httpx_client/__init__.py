@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from authlib.oauth1 import SIGNATURE_HMAC_SHA1
 from authlib.oauth1 import SIGNATURE_PLAINTEXT
 from authlib.oauth1 import SIGNATURE_RSA_SHA1

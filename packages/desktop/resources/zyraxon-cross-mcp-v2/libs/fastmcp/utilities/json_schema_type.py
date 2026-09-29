@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Convert JSON Schema to Python types with validation.
 
 The json_schema_to_type function converts a JSON Schema into a Python type that can be used

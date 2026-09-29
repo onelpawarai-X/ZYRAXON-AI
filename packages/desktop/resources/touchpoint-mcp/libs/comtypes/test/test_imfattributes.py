@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import contextlib
 import unittest as ut
 from ctypes import HRESULT, POINTER, WinDLL, c_uint32, pointer

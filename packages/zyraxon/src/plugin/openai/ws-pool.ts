@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import WebSocket from "ws"
 import { ProviderError } from "@/provider/error"
 import { isRecord } from "@/util/record"

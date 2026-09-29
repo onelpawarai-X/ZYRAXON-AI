@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import warnings
 from typing import cast, overload, Literal, Union, Callable, Protocol
 from ._keys import (

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # This module is very old and useless in this day and age!  It will be
 # removed in a few years (ie, 2009 or so...)
 

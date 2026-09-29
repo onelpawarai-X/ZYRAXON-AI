@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Duration } from "effect"
 import { indent, pad } from "./assertions"
 import type { Options, Result, Scenario } from "./types"

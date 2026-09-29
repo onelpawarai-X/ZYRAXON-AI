@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Originally written by Curt Hagenlocher, and various bits
 # and pieces by Mark Hammond (and now Greg Stein has had
 # a go too :-)

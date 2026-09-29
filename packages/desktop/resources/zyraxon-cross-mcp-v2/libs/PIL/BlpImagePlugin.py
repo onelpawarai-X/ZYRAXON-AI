@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 Blizzard Mipmap Format (.blp)
 Jerome Leclanche <jerome@leclan.ch>

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 SHELL_NAMES = (
     {"sh", "bash", "dash", "ash"}  # Bourne.
     | {"csh", "tcsh"}  # C.

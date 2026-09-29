@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { useFile } from "@/context/file"
 import { encodeFilePath } from "@/context/file/path"
 import { Collapsible } from "@zyraxon-ai/ui/collapsible"

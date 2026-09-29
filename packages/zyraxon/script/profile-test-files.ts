@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Per-file profiler for finding candidate test-speed work; see ../../perf/test-suite.md
 // for the benchmark notes, kept wins, and discarded experiments.
 // Example: TEST_PROFILE_GLOB='test/server/**/*.test.ts' TEST_PROFILE_TOP=15 bun run profile:test

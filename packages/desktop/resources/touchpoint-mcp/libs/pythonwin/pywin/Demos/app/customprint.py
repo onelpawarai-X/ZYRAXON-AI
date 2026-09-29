@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # A demo of an Application object that has some custom print functionality.
 
 # If you desire, you can also run this from inside Pythonwin, in which

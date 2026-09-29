@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 ZYRAXON X — Image Generation Tool
 Uses Stable Diffusion v1.5 via diffusers for local image generation.

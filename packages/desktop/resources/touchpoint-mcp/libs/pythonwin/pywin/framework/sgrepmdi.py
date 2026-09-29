@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # SGrepMDI is by Gordon McMillan (gmcm@hypernet.com)
 # It does basically what Find In Files does in MSVC with a couple enhancements.
 # - It saves any directories in the app's ini file (if you want to get rid

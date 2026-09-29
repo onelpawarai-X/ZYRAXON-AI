@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createZyraxonClient } from "@zyraxon-ai/sdk/v2"
 import type { GlobalEvent } from "@zyraxon-ai/sdk/v2"
 import { Flag } from "@zyraxon-ai/core/flag/flag"

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Per-tool display rules shared across `zyraxon run` output paths.
 //
 // Each known tool (bash, edit, write, task, etc.) has a ToolRule that controls

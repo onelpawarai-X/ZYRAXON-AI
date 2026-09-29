@@ -1,4 +1,7 @@
 #!/usr/bin/env bun
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 
 async function sendToPostHog(event: string, properties: Record<string, any>) {
   const key = process.env["POSTHOG_KEY"]

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Collapsible } from "@kobalte/core/collapsible"
 import { type ComponentProps, type JSX, For, Show, createMemo, splitProps } from "solid-js"
 import { DiffChanges } from "@zyraxon-ai/ui/v2/diff-changes-v2"

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from fastmcp import FastMCP
 from fastmcp.contrib.component_manager import set_up_component_manager
 from fastmcp.server.auth.providers.jwt import JWTVerifier, RSAKeyPair

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """List of valid html blocks names, according to commonmark spec
 http://jgm.github.io/CommonMark/spec.html#html-blocks
 """

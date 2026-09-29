@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 class RemovedInPyjwt3Warning(DeprecationWarning):
     """Warning for features that will be removed in PyJWT 3."""
 

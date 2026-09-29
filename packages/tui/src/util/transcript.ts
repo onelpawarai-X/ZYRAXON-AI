@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { AssistantMessage, Part, Provider, UserMessage } from "@zyraxon-ai/sdk/v2"
 import { Locale } from "./locale"
 import * as Model from "./model"

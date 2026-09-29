@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { LocalContext } from "@/util/local-context"
 import { FSUtil } from "@zyraxon-ai/core/fs-util"
 import type * as Project from "./project"

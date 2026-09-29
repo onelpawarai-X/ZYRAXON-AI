@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """The MCP protocol wire types, as the `mcp.types` namespace.
 
 This module mirrors the standalone `mcp_types` package exactly (every name is the

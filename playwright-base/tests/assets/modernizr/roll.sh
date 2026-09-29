@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 
 MODERNIZR_VERSION="44fa7b07c367a1814e8699e3a2f15c53fbe32df7"
 

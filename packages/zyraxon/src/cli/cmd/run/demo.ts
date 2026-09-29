@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Demo mode for testing direct interactive mode without a real SDK.
 //
 // Enabled with `--demo`. Intercepts prompt submissions and generates synthetic

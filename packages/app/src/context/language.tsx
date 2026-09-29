@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import * as i18n from "@solid-primitives/i18n"
 import { createEffect, createMemo, createResource } from "solid-js"
 import { createStore } from "solid-js/store"

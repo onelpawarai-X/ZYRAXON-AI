@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # A sample shell column provider
 # Mainly ported from MSDN article:
 #  Using Shell Column Handlers for Detailed File Information,

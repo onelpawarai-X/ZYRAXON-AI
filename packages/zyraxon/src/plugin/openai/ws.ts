@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Low-level OpenAI Responses WebSocket protocol helpers. Session pooling,
 // fallback, and continuation state intentionally live above this file.
 

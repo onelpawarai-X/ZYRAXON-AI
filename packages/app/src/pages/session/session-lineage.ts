@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createEffect, createMemo, createSignal, on, onCleanup } from "solid-js"
 import { sessionNotFoundError } from "@/utils/server-errors"
 

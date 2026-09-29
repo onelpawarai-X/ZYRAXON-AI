@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import path from "path"
 import { Context, Effect, Layer, Schema } from "effect"
 import { FSUtil } from "./fs-util"

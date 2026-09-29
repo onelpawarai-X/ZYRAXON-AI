@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # CallTips.py - An IDLE extension that provides "Call Tips" - ie, a floating window that
 # displays parameter information as you open parens.
 

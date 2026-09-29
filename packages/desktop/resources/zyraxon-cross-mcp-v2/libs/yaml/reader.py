@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # This module contains abstractions for the input stream. You don't have to
 # looks further, there are no pretty code.
 #

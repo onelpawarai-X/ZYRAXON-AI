@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { WorkspaceV2 } from "@zyraxon-ai/core/workspace"
 import type { Target } from "@/control-plane/types"
 import { Workspace } from "@/control-plane/workspace"

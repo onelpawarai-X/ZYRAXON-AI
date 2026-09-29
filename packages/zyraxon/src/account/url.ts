@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export const normalizeServerUrl = (input: string): string => {
   const url = new URL(input)
   url.search = ""

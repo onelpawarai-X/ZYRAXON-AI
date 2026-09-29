@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Some tests of the win32security sspi functions.
 # Stolen from Roger's original test_sspi.c, a version of which is in "Demos"
 # See also the other SSPI demos.

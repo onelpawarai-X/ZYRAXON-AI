@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Protocol-version registry and comparison helpers.
 
 Date-string protocol revisions happen to sort lexicographically, but versions

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # An Python interface to the Scintilla control.
 #
 # Exposes Python classes that allow you to use Scintilla as

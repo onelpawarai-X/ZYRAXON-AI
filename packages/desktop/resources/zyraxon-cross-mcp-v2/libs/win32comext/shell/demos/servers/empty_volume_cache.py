@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # A sample implementation of IEmptyVolumeCache - see
 # https://learn.microsoft.com/en-ca/windows/win32/lwef/disk-cleanup for an overview.
 #

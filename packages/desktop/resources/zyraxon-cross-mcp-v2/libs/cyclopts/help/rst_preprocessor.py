@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Preprocessing utilities for reStructuredText content.
 
 This module provides workarounds for limitations in the rich_rst library when rendering

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export { AppBaseProviders, AppInterface } from "./app"
 export { useLayout } from "./context/layout"
 export { useServerSDK } from "./context/server-sdk"

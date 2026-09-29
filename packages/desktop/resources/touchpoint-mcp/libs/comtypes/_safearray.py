@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """SAFEARRAY api functions, data types, and constants."""
 
 from ctypes import POINTER, Structure, WinDLL, c_uint, c_ushort, c_void_p

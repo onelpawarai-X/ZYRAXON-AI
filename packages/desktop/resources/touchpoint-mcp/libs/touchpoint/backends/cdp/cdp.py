@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Chrome DevTools Protocol (CDP) backend for Touchpoint.
 
 Targets Electron and Chromium-based applications that don't expose

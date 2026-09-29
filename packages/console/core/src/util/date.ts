@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export function getWeekBounds(date: Date) {
   const offset = (date.getUTCDay() + 6) % 7
   const start = new Date(date)

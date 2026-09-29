@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """FastMCP Configuration File Support.
 
 This module provides support for fastmcp.json configuration files that allow

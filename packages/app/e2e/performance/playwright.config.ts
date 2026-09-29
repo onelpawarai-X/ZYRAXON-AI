@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import config from "../../playwright.config"
 
 const port = Number(process.env.PLAYWRIGHT_PORT ?? 3000)

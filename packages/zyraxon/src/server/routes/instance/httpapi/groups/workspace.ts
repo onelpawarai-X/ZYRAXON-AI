@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Workspace } from "@/control-plane/workspace"
 import { WorkspaceAdapterEntry } from "@/control-plane/types"
 import { Schema, Struct } from "effect"

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Search transforms for tool discovery.
 
 Search transforms collapse a large tool catalog into a search interface,

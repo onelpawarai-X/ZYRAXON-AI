@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { DatabaseSync, type SQLInputValue } from "node:sqlite"
 import { drizzle } from "drizzle-orm/node-sqlite"
 import * as Context from "effect/Context"

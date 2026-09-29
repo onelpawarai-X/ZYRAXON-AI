@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { cmd } from "@/cli/cmd/cmd"
 import { Rpc } from "@/util/rpc"
 import { type rpc } from "../tui/worker"

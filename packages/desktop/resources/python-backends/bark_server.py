@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 ZYRAXON Bark Server — Text-to-Speech
 Runs as a standalone FastAPI server. Called by BackendManager.

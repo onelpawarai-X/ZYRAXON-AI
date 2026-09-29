@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import * as Effect from "effect/Effect"
 import * as Command from "effect/unstable/cli/Command"
 import { Spec } from "./spec"

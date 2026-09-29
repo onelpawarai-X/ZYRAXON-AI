@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """This module follows the JSON-RPC 2.0 specification: https://www.jsonrpc.org/specification."""
 
 from __future__ import annotations

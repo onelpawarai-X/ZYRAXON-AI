@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # A sample context menu handler.
 # Adds a 'Hello from Python' menu entry to .py files.  When clicked, a
 # simple message box is displayed.

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Async retry utilities with exponential backoff.
 
 This module provides utilities for retrying async operations with configurable

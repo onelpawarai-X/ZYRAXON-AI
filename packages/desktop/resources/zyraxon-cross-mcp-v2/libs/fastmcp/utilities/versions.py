@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Version comparison utilities for component versioning.
 
 This module provides utilities for comparing component versions. Versions are

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Request checks shared by the HTTP server transports: Host/Origin header validation and body size limits."""
 
 import logging

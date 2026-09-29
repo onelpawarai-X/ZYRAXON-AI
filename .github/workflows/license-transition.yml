@@ -1,0 +1,75 @@
+name: Licence Transition
+
+# Reports which licence edition governs and keeps the transition notice honest.
+#
+# It does not switch terms on a date. A successor edition takes effect only when
+# its licence text has actually been published in the repository. Copies already
+# obtained keep the terms they were issued under, which no automation can undo.
+
+on:
+  schedule:
+    - cron: "17 3 1 1 *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    name: Report governing edition
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Identify published editions
+        run: |
+          set +e
+          curl -fsSL -o current.tmp https://raw.githubusercontent.com/onelpawarai-X/ZSL/main/ZSL-X-LICENSE
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            mv current.tmp ZSL-X-LICENSE
+            echo "current_edition=published" >> "$GITHUB_OUTPUT"
+          else
+            rm -f current.tmp
+            echo "current_edition=unreachable" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Decide what governs
+        run: |
+          year=$(date -u +%Y)
+          if [ -f ZSL-X-2.1.0-LICENSE ]; then
+            successor="published"
+          else
+            successor="absent"
+          fi
+          {
+            echo "year=$year"
+            echo "successor=$successor"
+          } >> "$GITHUB_OUTPUT"
+
+          if [ "$successor" = "published" ]; then
+            echo "A successor edition is published. Review it deliberately and state, in the transition notice, which existing copies move and which do not."
+            echo "::notice::ZSL-X-2.1.0-LICENSE exists. Terms are not changed automatically."
+          else
+            echo "No successor edition is published, so the current edition governs unchanged."
+            echo "Terms never move on a calendar alone."
+          fi
+
+      - name: Summary
+        run: |
+          echo "### Licence edition" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Item | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| --- | --- |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Current year | ${{ steps.decide.outputs.year }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Governing edition | ${{ steps.identity.outputs.current_edition }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Successor edition | ${{ steps.decide.outputs.successor }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "A successor edition takes effect only once its text is published. Existing copies keep the terms they were issued under." >> "$GITHUB_STEP_SUMMARY"

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 ZYRAXON Cross-Platform MCP Server v2
 Based on Windows-MCP (CursorTouch) - ported to Windows + Linux + macOS.

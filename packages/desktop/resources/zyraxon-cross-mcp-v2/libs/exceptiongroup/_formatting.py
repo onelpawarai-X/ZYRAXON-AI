@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # traceback_exception_init() adapted from trio
 #
 # _ExceptionPrintContext and traceback_exception_format() copied from the standard

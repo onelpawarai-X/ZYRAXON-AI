@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { Argv } from "yargs"
 import { spawn } from "child_process"
 import { Database } from "@zyraxon-ai/core/database/database"

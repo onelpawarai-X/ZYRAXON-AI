@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { ProviderOptions, ReasoningEffort, TextVerbosity } from "../schema"
 import { mergeProviderOptions } from "../schema"
 import type { OpenAIResponseIncludable, OpenAIServiceTier } from "../protocols/utils/openai-options"

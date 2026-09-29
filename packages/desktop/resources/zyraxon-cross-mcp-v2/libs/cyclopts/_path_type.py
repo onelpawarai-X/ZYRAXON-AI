@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """:class:`StdioPath` - A Path subclass that treats ``-`` as stdin/stdout.
 
 Requires Python 3.12+ for proper Path subclassing support.

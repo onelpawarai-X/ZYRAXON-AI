@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 print("This module depends on the dbapi20 compliance tests created by Stuart Bishop")
 print("(see db-sig mailing list history for info)")
 import platform

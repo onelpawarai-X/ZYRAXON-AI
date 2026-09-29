@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Binary } from "@zyraxon-ai/core/util/binary"
 import type { AssistantMessage, Message, Part, SessionStatus, UserMessage } from "@zyraxon-ai/sdk/v2"
 import { createMemo, mapArray, type Accessor } from "solid-js"

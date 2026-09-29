@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Opt-in extension interface for MCP clients.
 
 Subclass `ClientExtension`, set `identifier`, override the hooks you need, and

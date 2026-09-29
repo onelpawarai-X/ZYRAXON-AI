@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { blend, contrastRatio, hexToOklch, shift } from "../color"
 import { mapV2Semantics } from "./mapping"
 import type { ColorValue, HexColor, V2ColorValue } from "../types"

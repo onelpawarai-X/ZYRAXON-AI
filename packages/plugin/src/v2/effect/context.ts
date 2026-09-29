@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { PluginOptions } from "../options.js"
 import type { AgentHooks } from "./agent.js"
 import type { AISDKHooks } from "./aisdk.js"

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export function createFixtureProvider(options: Record<string, unknown>) {
   const captured = Object.fromEntries(Object.entries(options))
   return Object.assign((modelID: string) => ({ modelID, options: captured }), {

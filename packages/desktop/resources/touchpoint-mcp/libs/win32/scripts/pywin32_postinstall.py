@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # postinstall script for pywin32
 #
 # copies pywintypesXX.dll and pythoncomXX.dll into the system directory,

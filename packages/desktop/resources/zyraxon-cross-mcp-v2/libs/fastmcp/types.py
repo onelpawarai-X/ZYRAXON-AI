@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Reusable type annotations for FastMCP tool parameters.
 
 These types can be used in tool function signatures to influence how

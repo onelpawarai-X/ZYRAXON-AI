@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """RFC 6570 URI Templates with bidirectional support.
 
 Provides both expansion (template + variables → URI) and matching

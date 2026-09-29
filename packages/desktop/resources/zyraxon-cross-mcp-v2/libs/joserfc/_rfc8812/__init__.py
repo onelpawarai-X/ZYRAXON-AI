@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from cryptography.hazmat.primitives.asymmetric.ec import SECP256K1
 from .._rfc7518.ec_key import ECKey
 from .._rfc7518.jws_algs import ESAlgorithm

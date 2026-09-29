@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Authorization checks for FastMCP components.
 
 Auth checks are callables that receive an ``AuthContext`` and return True to

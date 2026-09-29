@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { PermissionRequest, Session } from "@zyraxon-ai/sdk/v2/client"
 import { cmp } from "./utils"
 import { SESSION_RECENT_LIMIT, SESSION_RECENT_WINDOW } from "./types"

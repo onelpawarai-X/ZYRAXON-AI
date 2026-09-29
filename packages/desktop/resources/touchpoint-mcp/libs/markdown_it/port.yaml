@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 - package: markdown-it/markdown-it
   version: 14.1.0
   commit: 0fe7ccb4b7f30236fb05f623be6924961d296d3d

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Demo of using just windows, without documents and views.
 
 # Also demo of a GUI thread, pretty much direct from the MFC C++ sample MTMDI.

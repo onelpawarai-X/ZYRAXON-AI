@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { and, asc, eq, inArray } from "drizzle-orm"
 import { Effect, Layer } from "effect"
 import * as Context from "effect/Context"

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { HoverCard as Kobalte } from "@kobalte/core/hover-card"
 import { createSignal, Show, type JSXElement } from "solid-js"
 import "./titlebar-tab-popover.css"

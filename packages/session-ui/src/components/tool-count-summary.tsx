@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Index, createMemo } from "solid-js"
 import { AnimatedCountLabel } from "./tool-count-label"
 

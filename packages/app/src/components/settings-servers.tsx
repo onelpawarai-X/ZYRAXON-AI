@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Show, type Component } from "solid-js"
 import { useLanguage } from "@/context/language"
 import { ServerConnectionForm, ServerConnectionList, useServerManagementController } from "./dialog-select-server"

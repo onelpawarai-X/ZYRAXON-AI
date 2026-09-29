@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Transform system for component transformations.
 
 Transforms modify components (tools, resources, prompts). List operations use a pure

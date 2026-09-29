@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createMemo, Match, onCleanup, onMount, Show, Switch } from "solid-js"
 import { useTheme } from "../../context/theme"
 import { useSync } from "../../context/sync"

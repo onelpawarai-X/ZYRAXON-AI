@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # A sample distutils script to show to build your own
 # extension module which extends pywintypes or pythoncom.
 #

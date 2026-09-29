@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import * as NodeRuntime from "@effect/platform-node/NodeRuntime"
 import { Athena } from "@zyraxon-ai/stats-core/athena"
 import { ModelStatRepo } from "@zyraxon-ai/stats-core/domain/model"

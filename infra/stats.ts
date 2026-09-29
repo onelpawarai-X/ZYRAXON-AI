@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { lakeAthenaWorkgroup, lakeCatalog, lakeCluster, lakeQueryPermissions, lakeRegion, tableBucket } from "./lake"
 import { EMAILOCTOPUS_API_KEY } from "./app"
 import { domain } from "./stage"

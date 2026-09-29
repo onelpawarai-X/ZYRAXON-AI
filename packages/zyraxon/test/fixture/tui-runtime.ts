@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { spyOn } from "bun:test"
 import path from "path"
 import { resolve, type Info, type Resolved } from "@zyraxon-ai/tui/config"

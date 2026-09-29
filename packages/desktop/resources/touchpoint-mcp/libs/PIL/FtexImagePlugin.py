@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 A Pillow loader for .ftc and .ftu files (FTEX)
 Jerome Leclanche <jerome@leclan.ch>

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """ZYRAXON Touchpoint MCP — 56 tools. Accessibility-based desktop automation.
 Cross-platform: Windows (UIAutomation), Linux (AT-SPI2), macOS (AX API).
 Controls ANY app via accessibility APIs — minimized or not, no screenshots needed.

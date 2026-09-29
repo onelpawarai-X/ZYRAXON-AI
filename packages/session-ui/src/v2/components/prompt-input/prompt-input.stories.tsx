@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // @ts-nocheck
 import { createStore } from "solid-js/store"
 import { PromptInputV2, type PromptInputV2PersistedState, type PromptInputV2Suggestion } from "."

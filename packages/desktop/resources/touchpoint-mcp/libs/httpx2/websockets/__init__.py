@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 WebSocket support, derived from httpx-ws (https://github.com/frankie567/httpx-ws).
 

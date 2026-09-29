@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 class Doc:
     """Define the documentation of a type annotation using `Annotated`, to be
         used in class attributes, function and method parameters, return values,

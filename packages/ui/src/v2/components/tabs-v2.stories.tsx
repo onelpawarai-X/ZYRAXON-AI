@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Show } from "solid-js"
 import * as mod from "./tabs-v2"
 import type { TabsV2Props } from "./tabs-v2"

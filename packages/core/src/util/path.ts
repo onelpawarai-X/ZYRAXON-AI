@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export function getFilename(path: string | undefined) {
   if (!path) return ""
   const trimmed = path.replace(/[/\\]+$/, "")

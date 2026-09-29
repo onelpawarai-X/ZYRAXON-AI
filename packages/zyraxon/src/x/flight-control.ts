@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * ZYRAXON X — Aircraft Flight Control System (Autopilot Layer)
  * PID loops, attitude rate control, navigation, waypoint following

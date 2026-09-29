@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Utilities for makegw - Parse a header file to build an interface
 
 This module contains the core code for parsing a header file describing a

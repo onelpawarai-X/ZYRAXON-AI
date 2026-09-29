@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Permission UI body for the direct-mode footer.
 //
 // Renders inside the footer when the reducer pushes a FooterView of type

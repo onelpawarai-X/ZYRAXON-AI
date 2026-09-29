@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { LayerNode } from "@zyraxon-ai/core/effect/layer-node"
 import { Cause, Duration, Effect, Layer, Schedule, Schema, Semaphore, Context } from "effect"
 import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process"

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Subscriptable request-context alias for FastMCP client handler signatures.
 
 FastMCP exposes public generic handler type aliases (``SamplingHandler``,

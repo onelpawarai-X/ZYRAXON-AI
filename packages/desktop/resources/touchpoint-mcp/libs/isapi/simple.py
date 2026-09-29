@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Simple base-classes for extensions and filters.
 
 None of the filter and extension functions are considered 'optional' by the

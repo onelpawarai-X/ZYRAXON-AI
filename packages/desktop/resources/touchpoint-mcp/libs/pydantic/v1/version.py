@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 __all__ = 'compiled', 'VERSION', 'version_info'
 
 VERSION = '1.10.26'

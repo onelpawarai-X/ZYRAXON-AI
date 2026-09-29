@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Component, createSignal, startTransition } from "solid-js"
 import { Dialog } from "@zyraxon-ai/ui/dialog"
 import { Tabs } from "@zyraxon-ai/ui/tabs"

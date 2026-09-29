@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from abc import ABC, abstractmethod  # pylint: disable=no-name-in-module
 from typing import Any, Type
 

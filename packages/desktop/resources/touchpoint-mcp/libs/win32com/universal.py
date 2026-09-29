@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Code that packs and unpacks the Univgw structures.
 
 # See if we have a special directory for the binaries (for developers)

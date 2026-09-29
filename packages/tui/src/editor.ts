@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { CliRenderer } from "@opentui/core"
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
 import { readFile, rm, writeFile } from "node:fs/promises"

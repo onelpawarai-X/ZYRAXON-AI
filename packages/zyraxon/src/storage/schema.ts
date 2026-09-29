@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export { AccountTable, AccountStateTable, ControlAccountTable } from "@zyraxon-ai/core/account/sql"
 export { ProjectTable } from "@zyraxon-ai/core/project/sql"
 export { SessionTable, MessageTable, PartTable, TodoTable } from "@zyraxon-ai/core/session/sql"

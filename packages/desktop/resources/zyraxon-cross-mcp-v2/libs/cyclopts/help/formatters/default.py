@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Default Rich-based help formatter."""
 
 from typing import TYPE_CHECKING, Any, Optional, Union

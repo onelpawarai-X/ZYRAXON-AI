@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Utilities for determining application-specific dirs.
 
 Provides convenience functions (e.g. :func:`user_data_dir`, :func:`user_config_path`), a :data:`PlatformDirs` class that

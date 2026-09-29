@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # A demo of basic SSPI authentication.
 # There is a 'client' context and a 'server' context - typically these will
 # be on different machines (here they are in the same process, but the same

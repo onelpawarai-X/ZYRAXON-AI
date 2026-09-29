@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export * as MoveSession from "./move-session"
 
 import { Context, DateTime, Effect, Layer, Schema } from "effect"

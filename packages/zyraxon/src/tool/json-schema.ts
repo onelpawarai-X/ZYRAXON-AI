@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { JSONSchema7 } from "@ai-sdk/provider"
 import { JsonSchema, Schema } from "effect"
 import type * as Tool from "./tool"

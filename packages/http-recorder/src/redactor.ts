@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Option } from "effect"
 import { decodeJson } from "./matching.js"
 import { REDACTED, redactHeaders, redactUrl } from "./redaction.js"

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Demonstrates `context.credentials.create()` — seeding a pre-existing
 // credential into a fresh context.
 //

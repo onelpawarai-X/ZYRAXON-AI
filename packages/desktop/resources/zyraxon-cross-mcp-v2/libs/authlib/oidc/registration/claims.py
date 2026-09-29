@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from joserfc.errors import InvalidClaimError
 
 from authlib.common.urls import is_valid_url

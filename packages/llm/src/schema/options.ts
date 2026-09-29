@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Schema } from "effect"
 import { JsonSchema, ModelID, ProviderID } from "./ids"
 import type { AnyRoute } from "../route/client"

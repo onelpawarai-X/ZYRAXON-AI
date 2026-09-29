@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from subprocess import Popen, PIPE
 from plyer.facades import Processors
 from plyer.utils import whereis_exe

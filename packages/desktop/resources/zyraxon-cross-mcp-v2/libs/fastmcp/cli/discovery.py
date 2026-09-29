@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Discover MCP servers configured in editor config files.
 
 Scans filesystem-readable config files from editors like Claude Desktop,

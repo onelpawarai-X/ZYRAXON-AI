@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Windows dialog .RC file parser, by Adam Walker.
 
 # This module was adapted from the spambayes project, and is Copyright

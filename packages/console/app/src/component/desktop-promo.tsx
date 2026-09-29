@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import "./desktop-promo.css"
 import { A, useLocation } from "@solidjs/router"
 import { createSignal, Show } from "solid-js"

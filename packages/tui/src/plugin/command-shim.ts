@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Legacy `api.command` bridge for v1 plugins; remove in v2.
 import type { TuiCommand, TuiPluginApi } from "@zyraxon-ai/plugin/tui"
 import { TuiKeybind } from "../config/keybind"

@@ -1,0 +1,22 @@
+# Commercial license registry
+#
+# Administrative record of signed Commercial License Agreements.
+# The signed agreement is the grant. This file only records that one exists,
+# so the enforcement workflow can tell a licensed reseller apart from an
+# unlicensed one and close a notice instead of escalating it.
+#
+# To register an agreement, add an entry. To end one, set status to "terminated"
+# and record the date; do not delete the record, because the history matters.
+#
+# Fields
+#   reference         Unique agreement reference. Appears in the agreement.
+#   licensee          Legal entity name, exactly as signed.
+#   status            active | pending | terminated
+#   effective_from    Date the grant starts.
+#   expires_on        Date the grant ends. This agreement never auto-renews.
+#   territory         Countries or regions covered.
+#   max_end_users     Number, or "unlimited".
+#   delivery          hosted | managed | bundled | combined
+#   notice_email      Contact for enforcement correspondence.
+
+agreements: []

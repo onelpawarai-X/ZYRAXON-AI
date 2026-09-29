@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """WrappedProvider for immutable transform composition.
 
 This module provides `_WrappedProvider`, an internal class that wraps a provider

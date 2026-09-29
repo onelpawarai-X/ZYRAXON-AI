@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { deployAws, domain } from "./stage"
 import { EMAILOCTOPUS_API_KEY } from "./app"
 import { SECRET } from "./secret"

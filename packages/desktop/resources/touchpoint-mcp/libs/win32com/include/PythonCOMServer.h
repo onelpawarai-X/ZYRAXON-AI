@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 #ifndef __PYTHONCOMSERVER_H__
 #define __PYTHONCOMSERVER_H__
 

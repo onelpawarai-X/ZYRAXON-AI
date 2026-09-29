@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Integrated from the cffi-buildtool project by Rose Davidson
 # (https://github.com/inklesspen/cffi-buildtool), under the following
 # license:

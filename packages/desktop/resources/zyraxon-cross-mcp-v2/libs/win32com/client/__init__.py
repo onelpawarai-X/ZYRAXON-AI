@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # This module exists to create the "best" dispatch object for a given
 # object.  If "makepy" support for a given object is detected, it is
 # used, otherwise a dynamic dispatch object.

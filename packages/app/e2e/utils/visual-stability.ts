@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { Page, TestInfo } from "@playwright/test"
 import { analyzeVisualObservations, analyzeVisualTraceByMarker } from "./visual-stability/analyzer"
 import { legacyVisualPlan, type LegacyVisualStabilityOptions } from "./visual-stability/invariant"

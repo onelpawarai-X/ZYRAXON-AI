@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * Remix Service — Download, Customize, Republish
  * Users can take any marketplace item, customize it, and republish as their own

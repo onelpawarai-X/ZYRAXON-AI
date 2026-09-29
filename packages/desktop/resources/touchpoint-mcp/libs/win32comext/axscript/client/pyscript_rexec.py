@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # A version of the ActiveScripting engine that enables rexec support
 # This version supports hosting by IE - however, due to Python's
 # rexec module being neither completely trusted nor private, it is

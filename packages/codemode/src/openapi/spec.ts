@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { fromSchemaOpenApi3_0, fromSchemaOpenApi3_1 } from "effect/JsonSchema"
 import type { JsonSchema } from "../tool.js"
 import { isBlockedMember } from "../tool-runtime.js"

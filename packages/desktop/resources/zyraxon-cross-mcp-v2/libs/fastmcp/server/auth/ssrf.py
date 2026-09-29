@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """SSRF-safe HTTP utilities for FastMCP.
 
 This module provides SSRF-protected HTTP fetching with:

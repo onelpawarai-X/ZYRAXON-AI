@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Fuzzy and exact matching pipeline for UI elements.
 
 Given a query string and a list of elements, the matcher runs a

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { type FilteredListProps, useFilteredList } from "@zyraxon-ai/ui/hooks"
 import { createEffect, For, type JSX, on, Show } from "solid-js"
 import { createStore } from "solid-js/store"

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from django.conf import settings
 from django.http import HttpResponse
 from django.utils.module_loading import import_string

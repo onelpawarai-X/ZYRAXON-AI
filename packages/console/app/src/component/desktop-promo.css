@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+   Copyright (c) 2026 onelpawarai. All rights reserved. */
+
 [data-component="desktop-promo"] {
   --promo-background: hsl(0, 20%, 99%);
   --promo-background-weak: hsl(0, 8%, 97%);

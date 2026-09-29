@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """comtypes._post_coinit
 
 This subpackage contains symbols that should be imported into `comtypes/__init__.py`

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """StreamableHTTP Server Transport Module
 
 This module implements an HTTP transport layer with Streamable HTTP.

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from pyobjus import autoclass, objc_str
 from pyobjus.dylib_manager import load_framework
 

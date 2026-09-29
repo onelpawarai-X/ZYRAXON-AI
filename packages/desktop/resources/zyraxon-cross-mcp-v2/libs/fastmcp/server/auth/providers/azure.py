@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Azure (Microsoft Entra) OAuth provider for FastMCP.
 
 This provider implements Azure/Microsoft Entra ID OAuth authentication

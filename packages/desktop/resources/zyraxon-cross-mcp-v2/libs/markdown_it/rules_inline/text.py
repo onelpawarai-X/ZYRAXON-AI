@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Skip text characters for text token, place those to pending buffer
 # and increment current pos
 from .state_inline import StateInline

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { onMount } from "solid-js"
 import { makeEventListener } from "@solid-primitives/event-listener"
 import type { PromptInputV2Attachment, PromptInputV2Prompt } from "./types"

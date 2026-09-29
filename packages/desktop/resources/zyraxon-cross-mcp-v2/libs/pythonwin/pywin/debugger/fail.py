@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # NOTE NOTE - This module is designed to fail!
 #
 # The ONLY purpose for this script is testing/demoing the

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # This is a stub package designed to roughly emulate the _yaml
 # extension module, which previously existed as a standalone module
 # and has been moved into the `yaml` package namespace.

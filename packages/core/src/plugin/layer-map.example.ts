@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export * as LayerMapExample from "./layer-map.example"
 
 import { Context, Effect, Layer, LayerMap } from "effect"

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { getFilename } from "@zyraxon-ai/core/util/path"
 import { type AgentPartInput, type FilePartInput, type Part, type TextPartInput } from "@zyraxon-ai/sdk/v2/client"
 import type { FileSelection } from "@/context/file"

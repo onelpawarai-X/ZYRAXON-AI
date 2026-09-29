@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Shell detection utilities for completion generation.
 
 This module provides functionality to detect the current shell type by inspecting

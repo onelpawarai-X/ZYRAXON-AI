@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Functions for reporting filesizes. Borrowed from https://github.com/PyFilesystem/pyfilesystem2
 
 The functions declared in this module should cover the different

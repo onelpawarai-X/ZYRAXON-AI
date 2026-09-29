@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from jsonschema_path.accessors import SchemaAccessor
 from jsonschema_path.handlers import default_handlers
 from jsonschema_path.paths import SchemaPath

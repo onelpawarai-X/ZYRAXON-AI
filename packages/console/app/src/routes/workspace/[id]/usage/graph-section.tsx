@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { and, Database, eq, gte, inArray, isNull, lt, or, sql, sum } from "@zyraxon-ai/console-core/drizzle/index.js"
 import { UsageTable } from "@zyraxon-ai/console-core/schema/billing.sql.js"
 import { KeyTable } from "@zyraxon-ai/console-core/schema/key.sql.js"

@@ -1,0 +1,79 @@
+name: Copyright Year
+
+# Runs at 03:00 UTC on 1 January every year and stamps the current year into
+# every copyright notice. It repeats for as long as this workflow exists: the
+# script reads the year from the clock, so each 1 January advances the notice
+# again on its own, with no per-year configuration anywhere.
+#
+# It also refuses to change anything if the notices are already correct, so a
+# scheduled run that finds nothing to do stays silent.
+
+on:
+  schedule:
+    - cron: "0 3 1 1 *"
+  workflow_dispatch:
+    inputs:
+      year:
+        description: "Year to stamp (blank = current year)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: copyright-year
+  cancel-in-progress: false
+
+jobs:
+  stamp-year:
+    name: Stamp ${{ inputs.year || 'current' }} year
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Update copyright year
+        run: |
+          if [ -n "${{ inputs.year }}" ]; then
+            bun run scripts/copyright-year.ts --year="${{ inputs.year }}"
+          else
+            bun run scripts/copyright-year.ts
+          fi
+
+      - name: Open a pull request when the year moved
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: automation/copyright-year
+          base: ${{ github.event.repository.default_branch }}
+          commit-message: "chore(legal): stamp copyright year ${{ inputs.year || 'current' }}"
+          title: "chore(legal): stamp copyright year ${{ inputs.year || 'current' }}"
+          body: |
+            Automated annual copyright year update.
+
+            Triggered by `.github/workflows/copyright-year.yml` on 1 January.
+            Only the year in each copyright notice changed. Licence terms,
+            owner and SPDX identifier are untouched.
+
+            Review the diff, then merge.
+          labels: legal,automation
+          delete-branch: true
+
+      - name: Summarise
+        run: |
+          echo "### Copyright year ${{ inputs.year || 'current' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if git diff --quiet; then
+            echo "Notices were already up to date. No pull request was needed." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "A pull request was opened on branch \`automation/copyright-year\`." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Notices now carry the year \`$(date -u +%Y)\`, and will advance again on the next 1 January." >> "$GITHUB_STEP_SUMMARY"

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Command-line interface for the :mod:`idna` package.
 
 Invoked via ``python -m idna``. See :func:`main` for the entry point.

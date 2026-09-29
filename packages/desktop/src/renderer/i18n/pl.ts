@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export const dict = {
   "desktop.menu.checkForUpdates": "Sprawdź aktualizacje...",
   "desktop.menu.installCli": "Zainstaluj CLI...",

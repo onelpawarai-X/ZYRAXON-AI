@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from ctypes import py_object, pythonapi
 
 pythonapi.PyInstanceMethod_New.argtypes = [py_object]

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // @ts-nocheck
 import { createSignal } from "solid-js"
 import { LineCommentEditorV2, LineCommentV2, LineCommentV2OverflowIcon } from "./line-comment-v2"

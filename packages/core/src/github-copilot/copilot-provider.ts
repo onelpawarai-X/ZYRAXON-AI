@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { LanguageModelV3 } from "@ai-sdk/provider"
 import { type FetchFunction, withoutTrailingSlash, withUserAgentSuffix } from "@ai-sdk/provider-utils"
 import { OpenAICompatibleChatLanguageModel } from "./chat/openai-compatible-chat-language-model"

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from .base_server import BaseServer
 from .errors import InvalidClientError
 from .errors import InvalidTokenError

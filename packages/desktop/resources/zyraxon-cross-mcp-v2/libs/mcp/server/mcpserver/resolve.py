@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Resolver dependency injection for MCPServer tools.
 
 A tool parameter annotated `Annotated[T, Resolve(fn)]` is filled by running the

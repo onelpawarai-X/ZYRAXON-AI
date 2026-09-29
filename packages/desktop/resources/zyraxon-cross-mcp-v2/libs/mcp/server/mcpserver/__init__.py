@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """MCPServer - A more ergonomic interface for MCP servers."""
 
 from mcp_types import Icon

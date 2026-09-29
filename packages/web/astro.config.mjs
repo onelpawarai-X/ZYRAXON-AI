@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // @ts-check
 import { defineConfig } from "astro/config"
 import starlight from "@astrojs/starlight"

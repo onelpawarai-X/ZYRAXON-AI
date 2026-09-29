@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from typing import Any, Literal, cast
 
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, ConfigDict, Field, field_validator, model_validator

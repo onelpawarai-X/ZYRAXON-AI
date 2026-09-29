@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # __init__ for the Pythonwin editor package.
 #
 # We used to support optional editors - eg, color or non-color.

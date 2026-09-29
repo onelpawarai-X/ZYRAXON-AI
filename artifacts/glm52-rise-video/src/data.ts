@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Verified against the production zyraxon-stats PlanetScale DB.
 // Scope: tier='Go' (ZYRAXON Go), dataset='zen', client='all', source='all', grain='day'.
 // metric = total_tokens. Daily token volume per model; GLM-5.2 (zhipu) launched Jun 17.

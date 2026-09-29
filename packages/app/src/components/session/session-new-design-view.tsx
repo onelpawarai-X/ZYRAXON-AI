@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { JSX } from "solid-js"
 import { WordmarkV2 } from "@zyraxon-ai/ui/v2/wordmark-v2"
 import { NEW_SESSION_CONTENT_WIDTH } from "@/pages/session/new-session-layout"

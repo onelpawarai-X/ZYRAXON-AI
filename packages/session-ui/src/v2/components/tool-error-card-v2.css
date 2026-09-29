@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+   Copyright (c) 2026 onelpawarai. All rights reserved. */
+
 [data-component="tool-error-card"] {
   --tec-border: var(--v2-state-fg-danger);
   --tec-title: var(--v2-text-text-base);

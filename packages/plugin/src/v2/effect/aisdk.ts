@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { LanguageModelV3 } from "@ai-sdk/provider"
 import type { ModelV2Info } from "@zyraxon-ai/sdk/v2/types"
 import type { Hooks } from "./registration.js"

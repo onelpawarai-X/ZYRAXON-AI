@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Logic for creating models."""
 
 # Because `dict` is in the local namespace of the `BaseModel` class, we use `Dict` for annotations.

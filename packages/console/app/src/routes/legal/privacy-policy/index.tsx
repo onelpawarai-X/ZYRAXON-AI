@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import "../../brand/index.css"
 import "./index.css"
 import { Title, Meta } from "@solidjs/meta"

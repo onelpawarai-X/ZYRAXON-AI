@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { type AstNode, InterpreterRuntimeError } from "../interpreter/model.js"
 import { isBlockedMember } from "../tool-runtime.js"
 import { isSandboxValue, SandboxMap, SandboxURLSearchParams } from "../values.js"

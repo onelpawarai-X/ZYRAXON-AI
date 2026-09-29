@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 urllib2.HTTPPasswordMgr object using the keyring, for use with the
 urllib2.HTTPBasicAuthHandler.

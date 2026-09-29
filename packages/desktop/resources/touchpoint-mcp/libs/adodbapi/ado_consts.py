@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # ADO enumerated constants documented on MSDN:
 # https://learn.microsoft.com/en-us/sql/ado/reference/ado-api/ado-enumerated-constants
 # TODO: Update to https://learn.microsoft.com/en-us/sql/ado/reference/ado-api/ado-enumerated-constants

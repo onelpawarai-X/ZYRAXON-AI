@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Pure state machine for the prompt input.
 //
 // Handles history ring navigation and prompt text helpers. All functions are

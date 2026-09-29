@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import initSqlJs from "sql.js"
 import fs from "node:fs"
 import { dirname } from "node:path"

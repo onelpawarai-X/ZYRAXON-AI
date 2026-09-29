@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { Workspace } from "@zyraxon-ai/sdk/v2"
 import { useDialog } from "../ui/dialog"
 import { DialogSelect, type DialogSelectOption } from "../ui/dialog-select"

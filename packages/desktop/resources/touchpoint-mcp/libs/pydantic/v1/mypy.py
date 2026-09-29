@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import sys
 from configparser import ConfigParser
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as TypingType, Union

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Tooltip } from "@zyraxon-ai/ui/tooltip"
 import { createResizeObserver } from "@solid-primitives/resize-observer"
 import {

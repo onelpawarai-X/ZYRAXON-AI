@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """In-memory cache for token verification results.
 
 Provides a generic TTL-based cache for ``AccessToken`` objects, designed to

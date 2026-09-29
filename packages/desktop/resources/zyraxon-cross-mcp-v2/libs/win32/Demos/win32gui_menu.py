@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # Demonstrates some advanced menu concepts using win32gui.
 # This creates a taskbar icon which has some fancy menus (but note that
 # selecting the menu items does nothing useful - see win32gui_taskbar.py

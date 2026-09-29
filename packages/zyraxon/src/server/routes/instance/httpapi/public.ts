@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { OpenApi } from "effect/unstable/httpapi"
 import { ZyraxonHttpApi } from "./api"
 import { QueryBooleanOpenApi } from "./groups/query"

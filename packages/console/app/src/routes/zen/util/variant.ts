@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export function parseAnthropicVariant(body: any) {
   const effort = body.effort ?? body.output_config?.effort ?? body.outputConfig?.effort ?? body.thinking?.effort
   if (effort) return effort

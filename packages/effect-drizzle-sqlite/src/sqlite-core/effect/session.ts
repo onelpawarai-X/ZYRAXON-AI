@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /* oxlint-disable */
 import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"

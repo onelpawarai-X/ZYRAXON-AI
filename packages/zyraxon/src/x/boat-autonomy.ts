@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * ZYRAXON X — Boat Autonomy
  * Radar processor, AIS, voyage planner, COLREGS collision avoidance, maneuvering, GMDSS

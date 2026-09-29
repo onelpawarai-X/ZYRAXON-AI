@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Touchpoint MCP server — vision and no-vision modes.
 
 Exposes the Touchpoint UI-automation API as MCP tools so LLM agents

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export function createWorkerTransport<T extends { id: number; key: string }>(input: {
   post: (request: T) => void
   supersede: (request: T) => void

@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# The desktop app ships these as vendored runtime assets, not installs, so
+# they stay tracked. git cannot descend into an excluded parent directory,
+# so the directory is re-included before its contents.
+!resources/node_modules/
+!resources/node_modules/**
+!resources/*/node_modules/
+!resources/*/node_modules/**
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -25,5 +33,3 @@ dist-ssr
 out/
 
 resources/opencode-cli*
-resources/icons
-resources/*.metainfo.xml

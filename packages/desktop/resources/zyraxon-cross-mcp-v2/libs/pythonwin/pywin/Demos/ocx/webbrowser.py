@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # This demo uses the Internet Explorer Web Browser control.
 
 # It catches an "OnNavigate" event, and updates the frame title.

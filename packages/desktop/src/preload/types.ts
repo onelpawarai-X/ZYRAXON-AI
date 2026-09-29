@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { DesktopMenuAction } from "@zyraxon-ai/app/desktop-menu"
 import type { WslServersPlatform } from "@zyraxon-ai/app/wsl/types"
 import type { UpdaterState } from "@zyraxon-ai/app/updater"

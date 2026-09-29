@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export function countryFromRequest(request: Request | undefined) {
   if (!request) return undefined
   const cloudflareRequest = request as Request & { cf?: { country?: string } }

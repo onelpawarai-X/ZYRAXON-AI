@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """
 A Pillow plugin for .dds files (S3TC-compressed aka DXTC)
 Jerome Leclanche <jerome@leclan.ch>

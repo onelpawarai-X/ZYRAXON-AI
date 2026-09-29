@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Serialization adapter base class for converting ManagedEntry objects to/from store-specific formats.
 
 This module provides the SerializationAdapter ABC that store implementations should use

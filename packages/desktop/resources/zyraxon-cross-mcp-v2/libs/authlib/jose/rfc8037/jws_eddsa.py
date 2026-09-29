@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from cryptography.exceptions import InvalidSignature
 
 from ..rfc7515 import JWSAlgorithm

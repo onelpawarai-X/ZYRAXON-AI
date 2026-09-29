@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { runtimeModules as keymapRuntimeModules } from "@opentui/keymap/runtime-modules"
 import { ensureRuntimePluginSupport } from "@opentui/solid/runtime-plugin-support/configure"
 import {

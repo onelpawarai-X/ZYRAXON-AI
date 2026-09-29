@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """macOS Accessibility backend for Touchpoint.
 
 Uses the macOS Accessibility API (``AXUIElement``) via ``pyobjc`` to

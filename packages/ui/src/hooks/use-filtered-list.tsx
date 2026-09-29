@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import fuzzysort from "fuzzysort"
 import { entries, flatMap, groupBy, map, pipe } from "remeda"
 import { createEffect, createMemo, createResource, on } from "solid-js"

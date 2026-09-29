@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import array
 import threading
 from ctypes import POINTER, Structure, byref, c_long, cast, memmove, pointer, sizeof

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * Taken from https://www.solid-ui.com/docs/components/drawer
  * Only used in one place hence not a v2 component yet... can be promoted to ui/v2 later

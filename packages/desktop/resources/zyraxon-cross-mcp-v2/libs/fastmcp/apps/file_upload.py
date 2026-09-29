@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """FileUpload — a Provider that adds drag-and-drop file upload to any server.
 
 Lets users upload files directly to the server through an interactive UI,

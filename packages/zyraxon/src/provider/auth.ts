@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
 import type { AuthOAuthResult, Hooks } from "@opencode-ai/plugin"
 import { serviceUse } from "@opencode-ai/core/effect/service-use"

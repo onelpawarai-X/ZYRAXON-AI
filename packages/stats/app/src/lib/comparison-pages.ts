@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { catalogSlug, findModelCatalogEntry, type ModelCatalog, type ModelCatalogEntry } from "../routes/model-catalog"
 
 type ComparisonFamilyDefinition = {

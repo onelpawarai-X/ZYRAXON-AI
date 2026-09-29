@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { TextField } from "@zyraxon-ai/ui/text-field"
 import * as Sentry from "@sentry/solid"
 import { Logo } from "@zyraxon-ai/ui/logo"

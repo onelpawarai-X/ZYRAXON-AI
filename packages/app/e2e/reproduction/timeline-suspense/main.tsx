@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createResource, createSignal, For, onMount, Suspense } from "solid-js"
 import { render } from "solid-js/web"
 import { createVirtualizer, observeElementOffset, observeElementRect } from "@tanstack/solid-virtual"

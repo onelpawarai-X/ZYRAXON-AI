@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { defineConfig, devices } from "@playwright/test"
 
 const port = Number(process.env.PLAYWRIGHT_TIMELINE_SUSPENSE_PORT ?? 4317)

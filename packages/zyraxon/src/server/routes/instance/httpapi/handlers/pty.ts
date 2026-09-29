@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import * as InstanceState from "@/effect/instance-state"
 import { registerDisposer } from "@/effect/instance-registry"
 import { InstanceRef, WorkspaceRef } from "@/effect/instance-ref"

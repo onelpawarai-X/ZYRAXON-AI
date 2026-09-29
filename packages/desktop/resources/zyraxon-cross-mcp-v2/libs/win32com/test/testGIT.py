@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Testing pasing object between multiple COM threads
 
 Uses standard COM marshalling to pass objects between threads.  Even

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { createStore, reconcile } from "solid-js/store"
 import { createEffect, createMemo, createSignal, onCleanup } from "solid-js"
 import { createSimpleContext } from "@zyraxon-ai/ui/context"

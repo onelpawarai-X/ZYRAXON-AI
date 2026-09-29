@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export const SESSION_OPEN_FILE_TAB = "open-file"
 
 export type SessionTabs = {

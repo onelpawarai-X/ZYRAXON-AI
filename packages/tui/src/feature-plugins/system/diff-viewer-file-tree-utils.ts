@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Paths branch softly through the screen,
 // A quiet tree of changed designs;
 // Each leaf remembers what has been,

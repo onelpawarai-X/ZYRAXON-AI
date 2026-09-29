@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Select as Kobalte } from "@kobalte/core/select"
 import { Show, createMemo, onCleanup, splitProps, type ComponentProps, type JSX } from "solid-js"
 import "./select-v2.css"

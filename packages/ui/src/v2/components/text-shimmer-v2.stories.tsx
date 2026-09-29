@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { TextShimmerV2 } from "./text-shimmer-v2"
 
 const docs = `### Overview

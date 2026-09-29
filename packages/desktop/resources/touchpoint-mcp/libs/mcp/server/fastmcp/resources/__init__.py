@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from .base import Resource
 from .resource_manager import ResourceManager
 from .templates import ResourceTemplate

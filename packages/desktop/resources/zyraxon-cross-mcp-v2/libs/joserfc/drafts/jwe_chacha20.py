@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from Crypto.Cipher import ChaCha20_Poly1305
 from .._rfc7516.registry import JWERegistry
 from .._rfc7516.models import JWEEncModel

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Extract descriptions from function docstrings.
 
 Uses griffelib to parse Google, NumPy, and Sphinx-style docstrings. The

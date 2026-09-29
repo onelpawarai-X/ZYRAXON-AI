@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { Component, Show, createMemo, createResource, onMount, type JSX } from "solid-js"
 import { Button } from "@zyraxon-ai/ui/button"
 import { Icon } from "@zyraxon-ai/ui/icon"

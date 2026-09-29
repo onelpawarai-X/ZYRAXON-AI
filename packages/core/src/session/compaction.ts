@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export * as SessionCompaction from "./compaction"
 
 import { LLM, LLMError, LLMEvent, Message, type LLMRequest, type Model } from "@zyraxon-ai/llm"

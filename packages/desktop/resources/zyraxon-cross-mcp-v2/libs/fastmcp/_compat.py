@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """camelCase compatibility bridge for MCP SDK v2.
 
 MCP Python SDK v2 renamed protocol fields from camelCase (`inputSchema`) to

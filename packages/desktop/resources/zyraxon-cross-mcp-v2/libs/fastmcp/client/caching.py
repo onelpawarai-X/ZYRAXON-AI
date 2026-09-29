@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """A client response cache store backed by AsyncKeyValue.
 
 The MCP SDK's client response cache (SEP-2549) reads and writes through a

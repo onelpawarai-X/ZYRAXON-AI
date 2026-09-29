@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 from .client_mixin import OAuth2ClientMixin
 from .functions import create_bearer_token_validator
 from .functions import create_query_client_func

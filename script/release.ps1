@@ -1,3 +1,6 @@
+<# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+   Copyright (c) 2026 onelpawarai. All rights reserved. #>
+
 # ZYRAXON Release Script
 # Builds the app and creates a GitHub release with all necessary files
 # This ensures auto-update works (latest.yml is uploaded)

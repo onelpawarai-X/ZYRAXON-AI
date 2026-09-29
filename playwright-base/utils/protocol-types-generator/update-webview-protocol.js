@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 //
 // Fetches upstream WebKit Web Inspector protocol definitions from
 // github.com/WebKit/WebKit (main branch) and generates an up-to-date

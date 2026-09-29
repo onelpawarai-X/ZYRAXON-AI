@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /* eslint-disable notice/notice */
 
 import { test as baseTest } from '@jarvis-browser/test';
