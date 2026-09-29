@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
-﻿name: pr-management
+name: pr-management
 
 on:
   pull_request_target:
