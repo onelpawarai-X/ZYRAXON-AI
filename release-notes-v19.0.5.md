@@ -69,9 +69,13 @@ ZYRAXON is an agent engine today. It is a family of companies tomorrow.
 - 🌐 **Our own ecosystem** — tools, SDK, marketplace, integrations
 - 🏢 **Our own company** — built to last, owned by the people who build it
 
-**And the commitment that matters most: free for the people.**
+**And the commitment that matters most: free to use, now and for good.**
 
-Think mobile data. Airtime costs money, and yet people use the internet every day anyway. ZYRAXON works the same way. **On the free tier people can do everything** — chat, tools, sub-agents, code, automation, the full engine, not a crippled demo. If you want more power, more scale and more speed, that is what the subscription is for. But nobody gets locked out.
+ZYRAXON is free to use, and it will stay free to use. The core engine, the tools, the sub-agents, the code work — all of it runs on the free tier. Nobody has to pay a rupee to install it, use it every day, or get real work out of it. We will not put the useful parts behind a paywall.
+
+Where the subscription comes in is capacity, not access. Free plans get a generous allowance; paid plans get more of it, faster runs, deeper sub-agent parallelism and priority access to the heaviest models. That is the difference between a good plan and a bigger plan — never between working and not working.
+
+And this is the part we care about: **every subscription funds the work toward our own model and our own provider.** Our goal is that when it arrives, it costs nobody anything to use. The people who support us today are paying for the build that gets us there.
 
 We are not here to squeeze the people who use us. We are here to put an open AI into every hand that wants one.
 
