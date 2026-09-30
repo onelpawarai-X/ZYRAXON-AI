@@ -16,7 +16,6 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "test": "bun test --timeout 5000",
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {

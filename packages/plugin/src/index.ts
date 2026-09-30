@@ -15,10 +15,10 @@ import type {
 } from "@zyraxon-ai/sdk"
 import type { Provider as ProviderV2, Model as ModelV2, Auth } from "@zyraxon-ai/sdk/v2"
 
-import type { BunShell } from "./shell.ts"
-import { type ToolDefinition } from "./tool.ts"
+import type { BunShell } from "./shell.js"
+import { type ToolDefinition } from "./tool.js"
 
-export * from "./tool.ts"
+export * from "./tool.js"
 
 export type ProviderContext = {
   source: "env" | "config" | "custom" | "api"
