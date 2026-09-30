@@ -17,8 +17,11 @@ jobs:
 
       - name: Check for blacksmith runners
         run: |
-          if grep -r "blacksmith" .github/workflows/; then
-            echo "::error::Blacksmith runners detected! Use ubuntu-latest instead."
+          # Match runner labels, not every mention of the word. This workflow is
+          # itself named after the thing it looks for, so a plain search of the
+          # whole directory matches this file and can never pass.
+          if grep -rE --include='*.yml' '^[[:space:]]*(runs-on|host):[[:space:]].*blacksmith' .github/workflows/; then
+            echo "::error::Blacksmith runners detected! Use a GitHub-hosted runner instead."
             exit 1
           fi
-          echo "All workflows use ubuntu-latest. OK!"
+          echo "No blacksmith runners. OK!"
