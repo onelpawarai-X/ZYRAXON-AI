@@ -1,27 +1,43 @@
 // SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-/** Parse the two release workflows so a syntax error cannot reach main. */
+/** Parse every workflow so a syntax error cannot reach main. */
 
 import { parse } from "yaml"
+import { readdirSync, readFileSync } from "node:fs"
 
-for (const name of ["release-linux.yml", "release-macos.yml"]) {
-  const path = `.github/workflows/${name}`
-  const text = await Bun.file(path).text()
+const BOM = Buffer.from([0xef, 0xbb, 0xbf])
+const problems: string[] = []
+
+for (const name of readdirSync(".github/workflows").filter((f) => f.endsWith(".yml") || f.endsWith(".yaml"))) {
+  const bytes = readFileSync(`.github/workflows/${name}`)
+  const text = bytes.toString("utf8")
+  const issues: string[] = []
+
+  // A mark at the start of the file is a byte order mark and belongs there. One
+  // further in joins the key after it, so the workflow is rejected before a
+  // runner starts and the run log never explains why.
+  if (bytes.indexOf(BOM, 3) !== -1) issues.push("carries a stray byte order mark")
+  if (!/^name:\s*\S/m.test(text)) issues.push("no plain `name:` key")
+
   try {
     const doc = parse(text)
-    const jobs = Object.keys(doc.jobs ?? {})
-    const on = doc.on ?? doc[true]
-    const steps = doc.jobs[Object.keys(doc.jobs)[0]].steps.map((s: { name?: string; uses?: string; run?: string }) =>
-      s.name ?? s.uses ?? "(inline)",
-    )
-    console.log(`\n${name}  OK`)
-    console.log("  trigger  :", Object.keys(on).join(", "))
-    console.log("  jobs     :", jobs.join(", "))
-    console.log("  steps    :", steps.length)
-    for (const s of steps) console.log("     -", s)
+    if (doc.jobs === undefined) issues.push("no jobs key")
+    if ((doc.on ?? doc[true]) === undefined) issues.push("no trigger key")
   } catch (e) {
-    console.error(`\n${name}  FAILED: ${(e as Error).message}`)
-    process.exitCode = 1
+    issues.push(e instanceof Error ? e.message.split("\n")[0] : String(e))
   }
+
+  if (issues.length) {
+    problems.push(name)
+    console.log(`${name}  FAILED`)
+    for (const issue of issues) console.log(`  - ${issue}`)
+  }
+}
+
+if (problems.length) {
+  console.log(`\n${problems.length} workflow(s) need attention`)
+  process.exitCode = 1
+} else {
+  console.log("every workflow parses")
 }
