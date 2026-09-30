@@ -116,3 +116,87 @@ jobs:
         run: |
           gh release view "$TAG" --repo "$GITHUB_REPOSITORY" \
             --json assets --jq '.assets[].name' | sed 's/^/  /'
+
+  cli:
+    name: CLI
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    env:
+      ZYRAXON_CHANNEL: dev
+      # husky would install and try to wire git hooks, which CI does not need.
+      HUSKY: "0"
+      NODE_OPTIONS: --max-old-space-size=8192
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: release-cli-${{ hashFiles('bun.lock') }}
+          restore-keys: release-cli-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build every Linux CLI target
+        run: bun run --cwd packages/cli script/build.ts --os=linux
+
+      - name: Package the CLI into install archives
+        run: bun run --cwd packages/cli script/package-release.ts
+
+      - name: Each archive holds one flat binary
+        run: |
+          set -euo pipefail
+          cd packages/cli/release
+          for archive in *.tar.gz; do
+            contents=$(tar -tzf "$archive")
+            if [ "$contents" != "zyraxon" ]; then
+              echo "::error::$archive should hold a single entry named zyraxon, holds: $contents"
+              exit 1
+            fi
+            echo "  $archive -> $contents"
+          done
+
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd packages/cli/release
+          files=(*.tar.gz)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No CLI archives were produced."
+            exit 1
+          fi
+          gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+          printf '  %s\n' "${files[@]}"
+
+      - name: The install script can now find a download
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          for name in zyraxon-linux-x64.tar.gz zyraxon-linux-arm64.tar.gz; do
+            status=$(curl -sIL -o /dev/null -w '%{http_code}' \
+              "https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/$name")
+            echo "  $status  $name"
+            if [ "$status" != "200" ]; then
+              echo "::error::$name is not downloadable, so the install script would 404."
+              exit 1
+            fi
+          done
