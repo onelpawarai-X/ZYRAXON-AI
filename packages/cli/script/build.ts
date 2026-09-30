@@ -12,7 +12,7 @@ import pkg from "../package.json"
 import { modelsData } from "./generate"
 
 const dir = path.resolve(import.meta.dirname, "..")
-const binary = "lildax"
+const binary = "zyraxon"
 process.chdir(dir)
 
 await rm("dist", { recursive: true, force: true })
@@ -43,13 +43,18 @@ const allTargets: {
   { os: "win32", arch: "x64", avx2: false },
 ]
 
-const targets = singleFlag
+// A release workflow builds one platform at a time, so --os narrows the full
+// cross-compile list to the targets that belong in that platform's release.
+const osFilter = process.argv.find((arg) => arg.startsWith("--os="))?.slice("--os=".length)
+
+const targets = (singleFlag
   ? allTargets.filter((item) => {
       if (item.os !== process.platform || item.arch !== process.arch) return false
       if (item.avx2 === false) return baselineFlag
       return item.abi === undefined
     })
   : allTargets
+).filter((item) => !osFilter || item.os === osFilter)
 
 if (!skipInstall) await $`bun install --os="*" --cpu="*" @opentui/core@${pkg.dependencies["@opentui/core"]}`
 
