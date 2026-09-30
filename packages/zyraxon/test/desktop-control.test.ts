@@ -57,7 +57,7 @@ describe("PNG codec round trips real pixels", () => {
   })
 })
 
-describe("screen capture produces a real frame", () => {
+describe.skipIf(!drivesRealInput)("screen capture produces a real frame", () => {
   test("captures the screen and reports its true size", async () => {
     const shot = await captureScreen()
     expect(shot.base64.length).toBeGreaterThan(0)
