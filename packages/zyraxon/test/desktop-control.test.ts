@@ -18,7 +18,11 @@ import {
   typeText,
 } from "../src/x/desktop-control"
 
+// These drive the real mouse, keyboard and screen of the machine running them, so they
+// only make sense in an interactive session. A runner has no desktop to click, and a
+// developer does not expect a test run to move their cursor, so require an explicit opt-in.
 const isWindows = currentPlatform() === "windows"
+const drivesRealInput = isWindows && process.env.ZYRAXON_DESKTOP_CONTROL_TESTS === "1"
 
 describe("desktop control runs on every platform", () => {
   test("reports a platform this machine can actually drive", () => {
@@ -53,7 +57,7 @@ describe("PNG codec round trips real pixels", () => {
   })
 })
 
-describe("screen capture produces a real frame", () => {
+describe.skipIf(!drivesRealInput)("screen capture produces a real frame", () => {
   test("captures the screen and reports its true size", async () => {
     const shot = await captureScreen()
     expect(shot.base64.length).toBeGreaterThan(0)
@@ -140,24 +144,24 @@ describe("invalid input is refused before touching the desktop", () => {
 })
 
 describe("desktop actions reach the operating system", () => {
-  test.skipIf(!isWindows)("moving the mouse succeeds", async () => {
+  test.skipIf(!drivesRealInput)("moving the mouse succeeds", async () => {
     const result = await moveMouse(300, 200)
     expect(result.ok).toBe(true)
     expect(result.data).toMatchObject({ moved: true, x: 300, y: 200, platform: "windows" })
   }, 30000)
 
-  test.skipIf(!isWindows)("a left click succeeds", async () => {
+  test.skipIf(!drivesRealInput)("a left click succeeds", async () => {
     const result = await clickAt(300, 200, "left", 1)
     expect(result.ok).toBe(true)
     expect(result.data).toMatchObject({ clicked: true, button: "left", clicks: 1 })
   }, 30000)
 
-  test.skipIf(!isWindows)("a right click succeeds", async () => {
+  test.skipIf(!drivesRealInput)("a right click succeeds", async () => {
     const result = await clickAt(300, 200, "right")
     expect(result.ok).toBe(true)
   }, 30000)
 
-  test.skipIf(!isWindows)("a drag succeeds", async () => {
+  test.skipIf(!drivesRealInput)("a drag succeeds", async () => {
     const result = await dragMouse(250, 180, 400, 260, 8)
     expect(result.ok).toBe(true)
     expect(result.data).toMatchObject({
@@ -167,14 +171,14 @@ describe("desktop actions reach the operating system", () => {
     })
   }, 40000)
 
-  test.skipIf(!isWindows)("scrolling in each direction succeeds", async () => {
+  test.skipIf(!drivesRealInput)("scrolling in each direction succeeds", async () => {
     for (const direction of ["up", "down", "left", "right"] as const) {
       const result = await scrollAt(direction, 2, 300, 200)
       expect(result.ok).toBe(true)
     }
   }, 40000)
 
-  test.skipIf(!isWindows)("a modifier chord succeeds and can be released", async () => {
+  test.skipIf(!drivesRealInput)("a modifier chord succeeds and can be released", async () => {
     const pressed = await pressKeys("ctrl+shift+esc")
     expect(pressed.ok).toBe(true)
     await new Promise((resolve) => setTimeout(resolve, 500))
@@ -182,7 +186,7 @@ describe("desktop actions reach the operating system", () => {
     expect(released.ok).toBe(true)
   }, 30000)
 
-  test.skipIf(!isWindows)("real windows are enumerated with titles and geometry", async () => {
+  test.skipIf(!drivesRealInput)("real windows are enumerated with titles and geometry", async () => {
     const windows = await listWindows()
     expect(windows.length).toBeGreaterThan(0)
     for (const w of windows) {

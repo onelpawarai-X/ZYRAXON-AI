@@ -10,6 +10,10 @@ on:
 
 jobs:
   sync:
+    # The beta sync needs a GitHub App, a ZYRAXON_API_KEY, and a dev branch to
+    # branch from, none of which exist in this repository. Without this it fails
+    # every hour on the schedule for a reason that is not fixable in the file.
+    if: github.repository == 'anomalyco/zyraxon'
     runs-on: ubuntu-latest
     permissions:
       contents: write

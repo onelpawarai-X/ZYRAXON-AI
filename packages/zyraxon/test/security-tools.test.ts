@@ -2,7 +2,13 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import { describe, expect, test } from "bun:test"
+import { currentPlatform } from "../src/x/desktop-control"
 import { CyberSecurityMonitor, SurveillanceSystem } from "../src/x/security-tools"
+
+// Motion detection compares two real screen captures, so it needs an actual desktop to
+// read. A runner has none, and a developer does not expect a test run to photograph their
+// screen, so require the same explicit opt-in the desktop control suite uses.
+const drivesRealInput = currentPlatform() === "windows" && process.env.ZYRAXON_DESKTOP_CONTROL_TESTS === "1"
 
 describe("CyberSecurityMonitor port probing uses real TCP results", () => {
   test("reports the real state of a port that is actually listening", async () => {
@@ -185,7 +191,9 @@ describe("SurveillanceSystem state persists across calls", () => {
     expect(result.error).toContain("sensitivity")
   })
 
-  test("real motion is measured from two real screen frames", async () => {
+  // Both motion tests below take two real screen captures, so they need a desktop to
+  // capture. A runner has none, so they follow the same opt-in as the desktop control suite.
+  test.skipIf(!drivesRealInput)("real motion is measured from two real screen frames", async () => {
     const system = new SurveillanceSystem()
     system.addCamera("cam1", "gate")
 
@@ -200,7 +208,7 @@ describe("SurveillanceSystem state persists across calls", () => {
     expect(Array.isArray(result.data.zones)).toBe(true)
   }, 30000)
 
-  test("a still screen between two captures reports no motion", async () => {
+  test.skipIf(!drivesRealInput)("a still screen between two captures reports no motion", async () => {
     const system = new SurveillanceSystem()
     system.addCamera("cam1", "gate")
 

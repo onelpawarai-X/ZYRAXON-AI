@@ -78,15 +78,7 @@ export const makeApi = <
 }) =>
   makeApiFromGroup(makeEventGroup(options.definitions), options.locationMiddleware, options.sessionLocationMiddleware)
 
-export const makeDefaultApi: <
-  LocationId extends HttpApiMiddleware.AnyId,
-  LocationService,
-  SessionLocationId extends HttpApiMiddleware.AnyId,
-  SessionLocationService,
->(options: {
-  readonly locationMiddleware: Context.Key<LocationId, LocationService>
-  readonly sessionLocationMiddleware: Context.Key<SessionLocationId, SessionLocationService>
-}) => ReturnType<typeof makeApiFromGroup> = <
+export const makeDefaultApi = <
   LocationId extends HttpApiMiddleware.AnyId,
   LocationService,
   SessionLocationId extends HttpApiMiddleware.AnyId,
