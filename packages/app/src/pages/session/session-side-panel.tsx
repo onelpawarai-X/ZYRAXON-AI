@@ -24,6 +24,7 @@ import { TooltipKeybind } from "@zyraxon-ai/ui/tooltip"
 import { ResizeHandle } from "@zyraxon-ai/ui/resize-handle"
 import { Mark } from "@zyraxon-ai/ui/logo"
 import { IconButtonV2 } from "@zyraxon-ai/ui/v2/icon-button-v2"
+import { Icon as IconV2 } from "@zyraxon-ai/ui/v2/icon"
 import { KeybindV2 } from "@zyraxon-ai/ui/v2/keybind-v2"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
 import type { SnapshotFileDiff, VcsFileDiff } from "@zyraxon-ai/sdk/v2"
@@ -38,8 +39,11 @@ import { DailyTasksPanel } from "@/components/daily-tasks-panel"
 const reviewTabID = "session-side-panel-review-tab"
 const reviewTabPanelID = "session-side-panel-review-tabpanel"
 const fileBrowserTabPanelID = "session-side-panel-file-browser-tabpanel"
+const previewTabID = "session-side-panel-preview-tab"
+const previewTabPanelID = "session-side-panel-preview-tabpanel"
 import { SessionContextTab, SortableTab, SortableTabV2, FileVisual } from "@/components/session"
 import { OpenInAppV2 } from "@/components/session/open-in-app-v2"
+import { SitePreview } from "@/pages/session/site-preview"
 import { useCommand } from "@/context/command"
 import { useFile, type SelectedLineRange } from "@/context/file"
 import { useLanguage } from "@/context/language"
@@ -71,6 +75,7 @@ function renderDiff(value: SnapshotFileDiff | VcsFileDiff): value is RenderDiff 
 
 export function SessionSidePanel(props: {
   canReview: () => boolean
+  canPreview?: () => boolean
   diffs: () => (SnapshotFileDiff | VcsFileDiff)[]
   diffsReady: () => boolean
   empty: () => string
@@ -88,6 +93,7 @@ export function SessionSidePanel(props: {
 }) {
   const layout = useLayout()
   const settings = useSettings()
+  const canPreview = () => props.canPreview?.() ?? true
   const file = useFile()
   const language = useLanguage()
   const command = useCommand()
@@ -404,6 +410,18 @@ export function SessionSidePanel(props: {
                                 </div>
                               </Tabs.Trigger>
                             </Show>
+                            <Show when={canPreview()}>
+                              <Tabs.Trigger
+                                value="preview"
+                                id={previewTabID}
+                                aria-controls={activeTab() === "preview" ? previewTabPanelID : undefined}
+                              >
+                                <div class="flex items-center gap-1.5">
+                                  <IconV2 name="preview" />
+                                  <div>{language.t("session.tab.preview")}</div>
+                                </div>
+                              </Tabs.Trigger>
+                            </Show>
                             <Tabs.Trigger
                               value="daily-tasks"
                               class="flex items-center gap-1.5"
@@ -522,7 +540,20 @@ export function SessionSidePanel(props: {
                             </div>
                           </Show>
 
-                          <Show when={activeTab() === "daily-tasks"}>
+                        <Show when={canPreview() && activeTab() === "preview"}>
+                          <div
+                            id={previewTabPanelID}
+                            role="tabpanel"
+                            aria-labelledby={previewTabID}
+                            tabIndex={0}
+                            data-slot="tabs-content"
+                            class="flex flex-col h-full overflow-hidden contain-strict"
+                          >
+                            <SitePreview />
+                          </div>
+                        </Show>
+
+                        <Show when={activeTab() === "daily-tasks"}>
                             <div class="flex flex-col h-full overflow-hidden">
                               <DailyTasksPanel />
                             </div>
@@ -621,6 +652,18 @@ export function SessionSidePanel(props: {
                                 {props.hasReview()
                                   ? language.t("session.review.filesChanged", { count: props.reviewCount() })
                                   : language.t("session.tab.review")}
+                              </Tabs.Trigger>
+                            </Show>
+                            <Show when={canPreview()}>
+                              <Tabs.Trigger
+                                value="preview"
+                                id={previewTabID}
+                                aria-controls={activeTab() === "preview" ? previewTabPanelID : undefined}
+                              >
+                                <div class="flex items-center gap-1.5">
+                                  <IconV2 name="preview" />
+                                  <span>{language.t("session.tab.preview")}</span>
+                                </div>
                               </Tabs.Trigger>
                             </Show>
                             <Tabs.Trigger

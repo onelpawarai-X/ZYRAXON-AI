@@ -166,6 +166,8 @@ const api: ElectronAPI = {
 
   getPreviewState: () => ipcRenderer.invoke("get-preview-state"),
   setPreviewState: (state) => ipcRenderer.invoke("set-preview-state", state),
+  listPreviewSources: () => ipcRenderer.invoke("preview-list-sources"),
+  openPreviewTarget: (target) => ipcRenderer.invoke("preview-open-external", target),
   onSitePreviewUpdate: (cb) => {
     const handler = (_: unknown, state: PreviewState) => cb(state)
     ipcRenderer.on("site-preview-update", handler)

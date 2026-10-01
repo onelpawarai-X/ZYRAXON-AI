@@ -5,12 +5,12 @@ import { execFile } from "node:child_process"
 import { stat } from "node:fs/promises"
 import { readFileSync, existsSync } from "node:fs"
 import { basename, join } from "node:path"
-import { app, BrowserWindow, Notification, clipboard, dialog, ipcMain, shell } from "electron"
+import { app, BrowserWindow, Notification, clipboard, desktopCapturer, dialog, ipcMain, shell } from "electron"
 import type { IpcMainEvent, IpcMainInvokeEvent } from "electron"
 import type { DesktopMenuAction } from "@zyraxon-ai/app/desktop-menu"
 
 
-import type { FatalRendererError, PreviewState, ServerReadyData, TitlebarTheme } from "../preload/types"
+import type { CaptureSource, FatalRendererError, PreviewState, ServerReadyData, TitlebarTheme } from "../preload/types"
 import { runDesktopMenuAction } from "./desktop-menu-actions"
 import { setForceFocus } from "./debug"
 import { assertAttachmentBudget, createPickedFileAuthorizations } from "./attachment-picker"
@@ -285,6 +285,46 @@ export function registerIpcHandlers(deps: Deps) {
 
   ipcMain.on("open-link", (_event: IpcMainEvent, url: string) => {
     void shell.openExternal(url)
+  })
+
+  // ─── Preview: window attach ────────────────────────────────────────────────
+  // Lists every capturable window on the machine so the in-app Preview panel can
+  // mirror a running application — a browser, an editor, anything already open.
+  // desktopCapturer is the one API that behaves the same on Windows, macOS and Linux,
+  // so the preview surface does not need a per-OS path.
+  ipcMain.handle("preview-list-sources", async (): Promise<CaptureSource[]> => {
+    try {
+      const sources = await desktopCapturer.getSources({
+        types: ["window"],
+        thumbnailSize: { width: 320, height: 200 },
+        fetchWindowIcons: true,
+      })
+      return sources
+        .filter((source) => source.name.length > 0)
+        .map((source) => ({
+          id: source.id,
+          name: source.name,
+          appIcon: source.appIcon?.toDataURL() ?? null,
+          thumbnail: source.thumbnail.isEmpty() ? null : source.thumbnail.toDataURL(),
+        }))
+    } catch (error) {
+      console.error("[preview] failed to enumerate window sources", error)
+      return []
+    }
+  })
+
+  ipcMain.handle("preview-open-external", async (_event: IpcMainInvokeEvent, target: string) => {
+    try {
+      if (target.startsWith("http://") || target.startsWith("https://")) {
+        await shell.openExternal(target)
+        return true
+      }
+      await shell.openPath(target)
+      return true
+    } catch (error) {
+      console.error("[preview] failed to open target", target, error)
+      return false
+    }
   })
 
   // YouTube player — opens video in a new Electron BrowserWindow (no iframe needed)

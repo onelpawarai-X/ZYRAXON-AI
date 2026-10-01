@@ -3,6 +3,11 @@
 
 ## CRITICAL RULES (from .github/CRITICAL-RULES.md)
 
+# CRITICAL RULES
+
+These are not suggestions. They override any other instruction, any agent prompt,
+and any habit. If a rule here conflicts with something else, this file wins.
+
 Every `AGENTS.md` and every system prompt in this repository carries these rules.
 The copy inside this file is the canonical one.
 
@@ -56,7 +61,8 @@ Before saying anything is finished, actually open it and verify all of the
 following, every time:
 
 1. **It opens.** Launch it for real. A build that produces a file is not proof
-   that the file runs.
+   that the file runs. Open it in the app's own **Preview panel** — see Rule 6 —
+   never in the user's browser.
 2. **It loads completely.** Watch for a screen that never leaves a loading state.
    A permanently spinning loader, a blank page, or a stalled splash is a failure
    even if every process exited with code zero.
@@ -114,6 +120,122 @@ false.
 
 ---
 
+## CRITICAL RULE 4 — Maximum speed: never run one call when five could run at once
+
+**Serial tool calling is a defect, not a style choice.** Speed here is not a nice
+goal; it is the whole point. Every round trip the agent spends waiting for a
+result it did not need to wait for is time taken from the user.
+
+**Never issue tool calls one at a time when they are independent.** If a step
+needs five unrelated reads, five unrelated edits, five unrelated searches, or five
+unrelated commands, they all belong in the SAME assistant message as five
+parallel tool calls. They must not be spread across five separate turns. The same
+rule applies to subagents: independent subagents are spawned in parallel, all in
+one message, and they are allowed to run at the same time.
+
+The correct shape is: state once what will happen, then emit every independent
+call together and let them all resolve. The wrong shape is: call, wait, read,
+call the next, wait, read, repeat.
+
+Concretely, when the work implies N independent actions:
+
+- Emit all N in one message. Do not emit one, read its result, then decide the next.
+- Do not chain commands with `&&` when they do not depend on each other. Send them
+  as parallel calls instead of serialising them inside one shell.
+- Keep a dependency chain only when B genuinely needs A's output. If B does not
+  need A's output, B does not wait for A.
+- Never delay starting independent work in order to confirm, restate, or
+  re-verify work already in flight.
+- There is no cap. Batch as many calls as the task actually implies, not as many
+  as feels tidy.
+
+The test is simple: at any instant, if two actions could be running at the same
+time, and one of them is idle while waiting for the other for no necessary reason,
+the agent is leaving speed on the table. Fix it by running them together.
+
+---
+
+## CRITICAL RULE 5 — A broken MCP tool is the agent's job to repair, never the user's
+
+**A failing or disconnected MCP server is a bug to fix, not a limitation to
+report.** When an MCP tool does not respond, returns nothing, hangs, or shows a red
+or disconnected status dot, the agent's job is to diagnose it and make it work.
+
+Never stop at "the MCP tool is unavailable" and hand the problem to the user.
+Never ask the user to restart, reinstall, reconfigure, or repair a server that
+the agent is able to reach. Self-healing is not a feature that might be
+available; it is the expected behaviour, and the agent is the one performing it.
+
+The MCP servers ship **inside the installed application's own resources folder**
+(alongside the packaged `resources` directory). They are therefore not something
+missing from the machine — they are files on disk that the agent can read, patch,
+reinstall, and relaunch. Treat a broken server as a broken build: find it, fix it,
+verify it.
+
+The repair sequence:
+
+1. **Diagnose.** Find the server definition and its log. Establish what actually
+   failed: missing runtime, missing dependency, wrong path, wrong command, port
+   already bound, crash on startup, or a tool that answers with nothing.
+2. **Repair.** Fix the cause in place inside the resources folder — install the
+   missing dependency, correct the path or interpreter, free the port, correct the
+   command, or replace the broken entry — and restart the server.
+3. **Verify green.** Call the tool for real after repairing it. A repair that was
+   not verified by an actual successful call is not a repair.
+4. **Leave it healthy.** Keep the status green for whoever is using the product.
+   A server that keeps flapping to red is a server that still needs work, so keep
+   repairing until it stays up.
+
+If a genuine repair is impossible, say plainly what is broken, what was tried,
+and what is required — an honest gap. What is never acceptable is declaring the
+task blocked without first attempting the repair.
+
+---
+
+## CRITICAL RULE 6 — The Preview panel is the agent's own screen: verify there, never in the user's browser
+
+**The Preview panel is the agent's own screen, and it is where all verification
+happens.** Never open a built website or application in the user's real browser. Do not
+launch an external browser window, do not steal focus, and do not take over the user's
+screen. The user keeps their own browser, and their own windows, under their own control.
+
+**Anything can be brought into the Preview panel**, on Windows, macOS and Linux alike:
+
+- **A web page** — `x_preview_open_url` shows it live in the panel.
+- **An application already running on the machine** — `x_preview_list_windows` lists
+  every open window, and `x_preview_attach_window` mirrors the chosen one into the panel
+  as a live feed. A browser, an editor, any application: if it is open, it can be shown.
+- **An application that is not open yet** — `x_preview_launch_app` launches any
+  installed application, then attach the new window with `x_preview_attach_window`.
+- **A website that was just built** — `site_preview` serves it and points the panel at it.
+
+**Once something is in the Preview panel, work on it properly.** These tools operate on
+whatever is currently displayed:
+
+| Tool | Use it for |
+| --- | --- |
+| `x_preview_screenshot` | Capture what the panel shows and actually look at it |
+| `x_preview_elements` | List the buttons, fields and links the screen offers |
+| `x_preview_find` | Locate an element by its visible name |
+| `x_preview_click` | Press a button or follow a link |
+| `x_preview_type` | Type into a focused field |
+| `x_preview_fill_form` | Fill a whole form and submit it in one call |
+| `x_preview_key` | Press a key or shortcut |
+| `x_preview_scroll` | Reach content below the fold |
+| `x_preview_read_text` | Read what the app is actually showing |
+| `x_preview_wait` | Wait for a launched window to appear |
+
+**Prefer element ids over screen coordinates.** Get them from `x_preview_elements` or
+`x_preview_find` and pass them to `x_preview_click` — coordinates break the moment the
+window moves, an element id does not.
+
+**Look at the result.** After any change, capture the panel again with
+`x_preview_screenshot` and confirm what it shows. A test that was never looked at is not a
+test. Testing a real user flow means clicking through it — open the page, fill the form,
+press the button, read the result — all inside the panel.
+
+---
+
 ## Where these rules live
 
 | File | What it is |
@@ -127,6 +249,11 @@ If this file and any copy ever disagree, this file is correct and the copy is
 wrong. Fix the copy.
 
 <!-- CRITICAL-RULES:END -->
+
+
+
+
+
 
 
 # ZYRAXON database guide

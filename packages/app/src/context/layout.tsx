@@ -23,6 +23,7 @@ import { createSessionKeyReader, ensureSessionKey, pruneSessionKeys } from "./la
 import { requireServerKey } from "@/utils/session-route"
 import { type DraftTab, useTabs } from "./tabs"
 import { closeSessionTab, openSessionTab, previewSessionTab, type SessionTabs } from "./layout-tabs"
+import { getPreviewActive, setPreviewActiveState } from "@/pages/session/preview-state"
 
 export { createSessionKeyReader, ensureSessionKey, pruneSessionKeys }
 
@@ -900,6 +901,20 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
             },
             toggle() {
               setReviewPanelOpened(!reviewPanelOpened(), "other")
+            },
+          },
+          previewPanel: {
+            opened: getPreviewActive,
+            open() {
+              setPreviewActiveState(true)
+              setReviewPanelOpened(true, "other")
+            },
+            close() {
+              setPreviewActiveState(false)
+            },
+            toggle() {
+              setPreviewActiveState(!getPreviewActive())
+              setReviewPanelOpened(true, "other")
             },
           },
           review: {

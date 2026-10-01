@@ -24,8 +24,31 @@ export const TOOL_TIER_MAP: Record<string, Tier> = {
   x_math_matrix: "free", x_math_prime: "free", x_math_stats: "free", x_memory_append: "free",
   x_memory_create: "free", x_memory_delete: "free", x_memory_read: "free", x_memory_search: "free",
   x_memory_update: "free", x_memory_view: "free", x_reason_add_fact: "free", x_skill_create: "free",
-  x_skill_delete: "free", x_skill_list: "free", x_spatial_add_obj: "free", x_subscription_status: "free",
+  x_skill_delete: "free", x_skill_list: "free", x_spatial_add_obj: "free",   x_subscription_status: "free",
   x_mode_switch: "free",
+
+  // MULTI-SESSION CONTROL (free trial) — work across every session in parallel
+  x_session_list: "free", x_session_open: "free", x_session_send: "free",
+  x_session_subagent: "free", x_session_switch: "free", x_session_remove: "free",
+
+  // UI BUTTON MONITORING (free trial) — one tool per button in the running app
+  x_ui_buttons_list: "free",
+  x_ui_button_send: "free", x_ui_button_stop: "free", x_ui_button_new_session: "free",
+  x_ui_button_review: "free", x_ui_button_preview: "free", x_ui_button_sidebar: "free",
+  x_ui_button_mode: "free", x_ui_button_model: "free", x_ui_button_terminal: "free",
+  x_ui_button_attach: "free", x_ui_button_todo: "free", x_ui_button_settings: "free",
+  x_ui_button_plan_exit: "free",
+
+  // PREVIEW BOX CONTROL (free trial) — the agent's own screen, cross-platform
+  x_preview_list_windows: "free", x_preview_attach_window: "free", x_preview_detach_window: "free",
+  x_preview_launch_app: "free", x_preview_open_url: "free", x_preview_screenshot: "free",
+  x_preview_click: "free", x_preview_type: "free", x_preview_fill_form: "free",
+  x_preview_key: "free", x_preview_scroll: "free", x_preview_read_text: "free",
+  x_preview_elements: "free", x_preview_find: "free", x_preview_wait: "free",
+
+  // IN-APP PREVIEW (free trial) — serve and verify a site without the real browser
+  site_preview: "free", site_create: "free", site_publish: "free",
+  site_unpublish: "free", site_domain: "free",
   x_task_create: "free", x_task_delete: "free", x_task_list: "free", x_task_run_now: "free",
   x_task_scheduler_status: "free", x_task_start_scheduler: "free", x_task_toggle: "free", x_world_add_object: "free",
   task: "free", system_info: "free",
@@ -210,8 +233,7 @@ export const TOOL_TIER_MAP: Record<string, Tier> = {
   x_water_get_quality: "max", x_water_set_flow: "max", x_water_set_ph: "max", x_weather_check_icing: "max",
   x_weather_check_turbulence: "max", x_weather_get_winds_aloft: "max", x_weather_parse_metar: "max", x_wind_get_vector: "max",
   x_wind_update_gps: "max", x_wind_update_imu: "max",
-  site_create: "max", site_publish: "max", site_unpublish: "max", site_domain: "max",
-  site_preview: "max", github_connect: "max", external_directory: "max",
+  github_connect: "max", external_directory: "max",
   x_cdp_connect: "max", x_cdp_disconnect: "max", x_comp_click_at: "max", x_comp_drag: "max",
   x_comp_key_press: "max", x_comp_list_windows: "max", x_comp_move_mouse: "max", x_comp_open_app: "max",
   x_comp_screenshot: "max", x_comp_scroll: "max", x_comp_type_text: "max",
