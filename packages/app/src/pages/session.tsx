@@ -573,6 +573,7 @@ export default function Page() {
   const isChildSession = createMemo(() => !!info()?.parentID)
   const diffs = createMemo(() => (params.id ? list(sync().data.session_diff[params.id]) : []))
   const canReview = createMemo(() => !!sync().project)
+  const canPreview = createMemo(() => isDesktop())
   const reviewTab = createMemo(() => isDesktop())
   const tabState = createSessionTabs({
     tabs,
@@ -645,6 +646,18 @@ export default function Page() {
         if (prev !== undefined && _id !== prev) {
           setPreviewActiveState(false)
         }
+      },
+      { defer: true },
+    ),
+  )
+
+  // The header Preview button flips this flag; showing the preview panel then means
+  // also selecting the preview tab, so the panel never opens onto the diff view.
+  createEffect(
+    on(
+      previewActive,
+      (active) => {
+        if (active && tabs().active() !== "preview") tabs().setActive("preview")
       },
       { defer: true },
     ),
@@ -2403,6 +2416,7 @@ export default function Page() {
         <Show when={!newSessionDesign() && (desktopSidePanelOpen() || activeTab() === "preview" || getPreviewActive())}>
           <SessionSidePanel
             canReview={canReview}
+            canPreview={canPreview}
             diffs={reviewDiffs}
             diffsReady={reviewReady}
             empty={reviewEmptyText}
@@ -2423,6 +2437,7 @@ export default function Page() {
                 <div class="min-h-0 flex-1">
                   <SessionSidePanel
                     canReview={canReview}
+                    canPreview={canPreview}
                     diffs={reviewDiffs}
                     diffsReady={reviewReady}
                     empty={reviewEmptyText}

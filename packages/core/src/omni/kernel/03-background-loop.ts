@@ -8,7 +8,9 @@ import { execSync } from "node:child_process"
  * Algorithm: Parallel Task Scheduling with Weighted Fair Queuing + DAG Resolution + Critical Path + Resource-Aware Scheduling
  * Input: Sub-task definitions with dependencies and priorities
  * Output: Execution results, scheduling metrics, resource utilization
- * Boundary: Max 16 parallel tasks; task timeout 60s; DAG cycle detection via DFS
+ * Boundary: UNLIMITED parallel tasks (no hardcoded cap); task timeout 60s; DAG cycle detection via DFS
+ * Concurrency: unbounded by default — every ready task launches in the same tick. Bounds are opt-in
+ *   via configure({ maxParallel, resourceBudget }) so callers can throttle, but nothing throttles by default.
  * Verification: Tasks A→B→C scheduled so C runs after B after A; critical path = [A, B, C]
  */
 
@@ -77,15 +79,27 @@ function shannonEntropy(values: number[]): number {
 export class BackgroundLoop {
   private activeTasks: Map<string, SubTask> = new Map()
   private completedTasks: SubTask[] = []
-  private maxParallel = 16
+  private maxParallel: number = Number.POSITIVE_INFINITY
   private taskQueue: SubTask[] = []
   private schedulingMetrics: SchedulingMetrics = {
     totalTasks: 0, completedTasks: 0, failedTasks: 0, avgWaitTime: 0,
     avgExecutionTime: 0, maxConcurrency: 0, resourceUtilization: 0,
   }
   private taskHistory: Array<{ taskId: string; command: string; duration: number; success: boolean; timestamp: number }> = []
-  private resourceBudget = 100
+  private resourceBudget: number = Number.POSITIVE_INFINITY
   private resourceUsed = 0
+
+  /**
+   * Opt-in throttling. Omitting both fields keeps every ready task running concurrently.
+   * Pass Infinity (or omit) to lift a previously configured bound again.
+   */
+  configure(options: { maxParallel?: number; resourceBudget?: number } = {}) {
+    if (options.maxParallel !== undefined)
+      this.maxParallel = Number.isFinite(options.maxParallel) ? Math.max(1, Math.floor(options.maxParallel)) : Number.POSITIVE_INFINITY
+    if (options.resourceBudget !== undefined)
+      this.resourceBudget = Number.isFinite(options.resourceBudget) ? Math.max(0, options.resourceBudget) : Number.POSITIVE_INFINITY
+    return { maxParallel: this.maxParallel, resourceBudget: this.resourceBudget }
+  }
 
   async spawnParallel(tasks: SubTask[]): Promise<Map<string, SubTask>> {
     this.validateDAG(tasks)
@@ -200,7 +214,9 @@ export class BackgroundLoop {
       const waitTime = Date.now() - task.startTime
       m.avgWaitTime = (m.avgWaitTime * (m.totalTasks - 1) + waitTime) / m.totalTasks
     }
-    m.resourceUtilization = this.resourceBudget > 0 ? this.resourceUsed / this.resourceBudget : 0
+    m.resourceUtilization = Number.isFinite(this.resourceBudget) && this.resourceBudget > 0
+      ? this.resourceUsed / this.resourceBudget
+      : 0
   }
 
   private recordTaskHistory(task: SubTask, success: boolean) {

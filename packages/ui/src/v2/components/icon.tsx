@@ -72,6 +72,26 @@ const icons = {
     viewBox: "0 0 16 16",
     body: `<path d="M4.05559 9.38889H0.500007C0.500007 9.38889 0.500017 8.59298 0.500017 7.61112V2.27778C0.500017 1.29594 0.500102 0.5 0.500102 0.5H13.3889C13.3889 0.5 13.3889 1.29594 13.3889 2.27778V7.61112C13.3889 8.59298 13.3889 9.38889 13.3889 9.38889H9.83336M4.05559 9.38889V11.6111H6.94448H9.83336V9.38889M4.05559 9.38889H9.83336" transform="translate(1.05556 1.94444)" stroke="currentColor"/>`,
   },
+  preview: {
+    viewBox: "0 0 16 16",
+    body: `<path d="M1.5 4.5C1.5 2.84315 2.84315 1.5 4.5 1.5H11.5C13.1569 1.5 14.5 2.84315 14.5 4.5V11.5C14.5 13.1569 13.1569 14.5 11.5 14.5H4.5C2.84315 14.5 1.5 13.1569 1.5 11.5V4.5Z" stroke="currentColor"/><path d="M6.5 6L10.5 8L6.5 10V6Z" fill="currentColor"/>`,
+  },
+  "window-attach": {
+    viewBox: "0 0 16 16",
+    body: `<path d="M1.5 2.5H9.5V8.5H1.5V2.5Z" stroke="currentColor"/><path d="M6.5 13.5H14.5V7.5H6.5V13.5Z" stroke="currentColor"/><path d="M4 6H7" stroke="currentColor" stroke-linecap="round"/>`,
+  },
+  refresh: {
+    viewBox: "0 0 16 16",
+    body: `<path d="M13.5 8C13.5 11.0376 11.0376 13.5 8 13.5C4.96243 13.5 2.5 11.0376 2.5 8C2.5 4.96243 4.96243 2.5 8 2.5" stroke="currentColor" stroke-linecap="round"/><path d="M8 2.5L6 0.5M8 2.5L10 0.5" stroke="currentColor" stroke-linecap="round"/><path d="M8 2.5V6" stroke="currentColor" stroke-linecap="round"/>`,
+  },
+  device: {
+    viewBox: "0 0 16 16",
+    body: `<rect x="3.5" y="1.5" width="9" height="13" rx="1.5" stroke="currentColor"/><path d="M6.5 12.5H9.5" stroke="currentColor" stroke-linecap="round"/>`,
+  },
+  screenshot: {
+    viewBox: "0 0 16 16",
+    body: `<path d="M2 4.5C2 3.11929 3.11929 2 4.5 2H11.5C12.8807 2 14 3.11929 14 4.5V11.5C14 12.8807 12.8807 14 11.5 14H4.5C3.11929 14 2 12.8807 2 11.5V4.5Z" stroke="currentColor"/><circle cx="8" cy="8" r="2.5" stroke="currentColor"/>`,
+  },
   "workspace-new": {
     viewBox: "0 0 16 16",
     body: `<path d="M2 10.7578V14.0011H5.24324M13.9991 5.24324V2H10.7559M13.9991 10.7578V14.0011H10.7559M2 5.24324V2H5.24324" stroke="currentColor" stroke-miterlimit="10" stroke-linecap="square"/><path d="M8 4.5V11.5M4.5 8H11.5" stroke="currentColor" stroke-linejoin="round"/>`,

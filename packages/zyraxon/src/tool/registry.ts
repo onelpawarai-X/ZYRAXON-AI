@@ -45,6 +45,32 @@ import { SiteDomainTool } from "./site_domain"
 import { SitePreviewTool } from "./site_preview"
 import { GithubConnectTool } from "./github_connect"
 import { ModeSwitchTool } from "./mode-switch"
+import {
+  SessionListTool,
+  SessionOpenTool,
+  SessionSendTool,
+  SessionSubagentTool,
+  SessionSwitchTool,
+  SessionRemoveTool,
+} from "./session-control"
+import { UIButtonTools, UIButtonsListTool, UIButtonToolIds } from "./ui-button"
+import {
+  PreviewAttachWindowTool,
+  PreviewClickTool,
+  PreviewDetachTool,
+  PreviewElementsTool,
+  PreviewFillFormTool,
+  PreviewFindTool,
+  PreviewKeyTool,
+  PreviewLaunchTool,
+  PreviewListWindowsTool,
+  PreviewOpenUrlTool,
+  PreviewReadTool,
+  PreviewScreenshotTool,
+  PreviewScrollTool,
+  PreviewTypeTool,
+  PreviewWaitTool,
+} from "./preview-control"
 import * as Truncate from "./truncate"
 import { ApplyPatchTool } from "./apply_patch"
 import { Glob } from "@zyraxon-ai/core/util/glob"
@@ -144,6 +170,30 @@ const layer = Layer.effect(
     const sitePreviewToolDef = yield* SitePreviewTool
     const githubConnectToolDef = yield* GithubConnectTool
     const modeSwitchToolDef = yield* ModeSwitchTool
+    const sessionListToolDef = yield* SessionListTool
+    const sessionOpenToolDef = yield* SessionOpenTool
+    const sessionSendToolDef = yield* SessionSendTool
+    const sessionSubagentToolDef = yield* SessionSubagentTool
+    const sessionSwitchToolDef = yield* SessionSwitchTool
+    const sessionRemoveToolDef = yield* SessionRemoveTool
+    const uiButtonsListToolDef = yield* UIButtonsListTool
+    const uiButtonToolDefs = yield* Effect.forEach(UIButtonTools, (toolDef) => toolDef)
+    const uiButtonToolIds = UIButtonToolIds
+    const previewListWindowsToolDef = yield* PreviewListWindowsTool
+    const previewAttachWindowToolDef = yield* PreviewAttachWindowTool
+    const previewDetachToolDef = yield* PreviewDetachTool
+    const previewLaunchToolDef = yield* PreviewLaunchTool
+    const previewOpenUrlToolDef = yield* PreviewOpenUrlTool
+    const previewScreenshotToolDef = yield* PreviewScreenshotTool
+    const previewClickToolDef = yield* PreviewClickTool
+    const previewTypeToolDef = yield* PreviewTypeTool
+    const previewFillFormToolDef = yield* PreviewFillFormTool
+    const previewKeyToolDef = yield* PreviewKeyTool
+    const previewScrollToolDef = yield* PreviewScrollTool
+    const previewReadToolDef = yield* PreviewReadTool
+    const previewElementsToolDef = yield* PreviewElementsTool
+    const previewFindToolDef = yield* PreviewFindTool
+    const previewWaitToolDef = yield* PreviewWaitTool
     const agent = yield* Agent.Service
     const codeMode = flags.experimentalCodeMode ? yield* Effect.promise(() => import("./code-mode")) : undefined
     const codeModeTool = codeMode ? yield* codeMode.CodeModeTool : undefined
@@ -370,6 +420,29 @@ const layer = Layer.effect(
           site_preview: Tool.init(sitePreviewToolDef),
           github_connect: Tool.init(githubConnectToolDef),
           x_mode_switch: Tool.init(modeSwitchToolDef),
+          x_session_list: Tool.init(sessionListToolDef),
+          x_session_open: Tool.init(sessionOpenToolDef),
+          x_session_send: Tool.init(sessionSendToolDef),
+          x_session_subagent: Tool.init(sessionSubagentToolDef),
+          x_session_switch: Tool.init(sessionSwitchToolDef),
+          x_session_remove: Tool.init(sessionRemoveToolDef),
+          x_ui_buttons_list: Tool.init(uiButtonsListToolDef),
+          ...Object.fromEntries(uiButtonToolDefs.map((def, i) => [uiButtonToolIds[i], Tool.init(def)])),
+          x_preview_list_windows: Tool.init(previewListWindowsToolDef),
+          x_preview_attach_window: Tool.init(previewAttachWindowToolDef),
+          x_preview_detach_window: Tool.init(previewDetachToolDef),
+          x_preview_launch_app: Tool.init(previewLaunchToolDef),
+          x_preview_open_url: Tool.init(previewOpenUrlToolDef),
+          x_preview_screenshot: Tool.init(previewScreenshotToolDef),
+          x_preview_click: Tool.init(previewClickToolDef),
+          x_preview_type: Tool.init(previewTypeToolDef),
+          x_preview_fill_form: Tool.init(previewFillFormToolDef),
+          x_preview_key: Tool.init(previewKeyToolDef),
+          x_preview_scroll: Tool.init(previewScrollToolDef),
+          x_preview_read_text: Tool.init(previewReadToolDef),
+          x_preview_elements: Tool.init(previewElementsToolDef),
+          x_preview_find: Tool.init(previewFindToolDef),
+          x_preview_wait: Tool.init(previewWaitToolDef),
           ...(codeModeTool ? { execute: Tool.init(codeModeTool) } : {}),
         })
 

@@ -8,7 +8,9 @@ import { spawn, execSync } from "node:child_process"
  * Algorithm: Error Pattern Classification + Bayesian Fix Ranking + Exponential Backoff + Command Dependency Analysis + Sequential Pattern Mining
  * Input: Commands, error strings, execution history
  * Output: Fix suggestions, auto-fix results, success probability estimates
- * Boundary: Timeout per command (30s default); max parallel 4; history capped at 1000
+ * Boundary: Timeout per command (30s default); UNLIMITED parallel commands; history capped at 1000
+ * Concurrency: runParallel launches every command in the same tick unless the caller opts into a bound
+ *   via configure({ maxParallel }). No default cap.
  * Verification: "TypeError: x.map is not a function" → suggests type guard fix with p=0.82
  */
 
@@ -103,8 +105,57 @@ export class TerminalAutonomy {
   private commandPatterns: Map<string, { count: number; successCount: number; avgDuration: number }> = new Map()
   private sequentialPatterns: Map<string, { nextCommands: Map<string, number>; total: number }> = new Map()
   private maxHistory = 1000
-  private maxParallel = 4
+  private maxParallel: number = Number.POSITIVE_INFINITY
   private defaultTimeout = 30000
+
+  /**
+   * Opt-in throttling for runParallel. Omitting maxParallel keeps every command running concurrently.
+   * Pass Infinity (or omit) to lift a previously configured bound again.
+   */
+  configure(options: { maxParallel?: number; defaultTimeout?: number } = {}) {
+    if (options.maxParallel !== undefined)
+      this.maxParallel = Number.isFinite(options.maxParallel) ? Math.max(1, Math.floor(options.maxParallel)) : Number.POSITIVE_INFINITY
+    if (options.defaultTimeout !== undefined) this.defaultTimeout = options.defaultTimeout
+    return { maxParallel: this.maxParallel, defaultTimeout: this.defaultTimeout }
+  }
+
+  /**
+   * Runs a batch of commands concurrently. All commands start immediately; the returned promise settles
+   * once every command in the batch has finished. Results keep input order, so callers can zip them
+   * against their inputs without a lookup by index.
+   */
+  async runParallel(
+    commands: string[],
+    options: { cwd?: string; timeout?: number } = {},
+  ): Promise<AutoTestResult[]> {
+    const settled = new Set<number>()
+    const results: AutoTestResult[] = new Array(commands.length)
+    const running = new Map<number, Promise<void>>()
+
+    const launch = (index: number) => {
+      settled.add(index)
+      running.set(
+        index,
+        this.autoTest(commands[index], options.cwd, options.timeout).then((result) => {
+          results[index] = result
+          running.delete(index)
+        }),
+      )
+    }
+
+    for (let index = 0; index < commands.length; index++) {
+      if (this.maxParallel === Number.POSITIVE_INFINITY || running.size < this.maxParallel) {
+        launch(index)
+        continue
+      }
+      await Promise.race(running.values())
+      launch(index)
+    }
+
+    while (running.size > 0) await Promise.race(running.values())
+
+    return results
+  }
 
   async autoTest(command: string, cwd?: string, timeout?: number): Promise<AutoTestResult> {
     const effectiveTimeout = timeout ?? this.defaultTimeout

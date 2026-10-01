@@ -38,7 +38,7 @@ import { KeybindV2 } from "@zyraxon-ai/ui/v2/keybind-v2"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
 import { reviewTooltipKeybind } from "../command-tooltip-keybind"
 import { useTitlebarRightMount } from "../titlebar"
-import { togglePreview, getPreviewActive } from "@/pages/session/preview-state"
+import { getPreviewActive } from "@/pages/session/preview-state"
 
 const OPEN_APPS = [
   "vscode",
@@ -250,6 +250,10 @@ export function SessionHeader() {
     reviewVisible: isDesktop(),
     reviewOpened: view().reviewPanel.opened(),
     onReviewToggle: () => view().reviewPanel.toggle(),
+    previewLabel: language.t("command.preview.toggle"),
+    previewVisible: isDesktop(),
+    previewOpened: getPreviewActive()(),
+    onPreviewToggle: () => view().previewPanel.toggle(),
   }))
 
   const selectApp = (app: OpenApp) => {
@@ -548,8 +552,11 @@ type SessionHeaderV2ActionsState = {
   reviewVisible: boolean
   reviewOpened: boolean
   onReviewToggle: () => void
+  previewLabel: string
+  previewVisible: boolean
+  previewOpened: boolean
+  onPreviewToggle: () => void
 }
-
 function SessionHeaderV2Actions(props: { state: SessionHeaderV2ActionsState }) {
   const language = useLanguage()
 
@@ -584,6 +591,26 @@ function SessionHeaderV2Actions(props: { state: SessionHeaderV2ActionsState }) {
             aria-expanded={props.state.reviewOpened}
             aria-controls="review-panel"
             icon={<IconV2 name="sidebar-right" />}
+          />
+        </TooltipV2>
+      </Show>
+      <Show when={props.state.previewVisible}>
+        <TooltipV2
+          class="shrink-0"
+          placement="bottom"
+          value={props.state.previewLabel}
+        >
+          <IconButtonV2
+            type="button"
+            variant="ghost-muted"
+            size="large"
+            class="!w-9 shrink-0"
+            state={props.state.previewOpened ? "pressed" : undefined}
+            onClick={props.state.onPreviewToggle}
+            aria-label={props.state.previewLabel}
+            aria-expanded={props.state.previewOpened}
+            aria-controls="preview-panel"
+            icon={<IconV2 name="preview" />}
           />
         </TooltipV2>
       </Show>

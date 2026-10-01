@@ -74,6 +74,18 @@ export type PreviewState = {
   timestamp: string
 }
 
+/**
+ * A window that can be mirrored into the in-app Preview panel. Produced by
+ * Electron's desktopCapturer, which enumerates windows identically on
+ * Windows, macOS and Linux.
+ */
+export type CaptureSource = {
+  id: string
+  name: string
+  appIcon: string | null
+  thumbnail: string | null
+}
+
 export type ElectronAPI = {
   killSidecar: () => Promise<void>
   installCli: () => Promise<string>
@@ -184,6 +196,8 @@ export type ElectronAPI = {
 
   getPreviewState: () => Promise<PreviewState>
   setPreviewState: (state: PreviewState) => Promise<void>
+  listPreviewSources: () => Promise<CaptureSource[]>
+  openPreviewTarget: (target: string) => Promise<boolean>
   onSitePreviewUpdate: (cb: (state: PreviewState) => void) => () => void
 
   // Model Download
@@ -226,6 +240,7 @@ export type ElectronAPI = {
     closeTab: (tabId: string) => Promise<{ success: boolean; error?: string }>
     fillForm: (selector: string, value: string) => Promise<{ success: boolean; error?: string }>
     getElement: (x: number, y: number) => Promise<{ success: boolean; element?: any; error?: string }>
+    listProfiles: () => Promise<{ success: boolean; profiles?: any[]; error?: string }>
     destroy: () => Promise<{ success: boolean; error?: string }>
   }
 }
