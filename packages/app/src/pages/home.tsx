@@ -600,25 +600,14 @@ export function NewHome() {
 function openMcpHub() {
     void import("../../../../MCP Hub/plugin").then((hub) => {
       const conn = focusedServer() ?? server.current
-      const directory = newSessionProject()?.worktree ?? ""
+      const sdk = conn ? global.ensureServerCtx(conn)?.sdk : undefined
+      if (!sdk) return
       const runtime = hub.bindRuntime({
-        mcpState: () =>
-          (sync().data as unknown as { mcp?: Record<string, { status: string }> }).mcp,
-        // The sync payload carries no flat `tool` map, so report the servers the
-        // agent can draw tools from rather than an empty list.
-        toolNames: () =>
-          Object.keys((sync().data.config as unknown as { mcp?: Record<string, unknown> }).mcp ?? {}),
-        toggle: (name: string) => Promise.resolve(sync().mcp.toggle(directory, name)),
+        // The Hub asks the server for status and tool ids rather than reading the
+        // sync snapshot: a card has to reflect the transport's live state, and the
+        // snapshot only refreshes on a poll we do not control from here.
+        client: sdk,
         updateConfig: (patch: Record<string, unknown>) => sync().updateConfig(patch),
-        startAuth: async (name: string) => {
-          if (!conn) return undefined
-          const sdk = global.ensureServerCtx(conn)?.sdk
-          const mcp = (sdk?.client as unknown as {
-            mcp?: { auth?: { start?: (n: string) => Promise<{ url?: string }> } }
-          })?.mcp
-          const result = await mcp?.auth?.start?.(name)
-          return result?.url
-        },
       })
       const hubApi = hub.createMcpHub(runtime)
       dialog.show(() => (

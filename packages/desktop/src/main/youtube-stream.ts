@@ -36,7 +36,89 @@ export type YouTubeStreamConfig = {
   audioMode?: AudioMode
 }
 
+/**
+ * Ready-made endpoints. YouTube and Facebook both speak plain RTMP, so supporting a
+ * platform is a matter of choosing its ingest host — the encoder path below does not
+ * change at all. Facebook uses :80 and a stream key from Live Producer; its in-app
+ * RTMP server is only reachable on a verified account, so if the connection fails the
+ * error says so instead of hanging.
+ */
+export const STREAM_ENDPOINTS = {
+  youtube: {
+    label: "YouTube",
+    url: "rtmp://a.rtmp.youtube.com/live2",
+    keyUrl: "https://www.youtube.com/livemac?macm=YOUR_STREAM_KEY",
+    help: "YouTube Studio > Create > Go live > Stream key.",
+  },
+  facebook: {
+    label: "Facebook",
+    url: "rtmp://rtmp.facebook.com:80/rtmp",
+    keyUrl: "https://live.facebook.com/rtmp",
+    help: "Facebook > Go Live > Live Producer > Stream Setup > Get Stream URL and key.",
+  },
+} as const
+
+export type StreamPlatform = keyof typeof STREAM_ENDPOINTS
+
 let _ffmpegPath: string | null = null
+
+/** Loopback/capture devices that carry the whole system's audio. */
+function isLoopbackDevice(device: string): boolean {
+  const d = device.toLowerCase()
+  return (
+    d.includes("virtual") || d.includes("cable") || d.includes("loopback") ||
+    d.includes("stereo mix") || d.includes("what u hear") || d.includes("blackhole")
+  )
+}
+
+/**
+ * A microphone a stream can actually record from. Loopback devices and the
+ * "Stereo Mix" style captures are excluded so they are not mistaken for a mic.
+ */
+function isUsableMicrophone(device: string): boolean {
+  const d = device.toLowerCase()
+  if (!d) return false
+  if (isLoopbackDevice(d)) return false
+  if (d.includes("virtual-audio-capturer")) return false
+  return true
+}
+
+/**
+ * Primary display index for avfoundation. Index 1 is the first screen on a Mac with
+ * more than one; index 0 is the capture probe and has no video.
+ */
+function macPrimaryDisplayIndex(): number {
+  return process.env.ZYRAXON_CAPTURE_DISPLAY ? Number(process.env.ZYRAXON_CAPTURE_DISPLAY) : 1
+}
+
+/** True when the user has already granted Screen Recording to this app. */
+async function macScreenRecordingGranted(): Promise<boolean> {
+  return new Promise((resolve) => {
+    // A short capture is the only reliable test; it either yields a frame or fails.
+    try {
+      const probe = execFileSync("ffmpeg", ["-hide_banner", "-f", "avfoundation", "-list_devices", "true", "-i", ""], {
+        timeout: 5000,
+        stdio: ["pipe", "pipe", "pipe"],
+      })
+      resolve(Buffer.from(probe).length > 0)
+    } catch {
+      // ffmpeg exits non-zero after printing the device list; that still means it ran.
+      resolve(true)
+    }
+  })
+}
+
+/** Physical size of the X11 screen, for x11grab's -video_size. */
+function linuxDisplaySize(): string | null {
+  try {
+    const out = execFileSync("xrandr", ["--current"], { timeout: 5000, encoding: "utf8" })
+    for (const line of out.split("\n")) {
+      const m = line.match(/connected.*?(\d{3,5})x(\d{3,5})/)
+      if (m) return `${m[1]}x${m[2]}`
+    }
+  } catch {}
+  return null
+}
 
 function logStreamDebug(message: string) {
   try {
@@ -63,8 +145,40 @@ function findFfmpeg(): string {
 }
 
 function probeAudioDevices(ffmpegPath: string): Promise<string[]> {
+  // Probing with dshow listed nothing off Windows, so the microphone list was empty
+  // everywhere else and every audio choice silently fell back to silence.
+  const platform = process.platform
+  if (platform === "darwin") {
+    return new Promise((resolve) => {
+      execFile(ffmpegPath, ["-hide_banner", "-f", "avfoundation", "-list_devices", "true", "-i", ""], { timeout: 10000 }, (_err, _stdout, stderr) => {
+        const output = stderr || ""
+        // avfoundation reports "No such device" on a non-zero exit but still lists them.
+        const names = new Set<string>()
+        const pattern = /\[\d+\]\s+(.+?)\s+\((?:audio|video)\)/g
+        let match
+        while ((match = pattern.exec(output)) !== null) names.add(match[1].trim())
+        resolve([...names])
+      })
+    })
+  }
+
+  if (platform === "linux") {
+    return new Promise((resolve) => {
+      execFile(ffmpegPath, ["-hide_banner", "-f", "pulse", "-list_devices", "true", "-i", "dummy"], { timeout: 10000 }, (_err, _stdout, stderr) => {
+        const output = stderr || ""
+        const devices: string[] = []
+        const pattern = /^device: ([^:]+):/gm
+        let match
+        while ((match = pattern.exec(output)) !== null) devices.push(match[1].trim())
+        // "default" always works on PulseAudio and is the safe answer when probing
+        // returned nothing useful.
+        resolve(devices.length > 0 ? devices : ["default"])
+      })
+    })
+  }
+
   return new Promise((resolve) => {
-    execFile(ffmpegPath, ["-list_devices", "true", "-f", "dshow", "-i", "dummy"], { timeout: 10000 }, (_err, _stdout, stderr) => {
+    execFile(ffmpegPath, ["-hide_banner", "-list_devices", "true", "-f", "dshow", "-i", "dummy"], { timeout: 10000 }, (_err, _stdout, stderr) => {
       const output = stderr || ""
       const devices: string[] = []
       const regex = /"([^"]+)" \(audio\)/g
@@ -91,7 +205,7 @@ function testRtmpConnectivity(rtmpUrl: string): Promise<{ ok: boolean; error?: s
       socket.on("connect", () => {
         clearTimeout(timer)
         socket.destroy()
-        console.log(`[YouTubeStream] RTMP connectivity OK: ${host}:${port}`)
+        console.log(`[Stream] RTMP connectivity OK: ${host}:${port}`)
         resolve({ ok: true })
       })
       socket.on("error", (err: any) => {
@@ -111,6 +225,9 @@ function testRtmpConnectivity(rtmpUrl: string): Promise<{ ok: boolean; error?: s
 }
 
 async function findExactWindowTitle(title: string): Promise<string | null> {
+  // This asked PowerShell, which does not exist off Windows, so "capture the app
+  // window" silently never found anything there.
+  if (process.platform !== "win32") return null
   return new Promise((resolve) => {
     execFile("powershell", [
       "-Command",
@@ -142,15 +259,9 @@ export class YouTubeStreamManager extends EventEmitter {
   async probeDevices(): Promise<{ systemAudioAvailable: boolean; devices: string[] }> {
     const ffmpegPath = findFfmpeg()
     this._probedDevices = await probeAudioDevices(ffmpegPath)
-    this._systemAudioAvailable = this._probedDevices.some((d) =>
-      d.toLowerCase().includes("virtual") ||
-      d.toLowerCase().includes("cable") ||
-      d.toLowerCase().includes("loopback") ||
-      d.toLowerCase().includes("stereo mix") ||
-      d.toLowerCase().includes("what u hear")
-    )
-    console.log("[YouTubeStream] Probed audio devices:", this._probedDevices)
-    console.log("[YouTubeStream] System audio available:", this._systemAudioAvailable)
+    this._systemAudioAvailable = this._probedDevices.some(isLoopbackDevice)
+    console.log("[Stream] Probed audio devices:", this._probedDevices)
+    console.log("[Stream] System audio available:", this._systemAudioAvailable)
     return { systemAudioAvailable: this._systemAudioAvailable, devices: this._probedDevices }
   }
 
@@ -211,39 +322,107 @@ export class YouTubeStreamManager extends EventEmitter {
       case "1440p": return "scale=2560:1440:flags=lanczos"
       case "1080p": return "scale=1920:1080:flags=lanczos"
       case "720p": return "scale=1280:720:flags=lanczos"
-      default: return "scale=3840:2160:flags=lanczos"
+      // Anything unrecognised follows the resolution the encoder is actually told to
+      // produce, instead of silently asking ffmpeg to upscale to 4K on a 1080p stream.
+      default: return "scale=1920:1080:flags=lanczos"
     }
   }
 
+  /**
+   * Screen capture for the platform we are actually running on.
+   *
+   * gdigrab and dshow exist only on Windows; avfoundation is macOS; x11grab needs
+   * X11. Using one of them everywhere is why streaming simply did not start on the
+   * other two platforms.
+   */
   private async buildVideoInput(): Promise<string[]> {
-    if (this.currentCaptureMode === "app") {
-      const exactTitle = await findExactWindowTitle("ZYRAXON")
-      if (exactTitle) {
-        logStreamDebug(`Found exact window title: "${exactTitle}"`)
-        console.log(`[YouTubeStream] Capturing window: "${exactTitle}"`)
-        return ["-f", "gdigrab", "-framerate", "60", "-i", `title=${exactTitle}`]
+    const platform = process.platform
+    const framerate = "30"
+
+    if (platform === "win32") {
+      if (this.currentCaptureMode === "app") {
+        const exactTitle = await findExactWindowTitle("ZYRAXON")
+        if (exactTitle) {
+          logStreamDebug(`Found exact window title: "${exactTitle}"`)
+          console.log(`[Stream] Capturing window: "${exactTitle}"`)
+          return ["-f", "gdigrab", "-framerate", framerate, "-i", `title=${exactTitle}`]
+        }
+        console.log("[Stream] App window not found, falling back to full desktop")
+        logStreamDebug("App window not found, falling back to full desktop")
       }
-      console.log("[YouTubeStream] App window not found, falling back to full desktop")
-      logStreamDebug("App window not found, falling back to full desktop")
+      return ["-f", "gdigrab", "-framerate", framerate, "-i", "desktop"]
     }
-    return ["-f", "gdigrab", "-framerate", "60", "-i", "desktop"]
+
+    if (platform === "darwin") {
+      // Screen capture needs an explicit permission grant on macOS; failing here with a
+      // clear message beats ffmpeg exiting on an opaque "no such device".
+      if (platform === "darwin" && !(await macScreenRecordingGranted())) {
+        throw new Error(
+          "macOS blocked screen recording. Grant ZYRAXON access in System Settings > Privacy & Security > Screen Recording, then start the stream again.",
+        )
+      }
+      // Index 1 is the first display on a two-screen Mac; 0 is the capture probe.
+      const display = macPrimaryDisplayIndex()
+      const args = ["-f", "avfoundation", "-capture_cursor", "1", "-framerate", framerate]
+      if (this.currentCaptureMode === "app") {
+        const title = await findExactWindowTitle("ZYRAXON")
+        if (title) return [...args, "-i", `${display}:none`]
+      }
+      return [...args, "-i", `${display}:none`]
+    }
+
+    // Linux: x11grab needs an explicit geometry and a display. Without DISPLAY there is
+    // nothing to capture, so say so rather than handing ffmpeg an empty input.
+    const display = process.env.DISPLAY ?? ":0"
+    if (process.platform === "linux" && !display) {
+      throw new Error("No DISPLAY is set, so there is no screen to capture. Streaming needs a graphical session.")
+    }
+    const size = linuxDisplaySize()
+    const args = ["-f", "x11grab", "-framerate", framerate]
+    if (size) args.push("-video_size", size)
+    return [...args, "-i", display]
   }
 
   private buildAudioInput(): string[] {
-    if (this.currentAudioMode === "microphone") {
-      return ["-f", "dshow", "-i", "audio=Microphone Array (Realtek Audio)"]
-    }
-    if (this.currentAudioMode === "system" && this._systemAudioAvailable) {
-      const systemDevice = this._probedDevices.find((d) =>
-        d.toLowerCase().includes("virtual") ||
-        d.toLowerCase().includes("cable") ||
-        d.toLowerCase().includes("stereo mix")
-      )
-      if (systemDevice) {
-        return ["-f", "dshow", "-i", `audio=${systemDevice}`]
+    const platform = process.platform
+    const silent: string[] = ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"]
+
+    if (platform === "win32") {
+      if (this.currentAudioMode === "microphone") {
+        // The device used to be a hardcoded "Microphone Array (Realtek Audio)", so on any
+        // other machine ffmpeg exited immediately and the stream never went live. Ask
+        // ffmpeg what is actually plugged in and take the first real capture device.
+        const device = this._probedDevices.find(isUsableMicrophone)
+        if (!device) {
+          console.log("[Stream] No microphone found, falling back to silent audio")
+          return silent
+        }
+        return ["-f", "dshow", "-i", `audio=${device}`]
       }
+      if (this.currentAudioMode === "system" && this._systemAudioAvailable) {
+        const systemDevice = this._probedDevices.find(isLoopbackDevice)
+        if (systemDevice) return ["-f", "dshow", "-i", `audio=${systemDevice}`]
+      }
+      return silent
     }
-    return ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"]
+
+    if (platform === "darwin") {
+      if (this.currentAudioMode === "none") return silent
+      // On macOS system audio needs a loopback device (BlackHole); without one, take the
+      // microphone so the stream still carries voice instead of dropping the audio track.
+      const loopback = this._probedDevices.find(isLoopbackDevice)
+      if (loopback) return ["-f", "avfoundation", "-i", loopback]
+      return ["-f", "avfoundation", "-i", ":0"]
+    }
+
+    // Linux: PulseAudio/PipeWire first, then ALSA as a fallback.
+    if (this.currentAudioMode === "none") return silent
+    if (this._systemAudioAvailable) {
+      return ["-f", "pulse", "-i", this._probedDevices.find(isLoopbackDevice) ?? "default"]
+    }
+    const mic = this._probedDevices.find(isUsableMicrophone)
+    if (mic) return ["-f", "alsa", "-i", mic]
+    return silent
   }
 
   async start(config: YouTubeStreamConfig): Promise<StreamState> {
@@ -271,18 +450,25 @@ export class YouTubeStreamManager extends EventEmitter {
       await this.probeDevices()
       if (!this._systemAudioAvailable) {
         this.currentAudioMode = "none"
-        console.log("[YouTubeStream] No system audio device found, falling back to silent")
+        console.log("[Stream] No system audio device found, falling back to silent")
       }
     }
 
     const rtmpUrl = this.getFullRtmpUrl()
 
-    console.log("[YouTubeStream] Checking RTMP connectivity...")
+    console.log("[Stream] Checking RTMP connectivity...")
     logStreamDebug(`Testing RTMP connectivity to: ${rtmpUrl}`)
     const connTest = await testRtmpConnectivity(rtmpUrl)
     logStreamDebug(`RTMP connectivity result: ok=${connTest.ok} error=${connTest.error || "none"}`)
     if (!connTest.ok) {
-      this.handleError(`RTMP connection failed: ${connTest.error}. Make sure your stream key is correct and your network allows RTMP (port 1935).`)
+      // Facebook only accepts RTMP on accounts with Live enabled, and its host refuses
+      // the connection outright otherwise. Say which case this is so the user knows
+      // whether to fix the key or enable Live.
+      const isFacebook = rtmpUrl.includes("facebook.com")
+      const hint = isFacebook
+        ? " Facebook's RTMP server is only reachable from an account with Live enabled — check that the stream key is current and that the page is set to Go Live."
+        : " Make sure the stream key is correct and your network allows RTMP."
+      this.handleError(`RTMP connection failed: ${connTest.error}.${hint}`)
       return this.getState()
     }
 
@@ -294,7 +480,9 @@ export class YouTubeStreamManager extends EventEmitter {
 
     const targetW = this.config.quality === "4k" ? 3840 : this.config.quality === "1440p" ? 2560 : this.config.quality === "1080p" ? 1920 : 1280
     const targetH = this.config.quality === "4k" ? 2160 : this.config.quality === "1440p" ? 1440 : this.config.quality === "1080p" ? 1080 : 720
-    const filterComplex = `[0:v]scale=${targetW}:${targetH}:flags=lanczos,format=yuv420p,fps=60[v];[1:a]aresample=44100[a]`
+    // Must match the framerate buildVideoInput() asks the capture device for, or ffmpeg
+    // duplicates or drops frames and the stream judders.
+    const filterComplex = `[0:v]scale=${targetW}:${targetH}:flags=lanczos,format=yuv420p,fps=30[v];[1:a]aresample=44100[a]`
 
     const ffmpegArgs = [
       ...videoInput,
@@ -303,19 +491,26 @@ export class YouTubeStreamManager extends EventEmitter {
       "-map", "[v]",
       "-map", "[a]",
       "-c:v", "libx264",
-      "-preset", "slow",
-      "-tune", "film",
+      // veryfast holds quality on a live stream while leaving headroom for the encode to
+      // keep up in real time. "slow" was starving the encoder on weaker machines and
+      // dropping frames, which is what made the picture look bad.
+      "-preset", "veryfast",
+      // zerolatency keeps the stream live; zerolatency-tune zerolatency tunes the whole
+      // pipeline for it rather than just flagging the encoder.
+      "-tune", "zerolatency",
       "-profile:v", "high",
       "-level", "4.2",
       "-pix_fmt", "yuv420p",
       "-b:v", bitrate,
       "-maxrate", maxBitrate,
       "-bufsize", "40000k",
-      "-g", "120",
+      // One keyframe every two seconds at 30fps. The old value was 120 frames, which at
+      // the old 60fps was four seconds and made viewers wait longer for the picture.
+      "-g", "60",
       "-keyint_min", "60",
       "-sc_threshold", "0",
-      "-bf", "2",
-      "-refs", "4",
+      // No B-frames under zerolatency: they have to be buffered before they can be sent.
+      "-bf", "0",
       "-c:a", "aac",
       "-b:a", "192k",
       "-ar", "44100",
@@ -325,8 +520,8 @@ export class YouTubeStreamManager extends EventEmitter {
       rtmpUrl,
     ]
 
-    console.log("[YouTubeStream] ffmpeg path:", ffmpegPath)
-    console.log("[YouTubeStream] ffmpeg args:", ffmpegArgs.join(" "))
+    console.log("[Stream] ffmpeg path:", ffmpegPath)
+    console.log("[Stream] ffmpeg args:", ffmpegArgs.join(" "))
     logStreamDebug(`START ffmpeg: ${ffmpegPath} ${ffmpegArgs.join(" ")}`)
     logStreamDebug(`RTMP URL: ${rtmpUrl}`)
 
@@ -339,20 +534,20 @@ export class YouTubeStreamManager extends EventEmitter {
       })
 
       this.process.on("error", (err) => {
-        console.error("[YouTubeStream] Process error:", err.message)
+        console.error("[Stream] Process error:", err.message)
         logStreamDebug(`PROCESS ERROR: ${err.message}`)
         this.handleError(`Failed to start ffmpeg: ${err.message}`)
       })
 
       this.process.on("exit", (code, signal) => {
-        console.log(`[YouTubeStream] ffmpeg exited: code=${code} signal=${signal}`)
+        console.log(`[Stream] ffmpeg exited: code=${code} signal=${signal}`)
         logStreamDebug(`EXIT code=${code} signal=${signal}`)
         logStreamDebug(`STDERR FULL:\n${stderrLog}`)
         if (this.status === "stopping") {
           this.setStatus("idle")
         } else if (code !== null && code !== 0) {
           const snippet = stderrLog.slice(-2000)
-          console.error("[YouTubeStream] ffmpeg stderr:", snippet)
+          console.error("[Stream] ffmpeg stderr:", snippet)
           const realError = snippet.includes("error") || snippet.includes("Error")
             ? snippet.split("\n").filter((l: string) => l.toLowerCase().includes("error") || l.includes("errno") || l.includes("code=")).join(" | ").slice(0, 500)
             : ""
@@ -375,7 +570,7 @@ export class YouTubeStreamManager extends EventEmitter {
           console.log("[ffmpeg]", output.trim().slice(0, 500))
         }
         if (output.includes("frame=") && this.status === "starting") {
-          console.log("[YouTubeStream] Stream encoding started successfully")
+          console.log("[Stream] Stream encoding started successfully")
           logStreamDebug("STREAM ENCODING STARTED - setting status to streaming")
           this.setStatus("streaming")
         }
@@ -397,7 +592,7 @@ export class YouTubeStreamManager extends EventEmitter {
       })
 
     } catch (err: any) {
-      console.error("[YouTubeStream] Spawn error:", err.message)
+      console.error("[Stream] Spawn error:", err.message)
       this.handleError(`Failed to spawn ffmpeg: ${err.message}`)
     }
 
@@ -457,7 +652,7 @@ export class YouTubeStreamManager extends EventEmitter {
   }
 
   private handleError(message: string) {
-    console.error("[YouTubeStream] Error:", message)
+    console.error("[Stream] Error:", message)
     this.error = message
     this.setStatus("error")
     this.stopViewerPolling()

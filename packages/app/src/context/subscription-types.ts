@@ -144,6 +144,29 @@ export const TOOL_TIER_MAP: Record<string, SubscriptionTier> = {
   x_task_scheduler_status: "free", x_task_start_scheduler: "free", x_task_toggle: "free", x_world_add_object: "free",
   task: "free", system_info: "free",
 
+  // MULTI-SESSION CONTROL — free trial
+  x_session_list: "free", x_session_open: "free", x_session_send: "free",
+  x_session_subagent: "free", x_session_switch: "free", x_session_remove: "free",
+
+  // UI BUTTON MONITORING — free trial
+  x_ui_buttons_list: "free",
+  x_ui_button_send: "free", x_ui_button_stop: "free", x_ui_button_new_session: "free",
+  x_ui_button_review: "free", x_ui_button_preview: "free", x_ui_button_sidebar: "free",
+  x_ui_button_mode: "free", x_ui_button_model: "free", x_ui_button_terminal: "free",
+  x_ui_button_attach: "free", x_ui_button_todo: "free", x_ui_button_settings: "free",
+  x_ui_button_plan_exit: "free",
+
+  // PREVIEW BOX CONTROL — free trial
+  x_preview_list_windows: "free", x_preview_attach_window: "free", x_preview_detach_window: "free",
+  x_preview_launch_app: "free", x_preview_open_url: "free", x_preview_screenshot: "free",
+  x_preview_click: "free", x_preview_type: "free", x_preview_fill_form: "free",
+  x_preview_key: "free", x_preview_scroll: "free", x_preview_read_text: "free",
+  x_preview_elements: "free", x_preview_find: "free", x_preview_wait: "free",
+
+  // IN-APP PREVIEW — free trial
+  site_preview: "free", site_create: "free", site_publish: "free",
+  site_unpublish: "free", site_domain: "free",
+
   // MCP TOOL FALLBACKS — always free (the 4 MCP servers' tools)
   mcp_websearch: "free",
   nuphus_screenshot: "free", nuphus_list_windows: "free", nuphus_focus_window: "free", nuphus_click: "free",
@@ -324,8 +347,10 @@ export const TOOL_TIER_MAP: Record<string, SubscriptionTier> = {
   x_water_get_quality: "max", x_water_set_flow: "max", x_water_set_ph: "max", x_weather_check_icing: "max",
   x_weather_check_turbulence: "max", x_weather_get_winds_aloft: "max", x_weather_parse_metar: "max", x_wind_get_vector: "max",
   x_wind_update_gps: "max", x_wind_update_imu: "max",
-  site_create: "max", site_publish: "max", site_unpublish: "max", site_domain: "max",
-  site_preview: "max", github_connect: "max", external_directory: "max",
+  github_connect: "max", external_directory: "max",
+
+  // REMOTE DESKTOP — pro
+  x_desktop_share: "pro", x_desktop_link: "pro", x_desktop_stop_share: "pro",
   x_cdp_connect: "max", x_cdp_disconnect: "max", x_comp_click_at: "max", x_comp_drag: "max",
   x_comp_key_press: "max", x_comp_list_windows: "max", x_comp_move_mouse: "max", x_comp_open_app: "max",
   x_comp_screenshot: "max", x_comp_scroll: "max", x_comp_type_text: "max",
