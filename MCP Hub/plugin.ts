@@ -9,6 +9,7 @@ import type { AppEntry } from "./catalog/seed"
 import { allSeedApps, categories, zeroSetupApps, tokenApps, localApps } from "./catalog/seed"
 import { connectApp, toServerConfig, countTools, describe, type McpRuntime, type ConnectionState } from "./lib/connect"
 import { McpClient } from "./lib/client"
+import { bindRuntime } from "./lib/runtime"
 import { fetchPage, walkRegistry, searchRegistry, supportsZeroSetup, type RegistryServer } from "./lib/registry"
 import { McpHubPanel } from "./ui/mcp-hub-panel"
 
@@ -74,5 +75,5 @@ export function createMcpHub(runtime: McpRuntime): McpHub {
 }
 
 export type { AppEntry, McpRuntime, ConnectionState, RegistryServer }
-export { McpHubPanel }
+export { McpHubPanel, bindRuntime }
 export default createMcpHub

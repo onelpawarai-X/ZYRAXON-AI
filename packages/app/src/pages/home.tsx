@@ -590,6 +590,36 @@ export function NewHome() {
     setSelection({ server: ServerConnection.key(conn), directory })
   }
 
+  /**
+   * Open the MCP Hub connect panel.
+   *
+   * The Hub lives in the "MCP Hub/" folder at the repository root and is loaded
+   * as a plugin. Everything it needs is passed in here, so the Hub itself does
+   * not reach into the app.
+   */
+  function openMcpHub() {
+    void import("../../../../MCP Hub/plugin").then((hub) => {
+      const runtime = hub.createMcpHub(
+        hub.bindRuntime({
+          mcpState: () => sync().data.mcp as Record<string, { status: string }> | undefined,
+          toolNames: () => {
+            const tools = (sync().data as { tool?: Record<string, unknown> }).tool ?? {}
+            return Object.keys(tools)
+          },
+          toggle: (name: string) => Promise.resolve(sync().mcp.toggle(name)),
+          updateConfig: (patch: Record<string, unknown>) => sync().updateConfig(patch),
+          startAuth: async (name: string) => {
+            const sdk = global.ensureServerCtx(focusedServer() ?? server.current)?.sdk
+            const mcp = (sdk?.client as { mcp?: { auth?: { start?: (n: string) => Promise<{ url?: string }> } } })?.mcp
+            const result = await mcp?.auth?.start?.(name)
+            return result?.url
+          },
+        }),
+      )
+      dialog.show(() => <hub.McpHubPanel runtime={runtime} onClose={() => dialog.close()} />)
+    })
+  }
+
   function openNewSession() {
     const conn = focusedServer()
     const project = newSessionProject()
@@ -775,7 +805,17 @@ export function NewHome() {
                 onSelect={selectSearchSession}
               />
               {/* Always show "New session" button — default project ensures it works */}
-              <div class="pointer-events-none absolute right-0 top-[84px] z-20 flex lg:top-[108px]">
+              <div class="pointer-events-none absolute right-0 top-[84px] z-20 flex gap-1 lg:top-[108px]">
+                  <ButtonV2
+                    data-action="home-mcp-connect"
+                    variant="ghost-muted"
+                    size="normal"
+                    icon="dot-grid"
+                    class="pointer-events-auto h-7 px-2 [font-weight:530]"
+                    onClick={openMcpHub}
+                  >
+                    MCP Connect
+                  </ButtonV2>
                   <ButtonV2
                     data-action="home-new-session"
                     variant="ghost-muted"
