@@ -6,8 +6,10 @@
 
 import type { AppEntry } from "../catalog/seed"
 import { McpClient } from "./client"
+import { resolveApp, type Resolution } from "./resolve"
 
-export { McpClient }
+export { McpClient, resolveApp }
+export type { Resolution }
 
 export type ConnectionState =
   | { status: "disconnected" }

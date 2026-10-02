@@ -6,10 +6,13 @@ import { For, Show, createMemo, createSignal, onMount } from "solid-js"
 import type { AppEntry } from "../catalog/seed"
 import { allSeedApps, categories } from "../catalog/seed"
 import { connectApp, describe, type ConnectionState, type McpRuntime } from "../lib/connect"
+import type { Resolution } from "../lib/resolve"
 import { searchRegistry, supportsZeroSetup, type RegistryServer } from "../lib/registry"
 
 export interface McpHubPanelProps {
   runtime: McpRuntime
+  /** resolve an app to a real server when the catalog has no endpoint for it */
+  resolve: (app: AppEntry) => Promise<Resolution>
   /** close the panel */
   onClose?: () => void
 }
@@ -33,6 +36,8 @@ export function McpHubPanel(props: McpHubPanelProps) {
   const [tokenValue, setTokenValue] = createSignal("")
   const [registryHits, setRegistryHits] = createSignal<RegistryServer[]>([])
   const [registryTerm, setRegistryTerm] = createSignal("")
+  /** which registry server each app resolved to */
+  const [resolved, setResolved] = createSignal<Record<string, string>>({})
 
   const filtered = createMemo(() =>
     apps.filter((a) => {
@@ -55,15 +60,48 @@ export function McpHubPanel(props: McpHubPanelProps) {
     }
   })
 
+  /**
+   * Connect an app.
+   *
+   * Apps with a first-party endpoint go straight to OAuth. Apps without one are
+   * resolved against the registry first, so an app like Facebook or Gmail still
+   * connects instead of showing a card that cannot work.
+   */
   const onConnect = async (app: AppEntry) => {
     if (busy()) return
-    if (app.kind === "token") {
-      setTokenFor(app)
-      return
-    }
     setBusy(app.id)
     setState(app.id, { status: "connecting" })
-    const result = await connectApp(props.runtime, app)
+
+    // 1. find the real endpoint when the catalog does not know one
+    let resolved = app
+    if (!app.url && app.kind !== "local") {
+      const hit = await props.resolve(app)
+      if (!hit.url) {
+        setState(app.id, {
+          status: "failed",
+          error: hit.reason ?? "no connectable server found",
+        })
+        setBusy(null)
+        return
+      }
+      resolved = { ...app, url: hit.url, zeroSetup: hit.server ? undefined : app.zeroSetup }
+      setResolved((prev) => ({ ...prev, [app.id]: hit.server?.name ?? hit.url! }))
+    }
+
+    // 2. a token app needs the token before anything else
+    if (app.kind === "token" && !app.url) {
+      setTokenFor(resolved)
+      setBusy(null)
+      return
+    }
+    if (app.kind === "token") {
+      setTokenFor(resolved)
+      setBusy(null)
+      return
+    }
+
+    // 3. OAuth apps
+    const result = await connectApp(props.runtime, resolved)
     setState(app.id, result)
     if (result.status === "needs_auth") window.open(result.authorizationUrl, "_blank", "noopener")
     setBusy(null)
@@ -185,6 +223,12 @@ export function McpHubPanel(props: McpHubPanelProps) {
                       <span class="rounded-full bg-emerald-500/15 px-2 py-0.5 text-emerald-300">No setup</span>
                     </Show>
                   </div>
+
+                  <Show when={resolved()[app.id]}>
+                    <span class="truncate text-[11px] text-[var(--text-weak,#8b95ad)]">
+                      via {resolved()[app.id]}
+                    </span>
+                  </Show>
 
                   <div class="mt-auto flex items-center justify-between gap-2">
                     <span class="truncate text-[12px] text-[var(--text-weak,#8b95ad)]">{describe(st())}</span>
