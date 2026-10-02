@@ -21,6 +21,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "package.json"],
+  "include": ["src", "package.json", "../../MCP Hub"],
   "exclude": ["dist", "ts-dist"]
 }

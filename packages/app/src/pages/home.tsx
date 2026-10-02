@@ -597,26 +597,33 @@ export function NewHome() {
    * as a plugin. Everything it needs is passed in here, so the Hub itself does
    * not reach into the app.
    */
-  function openMcpHub() {
+function openMcpHub() {
     void import("../../../../MCP Hub/plugin").then((hub) => {
-      const runtime = hub.createMcpHub(
-        hub.bindRuntime({
-          mcpState: () => sync().data.mcp as Record<string, { status: string }> | undefined,
-          toolNames: () => {
-            const tools = (sync().data as { tool?: Record<string, unknown> }).tool ?? {}
-            return Object.keys(tools)
-          },
-          toggle: (name: string) => Promise.resolve(sync().mcp.toggle(name)),
-          updateConfig: (patch: Record<string, unknown>) => sync().updateConfig(patch),
-          startAuth: async (name: string) => {
-            const sdk = global.ensureServerCtx(focusedServer() ?? server.current)?.sdk
-            const mcp = (sdk?.client as { mcp?: { auth?: { start?: (n: string) => Promise<{ url?: string }> } } })?.mcp
-            const result = await mcp?.auth?.start?.(name)
-            return result?.url
-          },
-        }),
-      )
-      dialog.show(() => <hub.McpHubPanel runtime={runtime} onClose={() => dialog.close()} />)
+      const conn = focusedServer() ?? server.current
+      const directory = newSessionProject()?.worktree ?? ""
+      const runtime = hub.bindRuntime({
+        mcpState: () =>
+          (sync().data as unknown as { mcp?: Record<string, { status: string }> }).mcp,
+        // The sync payload carries no flat `tool` map, so report the servers the
+        // agent can draw tools from rather than an empty list.
+        toolNames: () =>
+          Object.keys((sync().data.config as unknown as { mcp?: Record<string, unknown> }).mcp ?? {}),
+        toggle: (name: string) => Promise.resolve(sync().mcp.toggle(directory, name)),
+        updateConfig: (patch: Record<string, unknown>) => sync().updateConfig(patch),
+        startAuth: async (name: string) => {
+          if (!conn) return undefined
+          const sdk = global.ensureServerCtx(conn)?.sdk
+          const mcp = (sdk?.client as unknown as {
+            mcp?: { auth?: { start?: (n: string) => Promise<{ url?: string }> } }
+          })?.mcp
+          const result = await mcp?.auth?.start?.(name)
+          return result?.url
+        },
+      })
+      const hubApi = hub.createMcpHub(runtime)
+      dialog.show(() => (
+        <hub.McpHubPanel runtime={runtime} resolve={hubApi.resolve} onClose={() => dialog.close()} />
+      ))
     })
   }
 

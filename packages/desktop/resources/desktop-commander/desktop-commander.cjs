@@ -10,28 +10,36 @@ var fs = require('fs');
 var { spawn } = require('child_process');
 
 var _dir = path.dirname(__filename || __dirname);
-var distDir = path.join(_dir, 'dist');
-var indexJs = path.join(distDir, 'index.js');
+
+// The built entrypoint lives inside the vendored package, not at ./dist — ./dist is
+// gitignored, so a fresh checkout has no dist/ and this wrapper used to exit(1) on
+// every platform. Check the vendored copy first, then the standalone build.
+var CANDIDATE_ENTRIES = [
+  path.join(_dir, 'node_modules', '@wonderwhy-er', 'desktop-commander', 'dist', 'index.js'),
+  path.join(_dir, 'dist', 'index.js'),
+];
+var indexJs = CANDIDATE_ENTRIES.find(function (p) { return fs.existsSync(p); });
 
 // Find Node.js executable
 function findNode() {
-  var candidates = ['node'];
-  if (process.platform === 'win32') {
-    try {
-      var whereOut = require('child_process').execSync('where node', {
-        encoding: 'utf8',
-        timeout: 3000,
-        stdio: ['pipe', 'pipe', 'pipe']
-      }).trim().split('\n')[0].trim();
-      if (whereOut && fs.existsSync(whereOut)) return whereOut;
-    } catch (e) {}
-  }
+  // In a packaged app there is no system node on PATH. The MCP loader already
+  // resolved one and set ELECTRON_RUN_AS_NODE, so reuse it rather than re-probing.
+  if (process.env.ELECTRON_RUN_AS_NODE === '1' && process.execPath) return process.execPath;
+  var finder = process.platform === 'win32' ? 'where' : 'which';
+  try {
+    var out = require('child_process').execSync(finder + ' node', {
+      encoding: 'utf8',
+      timeout: 3000,
+      stdio: ['pipe', 'pipe', 'pipe']
+    }).trim().split('\n')[0].trim();
+    if (out && fs.existsSync(out)) return out;
+  } catch (e) {}
   return 'node';
 }
 
-// Check if dist/index.js exists
-if (!fs.existsSync(indexJs)) {
-  process.stderr.write('[desktop-commander] dist/index.js not found at: ' + indexJs + '\n');
+// Check that an entrypoint exists
+if (!indexJs) {
+  process.stderr.write('[desktop-commander] no entrypoint found. Looked in:\n  ' + CANDIDATE_ENTRIES.join('\n  ') + '\n');
   process.exit(1);
 }
 

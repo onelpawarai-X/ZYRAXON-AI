@@ -17,8 +17,27 @@ export interface AppEntry {
   scope?: string
   /** brand colour used by the UI */
   color: string
+  /** Simple Icons slug, used to render the app's real logo */
+  icon?: string
   /** true when the server registers clients dynamically, so nothing is asked of the user */
   zeroSetup?: boolean
+}
+
+/**
+ * Render an app's real brand mark. Simple Icons is used because it carries one
+ * consistent, recognisable glyph per product and degrades to the brand colour when
+ * the network is unavailable — the panel still reads correctly offline.
+ */
+export function appIcon(app: AppEntry, size = 20): string {
+  if (app.icon)
+    return `https://cdn.simpleicons.org/${encodeURIComponent(app.icon)}/${encodeURIComponent(app.color.replace("#", ""))}`
+  // Fall back to the brand colour as a lettered tile so a row never renders blank.
+  return `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24">` +
+      `<rect width="24" height="24" rx="6" fill="${app.color}"/>` +
+      `<text x="12" y="17" font-family="system-ui,sans-serif" font-size="13" font-weight="600" ` +
+      `text-anchor="middle" fill="#ffffff">${app.name.slice(0, 1).toUpperCase()}</text></svg>`,
+  )}`
 }
 
 /**

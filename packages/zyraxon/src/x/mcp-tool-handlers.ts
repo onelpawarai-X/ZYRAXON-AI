@@ -795,7 +795,8 @@ function resolveTouchpointEntry(): { cmd: string; args: string[] } | null {
     const cjs = path.join(dir, "touchpoint-mcp.cjs")
     if (fs.existsSync(cjs)) return { cmd: process.execPath, args: [cjs] }
     const py = path.join(dir, "run.py")
-    if (fs.existsSync(py)) return { cmd: "python", args: [py] }
+    // macOS and Linux ship `python3`; only Windows guarantees bare `python`.
+    if (fs.existsSync(py)) return { cmd: process.platform === "win32" ? "python" : "python3", args: [py] }
   }
   return null
 }

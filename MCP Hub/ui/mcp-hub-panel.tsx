@@ -4,7 +4,7 @@
 
 import { For, Show, createMemo, createSignal, onMount } from "solid-js"
 import type { AppEntry } from "../catalog/seed"
-import { allSeedApps, categories } from "../catalog/seed"
+import { allSeedApps, appIcon, categories } from "../catalog/seed"
 import { connectApp, describe, type ConnectionState, type McpRuntime } from "../lib/connect"
 import type { Resolution } from "../lib/resolve"
 import { searchRegistry, supportsZeroSetup, type RegistryServer } from "../lib/registry"
@@ -205,11 +205,15 @@ export function McpHubPanel(props: McpHubPanelProps) {
               return (
                 <div class="flex flex-col gap-3 rounded-xl border border-[var(--border-weak-base,#1e2740)] bg-white/[0.02] p-4">
                   <div class="flex items-start gap-3">
-                    <div
-                      class="flex size-10 shrink-0 items-center justify-center rounded-lg text-[16px] font-[700] text-white"
-                      style={{ background: app.color }}
-                    >
-                      {app.name.slice(0, 1)}
+                    <div class="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+                      <img
+                        src={appIcon(app)}
+                        width={40}
+                        height={40}
+                        alt=""
+                        class="size-10 object-contain"
+                        loading="lazy"
+                      />
                     </div>
                     <div class="flex min-w-0 flex-col">
                       <span class="truncate text-[14px] font-[600]">{app.name}</span>

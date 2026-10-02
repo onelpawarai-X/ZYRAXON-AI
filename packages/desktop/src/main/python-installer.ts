@@ -174,12 +174,18 @@ async function installPythonWindows(): Promise<PythonInfo> {
     console.log("[Python Installer] pip install failed (non-fatal):", e)
   }
 
-  // Install touchpoint dependencies
+  // Install touchpoint dependencies. pywin32 only exists on Windows, so asking for
+  // it on Linux/macOS failed the whole pip transaction and left touchpoint uninstalled
+  // on both platforms — which is why the touchpoint MCP dot was red everywhere but Windows.
   try {
     console.log("[Python Installer] Installing touchpoint dependencies...")
+    const packages =
+      process.platform === "win32"
+        ? ["touchpoint", "mcp", "pywin32", "Pillow"]
+        : ["touchpoint", "mcp", "Pillow"]
     await execFileAsync(pythonExe, [
       "-m", "pip", "install", "--no-warn-script-location",
-      "touchpoint", "mcp", "pywin32", "Pillow",
+      ...packages,
     ], { timeout: 120_000, cwd: PYTHON_DIR })
   } catch (e) {
     console.log("[Python Installer] Package install failed (non-fatal):", e)
@@ -236,6 +242,16 @@ async function installPythonLinux(): Promise<PythonInfo> {
   if (!existsSync(PYTHON_DIR)) {
     mkdirSync(PYTHON_DIR, { recursive: true })
   }
+
+  // Touchpoint's Linux backend talks AT-SPI over GObject introspection, so those two
+  // system packages are part of being able to run at all, not an optional extra.
+  try {
+    console.log("[Python Installer] Installing AT-SPI prerequisites via apt...")
+    await execFileAsync("sudo", [
+      "apt-get", "install", "-y", "-qq",
+      "python3-gi", "gir1.2-atspi-2.0", "at-spi2-core",
+    ], { timeout: INSTALL_TIMEOUT })
+  } catch {}
 
   // Try apt
   try {

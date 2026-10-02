@@ -11,7 +11,14 @@ from pathlib import Path
 
 _dir = Path(__file__).parent
 _libs = _dir / "libs"
-if _libs.is_dir():
+
+# The vendored libs/ tree is a `pip install --target` of win_amd64 wheels — every
+# compiled extension there is a .pyd. Prepending it on Linux or macOS shadowed the
+# working system packages and made `import pydantic_core` fail outright, so this
+# server could only ever start on Windows. Use the bundled wheels only where they
+# are actually loadable and let the platform's own installation answer elsewhere.
+_bundled_usable = sys.platform == "win32" and _libs.is_dir()
+if _bundled_usable:
     sys.path.insert(0, str(_libs))
     os.environ["PYTHONPATH"] = str(_libs) + os.pathsep + os.environ.get("PYTHONPATH", "")
 os.environ.setdefault("TOUCHPOINT_MODE", "no-vision")
