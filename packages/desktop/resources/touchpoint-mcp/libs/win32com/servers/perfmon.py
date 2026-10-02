@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
 """A COM Server which exposes the NT Performance monitor in a very rudimentary way

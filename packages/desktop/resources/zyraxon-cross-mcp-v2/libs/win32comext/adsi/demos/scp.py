@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
 """A re-implementation of the MS DirectoryService samples related to services.

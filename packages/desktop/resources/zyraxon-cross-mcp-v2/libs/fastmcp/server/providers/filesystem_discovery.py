@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
 """File discovery and module import utilities for filesystem-based routing.

@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
 # This is a sample configuration file for an ISAPI filter and extension

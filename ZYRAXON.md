@@ -63,7 +63,7 @@ ZYRAXON is not a chatbot. It's not an autocomplete. It's not a sidebar.
 | **805 Control Tools** | ✅ | ❌ | ⚠️ MCP only | ⚠️ MCP only | ⚠️ Few | ⚠️ MCP only |
 | **25+ AI Provider Routing** | ✅ Auto | ⚠️ Sub only | ⚠️ Sub only | ⚠️ Sub only | ⚠️ Internal | ⚠️ BYO key |
 | **Full Security Toolkit** | ✅ 20+ tools | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Free & Open Source** | ✅ ZSL-X | ❌ Paid | ❌ Paid | ❌ Paid | ❌ Paid | ❌ Paid |
+| **Free & Source-Available** | - ZSL-X | ❌ Paid | ❌ Paid | ❌ Paid | ❌ Paid | ❌ Paid |
 | **Works Offline, Fully Local** | ✅ | ⚠️ | ❌ | ⚠️ | ❌ Cloud-only | ⚠️ |
 
 ### Why ZYRAXON Wins — Detailed

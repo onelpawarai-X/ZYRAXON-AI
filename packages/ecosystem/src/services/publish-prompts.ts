@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 /**
@@ -80,7 +79,7 @@ export const PUBLISH_FIELD_DEFINITIONS = {
   },
   license: {
     label: "License",
-    options: ["MIT", "BSL-1.1", "Apache-2.0", "GPL-3.0", "BSD-3-Clause", "Unlicense", "None"],
+    options: ["MIT", "ZSL-X", "Apache-2.0", "GPL-3.0", "BSD-3-Clause", "Unlicense", "None"],
     default: "MIT",
   },
   platforms: {
@@ -146,7 +145,7 @@ When a user asks you to publish something to the ZYRAXON Ecosystem, you must gat
 3. **Category** (REQUIRED) — Which category? (ai-bots, plugins, website-templates, desktop-apps, mobile-apps, etc.)
 4. **Version** — What version? (default: 1.0.0)
 5. **Tags** — Keywords for search (comma separated)
-6. **License** — MIT, BSL-1.1, Apache-2.0, etc.
+6. **License** — MIT, ZSL-X, Apache-2.0, etc.
 7. **Platforms** — Windows, macOS, Linux, Android, iOS, Web
 8. **Cover Image** — Hero image URL or file
 9. **Screenshots** — Up to 5 screenshots

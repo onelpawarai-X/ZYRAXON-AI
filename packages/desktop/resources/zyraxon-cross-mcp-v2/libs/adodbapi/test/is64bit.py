@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
 """is64bit.Python() --> boolean value of detected Python word size. is64bit.os() --> os build version"""

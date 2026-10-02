@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 // ZYRAXON ETERNAL MEMORY v5 — Token-Based Compaction, 50,000 Year Preservation

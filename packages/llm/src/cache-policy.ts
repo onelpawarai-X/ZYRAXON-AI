@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 // Apply an `LLMRequest.cache` policy by injecting `CacheHint`s onto the parts

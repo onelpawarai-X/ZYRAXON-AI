@@ -3,7 +3,7 @@
   "name": "@zyraxon-ai/client",
   "private": true,
   "type": "module",
-  "license": "BSL-1.1",
+  "license": "SEE LICENSE IN LICENSE",
   "exports": {
     ".": "./src/index.ts",
     "./effect": "./src/effect.ts"

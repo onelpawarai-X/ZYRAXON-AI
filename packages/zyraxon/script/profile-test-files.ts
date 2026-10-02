@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 // Per-file profiler for finding candidate test-speed work; see ../../perf/test-suite.md

@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
 """Typed event vocabulary for `subscriptions/listen` (2026-07-28, SEP-2575), shared by server and client.

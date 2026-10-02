@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
 """Patch copilot/.esbuild.mts so test-only build targets don't fail when test

@@ -19,19 +19,32 @@ export interface AppEntry {
   color: string
   /** Simple Icons slug, used to render the app's real logo */
   icon?: string
+  /**
+   * The product's own web domain, used to fetch its real favicon.
+   * Simple Icons only covers a few thousand brands, so this is what guarantees a
+   * real mark for every app rather than a lettered tile.
+   */
+  iconDomain?: string
+  /**
+   * Who actually runs the server, when it is not the vendor itself.
+   * Shown on the card so nobody is surprised about connecting to a third party.
+   */
+  via?: string
   /** true when the server registers clients dynamically, so nothing is asked of the user */
   zeroSetup?: boolean
 }
 
 /**
- * Render an app's real brand mark. Simple Icons is used because it carries one
- * consistent, recognisable glyph per product and degrades to the brand colour when
- * the network is unavailable — the panel still reads correctly offline.
+ * Render an app's real brand mark.
+ *
+ * Simple Icons first, because it gives a clean monochrome glyph for the brands it
+ * covers. Then the product's own favicon, which is the only way to get a real
+ * mark for everything else — a lettered tile is a last resort, not the norm.
  */
 export function appIcon(app: AppEntry, size = 20): string {
   if (app.icon)
     return `https://cdn.simpleicons.org/${encodeURIComponent(app.icon)}/${encodeURIComponent(app.color.replace("#", ""))}`
-  // Fall back to the brand colour as a lettered tile so a row never renders blank.
+  if (app.iconDomain) return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(app.iconDomain)}&sz=64`
   return `data:image/svg+xml;utf8,${encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24">` +
       `<rect width="24" height="24" rx="6" fill="${app.color}"/>` +

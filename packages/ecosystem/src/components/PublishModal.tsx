@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import { type Component, createSignal, Show, For } from "solid-js"
@@ -314,7 +313,7 @@ export const PublishModal: Component<PublishModalProps> = (props) => {
                   <label class="block text-sm font-medium text-[#c9d1d9] mb-1.5">License</label>
                   <select value={license()} onChange={(e) => setLicense(e.currentTarget.value)} class="w-full px-3 py-2 bg-[#0d1117] border border-[#21262d] rounded-lg text-sm text-[#c9d1d9] focus:outline-none focus:border-[#58a6ff]">
                     <option value="MIT">MIT</option>
-                    <option value="BSL-1.1">BSL-1.1</option>
+                    <option value="ZSL-X">ZSL-X</option>
                     <option value="Apache-2.0">Apache-2.0</option>
                     <option value="GPL-3.0">GPL-3.0</option>
                     <option value="BSD-3-Clause">BSD-3-Clause</option>

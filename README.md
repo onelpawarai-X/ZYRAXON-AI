@@ -402,7 +402,7 @@ Mic → Chrome → SpeechRecognition → AI → Edge TTS → You hear it.
 | Voice Communication | ✅ | ❌ | ❌ | ❌ | ❌ |
 | 805 Tools Built-in | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
 | 25+ AI Providers | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
-| Free & Open Source | ✅ | ❌ | ❌ | ❌ | ✅ |
+| Free & Source-Available | - | ❌ | ❌ | ❌ | ✅ |
 
 > Cursor is a sports car. Devin is an airline. ZYRAXON is a transformer — a complete autonomous AI workforce in one app.
 

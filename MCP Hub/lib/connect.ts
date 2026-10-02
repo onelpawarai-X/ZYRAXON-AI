@@ -77,17 +77,23 @@ const POLL_MS = 400
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
 /**
- * Watch one server until it says something final.
+ * Watch one server until it reaches a state worth acting on.
  *
  * A connect attempt is asynchronous: the runtime opens the transport, negotiates
  * a session, and only then reports connected, needs_auth or failed. Reading the
  * status on the very next tick sees nothing useful, which is what used to leave
  * every card on "Connecting…" forever with no sign-in ever offered.
+ *
+ * `until` exists because "settled" means different things at different moments.
+ * Before sign-in, needs_auth is the interesting answer and waiting past it is
+ * wrong. After sign-in starts it is the answer we already have, so the only
+ * useful thing left to wait for is a state that is no longer needs_auth.
  */
 export async function waitForStatus(
   runtime: McpRuntime,
   name: string,
   timeoutMs = CONNECT_TIMEOUT_MS,
+  until: (status: McpStatusEntry["status"]) => boolean = (status) => SETTLED.has(status),
 ): Promise<McpStatusEntry> {
   const deadline = Date.now() + timeoutMs
   let last: McpStatusEntry = { status: "disabled" }
@@ -96,7 +102,7 @@ export async function waitForStatus(
       const entry = (await runtime.statuses())[name]
       if (entry) {
         last = entry
-        if (SETTLED.has(entry.status)) return entry
+        if (until(entry.status)) return entry
       }
     } catch {
       /* the server may be restarting; keep watching */
@@ -105,6 +111,9 @@ export async function waitForStatus(
   }
   return last
 }
+
+/** The answer after sign-in: live, or a refusal. Nothing else counts. */
+const afterAuth = (status: McpStatusEntry["status"]) => status === "connected" || status === "failed"
 
 export interface ConnectOptions {
   /** bearer token, for apps that do not speak OAuth */
@@ -139,10 +148,14 @@ export async function connectApp(runtime: McpRuntime, app: AppEntry, options: Co
     if (first.status === "connected" || first.status === "failed") return settle(runtime, app.id, first)
 
     onProgress?.({ status: "needs_auth" })
-    // authenticate blocks on the consent page, so watch status instead of the
-    // request and let either one win. Status is the source of truth.
+    // authenticate opens the consent page and blocks until the user answers it,
+    // so it is never awaited directly. The status is the answer, but it must be
+    // a *new* answer: needs_auth is what the server said before the browser even
+    // opened, so waiting for "anything settled" here returned instantly and
+    // reported "sign-in was never completed" while Chrome was sitting on
+    // "Authorization successful".
     const [settled] = await Promise.all([
-      waitForStatus(runtime, app.id, AUTH_TIMEOUT_MS),
+      waitForStatus(runtime, app.id, AUTH_TIMEOUT_MS, afterAuth),
       runtime.authenticate(app.id).catch(() => undefined),
     ])
     return settle(runtime, app.id, settled)

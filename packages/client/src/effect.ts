@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 // TODO: Keep additional network capabilities inside Schema and Protocol as the client grows; /effect must never import

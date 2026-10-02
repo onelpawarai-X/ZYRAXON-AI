@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import { marked, type Tokens } from "marked"
@@ -53,7 +52,14 @@ function heal(text: string) {
 }
 
 export function stream(text: string, live: boolean): Block[] {
-  if (!live) return [{ raw: text, src: text, mode: "full" }] satisfies Block[]
+  // A finished answer is healed for the same reason a streaming one is. When a
+  // run is cut off mid-table, mid-fence or mid-bold the raw text ends inside an
+  // unterminated construct, and marked then renders those pipes and asterisks
+  // literally. Healing closes whatever is still open, so a truncated answer
+  // still reads as the table or code block it was instead of collapsing into
+  // plain text the moment it stops being live. On well-formed text heal is a
+  // no-op, so this costs nothing.
+  if (!live) return [{ raw: text, src: heal(text), mode: "full" }] satisfies Block[]
   if (refs(text)) return [{ raw: text, src: heal(text), mode: "live" }] satisfies Block[]
   const tokens = marked.lexer(text)
   const tail = tokens.findLastIndex((token) => token.type !== "space")

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import type { Agent, Project, ProviderListResponse } from "@zyraxon-ai/sdk/v2/client"

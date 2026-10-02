@@ -3,7 +3,7 @@
   "name": "@zyraxon-ai/schema",
   "private": true,
   "type": "module",
-  "license": "BSL-1.1",
+  "license": "SEE LICENSE IN LICENSE",
   "exports": {
     ".": "./src/index.ts",
     "./*": "./src/*.ts"

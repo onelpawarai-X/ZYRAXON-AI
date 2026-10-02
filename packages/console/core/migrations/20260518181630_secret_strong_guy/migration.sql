@@ -1,4 +1,3 @@
--- SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 -- Copyright (c) 2026 onelpawarai. All rights reserved.
 
 DROP INDEX `workspace_referral_code` ON `workspace`;--> statement-breakpoint

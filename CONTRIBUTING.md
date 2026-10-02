@@ -202,16 +202,19 @@ packages/zyraxon/test/your_tool.test.ts
 
 ## 7. Licence headers
 
-Every new source file carries this notice. The year is maintained automatically
-each 1 January, so you never need to update it by hand.
+New source files do not carry a per-file licence identifier. ZSL-X is ZYRAXON's own
+licence and is not published to any registry, so an SPDX identifier would assert a
+standardisation it has not been through. The licence and the required attribution
+live in `LICENSE` at the repository root, which is what Section 6 asks for.
+
+If you want a short provenance note at the top of a file, use:
 
 ```ts
-// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 ```
 
-For other languages, use that language's comment syntax and keep the same two
-lines. `scripts/copyright-header.ts` applies the correct form for each file type:
+For other languages, use that language's comment syntax and keep the same line.
+`scripts/copyright-header.ts` applies the correct form for each file type:
 
 ```bash
 bun run scripts/copyright-header.ts           # apply to everything that can carry it

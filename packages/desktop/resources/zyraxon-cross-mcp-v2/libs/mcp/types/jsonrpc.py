@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
 """The JSON-RPC 2.0 message and error types, as the `mcp.types.jsonrpc` namespace.
