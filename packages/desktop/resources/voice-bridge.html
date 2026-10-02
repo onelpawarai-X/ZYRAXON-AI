@@ -136,7 +136,10 @@ var recordStartTime = 0;
 var micStream = null, analyser = null, animFrame = null;
 var pollTimer = null;
 var fastPollUntil = 0;
-var silenceTimer = null;
+// Speech is ready before the mic is ever clicked: the first start() pays for a
+// network handshake with the speech service, and paying it lazily is what made
+// dictation take five seconds or more to pick up a voice.
+var warmed = false;
 
 function $(id) { return document.getElementById(id); }
 
@@ -152,14 +155,34 @@ function applyRecLang() {
   if (rec) rec.lang = activeLang();
 }
 
-function resetSilenceTimer() {
-  if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
-  if (!isRecording) return;
-  silenceTimer = setTimeout(function() {
+// Chrome ends a recognition session on its own, and with nothing to re-arm it
+// dictation simply dies partway through a long answer. So a session that ends
+// gets picked back up — quietly, on a delay that grows with each failure, and
+// capped so a broken speech service cannot spin. Nothing here is driven by the
+// user pausing, and nothing ever calls stop() on a timer: a 5.5s silence timer
+// used to do exactly that, tearing the recogniser down mid-thought every time
+// someone paused to think.
+var rearmAttempts = 0;
+var rearmTimer = null;
+var REARM_DELAYS = [200, 600, 1500, 3000];
+
+function clearRearm() {
+  if (rearmTimer) { clearTimeout(rearmTimer); rearmTimer = null; }
+}
+
+function rearm() {
+  clearRearm();
+  if (!isRecording || !rec) return;
+  if (rearmAttempts >= REARM_DELAYS.length) {
+    $("statusMsg").textContent = "Speech service stopped responding. Click the mic to resume.";
+    return;
+  }
+  rearmTimer = setTimeout(function() {
+    rearmTimer = null;
     if (!isRecording || !rec) return;
-    // 5.5s silence — restart recognizer once to clear lag/hang; onend auto-restarts while recording
-    try { rec.stop(); } catch (e) {}
-  }, 5500);
+    try { rec.start(); } catch (e) { rearm(); }
+  }, REARM_DELAYS[rearmAttempts]);
+  rearmAttempts++;
 }
 
 function pickLang(c) {
@@ -172,9 +195,10 @@ function pickLang(c) {
   if (isRecording) {
     applyRecLang();
     if (rec) {
+      // A language change has to restart the session, because the recogniser
+      // latches its language at start. That is a deliberate switch, not the
+      // silence-driven restart that used to fire every 5.5 seconds.
       try { rec.stop(); } catch (e) {}
-      // onend restarts with new lang while still recording
-      resetSilenceTimer();
     }
   }
 }
@@ -220,7 +244,11 @@ window._onMainMessage = function(d) { onMessage(d); };
 
 function scheduleNextPoll() {
   if (pollTimer) clearTimeout(pollTimer);
-  var interval = Date.now() < fastPollUntil ? 15 : 50;
+  // This loop used to run at 15-50ms for the whole life of the app, which is
+  // 20-66 requests a second at the main process forever. Nothing arrives while
+  // the mic is idle, so idle can afford to be slow; only listening needs to be
+  // quick enough to feel immediate.
+  var interval = isRecording ? (Date.now() < fastPollUntil ? 25 : 60) : 400;
   pollTimer = setTimeout(pollServer, interval);
 }
 
@@ -243,6 +271,32 @@ function connect() {
   send({ type: "ready" });
   fastPollUntil = Date.now() + 2000;
   pollServer();
+  warmSpeech();
+}
+
+/**
+ * Pay the speech service handshake before anyone clicks the mic.
+ *
+ * Chrome's recogniser opens a network connection on its first start(), and doing
+ * that lazily is what made dictation take several seconds to begin picking up a
+ * voice. A short throwaway session here moves that cost to app start, where it is
+ * invisible, and every result is discarded.
+ */
+function warmSpeech() {
+  if (warmed) return;
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  warmed = true;
+  var warm = new SR();
+  warm.continuous = false;
+  warm.interimResults = false;
+  warm.lang = activeLang();
+  warm.onresult = function() {};
+  try {
+    warm.start();
+    // Chrome always ends a one-shot session, so stop() is only ever a cleanup.
+    setTimeout(function() { try { warm.stop(); } catch (e) {} }, 400);
+  } catch (e) {}
 }
 
 function startMicMeter() {
@@ -298,7 +352,6 @@ function startRecording() {
   updateTimer();
   startMicMeter();
   startSpeechRecognition();
-  resetSilenceTimer();
   send({ type: "mic-state", active: true });
 }
 
@@ -307,7 +360,7 @@ function stopRecording() {
   isRecording = false;
 
   clearInterval(timerInterval);
-  if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+  clearRearm();
   $("timer").textContent = "";
   $("statusMsg").textContent = "";
 
@@ -346,9 +399,10 @@ function startSpeechRecognition() {
   if (!rec) { rec = new SR(); rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1; }
   applyRecLang();
 
-  rec.onstart = function() { resetSilenceTimer(); };
+  rec.onstart = function() { clearRearm(); };
   rec.onresult = function(ev) {
-    resetSilenceTimer();
+    // Results arriving means the session is healthy, so reset the backoff.
+    rearmAttempts = 0;
     interimText = "";
     for (var i = ev.resultIndex; i < ev.results.length; i++) {
       var t = ev.results[i][0].transcript;
@@ -369,15 +423,18 @@ function startSpeechRecognition() {
     }
   };
   rec.onerror = function(e) {
-    if (e.error === "no-speech" || e.error === "aborted" || e.error === "network") {
-      if (isRecording) { try { rec.start(); } catch(ex) {} resetSilenceTimer(); }
+    // A denied microphone is not transient. Retrying it forever is what made the
+    // mic look like it kept restarting itself.
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+      isRecording = false;
+      clearRearm();
+      $("statusMsg").textContent = "Microphone access was blocked. Allow it in Chrome and try again.";
+      return;
     }
+    rearm();
   };
-  rec.onend = function() {
-    if (isRecording) { try { rec.start(); } catch(ex) {} resetSilenceTimer(); }
-  };
-  try { rec.start(); } catch(e) {}
-  resetSilenceTimer();
+  rec.onend = function() { rearm(); };
+  try { rec.start(); } catch(e) { rearm(); }
 }
 
 function stopSpeechRecognition() {

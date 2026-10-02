@@ -53,7 +53,10 @@ export function toServerConfig(app: AppEntry, token?: string): Record<string, un
     // local servers are declared by ZYRAXON's own default config; nothing to add
     return {}
   }
-  const config: Record<string, unknown> = { type: "remote", url: app.url, enabled: true }
+  // The 5s default is a per-request budget, and a first connect has to negotiate
+  // a session and list every tool before it can report anything. Give hosted
+  // servers room, or a slow one just times out and looks like a hang.
+  const config: Record<string, unknown> = { type: "remote", url: app.url, enabled: true, timeout: 30_000 }
   if (token) {
     config.headers = { Authorization: `Bearer ${token}` }
   } else if (app.kind === "oauth") {

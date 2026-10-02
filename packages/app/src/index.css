@@ -6,6 +6,12 @@
 @import "@zyraxon-ai/ui/v2/styles/tailwind.css";
 @import "tw-animate-css";
 
+/* The MCP Hub lives at the repository root, outside packages/, so the default
+   source("../../../../") in ui/styles/tailwind never sees it. Without this its
+   arbitrary-value classes are silently dropped: no panel backdrop, no card
+   borders, no header sizing. */
+@source "../../../MCP Hub";
+
 @font-face {
   font-family: "JetBrainsMono Nerd Font Mono";
   src: url("/assets/JetBrainsMonoNerdFontMono-Regular.woff2") format("woff2");

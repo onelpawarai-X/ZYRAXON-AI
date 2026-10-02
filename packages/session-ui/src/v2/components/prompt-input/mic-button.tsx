@@ -73,7 +73,6 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
   const [state, setState] = createSignal<VoiceState>("idle")
   const [selectedLang, setSelectedLang] = createSignal(props.language || "auto")
   let finalText = ""
-  let receivedAnySpeech = false
   let removeVoiceListener: (() => void) | null = null
   let safetyTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -128,7 +127,6 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
   const registerVoiceListener = () => {
     cleanupListener()
     transcriptDelivered = false
-    receivedAnySpeech = false
     const api = (window as any).api
     if (!api?.onVoiceEvent) return
 
@@ -139,7 +137,6 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
       if (event.type === "voice-transcript") {
         const t = (event.fullText || event.text || "").trim()
         if (t) {
-          receivedAnySpeech = true
           finalText = t
           clearSafetyTimeout()
           // Stream interim text into the chat box as the user speaks — no waiting for stop
@@ -224,20 +221,21 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
         props.onError?.("Voice bridge module not ready. Please restart the app.")
         setState("idle")
         cleanupListener()
+        return
       }
     } catch {
       props.onError?.("Failed to start voice bridge.")
       setState("idle")
       cleanupListener()
+      return
     }
 
-    safetyTimeout = setTimeout(() => {
-      if (state() === "recording" && !receivedAnySpeech) {
-        setState("idle")
-        cleanupListener()
-        props.onError?.("Voice bridge timeout. Make sure ZYRAXON Voice window is open.")
-      }
-    }, 8000)
+    // The bridge confirmed the session, so the mic is live. Silence here just
+    // means the user has not spoken yet, which is not a failure: this used to
+    // throw "Voice bridge timeout" after 8 seconds and throw away a recording
+    // that was working exactly as intended. If the bridge really is unreachable
+    // it reports that itself, and the user can stop with the same button.
+    setState("recording")
   }
 
   const stopListening = async () => {

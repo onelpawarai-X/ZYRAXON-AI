@@ -25,6 +25,9 @@ const MAX_BUFFER_SIZE = 100
 // While TTS is playing, the mic hears the assistant voice back. Every transcript
 // from the bridge is echo, not user speech, so it must never reach the chat.
 let ttsSpeaking = false
+// Dictation in progress when the assistant started talking, so it can be picked
+// back up the moment the reply ends.
+let resumeAfterTTS = false
 
 export function getAccumulatedTranscript(): string {
   return accumulatedTranscript
@@ -38,7 +41,21 @@ export function clearAccumulatedTranscript(): void {
 export function setVoiceTTSActive(active: boolean) {
   if (ttsSpeaking === active) return
   ttsSpeaking = active
-  if (!active) return
+  if (!active) {
+    // The bridge stops recording while the assistant talks so its voice is never
+    // transcribed. It has to pick the mic back up afterwards, otherwise the first
+    // reply silently kills dictation and the user has to click again.
+    if (resumeAfterTTS) {
+      resumeAfterTTS = false
+      clearAccumulatedTranscript()
+      pendingListening = true
+      pendingCommands.push({ type: "clear-transcript" })
+      pendingCommands.push({ type: "start-listening" })
+      broadcastState()
+    }
+    return
+  }
+  resumeAfterTTS = pendingListening
   clearAccumulatedTranscript()
   pendingListening = false
   pendingCommands.push({ type: "tts-speaking", active: true })

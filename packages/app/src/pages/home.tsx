@@ -600,13 +600,14 @@ export function NewHome() {
 function openMcpHub() {
     void import("../../../../MCP Hub/plugin").then((hub) => {
       const conn = focusedServer() ?? server.current
-      const sdk = conn ? global.ensureServerCtx(conn)?.sdk : undefined
-      if (!sdk) return
+      // MCP config is per project, so the Hub needs a directory-scoped client,
+      // the same one server-sync uses. ensureServerCtx(...).sdk is the ServerSDK
+      // context, not a client, so it must be asked for one.
+      const directory = newSessionProject()?.worktree ?? ""
+      const serverSDK = conn ? global.ensureServerCtx(conn)?.sdk : undefined
+      if (!serverSDK || !directory) return
       const runtime = hub.bindRuntime({
-        // The Hub asks the server for status and tool ids rather than reading the
-        // sync snapshot: a card has to reflect the transport's live state, and the
-        // snapshot only refreshes on a poll we do not control from here.
-        client: sdk,
+        client: serverSDK.createClient({ directory, throwOnError: true }),
         updateConfig: (patch: Record<string, unknown>) => sync().updateConfig(patch),
       })
       const hubApi = hub.createMcpHub(runtime)
