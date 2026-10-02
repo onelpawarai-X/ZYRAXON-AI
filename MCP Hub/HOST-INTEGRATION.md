@@ -1,11 +1,16 @@
-# MCP Hub — হোস্টে যুক্ত করার নির্দেশ
+# Host integration
 
-এই ফোল্ডারের বাইরে **একটাই ফাইল** ছুঁতে হবে, আর সেখানে **একটাই লাইন**।
-তার বেশি কিছু না।
+Everything is in `MCP Hub/`. The host change is one button and one function.
 
-## পদ্ধতি ১ (প্রস্তাবিত) — কনফিগ দিয়ে, সোর্স ছোঁয়া ছাড়াই
+## Route 1 — config only, no source change
 
-`~/.config/zyraxon/zyraxon.jsonc` এ যোগ করুন:
+`install.mjs` writes the plugin entry into the user's own config:
+
+```bash
+node "MCP Hub/install.mjs"
+```
+
+It appends this to `~/.config/zyraxon/zyraxon.jsonc`:
 
 ```jsonc
 {
@@ -13,48 +18,74 @@
 }
 ```
 
-এতে কোনো সোর্স ফাইল বদলাতে হয় না। ZYRAXON নিজেই প্লাগিনটা লোড করবে,
-আর হোম পেজের টুলবারে **MCP Connect** বাটন বসবে।
+Restart ZYRAXON and the MCP Connect button appears on the home page. No file in
+the repository is modified.
 
-## পদ্ধতি ২ — হোস্ট কোডে এক লাইন
+## Route 2 — the button in the app source
 
-যদি প্লাগিন সিস্টেম দিয়ে বাটন না বসে, তাহলে হোস্ট অ্যাপে
-(`packages/app`) শুধু এই এক লাইন:
-
-```ts
-import { createMcpHub } from "../../MCP Hub/plugin"
-```
-
-তারপর যেখানে টুলবারের বাটনগুলো আছে, সেখানে:
+The button itself lives in `packages/app/src/pages/home.tsx`, next to
+*New session*:
 
 ```tsx
-const hub = createMcpHub(mcpRuntime)   // mcpRuntime = ZYRAXON-এর MCP সার্ভিস
+<ButtonV2
+  data-action="home-mcp-connect"
+  variant="ghost-muted"
+  size="normal"
+  icon="dot-grid"
+  class="pointer-events-auto h-7 px-2 [font-weight:530]"
+  onClick={openMcpHub}
+>
+  MCP Connect
+</ButtonV2>
 ```
 
-এবং বাটনের ক্লিকে `hub.Panel({ runtime: mcpRuntime, onClose })` রেন্ডার।
+and `openMcpHub()` imports the Hub and hands it the runtime bindings:
 
-**এই এক লাইন ছাড়া হোস্টে আর কিছু বদলাতে হবে না।**
+```tsx
+function openMcpHub() {
+  void import("../../../../MCP Hub/plugin").then((hub) => {
+    const runtime = hub.createMcpHub(
+      hub.bindRuntime({
+        mcpState: () => sync().data.mcp,
+        toolNames: () => Object.keys(sync().data.tool ?? {}),
+        toggle: (name) => Promise.resolve(sync().mcp.toggle(name)),
+        updateConfig: (patch) => sync().updateConfig(patch),
+        startAuth: async (name) => (await sdk.client.mcp.auth.start(name))?.url,
+      }),
+    )
+    dialog.show(() => <hub.McpHubPanel runtime={runtime} onClose={() => dialog.close()} />)
+  })
+}
+```
 
-## হোস্টকে যা দিতে হবে (`McpRuntime`)
+That is the whole change: one button, one function.
 
-Hub নিজে থেকে কিছু বানায় না — ZYRAXON-এর নিজের MCP সার্ভিসটাই ব্যবহার করে।
-হোস্ট শুধু এই ৬টা ফাংশন পাস করবে:
+## What the host provides
 
-| ফাংশন | কাজ |
+The Hub does not implement MCP. It uses the service ZYRAXON already has in
+`packages/zyraxon/src/mcp/`. The host passes six functions:
+
+| Function | Purpose |
 |---|---|
-| `statuses()` | কোন সার্ভার কানেক্টেড, কোনটা অথ দরকার |
-| `toolNames()` | এজেন্ট এখন যে টুলগুলো কল করতে পারে |
-| `toggle(name)` | সার্ভার অন/অফ |
-| `startAuth(name)` | OAuth শুরু করে ব্রাউজারের URL ফেরায় |
-| `setToken(name, token)` | যেসব সার্ভারে DCR নেই, তাদের টোকেন সেভ |
-| `addServer(name, config)` | নতুন সার্ভার কনফিগে যোগ করে কানেক্ট |
+| `mcpState()` | which servers are connected, which need auth |
+| `toolNames()` | the tools the agent can currently call |
+| `toggle(name)` | turn a server on or off |
+| `updateConfig(patch)` | write a server into the project config |
+| `startAuth(name)` | begin OAuth, return the URL to open |
+| `setToken(name, token)` | store a token for servers without dynamic registration |
 
-এই ৬টাই `packages/zyraxon/src/mcp/index.ts`-এ আগে থেকেই আছে —
-Hub শুধু সেগুলোকে UI-এর সাথে জোড়ে।
+All six already exist in the runtime. `lib/runtime.ts` adapts them to the shape
+the panel expects.
 
-## টোকেন কোথায় যায়
+## Where the token goes
 
-OAuth হলে টোকেন যায় ZYRAXON-এর নিজের স্টোরে:
-`~/.local/share/zyraxon/mcp-auth.json` (ফাইল পারমিশন 600)।
-তারপর `mcp/catalog.ts` সেটাকে AI টুলে বদলে দেয় — অর্থাৎ টোকেন **সরাসরি
-এজেন্টের হাতে** চলে যায়, ঠিক যেমন আপনি চেয়েছেন।
+For OAuth, the runtime stores the token in `~/.local/share/zyraxon/mcp-auth.json`
+with file mode 600. `mcp/catalog.ts` then converts the server's tools into agent
+tools, so the token is used by the agent directly.
+
+## Why the button needs no per-app code
+
+Every app in the catalog is described by the same five fields: a name, a URL, an
+auth kind, a token page and a colour. Adding an app is one entry in
+`catalog/seed.ts`. Nothing else changes, which is why the catalog can grow to
+thousands of apps through the registry.

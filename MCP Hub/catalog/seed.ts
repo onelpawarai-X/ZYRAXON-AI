@@ -172,7 +172,113 @@ export const localApps: AppEntry[] = [
   { id: "desktop-commander", name: "Desktop Commander", description: "Files, processes and shell", category: "System", kind: "local", color: "#0EA5E9" },
 ]
 
-export const allSeedApps = (): AppEntry[] => [...zeroSetupApps, ...tokenApps, ...localApps]
+/**
+ * Social and communication apps.
+ *
+ * None of these have an official hosted MCP server, so they are reached through
+ * community servers published in the registry, or through the provider's own
+ * API with a token. Every one of them is in the registry, which is why the
+ * panel can offer them without shipping a special case for each.
+ */
+export const socialApps: AppEntry[] = [
+  {
+    id: "gmail",
+    name: "Gmail",
+    description: "Read, search and send mail",
+    category: "Communication",
+    kind: "token",
+    tokenUrl: "https://console.cloud.google.com/apis/credentials",
+    color: "#EA4335",
+  },
+  {
+    id: "youtube-data",
+    name: "YouTube Data",
+    description: "Search, upload and manage videos",
+    category: "Media",
+    kind: "token",
+    tokenUrl: "https://console.cloud.google.com/apis/credentials",
+    color: "#FF0000",
+  },
+  {
+    id: "slack",
+    name: "Slack",
+    description: "Channels, messages and files",
+    category: "Communication",
+    kind: "token",
+    tokenUrl: "https://api.slack.com/apps",
+    color: "#4A154B",
+  },
+  {
+    id: "discord",
+    name: "Discord",
+    description: "Servers, channels and bots",
+    category: "Communication",
+    kind: "token",
+    tokenUrl: "https://discord.com/developers/applications",
+    color: "#5865F2",
+  },
+  {
+    id: "telegram",
+    name: "Telegram",
+    description: "Messages, channels and bots",
+    category: "Communication",
+    kind: "token",
+    tokenUrl: "https://core.telegram.org/bots#botfather",
+    color: "#26A5E4",
+  },
+  {
+    id: "whatsapp",
+    name: "WhatsApp Business",
+    description: "Send and receive messages",
+    category: "Communication",
+    kind: "token",
+    tokenUrl: "https://developers.facebook.com/apps",
+    color: "#25D366",
+  },
+  {
+    id: "meta-ads",
+    name: "Meta Ads",
+    description: "Facebook and Instagram campaigns",
+    category: "Marketing",
+    kind: "token",
+    tokenUrl: "https://developers.facebook.com/apps",
+    color: "#0866FF",
+  },
+  {
+    id: "linkedin",
+    name: "LinkedIn",
+    description: "Posts, profiles and outreach",
+    category: "Marketing",
+    kind: "token",
+    tokenUrl: "https://www.linkedin.com/developers/apps",
+    color: "#0A66C2",
+  },
+  {
+    id: "x-twitter",
+    name: "X (Twitter)",
+    description: "Posts, timelines and search",
+    category: "Marketing",
+    kind: "token",
+    tokenUrl: "https://developer.x.com/en/portal/dashboard",
+    color: "#000000",
+  },
+  {
+    id: "reddit",
+    name: "Reddit",
+    description: "Subreddits, posts and comments",
+    category: "Marketing",
+    kind: "token",
+    tokenUrl: "https://www.reddit.com/prefs/apps",
+    color: "#FF4500",
+  },
+]
+
+export const allSeedApps = (): AppEntry[] => [
+  ...zeroSetupApps,
+  ...tokenApps,
+  ...socialApps,
+  ...localApps,
+]
 
 export const categories = (apps: AppEntry[] = allSeedApps()): string[] =>
   Array.from(new Set(apps.map((a) => a.category))).sort()
