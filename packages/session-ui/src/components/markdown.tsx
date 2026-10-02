@@ -601,11 +601,13 @@ export function Markdown(
       if (!src.text) return { text: src.text, blocks: [] } satisfies RenderResult
 
       const base = src.key ?? checksum(src.text)
-      return Promise.all(
-        src.projection.blocks.map(async (block, index) => {
-          const key = base ? `${base}:${index}:${block.mode}` : undefined
-          const blockKey = markdownBlockKey(owner, src.key, index, block.mode)
-
+      // Each block renders on its own so a single bad parse cannot take the whole
+      // message down with it. Losing one paragraph is recoverable; a long answer
+      // collapsing into escaped plain text is not.
+      const render = async (block: Block, index: number): Promise<RenderedBlock> => {
+        const key = base ? `${base}:${index}:${block.mode}` : undefined
+        const blockKey = markdownBlockKey(owner, src.key, index, block.mode)
+        try {
           if (block.mode === "code") {
             const cached = completedCode.get(blockKey)
             if (block.complete && cached?.raw === block.raw) return cached
@@ -634,24 +636,34 @@ export function Markdown(
           const safe = sanitizeMarkdown(await Promise.resolve(marked.parse(block.src)))
           if (key && hash) touchCachedMarkdown(key, { raw: block.raw, hash, html: safe })
           return { key: blockKey, mode: block.mode, raw: block.raw, hash: hash ?? "", html: safe }
-        }),
+        } catch (error) {
+          console.error("Markdown block failed to render", error)
+          // Highlighting already handles its own failures, so a code block landing
+          // here is unexpected; show it unhighlighted rather than lose the text.
+          if (block.mode === "code")
+            return {
+              key: blockKey,
+              mode: "code",
+              raw: block.raw,
+              hash: String(block.raw.length),
+              language: block.language && block.language in bundledLanguages ? block.language : "text",
+              complete: !!block.complete,
+              generation: 0,
+              stable: [],
+              unstable: [[block.src, ""] as MarkdownToken],
+            }
+          return {
+            key: blockKey,
+            mode: block.mode,
+            raw: block.raw,
+            hash: String(block.raw.length),
+            html: fallback(block.src),
+          }
+        }
+      }
+      return Promise.all(src.projection.blocks.map(render)).then(
+        (blocks) => ({ text: src.text, blocks }) satisfies RenderResult,
       )
-        .then((blocks) => ({ text: src.text, blocks }) satisfies RenderResult)
-        .catch(
-          () =>
-            ({
-              text: src.text,
-              blocks: [
-                {
-                  key: base ?? "fallback",
-                  mode: "full" as const,
-                  raw: src.text,
-                  hash: checksum(src.text) ?? "",
-                  html: fallback(src.text),
-                },
-              ],
-            }) satisfies RenderResult,
-        )
     },
     {
       initialValue: initialResult(local.text, local.cacheKey, projection(), owner),
@@ -731,7 +743,13 @@ function pendingBlocks(
   owner: string,
 ) {
   if (!result) return []
-  if (!projection || result.text === projection.text) return result.blocks
+  if (!projection || result.text === projection.text) {
+    // "initial" is a cache-miss sentinel, not content. Painting it would show the
+    // whole message as escaped plain text until the real parse lands, which is the
+    // garbled flash a long answer used to give.
+    if (result.blocks.length === 1 && result.blocks[0]?.key === "initial") return []
+    return result.blocks
+  }
   const initial = result.blocks.length === 1 && result.blocks[0]?.key === "initial"
   return projection.blocks.map((block, index) => {
     const current = initial ? undefined : result.blocks[index]

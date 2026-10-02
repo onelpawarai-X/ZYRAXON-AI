@@ -47,6 +47,7 @@ export function appIcon(app: AppEntry, size = 20): string {
 export const zeroSetupApps: AppEntry[] = [
   {
     id: "notion",
+    icon: "notion",
     name: "Notion",
     description: "Pages, databases and wikis",
     category: "Knowledge",
@@ -57,6 +58,7 @@ export const zeroSetupApps: AppEntry[] = [
   },
   {
     id: "linear",
+    icon: "linear",
     name: "Linear",
     description: "Issues, projects and cycles",
     category: "Project",
@@ -67,6 +69,7 @@ export const zeroSetupApps: AppEntry[] = [
   },
   {
     id: "atlassian",
+    icon: "atlassian",
     name: "Atlassian",
     description: "Jira issues and Confluence pages",
     category: "Project",
@@ -77,6 +80,7 @@ export const zeroSetupApps: AppEntry[] = [
   },
   {
     id: "sentry",
+    icon: "sentry",
     name: "Sentry",
     description: "Errors, traces and releases",
     category: "Monitoring",
@@ -87,6 +91,7 @@ export const zeroSetupApps: AppEntry[] = [
   },
   {
     id: "stripe",
+    icon: "stripe",
     name: "Stripe",
     description: "Payments, customers and invoices",
     category: "Payments",
@@ -97,6 +102,7 @@ export const zeroSetupApps: AppEntry[] = [
   },
   {
     id: "cloudflare",
+    icon: "cloudflare",
     name: "Cloudflare",
     description: "Workers, DNS and R2 storage",
     category: "Infrastructure",
@@ -107,6 +113,7 @@ export const zeroSetupApps: AppEntry[] = [
   },
   {
     id: "figma",
+    icon: "figma",
     name: "Figma",
     description: "Design files and components",
     category: "Design",
@@ -124,6 +131,7 @@ export const zeroSetupApps: AppEntry[] = [
 export const tokenApps: AppEntry[] = [
   {
     id: "github",
+    icon: "github",
     name: "GitHub",
     description: "Repos, issues, pull requests and Actions",
     category: "Code",
@@ -135,6 +143,7 @@ export const tokenApps: AppEntry[] = [
   },
   {
     id: "supabase",
+    icon: "supabase",
     name: "Supabase",
     description: "Postgres, auth and storage",
     category: "Database",
@@ -144,6 +153,7 @@ export const tokenApps: AppEntry[] = [
   },
   {
     id: "neon",
+    icon: "neon",
     name: "Neon",
     description: "Serverless Postgres",
     category: "Database",
@@ -153,6 +163,7 @@ export const tokenApps: AppEntry[] = [
   },
   {
     id: "vercel",
+    icon: "vercel",
     name: "Vercel",
     description: "Deployments and projects",
     category: "Hosting",
@@ -162,6 +173,7 @@ export const tokenApps: AppEntry[] = [
   },
   {
     id: "netlify",
+    icon: "netlify",
     name: "Netlify",
     description: "Sites and deploys",
     category: "Hosting",
@@ -171,6 +183,7 @@ export const tokenApps: AppEntry[] = [
   },
   {
     id: "youtube",
+    icon: "youtube",
     name: "YouTube",
     description: "Video data, transcripts and trends",
     category: "Media",
@@ -202,6 +215,7 @@ export const localApps: AppEntry[] = [
 export const socialApps: AppEntry[] = [
   {
     id: "gmail",
+    icon: "gmail",
     name: "Gmail",
     description: "Read, search and send mail",
     category: "Communication",
@@ -211,6 +225,7 @@ export const socialApps: AppEntry[] = [
   },
   {
     id: "youtube-data",
+    icon: "youtube",
     name: "YouTube Data",
     description: "Search, upload and manage videos",
     category: "Media",
@@ -220,6 +235,7 @@ export const socialApps: AppEntry[] = [
   },
   {
     id: "slack",
+    icon: "slack",
     name: "Slack",
     description: "Channels, messages and files",
     category: "Communication",
@@ -229,6 +245,7 @@ export const socialApps: AppEntry[] = [
   },
   {
     id: "discord",
+    icon: "discord",
     name: "Discord",
     description: "Servers, channels and bots",
     category: "Communication",
@@ -238,6 +255,7 @@ export const socialApps: AppEntry[] = [
   },
   {
     id: "telegram",
+    icon: "telegram",
     name: "Telegram",
     description: "Messages, channels and bots",
     category: "Communication",
@@ -247,6 +265,7 @@ export const socialApps: AppEntry[] = [
   },
   {
     id: "whatsapp",
+    icon: "whatsapp",
     name: "WhatsApp Business",
     description: "Send and receive messages",
     category: "Communication",
@@ -256,6 +275,7 @@ export const socialApps: AppEntry[] = [
   },
   {
     id: "meta-ads",
+    icon: "meta",
     name: "Meta Ads",
     description: "Facebook and Instagram campaigns",
     category: "Marketing",
@@ -265,6 +285,7 @@ export const socialApps: AppEntry[] = [
   },
   {
     id: "linkedin",
+    icon: "linkedin",
     name: "LinkedIn",
     description: "Posts, profiles and outreach",
     category: "Marketing",
@@ -274,6 +295,7 @@ export const socialApps: AppEntry[] = [
   },
   {
     id: "x-twitter",
+    icon: "x",
     name: "X (Twitter)",
     description: "Posts, timelines and search",
     category: "Marketing",
@@ -283,6 +305,7 @@ export const socialApps: AppEntry[] = [
   },
   {
     id: "reddit",
+    icon: "reddit",
     name: "Reddit",
     description: "Subreddits, posts and comments",
     category: "Marketing",

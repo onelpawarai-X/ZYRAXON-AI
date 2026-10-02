@@ -25,7 +25,7 @@ export const ModeSwitchTool = Tool.define(
 
     return {
       description:
-        "Switch ZYRAXON to another agent mode (general, build, plan, explore, vision, pro, pro-builder, beast, auto, apex, dark-emperor). The target mode must be unlocked by your current subscription tier. If the target mode is locked, this tool FAILS and returns a clear access-denied error. When allowed, the switch takes effect at the next provider turn.",
+        "Switch ZYRAXON to another agent mode (general, build, plan, explore, vision, pro, pro-builder, beast, auto, apex, dark-emperor). The switch takes effect immediately: the mode picker updates and the next turn runs in the new mode. The target mode must be unlocked by your current subscription tier; if it is locked this tool FAILS and returns a clear access-denied error.",
       parameters: Parameters,
       execute: (params: { mode: string }, ctx: Tool.Context) =>
         Effect.gen(function* () {
@@ -69,10 +69,22 @@ export const ModeSwitchTool = Tool.define(
             synthetic: true,
           } satisfies SessionV1.TextPart)
 
+          // The synthetic message alone only labels that one message; the interface reads
+          // the session's own agent field, so without this the mode picker kept showing the
+          // old mode and the tool claimed a switch that never happened.
+          yield* session
+            .setAgentModel({
+              sessionID: ctx.sessionID,
+              agent: mode,
+              model: { ...model, id: model.modelID },
+              time: Date.now(),
+            })
+            .pipe(Effect.orDie)
+
           return {
-            title: `Switching to ${mode} mode`,
-            output: `Switched to ${mode} mode. Waiting for the next provider turn to take effect.`,
-            metadata: {},
+            title: `Switched to ${mode} mode`,
+            output: `Switched to ${mode} mode. The next turn runs in ${mode}.`,
+            metadata: { mode },
           }
         }).pipe(Effect.orDie),
     }

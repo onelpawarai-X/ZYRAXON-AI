@@ -50,9 +50,9 @@ export function McpHubPanel(props: McpHubPanelProps) {
 
   const setState = (id: string, s: ConnectionState) => setStates((prev) => ({ ...prev, [id]: s }))
 
-  onMount(() => {
+  onMount(async () => {
     // pick up anything already connected in this session
-    const live = props.runtime.statuses()
+    const live = await props.runtime.statuses()
     for (const app of apps) {
       if (live[app.id]?.status === "connected") {
         setState(app.id, { status: "connected", toolCount: 0 })
@@ -66,6 +66,10 @@ export function McpHubPanel(props: McpHubPanelProps) {
    * Apps with a first-party endpoint go straight to OAuth. Apps without one are
    * resolved against the registry first, so an app like Facebook or Gmail still
    * connects instead of showing a card that cannot work.
+   *
+   * No browser is opened from here. The server opens it, in the real profile
+   * that already carries the app's session, so the sign-in that follows lands
+   * straight in ZYRAXON's own data.
    */
   const onConnect = async (app: AppEntry) => {
     if (busy()) return
@@ -89,21 +93,14 @@ export function McpHubPanel(props: McpHubPanelProps) {
     }
 
     // 2. a token app needs the token before anything else
-    if (app.kind === "token" && !app.url) {
-      setTokenFor(resolved)
-      setBusy(null)
-      return
-    }
     if (app.kind === "token") {
       setTokenFor(resolved)
       setBusy(null)
       return
     }
 
-    // 3. OAuth apps
-    const result = await connectApp(props.runtime, resolved)
-    setState(app.id, result)
-    if (result.status === "needs_auth") window.open(result.authorizationUrl, "_blank", "noopener")
+    // 3. OAuth apps. This awaits the whole handshake, including the Allow click.
+    setState(app.id, await connectApp(props.runtime, resolved, { onProgress: (s) => setState(app.id, s) }))
     setBusy(null)
   }
 
@@ -113,9 +110,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
     if (!app || !token) return
     setBusy(app.id)
     setState(app.id, { status: "connecting" })
-    const result = await connectApp(props.runtime, app, token)
-    setState(app.id, result)
-    if (result.status === "needs_auth") window.open(result.authorizationUrl, "_blank", "noopener")
+    setState(app.id, await connectApp(props.runtime, app, { token, onProgress: (s) => setState(app.id, s) }))
     setBusy(null)
     setTokenFor(null)
     setTokenValue("")
@@ -143,7 +138,12 @@ export function McpHubPanel(props: McpHubPanelProps) {
 
   return (
     <div
-      class="flex h-full w-full flex-col overflow-hidden bg-[var(--surface-stronger-non-alpha,#0b1020)] text-[var(--text-strong,#e6ebf5)]"
+      // Two host quirks are handled here. The dialog layer is pointer-events:none
+      // so clicks reach the overlay that closes it, so the panel has to opt back
+      // in or every click just dismisses the dialog. And the surface variables
+      // resolve to translucent values in this theme, which let the app behind
+      // show through the grid, so the backdrop is a literal opaque colour.
+      class="pointer-events-auto flex h-full w-full flex-col overflow-hidden bg-[#0b1020] text-[#e6ebf5]"
       style={{ "font-family": "var(--v2-font-family-sans, system-ui, sans-serif)" }}
     >
       {/* header */}
@@ -297,7 +297,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
       {/* token dialog */}
       <Show when={tokenFor()}>
         {(app) => (
-          <div class="absolute inset-0 flex items-center justify-center bg-black/60 p-6">
+          <div class="absolute inset-0 flex items-center justify-center bg-[#05070d] p-6">
             <div class="w-full max-w-[460px] rounded-xl border border-[var(--border-weak-base,#1e2740)] bg-[#0d1424] p-5">
               <div class="mb-1 text-[15px] font-[600]">Connect {app().name}</div>
               <div class="mb-4 text-[12px] text-[var(--text-weak,#8b95ad)]">
