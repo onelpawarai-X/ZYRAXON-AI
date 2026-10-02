@@ -98,7 +98,10 @@ export function McpHubPanel(props: McpHubPanelProps) {
 
   const stateFor = (id: string): ConnectionState => states()[id] ?? { status: "disconnected" }
 
-  const connectedCount = createMemo(() => Object.values(states()).filter((s) => s.status === "connected").length)
+  const connectedCount = createMemo(() => {
+    const all: ConnectionState[] = Object.values(states())
+    return all.filter((s) => s.status === "connected").length
+  })
 
   return (
     <div

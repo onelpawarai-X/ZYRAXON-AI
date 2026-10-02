@@ -5,6 +5,9 @@
 // is the thin layer the Hub UI talks to, so nothing outside "MCP Hub/" changes.
 
 import type { AppEntry } from "../catalog/seed"
+import { McpClient } from "./client"
+
+export { McpClient }
 
 export type ConnectionState =
   | { status: "disconnected" }

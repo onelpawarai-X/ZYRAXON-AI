@@ -8,6 +8,7 @@
 import type { AppEntry } from "./catalog/seed"
 import { allSeedApps, categories, zeroSetupApps, tokenApps, localApps } from "./catalog/seed"
 import { connectApp, toServerConfig, countTools, describe, type McpRuntime, type ConnectionState } from "./lib/connect"
+import { McpClient } from "./lib/client"
 import { fetchPage, walkRegistry, searchRegistry, supportsZeroSetup, type RegistryServer } from "./lib/registry"
 import { McpHubPanel } from "./ui/mcp-hub-panel"
 
@@ -41,6 +42,8 @@ export interface McpHub {
     tools: typeof countTools
     describe: typeof describe
   }
+  /** a raw client, for tests and for callers that want to speak MCP directly */
+  client: typeof McpClient
   /** the server configs the host should write, for apps the user picked */
   serverConfigs: (ids: string[]) => Record<string, Record<string, unknown>>
 }
@@ -60,6 +63,7 @@ export function createMcpHub(runtime: McpRuntime): McpHub {
     },
     registry: { page: fetchPage, walk: walkRegistry, search: searchRegistry, supportsZeroSetup },
     connect: { app: connectApp, config: toServerConfig, tools: countTools, describe },
+    client: McpClient,
     serverConfigs: (ids: string[]) =>
       Object.fromEntries(
         allSeedApps()
