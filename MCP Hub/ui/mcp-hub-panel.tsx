@@ -137,17 +137,30 @@ export function McpHubPanel(props: McpHubPanelProps) {
   })
 
   return (
+    // The critical layout and the backdrop are inline rather than utilities. This
+    // folder sits outside packages/, so its arbitrary-value Tailwind classes are
+    // easy to drop silently, and a panel that renders with no background and no
+    // full-screen sizing lets the home page show straight through it. Inline
+    // styles cannot fail that way.
+    //
+    // pointer-events has to be opted into because the dialog layer sets
+    // pointer-events:none so clicks fall through to the overlay that closes it.
     <div
-      // Two host quirks are handled here. The dialog layer is pointer-events:none
-      // so clicks reach the overlay that closes it, so the panel has to opt back
-      // in or every click just dismisses the dialog. And the surface variables
-      // resolve to translucent values in this theme, which let the app behind
-      // show through the grid, so the backdrop is a literal opaque colour.
-      class="pointer-events-auto flex h-full w-full flex-col overflow-hidden bg-[#0b1020] text-[#e6ebf5]"
-      style={{ "font-family": "var(--v2-font-family-sans, system-ui, sans-serif)" }}
+      style={{
+        position: "fixed",
+        inset: "0",
+        "z-index": "2147483000",
+        display: "flex",
+        "flex-direction": "column",
+        overflow: "hidden",
+        "pointer-events": "auto",
+        background: "#05070d",
+        color: "#e6ebf5",
+        "font-family": "var(--v2-font-family-sans, system-ui, sans-serif)",
+      }}
     >
       {/* header */}
-      <div class="flex items-center justify-between gap-4 border-b border-[var(--border-weak-base,#1e2740)] px-6 py-4">
+      <div class="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--border-weak-base,#1e2740)] px-6 py-4">
         <div class="flex flex-col">
           <span class="text-[17px] font-[600] tracking-[-0.2px]">MCP Connect</span>
           <span class="text-[12px] text-[var(--text-weak,#8b95ad)]">
@@ -157,8 +170,8 @@ export function McpHubPanel(props: McpHubPanelProps) {
         <Show when={props.onClose}>
           <button
             type="button"
-            aria-label="Close"
-            class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5"
+            aria-label="Close MCP Connect"
+            class="rounded-md border border-[var(--border-weak-base,#2a3550)] bg-[#111a2e] px-4 py-1.5 text-[13px] font-[600] hover:bg-[#182340]"
             onClick={() => props.onClose?.()}
           >
             Close
@@ -297,7 +310,19 @@ export function McpHubPanel(props: McpHubPanelProps) {
       {/* token dialog */}
       <Show when={tokenFor()}>
         {(app) => (
-          <div class="absolute inset-0 flex items-center justify-center bg-[#05070d] p-6">
+          <div
+          style={{
+            position: "fixed",
+            inset: "0",
+            "z-index": "2147483100",
+            display: "flex",
+            "align-items": "center",
+            "justify-content": "center",
+            background: "#02040a",
+            padding: "1.5rem",
+            "pointer-events": "auto",
+          }}
+        >
             <div class="w-full max-w-[460px] rounded-xl border border-[var(--border-weak-base,#1e2740)] bg-[#0d1424] p-5">
               <div class="mb-1 text-[15px] font-[600]">Connect {app().name}</div>
               <div class="mb-4 text-[12px] text-[var(--text-weak,#8b95ad)]">
