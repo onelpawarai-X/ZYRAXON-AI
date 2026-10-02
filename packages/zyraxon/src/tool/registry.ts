@@ -54,6 +54,7 @@ import {
   SessionRemoveTool,
 } from "./session-control"
 import { UIButtonTools, UIButtonsListTool, UIButtonToolIds } from "./ui-button"
+import { DesktopLinkTool, DesktopShareTool, DesktopStopTool } from "./remote-desktop"
 import {
   PreviewAttachWindowTool,
   PreviewClickTool,
@@ -179,6 +180,9 @@ const layer = Layer.effect(
     const uiButtonsListToolDef = yield* UIButtonsListTool
     const uiButtonToolDefs = yield* Effect.forEach(UIButtonTools, (toolDef) => toolDef)
     const uiButtonToolIds = UIButtonToolIds
+    const desktopShareToolDef = yield* DesktopShareTool
+    const desktopLinkToolDef = yield* DesktopLinkTool
+    const desktopStopToolDef = yield* DesktopStopTool
     const previewListWindowsToolDef = yield* PreviewListWindowsTool
     const previewAttachWindowToolDef = yield* PreviewAttachWindowTool
     const previewDetachToolDef = yield* PreviewDetachTool
@@ -443,6 +447,9 @@ const layer = Layer.effect(
           x_preview_elements: Tool.init(previewElementsToolDef),
           x_preview_find: Tool.init(previewFindToolDef),
           x_preview_wait: Tool.init(previewWaitToolDef),
+          x_desktop_share: Tool.init(desktopShareToolDef),
+          x_desktop_link: Tool.init(desktopLinkToolDef),
+          x_desktop_stop_share: Tool.init(desktopStopToolDef),
           ...(codeModeTool ? { execute: Tool.init(codeModeTool) } : {}),
         })
 

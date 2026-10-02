@@ -2,7 +2,7 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import { execFile } from "node:child_process"
-import { existsSync, cpSync } from "node:fs"
+import { existsSync, cpSync, chmodSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { promisify } from "node:util"
@@ -43,6 +43,18 @@ function copyMcpBundles(configuration: { appOutDir: string }) {
   const nuphusDst = path.join(resourcesDst, "nuphus-mcp")
   if (existsSync(nuphusSrc)) {
     cpSync(nuphusSrc, nuphusDst, { recursive: true })
+    // Git tracks these binaries 755, but a checkout with core.filemode=false (CI does
+    // this) drops the exec bit and every Linux/macOS build then fails with EACCES.
+    // Set it here so packaging does not depend on how the tree was checked out.
+    if (process.platform !== "win32") {
+      for (const arch of ["linux-x64", "osx-arm64", "osx-x64"]) {
+        const bin = path.join(nuphusDst, arch, "nuphus-mcp")
+        if (existsSync(bin)) {
+          chmodSync(bin, 0o755)
+          console.log("[afterPack] chmod +x", bin)
+        }
+      }
+    }
     console.log("[afterPack] Copied nuphus-mcp to", nuphusDst)
   }
 
@@ -162,7 +174,13 @@ const getBase = (appId: string): Configuration => ({
     {
       from: "resources/touchpoint-mcp",
       to: "touchpoint-mcp",
-      filter: ["*.py", "*.cjs", "*.js", "*.json", "*.md", "libs/**/*"],
+      // libs/ holds win_amd64 wheels only. Shipping them to Linux/macOS wastes
+      // ~90MB and shadowed the platform's own packages; those builds resolve
+      // touchpoint from the interpreter's site-packages instead.
+      filter:
+        process.platform === "win32"
+          ? ["*.py", "*.cjs", "*.js", "*.json", "*.md", "libs/**/*"]
+          : ["*.py", "*.cjs", "*.js", "*.json", "*.md"],
     },
     {
       from: "resources/desktop-commander",

@@ -53,14 +53,17 @@ async function resolveNodePath(): Promise<string> {
     const { execFile: _execFile } = require("child_process") as typeof import("child_process")
     const { promisify } = require("util") as typeof import("util")
     const execFileAsync = promisify(_execFile)
-    const { stdout } = await execFileAsync("where", ["node"], { encoding: "utf8", timeout: 5000 })
+    // "where" only exists on Windows; Linux and macOS use "which". Getting this wrong
+// burned a 5s timeout on every connect before falling back, so pick per platform.
+    const finder = process.platform === "win32" ? "where" : "which"
+    const { stdout } = await execFileAsync(finder, ["node"], { encoding: "utf8", timeout: 5000 })
     const nodePath = stdout.trim().split("\n")[0]?.trim()
     if (nodePath && (require("fs") as typeof import("fs")).existsSync(nodePath)) {
       _cachedNodePath = nodePath
       return nodePath
     }
   } catch {
-    // where not available or node not on PATH — leave as null (fall back to "node")
+    // finder not available or node not on PATH — leave as null (fall back to "node")
   }
   // Packaged Electron: node is not on PATH, but the Electron binary itself runs JS
   // as plain Node when ELECTRON_RUN_AS_NODE is set. Fall back to process.execPath
@@ -389,34 +392,30 @@ const layer = Layer.effect(
       // Resolve __RESOURCES_PATH__ placeholder in command/args (for bundled MCP servers)
       // Try multiple paths: env var, packaged Electron resourcesPath, then dev fallbacks
       const findResourcesPath = (): string => {
+        // Score each candidate by how many bundled servers it actually holds instead
+        // of requiring all of them. Requiring every marker meant one server missing
+        // from a checkout sent all four down the same wrong path, so a healthy
+        // server failed for a sibling's reasons.
         const markerFiles = ["jarvis-browser-mcp.cjs", "nuphus-mcp/nuphus-mcp.cjs", "touchpoint-mcp/touchpoint-mcp.cjs", "desktop-commander/desktop-commander.cjs"]
-        const hasResources = (p: string) => markerFiles.every((m) => fs.existsSync(path.join(p, m)))
-        // 1. ZYRAXON_RESOURCES_PATH env var (set by Electron main process for sidecar)
-        if (process.env.ZYRAXON_RESOURCES_PATH) {
-          const p = process.env.ZYRAXON_RESOURCES_PATH
-          if (hasResources(p)) return p
-        }
-        // 2. Packaged Electron: process.resourcesPath works in main process
+        const score = (p: string) => markerFiles.filter((m) => fs.existsSync(path.join(p, m))).length
+        const candidates: string[] = []
+        if (process.env.ZYRAXON_RESOURCES_PATH) candidates.push(process.env.ZYRAXON_RESOURCES_PATH)
         if (typeof process !== "undefined" && (process as any).resourcesPath) {
-          const p = (process as any).resourcesPath as string
-          if (hasResources(p)) return p
+          candidates.push((process as any).resourcesPath as string)
         }
-        // 3. Dev mode: resolve relative to this file (packages/zyraxon/src/mcp/)
         try {
           const { fileURLToPath } = require("url") as typeof import("url")
           const here = path.dirname(fileURLToPath(import.meta.url))
-          const devResources = path.resolve(here, "../../../desktop/resources")
-          if (hasResources(devResources)) return devResources
+          candidates.push(path.resolve(here, "../../../desktop/resources"))
         } catch {}
-        // 4. Fallback: check resources dir relative to baseDir
-        const fallback = path.resolve(baseDir, "packages/desktop/resources")
-        if (hasResources(fallback)) return fallback
-        // 5. Last resort: any dir containing the core marker files (partial installs)
-        if (process.env.ZYRAXON_RESOURCES_PATH) return process.env.ZYRAXON_RESOURCES_PATH
-        if (typeof process !== "undefined" && (process as any).resourcesPath) {
-          return (process as any).resourcesPath as string
+        candidates.push(path.resolve(baseDir, "packages/desktop/resources"))
+
+        const best = candidates.reduce((a, b) => (score(b) > score(a) ? b : a), candidates[0] ?? baseDir)
+        if (score(best) === 0) {
+          console.error(`[mcp] no bundled MCP server found; looked in: ${candidates.join(", ")}`)
+          return baseDir
         }
-        return baseDir
+        return best
       }
       const resourcesPath = findResourcesPath()
       const resolvePath = (p: string) => p.replace(/__RESOURCES_PATH__/g, resourcesPath)
@@ -533,7 +532,46 @@ const layer = Layer.effect(
       Effect.catch(() => Effect.succeed([] as number[])),
     )
 
-    function watch(s: State, name: string, client: MCPClient, bridge: EffectBridge.Shape, timeout?: number) {
+    function watch(s: State, name: string, client: MCPClient, bridge: EffectBridge.Shape, timeout?: number, cfgMcp: State["config"] = {}) {
+      // A server that drops out is ours to bring back, not the user's problem. Count
+      // attempts per server and restart with a capped backoff, giving up only after
+      // several consecutive failures so a permanently broken server does not spin.
+      const attempts = new Map<string, number>()
+
+      function restart() {
+        const attempt = (attempts.get(name) ?? 0) + 1
+        if (attempt > 5) return
+        attempts.set(name, attempt)
+        const delay = Math.min(30_000, 1_000 * 2 ** (attempt - 1))
+        const config = s.config[name]
+        bridge.fork(
+          Effect.sleep(delay).pipe(
+            Effect.andThen(
+              Effect.gen(function* () {
+                // Someone already brought it back; nothing to do.
+                if (s.clients[name]) return attempts.set(name, 0)
+                const info = config ?? cfgMcp[name]
+                if (!info || info.enabled === false) return
+                const result = yield* create(name, info)
+                s.status[name] = result.status
+                if (result.mcpClient) {
+                  s.clients[name] = result.mcpClient
+                  s.defs[name] = result.defs!
+                  if (result.instructions) s.instructions[name] = result.instructions
+                  watch(s, name, result.mcpClient, bridge, info.timeout, cfgMcp)
+                  attempts.set(name, 0)
+                  yield* events.publish(ToolsChanged, { server: name }).pipe(Effect.ignore)
+                  return
+                }
+                yield* events.publish(ToolsChanged, { server: name }).pipe(Effect.ignore)
+                if (result.status.status !== "needs_auth") restart()
+              }),
+            ),
+            Effect.ignore,
+          ),
+        )
+      }
+
       client.onclose = () => {
         if (s.clients[name] !== client) return
         delete s.clients[name]
@@ -546,6 +584,7 @@ const layer = Layer.effect(
             Effect.ignore,
           ),
         )
+        restart()
       }
 
       client.setNotificationHandler(LoggingMessageNotificationSchema, (notification) =>
@@ -611,12 +650,14 @@ const layer = Layer.effect(
               }
 
               const result = yield* create(key, mcp)
+              // Record the entry so the close handler can rebuild this exact server.
+              s.config[key] = mcp
               s.status[key] = result.status
               if (result.mcpClient) {
                 s.clients[key] = result.mcpClient
                 s.defs[key] = result.defs!
                 if (result.instructions) s.instructions[key] = result.instructions
-                watch(s, key, result.mcpClient, bridge, mcp.timeout)
+                watch(s, key, result.mcpClient, bridge, mcp.timeout, s.config)
               }
             }),
           { concurrency: "unbounded" },
@@ -677,7 +718,7 @@ const layer = Layer.effect(
       s.defs[name] = listed
       if (instructions) s.instructions[name] = instructions
       else delete s.instructions[name]
-      watch(s, name, client, bridge, timeout)
+      watch(s, name, client, bridge, timeout, s.config)
       if (previous) yield* Effect.tryPromise(() => previous.close()).pipe(Effect.ignore)
       return s.status[name]
     })

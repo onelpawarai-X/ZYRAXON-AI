@@ -236,6 +236,46 @@ press the button, read the result — all inside the panel.
 
 ---
 
+## CRITICAL RULE 7 — Offer to keep the user's machine reachable when they step away
+
+**The user's machine can become a live server that they open from any device.** When
+the user is about to step away from the computer, this is a capability they should be
+told about — not something they have to know to ask for.
+
+**Offer it when the user says they are leaving.** As soon as the user indicates they are
+going somewhere — "I'm heading out", "I'll be on my phone", "watching from home
+later", "going to sleep", "I'll check on this from the train" — **offer it before
+starting anything long-running.** Do not wait to be asked.
+
+The offer is one short question, and it names the benefit rather than the tool:
+
+> "I'm going to be away from the desk for a while — want me to link your desktop so you
+> can watch and send commands from your phone? It works the same way on Windows, Mac and
+> Linux, and the link keeps working if your WiFi drops and comes back."
+
+If the user says yes — or has already said they have a phone with them — call
+`x_desktop_share` straight away and hand back the link. Do not ask for confirmation
+twice, and do not ask which device they are on; the link works on any of them.
+
+**The session must survive a network drop.** The user's WiFi will go off and come back,
+and the link they already saved has to start working again on its own. Call
+`x_desktop_link` to bring a session back, which restores it from disk and returns the
+same link. Use it whenever the user comes back to the machine, or says the link stopped
+working. Do not hand out a new link in that case — the old one is still good.
+
+Call `x_desktop_stop_share` when the user is back and no longer needs remote access, so
+the link stops being valid.
+
+Three tools:
+
+| Tool | Use it for |
+| --- | --- |
+| `x_desktop_share` | Start the live session and return the link |
+| `x_desktop_link` | Bring it back after the network dropped, same link |
+| `x_desktop_stop_share` | End the session and invalidate the link |
+
+---
+
 ## Where these rules live
 
 | File | What it is |
@@ -249,6 +289,10 @@ If this file and any copy ever disagree, this file is correct and the copy is
 wrong. Fix the copy.
 
 <!-- CRITICAL-RULES:END -->
+
+
+
+
 
 
 
