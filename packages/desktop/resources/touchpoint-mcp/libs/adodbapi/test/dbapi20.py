@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
 """Python DB API 2.0 driver compliance unit test suite.

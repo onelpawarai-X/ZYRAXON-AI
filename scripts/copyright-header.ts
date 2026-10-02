@@ -9,49 +9,47 @@ import * as path from "node:path"
 
 const OWNER = "onelpawarai"
 const YEAR = "2026"
-const SPDX = "LicenseRef-ZYRAXON-ZSL-X"
-const SPDX_TAG = "SPDX-License-Identifier:"
 
 const MARKERS = {
-  "ts": `// ${SPDX_TAG} ${SPDX}\n// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "tsx": `// ${SPDX_TAG} ${SPDX}\n// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "js": `// ${SPDX_TAG} ${SPDX}\n// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "jsx": `// ${SPDX_TAG} ${SPDX}\n// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "mjs": `// ${SPDX_TAG} ${SPDX}\n// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "cjs": `// ${SPDX_TAG} ${SPDX}\n// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "py": `# ${SPDX_TAG} ${SPDX}\n# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "rb": `# ${SPDX_TAG} ${SPDX}\n# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "sh": `# ${SPDX_TAG} ${SPDX}\n# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "bash": `# ${SPDX_TAG} ${SPDX}\n# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "go": `// ${SPDX_TAG} ${SPDX}\n// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "rs": `// ${SPDX_TAG} ${SPDX}\n// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "java": `// ${SPDX_TAG} ${SPDX}\n// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "kt": `// ${SPDX_TAG} ${SPDX}\n// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "swift": `// ${SPDX_TAG} ${SPDX}\n// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "c": `// ${SPDX_TAG} ${SPDX}\n// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "h": `// ${SPDX_TAG} ${SPDX}\n// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "cpp": `// ${SPDX_TAG} ${SPDX}\n// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "hpp": `// ${SPDX_TAG} ${SPDX}\n// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "cs": `// ${SPDX_TAG} ${SPDX}\n// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "css": `/* ${SPDX_TAG} ${SPDX}\n   Copyright (c) ${YEAR} ${OWNER}. All rights reserved. */`,
-  "scss": `/* ${SPDX_TAG} ${SPDX}\n   Copyright (c) ${YEAR} ${OWNER}. All rights reserved. */`,
-  "html": `<!-- ${SPDX_TAG} ${SPDX}\n     Copyright (c) ${YEAR} ${OWNER}. All rights reserved. -->`,
-  "vue": `<!-- ${SPDX_TAG} ${SPDX}\n     Copyright (c) ${YEAR} ${OWNER}. All rights reserved. -->`,
-  "svelte": `<!-- ${SPDX_TAG} ${SPDX}\n     Copyright (c) ${YEAR} ${OWNER}. All rights reserved. -->`,
-  "sql": `-- ${SPDX_TAG} ${SPDX}\n-- Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "ps1": `<# ${SPDX_TAG} ${SPDX}\n   Copyright (c) ${YEAR} ${OWNER}. All rights reserved. #>`,
-  "yaml": `# ${SPDX_TAG} ${SPDX}\n# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "yml": `# ${SPDX_TAG} ${SPDX}\n# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "toml": `# ${SPDX_TAG} ${SPDX}\n# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "dockerfile": `# ${SPDX_TAG} ${SPDX}\n# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "zig": `// ${SPDX_TAG} ${SPDX}\n// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "ex": `# ${SPDX_TAG} ${SPDX}\n# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "exs": `# ${SPDX_TAG} ${SPDX}\n# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "erl": `%% ${SPDX_TAG} ${SPDX}\n%% Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "hs": `-- ${SPDX_TAG} ${SPDX}\n-- Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "lua": `-- ${SPDX_TAG} ${SPDX}\n-- Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "pl": `# ${SPDX_TAG} ${SPDX}\n# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
-  "r": `# ${SPDX_TAG} ${SPDX}\n# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "ts": `// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "tsx": `// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "js": `// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "jsx": `// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "mjs": `// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "cjs": `// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "py": `# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "rb": `# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "sh": `# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "bash": `# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "go": `// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "rs": `// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "java": `// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "kt": `// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "swift": `// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "c": `// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "h": `// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "cpp": `// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "hpp": `// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "cs": `// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "css": `/*    Copyright (c) ${YEAR} ${OWNER}. All rights reserved. */`,
+  "scss": `/*    Copyright (c) ${YEAR} ${OWNER}. All rights reserved. */`,
+  "html": `<!--      Copyright (c) ${YEAR} ${OWNER}. All rights reserved. -->`,
+  "vue": `<!--      Copyright (c) ${YEAR} ${OWNER}. All rights reserved. -->`,
+  "svelte": `<!--      Copyright (c) ${YEAR} ${OWNER}. All rights reserved. -->`,
+  "sql": `-- Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "ps1": `<#    Copyright (c) ${YEAR} ${OWNER}. All rights reserved. #>`,
+  "yaml": `# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "yml": `# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "toml": `# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "dockerfile": `# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "zig": `// Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "ex": `# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "exs": `# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "erl": `%% Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "hs": `-- Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "lua": `-- Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "pl": `# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
+  "r": `# Copyright (c) ${YEAR} ${OWNER}. All rights reserved.`,
 }
 
 // Formats that cannot carry a comment, or whose contents are machine-defined.
@@ -115,7 +113,7 @@ function skipReason(file: string, scope: string): string | null {
 export function classify(file: string, content: string, scope = "first-party"): Decision {
   const reason = skipReason(file, scope)
   if (reason) return { file, action: "skip", reason }
-  if (content.includes(SPDX_TAG)) return { file, action: "present", reason: "SPDX identifier already in file" }
+  if (content.includes("Copyright (c)")) return { file, action: "present", reason: "copyright notice already in file" }
   return { file, action: "add", reason: "header missing" }
 }
 

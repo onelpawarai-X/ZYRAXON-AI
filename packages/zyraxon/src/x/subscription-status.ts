@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import { getCurrentTier, hasAccess, readSubState, TIER_ORDER, type Tier, TOOL_TIER_MAP } from "../subscription/canonical"

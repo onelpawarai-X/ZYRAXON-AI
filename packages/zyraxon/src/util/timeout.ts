@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 export function withTimeout<T>(promise: Promise<T>, ms: number, label?: string): Promise<T> {

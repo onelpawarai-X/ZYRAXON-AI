@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
 from .._rfc7516.models import Recipient, JWEKeyAgreement, JWEKeyWrapping, JWEEncModel

@@ -3,7 +3,7 @@
   "version": "19.0.5",
   "name": "@zyraxon-ai/llm",
   "type": "module",
-  "license": "BSL-1.1",
+  "license": "SEE LICENSE IN LICENSE",
   "private": true,
   "scripts": {
     "setup:recording-env": "bun run script/setup-recording-env.ts",

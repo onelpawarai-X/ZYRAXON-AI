@@ -114,7 +114,7 @@ Existing Windows installs pick this build up automatically through the in-app up
 
 ### License
 
-**ZSL-X** — open source. Use it, change it, share it. No commercial restrictions.
+**ZSL-X** - source-available. Use it, change it and learn from it freely. Section 5 of the license sets what may be published or sold: you may not sell ZYRAXON itself, and you may not publish a modified version of it.
 
 ---
 

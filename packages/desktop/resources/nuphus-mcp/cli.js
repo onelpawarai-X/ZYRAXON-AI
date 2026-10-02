@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 // nuphus-mcp launcher — locates the platform-specific binary in the companion

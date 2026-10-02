@@ -1,4 +1,3 @@
--- SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 -- Copyright (c) 2026 onelpawarai. All rights reserved.
 
 ALTER TABLE `user` RENAME COLUMN `sub_recent_usage` TO `sub_interval_usage`;--> statement-breakpoint

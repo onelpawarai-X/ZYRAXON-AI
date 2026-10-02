@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
 from authlib.oauth2.rfc6749 import AuthorizationCodeMixin as _AuthorizationCodeMixin

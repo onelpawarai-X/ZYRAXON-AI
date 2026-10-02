@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import { useMarked } from "@zyraxon-ai/ui/context/marked"
@@ -755,8 +754,24 @@ function pendingBlocks(
     const current = initial ? undefined : result.blocks[index]
     if (current && canReusePendingBlock(current, block)) return current
     const key = markdownBlockKey(owner, cacheKey, index, block.mode)
-    if (block.mode !== "code")
-      return { key, mode: block.mode, raw: block.raw, hash: String(block.raw.length), html: fallback(block.src) }
+    if (block.mode !== "code") {
+      // While the answer is still arriving, a block that has not been re-parsed
+      // yet must not be painted as escaped text: on the last update the whole
+      // message collapses from styled output into literal "**" and "|" while the
+      // real parse catches up, which is exactly the garbling this replaces.
+      //
+      // Streaming only ever grows the text, so anything already on screen is
+      // still a true prefix of what is coming. Keep that rendering, but give the
+      // block a fresh key and hash so the real parse replaces it when it lands.
+      const grewFrom = current && current.mode !== "code" && block.raw.startsWith(current.raw)
+      return {
+        key,
+        mode: block.mode,
+        raw: block.raw,
+        hash: String(block.raw.length),
+        html: grewFrom ? current.html : fallback(block.src),
+      }
+    }
     return {
       key,
       mode: block.mode,

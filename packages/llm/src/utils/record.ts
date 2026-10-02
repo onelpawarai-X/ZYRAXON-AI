@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 /** Plain-record narrowing. Excludes arrays so JSON object checks don't accept tuples as key/value bags. */

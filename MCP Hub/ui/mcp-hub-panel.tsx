@@ -2,7 +2,7 @@
 // Rendered by the Hub's plugin entry. Uses ZYRAXON's own UI primitives so it
 // looks native, and keeps every piece of state inside this folder.
 
-import { For, Show, createMemo, createSignal, onMount } from "solid-js"
+import { For, Show, createMemo, createSignal, onCleanup, onMount } from "solid-js"
 import type { AppEntry } from "../catalog/seed"
 import { allSeedApps, appIcon, categories } from "../catalog/seed"
 import { connectApp, describe, type ConnectionState, type McpRuntime } from "../lib/connect"
@@ -23,6 +23,11 @@ const authLabel: Record<string, string> = {
   token: "Needs an access token",
   local: "Runs on this machine",
 }
+
+/** fast enough that a card updates the moment the server settles */
+const LIVE_POLL_MS = 1500
+/** nothing connected yet, so there is nothing worth watching */
+const IDLE_POLL_MS = 10_000
 
 export function McpHubPanel(props: McpHubPanelProps) {
   const apps = allSeedApps()
@@ -50,14 +55,56 @@ export function McpHubPanel(props: McpHubPanelProps) {
 
   const setState = (id: string, s: ConnectionState) => setStates((prev) => ({ ...prev, [id]: s }))
 
-  onMount(async () => {
-    // pick up anything already connected in this session
-    const live = await props.runtime.statuses()
-    for (const app of apps) {
-      if (live[app.id]?.status === "connected") {
-        setState(app.id, { status: "connected", toolCount: 0 })
+  /**
+   * Keep every card honest while the panel is open.
+   *
+   * A card used to freeze whatever it was last told, so a server that finished
+   * connecting a second later kept saying "Connecting…", and the only way to see
+   * the truth was to close the panel and open it again. The server owns the
+   * transport, so the server's status is the only thing worth showing.
+   *
+   * Cards the user is actively working on are left alone, so this poll cannot
+   * fight an in-flight connect with its own intermediate state.
+   */
+  let busyIds = new Set<string>()
+
+  onMount(() => {
+    let stopped = false
+    let timer: ReturnType<typeof setTimeout> | undefined
+
+    const tick = async () => {
+      if (stopped) return
+      let connected = 0
+      try {
+        const live = await props.runtime.statuses()
+        if (stopped) return
+        connected = Object.values(live).filter((entry) => entry.status === "connected").length
+        if (!busyIds.size)
+          setStates((prev) => {
+            const next = { ...prev }
+            let changed = false
+            for (const app of apps) {
+              if (live[app.id]?.status !== "connected") continue
+              if (next[app.id]?.status === "connected") continue
+              next[app.id] = { status: "connected", toolCount: 0 }
+              changed = true
+            }
+            return changed ? next : prev
+          })
+      } catch {
+        /* the server may be restarting; try again on the next tick */
       }
+      if (stopped) return
+      // Nothing is connected yet, so there is nothing to watch for. Ease off
+      // rather than polling a local server sixty times a minute for no reason.
+      timer = setTimeout(tick, connected ? LIVE_POLL_MS : IDLE_POLL_MS)
     }
+
+    void tick()
+    onCleanup(() => {
+      stopped = true
+      if (timer) clearTimeout(timer)
+    })
   })
 
   /**
@@ -73,47 +120,55 @@ export function McpHubPanel(props: McpHubPanelProps) {
    */
   const onConnect = async (app: AppEntry) => {
     if (busy()) return
+    busyIds.add(app.id)
     setBusy(app.id)
     setState(app.id, { status: "connecting" })
 
-    // 1. find the real endpoint when the catalog does not know one
-    let resolved = app
-    if (!app.url && app.kind !== "local") {
-      const hit = await props.resolve(app)
-      if (!hit.url) {
-        setState(app.id, {
-          status: "failed",
-          error: hit.reason ?? "no connectable server found",
-        })
-        setBusy(null)
+    try {
+      // 1. find the real endpoint when the catalog does not know one
+      let resolved = app
+      if (!app.url && app.kind !== "local") {
+        const hit = await props.resolve(app)
+        if (!hit.url) {
+          setState(app.id, {
+            status: "failed",
+            error: hit.reason ?? "no connectable server found",
+          })
+          return
+        }
+        resolved = { ...app, url: hit.url, zeroSetup: hit.server ? undefined : app.zeroSetup }
+        setResolved((prev) => ({ ...prev, [app.id]: hit.server?.name ?? hit.url! }))
+      }
+
+      // 2. a token app needs the token before anything else
+      if (app.kind === "token") {
+        setTokenFor(resolved)
         return
       }
-      resolved = { ...app, url: hit.url, zeroSetup: hit.server ? undefined : app.zeroSetup }
-      setResolved((prev) => ({ ...prev, [app.id]: hit.server?.name ?? hit.url! }))
-    }
 
-    // 2. a token app needs the token before anything else
-    if (app.kind === "token") {
-      setTokenFor(resolved)
+      // 3. OAuth apps. This awaits the whole handshake, including the Allow click.
+      setState(app.id, await connectApp(props.runtime, resolved, { onProgress: (s) => setState(app.id, s) }))
+    } finally {
+      busyIds.delete(app.id)
       setBusy(null)
-      return
     }
-
-    // 3. OAuth apps. This awaits the whole handshake, including the Allow click.
-    setState(app.id, await connectApp(props.runtime, resolved, { onProgress: (s) => setState(app.id, s) }))
-    setBusy(null)
   }
 
   const submitToken = async () => {
     const app = tokenFor()
     const token = tokenValue().trim()
     if (!app || !token) return
+    busyIds.add(app.id)
     setBusy(app.id)
     setState(app.id, { status: "connecting" })
-    setState(app.id, await connectApp(props.runtime, app, { token, onProgress: (s) => setState(app.id, s) }))
-    setBusy(null)
-    setTokenFor(null)
-    setTokenValue("")
+    try {
+      setState(app.id, await connectApp(props.runtime, app, { token, onProgress: (s) => setState(app.id, s) }))
+    } finally {
+      busyIds.delete(app.id)
+      setBusy(null)
+      setTokenFor(null)
+      setTokenValue("")
+    }
   }
 
   const runRegistrySearch = async () => {
@@ -318,12 +373,18 @@ export function McpHubPanel(props: McpHubPanelProps) {
             display: "flex",
             "align-items": "center",
             "justify-content": "center",
-            background: "#02040a",
+            // Nearly opaque, but not quite: the grid has to stay faintly visible
+            // behind it, otherwise the dialog reads as a stray dropdown floating
+            // on a black screen rather than a modal on top of this panel.
+            background: "rgba(2,4,10,0.93)",
             padding: "1.5rem",
             "pointer-events": "auto",
           }}
         >
-            <div class="w-full max-w-[460px] rounded-xl border border-[var(--border-weak-base,#1e2740)] bg-[#0d1424] p-5">
+            <div
+              class="w-full max-w-[460px] rounded-xl border border-[var(--border-weak-base,#2a3550)] bg-[#0d1424] p-5"
+              style={{ "box-shadow": "0 24px 64px rgba(0,0,0,0.65)" }}
+            >
               <div class="mb-1 text-[15px] font-[600]">Connect {app().name}</div>
               <div class="mb-4 text-[12px] text-[var(--text-weak,#8b95ad)]">
                 Paste an access token. Create one at{" "}

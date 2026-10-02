@@ -1,5 +1,4 @@
 #!/usr/bin/env bun
-// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 // Injects the CRITICAL RULES block into every AGENTS.md and every system prompt.

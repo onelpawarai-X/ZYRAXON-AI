@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
 """Apply all permanent zyraxon-code build fixes. Idempotent - safe to re-run after session reset.

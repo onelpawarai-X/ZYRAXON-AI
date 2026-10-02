@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
 """Logic for interacting with type annotations, mostly extensions, shims and hacks to wrap Python's typing module."""

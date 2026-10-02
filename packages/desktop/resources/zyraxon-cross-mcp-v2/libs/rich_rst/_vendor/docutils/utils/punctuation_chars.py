@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
 # :Id: $Id: punctuation_chars.py 9270 2022-11-24 20:28:03Z milde $

@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
 """Private logic related to fields (the `Field()` function and `FieldInfo` class), and arguments to `Annotated`."""

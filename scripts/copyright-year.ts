@@ -1,5 +1,4 @@
 #!/usr/bin/env bun
-// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 // Rewrites the copyright year to the current year, everywhere it is stamped.

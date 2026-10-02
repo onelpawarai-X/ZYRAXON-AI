@@ -1,4 +1,3 @@
--- SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 -- Copyright (c) 2026 onelpawarai. All rights reserved.
 
 ALTER TABLE `geo_stat` ADD `unique_users` bigint NOT NULL DEFAULT 0;--> statement-breakpoint

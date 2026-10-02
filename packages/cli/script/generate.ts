@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 const modelsUrl = process.env.ZYRAXON_MODELS_URL || "https://models.dev"

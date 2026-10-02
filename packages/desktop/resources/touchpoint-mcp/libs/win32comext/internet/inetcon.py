@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
 INET_E_USE_DEFAULT_PROTOCOLHANDLER = -2146697199  # _HRESULT_TYPEDEF_(0x800C0011L)

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 // One-off copy from GitHub Linguist languages.yml (e9fe3c9f230cd9220afcd057f75702de4d7700c9), plus common lockfile suffixes.
