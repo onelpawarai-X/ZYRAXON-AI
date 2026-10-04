@@ -521,10 +521,10 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
       id: "preview.toggle",
       title: language.t("command.preview.toggle"),
       keybind: "mod+shift+p",
-      onSelect: () => {
-        view().previewPanel.toggle()
-        if (view().previewPanel.opened()) actions.setActive("preview")
-      },
+      // previewPanel.toggle() flips the global preview flag, and session.tsx already
+      // reacts to that by selecting the preview tab. There is no setActive on this
+      // context, so selecting it here as well could only ever throw.
+      onSelect: () => view().previewPanel.toggle(),
     }),
     ...(shown()
       ? [
