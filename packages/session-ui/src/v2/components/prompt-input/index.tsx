@@ -50,6 +50,15 @@ export function PromptInputV2(props: PromptInputV2Props) {
   const view = props.controller.view
   let editor: HTMLDivElement | undefined
   let localInput = false
+  // setText replaces the whole draft, so a naive voice insert destroyed whatever the
+  // user had typed before pressing the mic. Capture the pre-recording draft once and
+  // append every transcript segment to it instead.
+  let voiceBase: string | undefined
+  const appendVoice = (text: string) => {
+    voiceBase ??= props.controller.value()
+    const separator = voiceBase.trim() && text.trim() ? "\n" : ""
+    return voiceBase + separator + text
+  }
   const updateCursor = () => {
     if (!editor || !window.getSelection()?.isCollapsed) return
     props.controller.onCursor(promptInputV2Cursor(editor))
@@ -77,7 +86,7 @@ export function PromptInputV2(props: PromptInputV2Props) {
         ref={props.controller.setFileInput}
         type="file"
         multiple
-        accept="image/png,image/jpeg,image/gif,image/webp,application/pdf,text/*,application/json,application/ld+json,application/toml,application/x-toml,application/x-yaml,application/xml,application/yaml,.c,.cc,.cjs,.conf,.cpp,.css,.csv,.cts,.env,.go,.gql,.graphql,.h,.hh,.hpp,.htm,.html,.ini,.java,.js,.json,.jsx,.log,.md,.mdx,.mjs,.mts,.py,.rb,.rs,.sass,.scss,.sh,.sql,.toml,.ts,.tsx,.txt,.xml,.yaml,.yml,.zsh"
+        accept="image/png,image/jpeg,image/gif,image/webp,application/pdf,audio/mpeg,audio/mp4,audio/wav,audio/x-wav,audio/webm,audio/ogg,audio/flac,audio/aac,audio/m4a,audio/amr,audio/3gpp,audio/*,video/mp4,video/webm,video/quicktime,video/x-matroska,video/x-msvideo,video/mpeg,video/ogg,video/3gpp,video/x-flv,video/*,text/*,application/json,application/ld+json,application/toml,application/x-toml,application/x-yaml,application/xml,application/yaml,.c,.cc,.cjs,.conf,.cpp,.css,.csv,.cts,.env,.go,.gql,.graphql,.h,.hh,.hpp,.htm,.html,.ini,.java,.js,.json,.jsx,.log,.md,.mdx,.mjs,.mts,.py,.rb,.rs,.sass,.scss,.sh,.sql,.toml,.ts,.tsx,.txt,.xml,.yaml,.yml,.zsh"
         class="hidden"
         onChange={(event) => {
           const list = event.currentTarget.files
@@ -143,51 +152,11 @@ export function PromptInputV2(props: PromptInputV2Props) {
           inert={state.mode === "shell" ? true : undefined}
           style={buttons()}
         >
-          <Show when={view.agent}>
-            {(control) => (
-              <PromptInputV2ConfiguredSelect title="Choose agent" keybind={["Mod", "."]} control={control()} />
-            )}
-          </Show>
-          <Show
-            when={props.modelControl}
-            fallback={
-              <Show when={view.model}>
-                {(control) => (
-                  <PromptInputV2ConfiguredSelect
-                    title="Choose model"
-                    keybind={["Mod", "M"]}
-                    control={control()}
-                    model
-                  />
-                )}
-              </Show>
-            }
-          >
-            {props.modelControl}
-          </Show>
-          <Show when={view.variant}>
-            {(control) => (
-              <Show when={control().options().length > 1}>
-                <PromptInputV2ConfiguredSelect title="Choose model variant" control={control()} />
-              </Show>
-            )}
-          </Show>
+          {/* The agent, variant and model pickers moved to the bottom row. They were
+              pinned above the text area, which pushed the composer upward as soon
+              as one of them opened and made the whole box feel like it belonged to
+              the toolbar instead of the prompt. */}
           <div class="flex-1" />
-          <PromptInputV2MicButton
-            onTranscript={(text, _lang) => {
-              // Final settle only — live text already streamed via onLiveText; never auto-send
-              props.controller.setText(text)
-              requestAnimationFrame(() => editor?.focus())
-            }}
-            onLiveText={(text) => {
-              // Interim speech streams straight into the chat box as the user speaks
-              props.controller.setText(text)
-            }}
-            onError={(err) => console.error("[Mic]", err)}
-            disabled={state.mode === "shell"}
-            language={props.language}
-            onLanguageChange={props.onLanguageChange}
-          />
         </div>
 
         <div class="relative min-h-[60px]">
@@ -240,26 +209,80 @@ export function PromptInputV2(props: PromptInputV2Props) {
           </Show>
         </div>
 
-        <div class="flex h-11 items-center px-2">
+        <div class="flex h-11 items-center gap-1 px-2">
+          {/* Bottom row, left to right: plus, agent/mode, model, variant, spacer,
+              language, mic, send. Everything lives on one row so the composer keeps
+              its height while a menu is open, and every menu opens upward because
+              this row is anchored to the bottom of the viewport. */}
+          <PromptInputV2AddMenu
+            disabled={state.mode === "shell"}
+            title="Add images and files"
+            keybind={["Mod", "U"]}
+            attachLabel="Images and files"
+            attachShortcut="Mod+U"
+            commandsLabel="Commands"
+            contextLabel="Context"
+            shellLabel="Shell command"
+            onAttach={props.controller.attach}
+            onCommands={props.controller.openCommands}
+            onContext={props.controller.openContext}
+            onShell={props.controller.openShell}
+          />
+          <Show when={view.agent}>
+            {(control) => (
+              <PromptInputV2ConfiguredSelect title="Choose agent" keybind={["Mod", "."]} control={control()} />
+            )}
+          </Show>
+          <Show
+            when={props.modelControl}
+            fallback={
+              <Show when={view.model}>
+                {(control) => (
+                  <PromptInputV2ConfiguredSelect
+                    title="Choose model"
+                    keybind={["Mod", "M"]}
+                    control={control()}
+                    model
+                  />
+                )}
+              </Show>
+            }
+          >
+            {props.modelControl}
+          </Show>
+          <Show when={view.variant}>
+            {(control) => (
+              <Show when={control().options().length > 1}>
+                <PromptInputV2ConfiguredSelect title="Choose model variant" control={control()} />
+              </Show>
+            )}
+          </Show>
           <div
             class="flex min-w-0 flex-1 items-center gap-1"
             aria-hidden={state.mode === "shell"}
             inert={state.mode === "shell" ? true : undefined}
             style={buttons()}
           >
-            <PromptInputV2AddMenu
+            <PromptInputV2MicButton
+              onTranscript={(text, _lang) => {
+                // Final settle only — live text already streamed via onLiveText; never auto-send
+                props.controller.setText(appendVoice(text))
+                requestAnimationFrame(() => editor?.focus())
+              }}
+              onLiveText={(text) => {
+                // Interim speech streams straight into the chat box as the user speaks
+                if (!text) {
+                  // The mic clears its own previous paint before each new recording.
+                  voiceBase = undefined
+                  return
+                }
+                props.controller.setText(appendVoice(text))
+              }}
+              onError={(err) => console.error("[Mic]", err)}
               disabled={state.mode === "shell"}
-              title="Add images and files"
-              keybind={["Mod", "U"]}
-              attachLabel="Images and files"
-              attachShortcut="Mod+U"
-              commandsLabel="Commands"
-              contextLabel="Context"
-              shellLabel="Shell command"
-              onAttach={props.controller.attach}
-              onCommands={props.controller.openCommands}
-              onContext={props.controller.openContext}
-              onShell={props.controller.openShell}
+              language={props.language}
+              onLanguageChange={props.onLanguageChange}
+              onSubmit={props.controller.submit}
             />
           </div>
           <PromptInputV2SubmitButton
@@ -281,10 +304,10 @@ function renderPromptInputV2Editor(editor: HTMLDivElement, prompt: PromptInputV2
   const active = document.activeElement === editor
   editor.replaceChildren(
     ...prompt.flatMap<Node>((part) => {
-      if (part.type === "image") return []
+      if (part.type === "image" || part.type === "video" || part.type === "audio") return []
       if (part.type === "text") return [document.createTextNode(part.content)]
       const mention = document.createElement("span")
-      mention.textContent = part.content
+      mention.textContent = ("content" in part ? part.content : "")
       mention.contentEditable = "false"
       mention.dataset.mention =
         part.type === "file" && part.mime === "application/x-directory" ? "reference" : part.type
@@ -432,14 +455,7 @@ export function PromptInputV2Attachments(props: {
             {(attachment) => (
               <div class="relative group shrink-0">
                 <TooltipV2 value={attachment.filename} placement="top" contentClass="break-all">
-                  <Show
-                    when={attachment.mime.startsWith("image/")}
-                    fallback={
-                      <AttachmentCardV2 title={attachment.filename}>
-                        {typeLabel(attachment.filename, attachment.mime)}
-                      </AttachmentCardV2>
-                    }
-                  >
+                  <Show when={attachment.type === "image"} fallback={<MediaChip attachment={attachment} />}>
                     <img
                       src={attachment.dataUrl}
                       alt={attachment.filename}
@@ -468,6 +484,70 @@ export function PromptInputV2Attachments(props: {
   )
 }
 
+/**
+ * Preview for audio and video attachments.
+ *
+ * A clip that only showed its filename gave no way to tell a 4K video from a
+ * corrupt file, and audio had no affordance at all, so it read as a broken
+ * attachment. Video grabs a frame off the first loaded metadata so the thumbnail
+ * is the actual content; audio renders a live play control and scrubber.
+ */
+function MediaChip(props: { attachment: PromptInputV2Attachment }) {
+  const [duration, setDuration] = createSignal<string>("")
+
+  return (
+    <Show
+      when={props.attachment.type === "video"}
+      fallback={
+        <audio
+          src={props.attachment.dataUrl}
+          controls
+          preload="metadata"
+          class="h-[46px] w-[170px] rounded-[6px]"
+          onLoadedMetadata={(e) => setDuration(formatDuration(e.currentTarget.duration))}
+        />
+      }
+    >
+      <div class="relative h-[46px] w-[78px] overflow-hidden rounded-[6px] bg-black/80">
+        <video
+          src={props.attachment.dataUrl}
+          muted
+          playsinline
+          preload="metadata"
+          class="size-full object-cover"
+          onLoadedMetadata={(e) => {
+            // Seeking to the middle avoids the black first frame most encodes put
+            // at t=0, so the thumbnail shows something.
+            const el = e.currentTarget
+            if (Number.isFinite(el.duration) && el.duration > 0.2) el.currentTime = Math.min(el.duration / 2, 5)
+          }}
+        />
+        <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <span class="flex size-6 items-center justify-center rounded-full bg-black/55 text-white">
+            <IconV2 name="play" class="size-3" />
+          </span>
+        </div>
+        <Show when={duration()}>
+          <span class="pointer-events-none absolute bottom-0.5 right-1 rounded bg-black/70 px-1 text-[10px] leading-4 text-white">
+            {duration()}
+          </span>
+        </Show>
+        <div class="absolute inset-0 rounded-[6px] shadow-[inset_0_0_0_0.5px_var(--v2-border-border-base)] pointer-events-none" />
+      </div>
+    </Show>
+  )
+}
+
+function formatDuration(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds < 0) return ""
+  const total = Math.floor(seconds)
+  const hours = Math.floor(total / 3600)
+  const mins = Math.floor((total % 3600) / 60)
+  const secs = total % 60
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return hours > 0 ? `${hours}:${pad(mins)}:${pad(secs)}` : `${mins}:${pad(secs)}`
+}
+
 export function PromptInputV2AddMenu(props: {
   disabled?: boolean
   title: string
@@ -492,6 +572,10 @@ export function PromptInputV2AddMenu(props: {
         </>
       }
     >
+      {/* The composer is anchored to the bottom of the viewport, so a downward
+          menu has no room and renders past the bottom edge. top-start opens into
+          the conversation area, and MenuV2Root keeps Kobalte's collision
+          handling so a short viewport flips it back instead of clipping it. */}
       <MenuV2 gutter={6} modal={false} placement="top-start">
         <MenuV2.Trigger
           as={IconButtonV2}
