@@ -219,7 +219,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
         <div class="flex flex-col">
           <span class="text-[17px] font-[600] tracking-[-0.2px]">MCP Connect</span>
           <span class="text-[12px] text-[var(--text-weak,#8b95ad)]">
-            {connectedCount()} connected · {apps.length} apps ready · thousands more in the registry
+            {connectedCount()} connected · {apps.length} MCP servers/apps ready · thousands more in the registry
           </span>
         </div>
         <Show when={props.onClose}>
