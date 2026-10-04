@@ -440,6 +440,11 @@ const layer = Layer.effect(
         command: resolvedCmd,
         args: resolvedArgs,
         cwd,
+        // A stdio MCP server is a child process, and on Windows a console app
+        // spawned without this flashes a black console window for every server on
+        // every reconnect. The child's stdio is piped, so the window served no
+        // purpose; hiding it keeps the app from strobing while it starts up.
+        windowsHide: true,
         env: {
           ...process.env,
           ...(cmd === "opencode" ? { BUN_BE_BUN: "1" } : {}),
@@ -937,12 +942,19 @@ const layer = Layer.effect(
       return mcpConfig
     })
 
-    const startAuth = Effect.fn("MCP.startAuth")(function* (mcpName: string) {
+    const startAuth = Effect.fn("MCP.startAuth")(function* (
+      mcpName: string,
+      // Reports the consent URL the moment the server produces it, together with the
+      // state that callback will carry. Waiting for startAuth to return before acting
+      // on this is what put a two to three minute gap between the click and Chrome.
+      onAuthorization?: (authorizationUrl: string, oauthState: string) => void,
+    ) {
       const mcpConfig = yield* requireMcpConfig(mcpName)
       if (mcpConfig.type !== "remote") throw new Error(`MCP server ${mcpName} is not a remote server`)
       if (mcpConfig.oauth === false) throw new Error(`MCP server ${mcpName} has OAuth explicitly disabled`)
       const url = remoteURL(mcpConfig.url)
       if (!url) throw new Error(`Invalid MCP URL for "${mcpName}"`)
+      const connectTimeout = mcpConfig.timeout ?? DEFAULT_TIMEOUT
 
       // OAuth config is optional - if not provided, we'll use auto-discovery
       const oauthConfig = typeof mcpConfig.oauth === "object" ? mcpConfig.oauth : undefined
@@ -972,6 +984,11 @@ const layer = Layer.effect(
         {
           onRedirect: async (url) => {
             capturedUrl = url
+            // Hand the consent URL over the moment the server hands it to us. The
+            // connect call still has to unwind a failed handshake afterwards, and
+            // waiting for that before opening the browser is what put a two to three
+            // minute gap between the click and the consent page appearing.
+            onAuthorization?.(url.toString(), oauthState)
           },
         },
         auth,
@@ -986,7 +1003,13 @@ const layer = Layer.effect(
       return yield* Effect.tryPromise({
         try: () => {
           const client = createClient(directory)
-          return client.connect(transport).then(async () => {
+          // Without a bound here a server that accepts the connection but never
+          // answers the initialize handshake parks startAuth forever, and because
+          // the browser only opens after startAuth resolves the consent page
+          // appeared one to two minutes late — or never. A hosted MCP that has not
+          // answered within the connect budget is treated as unreachable so the
+          // user gets an error they can act on instead of a stalled card.
+          return withTimeout(client.connect(transport), connectTimeout).then(async () => {
             await authProvider.commit()
             return { authorizationUrl: "", oauthState, client } satisfies AuthResult
           })
@@ -998,7 +1021,17 @@ const layer = Layer.effect(
             pendingOAuthTransports.set(mcpName, { transport, provider: authProvider })
             return Effect.succeed({ authorizationUrl: capturedUrl.toString(), oauthState } satisfies AuthResult)
           }
-          return Effect.die(error)
+          // A remote server can refuse for any number of ordinary reasons: a bad
+          // path, a TLS failure, a proxy, an endpoint that is simply down. Dying here
+          // took the whole service down with it, so the UI showed "Unexpected server
+          // error" and the browser was never even asked to open. Report it as a
+          // connect failure instead, which is what it is.
+          return Effect.succeed({
+            authorizationUrl: "",
+            oauthState,
+            client: undefined,
+            error: error instanceof Error ? error.message : String(error),
+          } satisfies AuthResult & { error?: string })
         }),
       )
     })
@@ -1007,9 +1040,40 @@ const layer = Layer.effect(
       mcpName: string,
       onAuthorization?: (authorizationUrl: string) => void,
     ) {
-      const result = yield* startAuth(mcpName)
+      // startAuth reports the consent URL the instant the server produces it, so the
+      // browser can open while the handshake is still unwinding.
+      // Register the callback waiter and open the browser the instant the consent URL
+      // exists, rather than after the whole handshake has unwound. Waiting until then is
+      // what made the browser take minutes to appear, and registering the waiter late
+      // risks a fast sign-in landing on a callback nobody is listening for yet.
+      let callback: Promise<string> | undefined
+      const openConsentPage = (authorizationUrl: string, oauthState: string) => {
+        callback ??= McpOAuthCallback.waitForCallback(oauthState, mcpName)
+        onAuthorization?.(authorizationUrl)
+        // McpBrowser is an already-resolved Layer.succeed, so this effect needs no
+        // surrounding runtime and can be launched straight from the redirect callback
+        // that fires while the failed handshake is still unwinding.
+        Effect.runPromise(
+          browser
+            .open(authorizationUrl)
+            .pipe(Effect.catch(() => events.publish(BrowserOpenFailed, { mcpName, url: authorizationUrl }).pipe(Effect.ignore))),
+        ).catch(() => {})
+      }
+      const result = yield* startAuth(mcpName, openConsentPage)
       if (!result.authorizationUrl) {
         const client = "client" in result ? result.client : undefined
+        if ("error" in result) {
+          const _probe: null = result.error
+          void _probe
+        }
+        // startAuth reports an unreachable endpoint by returning a client-less
+        // result with the reason attached. Closing anything we managed to build and
+        // answering with that reason is what lets the card show what actually went
+        // wrong instead of claiming the sign-in was never completed.
+        if ("error" in result && result.error) {
+          yield* Effect.tryPromise(() => client?.close() ?? Promise.resolve()).pipe(Effect.ignore)
+          return { status: "failed", error: result.error } satisfies Status
+        }
         const mcpConfig = yield* requireMcpConfig(mcpName).pipe(
           Effect.tapError(() => Effect.tryPromise(() => client?.close() ?? Promise.resolve()).pipe(Effect.ignore)),
         )
@@ -1029,16 +1093,10 @@ const layer = Layer.effect(
         return yield* storeClient(s, mcpName, client, listed, client.getInstructions()?.trim(), mcpConfig.timeout)
       }
 
-      const callbackPromise = McpOAuthCallback.waitForCallback(result.oauthState, mcpName)
-      onAuthorization?.(result.authorizationUrl)
-
-      yield* browser.open(result.authorizationUrl).pipe(
-        Effect.catch(() => {
-          return events.publish(BrowserOpenFailed, { mcpName, url: result.authorizationUrl }).pipe(Effect.ignore)
-        }),
-      )
-
-      const code = yield* Effect.promise(() => callbackPromise)
+      // The consent page already opened from the redirect callback, and the callback
+      // waiter was registered alongside it. Re-registering here would orphan the first
+      // promise, and opening again would show the user two consent tabs.
+      const code = yield* Effect.promise(() => callback ?? McpOAuthCallback.waitForCallback(result.oauthState, mcpName))
 
       const storedState = yield* auth.getOAuthState(mcpName)
       if (storedState !== result.oauthState) {

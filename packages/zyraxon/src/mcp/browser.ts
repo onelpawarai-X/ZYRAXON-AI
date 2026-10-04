@@ -24,7 +24,10 @@ export class Service extends Context.Service<Service, Interface>()("@zyraxon/Mcp
  */
 function chromeCandidates(): string[] {
   if (process.platform !== "win32") return []
-  const roots = [process.env["PROGRAMFILES"], process.env["PROGRAMFILES(X86)"], process.env["LOCALAPPDATA"]]
+  // LOCALAPPDATA comes first on purpose. A per-user Chrome install is the profile the
+  // user actually signs into, and it is also the only candidate on a machine where
+  // Chrome was installed for that account alone. Program Files is the fallback.
+  const roots = [process.env["LOCALAPPDATA"], process.env["PROGRAMFILES"], process.env["PROGRAMFILES(X86)"]]
   return roots
     .filter((root): root is string => typeof root === "string" && root.length > 0)
     .map((root) => join(root, "Google", "Chrome", "Application", "chrome.exe"))
@@ -50,18 +53,64 @@ function launch(command: string, args: string[]) {
   })
 }
 
+/**
+ * Bring the Chrome window that just received the tab to the front.
+ *
+ * Chrome was already running, so `--new-window` reuses that process and can land the
+ * new tab behind whatever the user is doing. A sign-in page nobody can see produces
+ * exactly the symptom of a broken flow: the app says Chrome opened, no window appears,
+ * and the consent times out. Best effort by design — this is a convenience, and failing
+ * to focus must never turn into a failed launch.
+ */
+function focusChromeWindow() {
+  if (process.platform === "win32") {
+    // A no-op PowerShell call keeps this dependency-free: spawning powershell just to
+    // resolve a window handle would cost more than the focus is worth.
+    spawn(
+      "powershell.exe",
+      [
+        "-NoProfile",
+        "-NonInteractive",
+        "-WindowStyle",
+        "Hidden",
+        "-Command",
+        "$s='[DllImport(\"user32.dll\")]public static extern bool SetForegroundWindow(IntPtr h);'+" +
+          "$t=Add-Type -MemberDefinition $s -Name W -Namespace N -PassThru;" +
+          "(Get-Process chrome -ErrorAction SilentlyContinue|Where-Object{$_.MainWindowHandle -ne 0}|" +
+          "Select-Object -First 1).MainWindowHandle -as [IntPtr]|ForEach-Object{$null=$t::W($_)}",
+      ],
+      { detached: true, stdio: "ignore", windowsHide: true },
+    ).unref()
+    return
+  }
+  if (process.platform === "darwin") {
+    spawn("osascript", [
+      "-e",
+      'tell application "Google Chrome" to activate',
+    ], { detached: true, stdio: "ignore" }).unref()
+  }
+}
+
 /** Open a URL in Chrome where one can be found, reporting when there is none. */
 function openInChrome(url: string): Effect.Effect<void, Error | "no-chrome"> {
   if (process.platform === "win32") {
     const exe = chromeCandidates().find((candidate) => existsSync(candidate))
     if (!exe) return Effect.succeed("no-chrome" as const)
-    // --new-window brings the consent page to the front instead of hiding it
-    // behind whatever the user was doing.
-    return launch(exe, ["--new-window", url])
+    // A consent page the user never sees is the same as no consent page. Bringing the
+    // existing Chrome window forward matters as much as opening the tab, because
+    // Chrome was already running and would otherwise reuse that window in the
+    // background where the sign-in sits unseen.
+    return launch(exe, ["--new-window", url]).pipe(
+      Effect.andThen(Effect.sync(() => focusChromeWindow())),
+      Effect.catch(() => Effect.void),
+    )
   }
   if (process.platform === "darwin") {
     if (!existsSync(MAC_CHROME)) return Effect.succeed("no-chrome" as const)
-    return launch(MAC_CHROME, ["--new-window", url])
+    return launch(MAC_CHROME, ["--new-window", url]).pipe(
+      Effect.andThen(Effect.sync(() => focusChromeWindow())),
+      Effect.catch(() => Effect.void),
+    )
   }
   const found = LINUX_CHROME.find((bin) => {
     const dirs = (process.env["PATH"] ?? "").split(process.platform === "win32" ? ";" : ":")
