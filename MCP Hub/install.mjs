@@ -67,7 +67,7 @@ async function main() {
     "to the agent at runtime.",
     "",
     `Plugin entry: ${entry}`,
-    "Catalog: 17 curated apps, plus 9,580 servers from the official MCP registry.",
+    "MCP inventory: 83 curated MCP servers/apps (4 built-in local + 79 remote), plus 9,580 servers from the official MCP registry.",
     "",
   ].join("\n")
   try {
