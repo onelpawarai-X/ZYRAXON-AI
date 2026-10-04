@@ -1,4 +1,4 @@
-     Copyright (c) 2026 onelpawarai. All rights reserved. -->
+     <!--      Copyright (c) 2026 onelpawarai. All rights reserved. -->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -461,7 +461,10 @@ $("mc").onclick = function() { isRecording ? stopRecording() : startRecording();
 $("sn").onclick = function() {
   var text = finalTranscript.trim();
   if (!text) return;
-  send({ type: "send-to-chat", text: text, lang: activeLang() });
+  // A third message: the transcript plus an explicit intent to submit it. The bridge
+  // window is a separate page from the composer, so it cannot press Send itself, and
+  // "here is your text" alone left the utterance stranded in the chat box.
+  send({ type: "send-to-chat", text: text, lang: activeLang(), submit: true });
   finalTranscript = ""; interimText = ""; updDisplay();
   $("sn").disabled = true;
   $("statusMsg").textContent = "Sent!";
