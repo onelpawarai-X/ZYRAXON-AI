@@ -10,7 +10,7 @@ Everything lives in this folder. No existing source file is changed — see
 
 | Layer | Count |
 |---|---|
-| Curated catalog (hand-picked, ready) | **27** |
+| Curated catalog (hand-picked, ready) | **83** |
 | Official MCP registry (local cache) | **9,580** |
 | Official MCP registry (live, beyond the cache) | **18,000+** and growing |
 
@@ -31,6 +31,7 @@ Verified live against each server's `WWW-Authenticate` header and its
 | Stripe | No |
 | Cloudflare | No |
 | Figma | No |
+| ElevenLabs | No |
 | GitHub | Yes, once |
 
 These seven run an authorization server that supports dynamic client
@@ -82,6 +83,10 @@ community servers in the registry or through the provider's own API.
 | Slack | 4 | 2 |
 | Discord | 4 | 3 |
 
+## MCP inventory
+
+**Total MCP servers/apps in the curated ZYRAXON MCP inventory: 83.** This is the single user-facing total: 4 built-in local MCP servers plus 79 remote MCP app connections.
+
 ## Local servers
 
 ZYRAXON already ships four MCP servers that run on this machine. They appear in
@@ -100,7 +105,7 @@ the panel next to the remote apps.
 MCP Hub/
   plugin.ts                 host entry point — the only file ZYRAXON imports
   catalog/
-    seed.ts                 27 curated apps
+    seed.ts                 83 curated apps
     registry-cache.json     9,580 servers from the official registry
   lib/
     client.ts               dependency-free MCP client (Streamable HTTP)
