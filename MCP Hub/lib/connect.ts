@@ -50,8 +50,11 @@ export interface McpRuntime {
 /** Build the ZYRAXON config entry for an app. */
 export function toServerConfig(app: AppEntry, token?: string): Record<string, unknown> {
   if (app.kind === "local") {
-    // local servers are declared by ZYRAXON's own default config; nothing to add
-    return {}
+    // Bundled local servers are declared by ZYRAXON's own defaults and need nothing.
+    // One that ships its own launch command has to be declared here or it can never
+    // start, so it becomes a normal local entry pointing at that command.
+    if (!app.command) return {}
+    return { type: "local", command: [app.command.command, ...app.command.args], enabled: true }
   }
   // The 5s default is a per-request budget, and a first connect has to negotiate
   // a session and list every tool before it can report anything. Give hosted
@@ -113,7 +116,8 @@ export async function waitForStatus(
 }
 
 /** The answer after sign-in: live, or a refusal. Nothing else counts. */
-const afterAuth = (status: McpStatusEntry["status"]) => status === "connected" || status === "failed"
+const afterAuth = (status: McpStatusEntry["status"]) =>
+  status === "connected" || status === "failed" || status === "needs_client_registration"
 
 export interface ConnectOptions {
   /** bearer token, for apps that do not speak OAuth */
@@ -130,6 +134,32 @@ export interface ConnectOptions {
  */
 export async function connectApp(runtime: McpRuntime, app: AppEntry, options: ConnectOptions = {}) {
   const { token, onProgress } = options
+  return await attempt(runtime, app, token, onProgress, 0)
+}
+
+/** how many times a connect is tried before it is called unreachable */
+const MAX_ATTEMPTS = 4
+const RETRY_BASE_MS = 1200
+
+/**
+ * One attempt, retried until it works.
+ *
+ * Every failure here is temporary in practice: a cold DNS lookup, a slow TLS
+ * handshake, a hosted endpoint mid-restart, a rate limit. Giving up on the first
+ * one showed the user "failed" for something they did nothing wrong about.
+ */
+async function attempt(
+  runtime: McpRuntime,
+  app: AppEntry,
+  token: string | undefined,
+  onProgress: ((state: ConnectionState) => void) | undefined,
+  retry: number,
+): Promise<ConnectionState> {
+  let reason = "could not reach the server"
+  // A retry re-opens the consent page from scratch, so it is only fair before the
+  // browser ever appeared. Once a person has been through sign-in, another silent
+  // round of attempts just stacks browser tabs and multiplies the wait.
+  let signedIn = false
   try {
     const config = toServerConfig(app, token)
     onProgress?.({ status: "connecting" })
@@ -138,40 +168,73 @@ export async function connectApp(runtime: McpRuntime, app: AppEntry, options: Co
     // nothing to add; just wake the one that is configured.
     if (Object.keys(config).length === 0) {
       await runtime.connect(app.id)
-      return settle(runtime, app.id, await waitForStatus(runtime, app.id))
+      return await settle(runtime, app.id, await waitForStatus(runtime, app.id))
     }
 
     // Adding brings the server up in the same round trip, so the response
     // already says whether it is live, broken, or waiting on a sign-in.
     const added = await runtime.addServer(app.id, config)
     const first = added ?? (await waitForStatus(runtime, app.id))
-    if (first.status === "connected" || first.status === "failed") return settle(runtime, app.id, first)
-
-    onProgress?.({ status: "needs_auth" })
-    // authenticate opens the consent page and blocks until the user answers it,
-    // so it is never awaited directly. The status is the answer, but it must be
-    // a *new* answer: needs_auth is what the server said before the browser even
-    // opened, so waiting for "anything settled" here returned instantly and
-    // reported "sign-in was never completed" while Chrome was sitting on
-    // "Authorization successful".
-    const [settled] = await Promise.all([
-      waitForStatus(runtime, app.id, AUTH_TIMEOUT_MS, afterAuth),
-      runtime.authenticate(app.id).catch(() => undefined),
-    ])
-    return settle(runtime, app.id, settled)
-  } catch (error) {
-    const failed: ConnectionState = {
-      status: "failed",
-      error: error instanceof Error ? error.message : String(error),
+    if (first.status === "connected") return await settle(runtime, app.id, first)
+    if (first.status === "failed") {
+      reason = first.error ?? reason
+    } else {
+      signedIn = true
+      onProgress?.({ status: "needs_auth" })
+      const settled = await authenticate(runtime, app.id)
+      if (settled.status !== "failed") return await settle(runtime, app.id, settled)
+      reason = settled.error ?? reason
     }
+  } catch (error) {
+    reason = error instanceof Error ? error.message : String(error)
+  }
+
+  if (signedIn || retry >= MAX_ATTEMPTS - 1) {
+    const failed: ConnectionState = { status: "failed", error: reason }
     onProgress?.(failed)
     return failed
   }
+
+  // Brief, growing pause so a struggling endpoint gets room without the user
+  // staring at a frozen screen.
+  onProgress?.({ status: "connecting" })
+  await delay(RETRY_BASE_MS * (retry + 1))
+  return await attempt(runtime, app, token, onProgress, retry + 1)
+}
+
+/**
+ * Run the OAuth handshake, letting a rejection win the race against the poll.
+ *
+ * authenticate's *return* is not the answer. Resolving it means the browser flow
+ * finished and the runtime still has to spend the new token and report connected,
+ * so a successful resolve must never settle this function on its own — only the
+ * status poll may do that.
+ *
+ * It previously mapped a successful resolve to `needs_auth` and raced it against
+ * the poll. A resolved promise wins in a microtask while the poll sleeps 400ms, so
+ * every completed sign-in returned instantly with `needs_auth` and the card
+ * reported "sign-in was never completed" while Chrome was sitting on
+ * "Authorization successful".
+ */
+async function authenticate(runtime: McpRuntime, name: string): Promise<McpStatusEntry> {
+  const rejection = runtime.authenticate(name).then(
+    // Success hands the answer to the status poll and waits for it.
+    () => new Promise<McpStatusEntry>(() => {}),
+    (error: unknown): McpStatusEntry => ({
+      status: "failed",
+      error: error instanceof Error ? error.message : String(error),
+    }),
+  )
+
+  return await Promise.race([waitForStatus(runtime, name, AUTH_TIMEOUT_MS, afterAuth), rejection])
 }
 
 /** Turn a server status into the state a card renders. */
-function settle(runtime: McpRuntime, name: string, status: McpStatusEntry): ConnectionState {
-  if (status.status === "connected") return { status: "connected", toolCount: countTools(runtime, name) }
+async function settle(runtime: McpRuntime, name: string, status: McpStatusEntry): Promise<ConnectionState> {
+  // countTools is async, so this has to await. Reading it synchronously handed the
+  // UI a Promise, which rendered as an empty tool count and made a live server look
+  // like it had contributed nothing to the agent.
+  if (status.status === "connected") return { status: "connected", toolCount: await countTools(runtime, name) }
   if (status.status === "failed") return { status: "failed", error: status.error ?? "the server refused the connection" }
   if (status.status === "needs_auth" || status.status === "needs_client_registration")
     return { status: "failed", error: status.error ?? "sign-in was never completed" }
