@@ -98,6 +98,7 @@ export const zeroSetupApps: AppEntry[] = [
   { id: "algolia", icon: "algolia", iconDomain: "algolia.com", name: "Algolia", description: "Search index and records", category: "Search", kind: "oauth", url: "https://mcp.algolia.com/mcp", color: "#5468FF", zeroSetup: true },
   { id: "typesense", iconDomain: "typesense.org", name: "Typesense", description: "Search clusters and collections", category: "Search", kind: "oauth", url: "https://cloud.typesense.org/mcp/v1", color: "#F5A800", zeroSetup: true },
   { id: "context7", iconDomain: "context7.com", name: "Context7", description: "Live library documentation", category: "Developer", kind: "oauth", url: "https://mcp.context7.com/mcp", color: "#F59E0B", zeroSetup: true },
+  { id: "elevenlabs", iconDomain: "elevenlabs.io", name: "ElevenLabs", description: "Voice, audio, music, images, video and agent management", category: "AI & Media", kind: "oauth", url: "https://api.elevenlabs.io/v1/mcp", color: "#111111", zeroSetup: true },
 
   // No sign-in at all. These answered 200 on the first request.
   { id: "wolfram", iconDomain: "wolframalpha.com", name: "Wolfram Alpha", description: "Computation, data and facts", category: "Knowledge", kind: "none", url: "https://agenttools.wolfram.com/mcp", color: "#DD1100" },
