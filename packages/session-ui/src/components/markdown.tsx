@@ -69,6 +69,22 @@ function fallback(markdown: string) {
   return escape(markdown).replace(/\r\n?/g, "\n").replace(/\n/g, "<br>")
 }
 
+/**
+ * Render a block that has not been re-parsed yet.
+ *
+ * `marked.parse` is synchronous, so this costs nothing and it is the difference
+ * between a styled message and a wall of literal asterisks. Sanitizing is applied
+ * exactly as it is for a settled block, so a pending block can never widen what
+ * the renderer allows through — only how soon it looks right.
+ */
+function pendingHtml(markdown: string) {
+  try {
+    return sanitizeMarkdown(marked.parse(markdown))
+  } catch {
+    return fallback(markdown)
+  }
+}
+
 async function code(text: string, language: string | undefined, key: string, complete = false) {
   const name = language && language in bundledLanguages ? language : "text"
   try {
@@ -763,13 +779,21 @@ function pendingBlocks(
       // Streaming only ever grows the text, so anything already on screen is
       // still a true prefix of what is coming. Keep that rendering, but give the
       // block a fresh key and hash so the real parse replaces it when it lands.
-      const grewFrom = current && current.mode !== "code" && block.raw.startsWith(current.raw)
+      //
+      // `grewFrom` also has to cover the prefix that is already fully rendered.
+      // When it did not, the block fell back to escaped text and the message
+      // visibly snapped back to plain writing the instant it finished — the
+      // markdown box "turning into ordinary text" at the end.
+      const prefix = current && current.mode !== "code" && block.raw.startsWith(current.raw)
       return {
         key,
         mode: block.mode,
         raw: block.raw,
         hash: String(block.raw.length),
-        html: grewFrom ? current.html : fallback(block.src),
+        // Reuse the rendered prefix when there is one, and otherwise render the
+        // block properly instead of escaping it. Escaping is only correct for a
+        // block that genuinely has no parse yet.
+        html: prefix ? current.html : pendingHtml(block.src),
       }
     }
     return {
