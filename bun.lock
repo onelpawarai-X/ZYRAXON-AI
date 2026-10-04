@@ -106,7 +106,7 @@
       "name": "@zyraxon-ai/cli",
       "version": "19.0.0",
       "bin": {
-        "lildax": "./bin/lildax.cjs",
+        "zyraxon": "./bin/zyraxon.cjs",
       },
       "dependencies": {
         "@effect/platform-node": "catalog:",
