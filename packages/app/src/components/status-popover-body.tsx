@@ -392,7 +392,9 @@ export function StatusPopoverBody(props: { shown: Accessor<boolean> }) {
 
         <Tabs.Content value="mcp">
           <div class="flex flex-col px-2 pb-2">
-            <div class="flex flex-col p-3 bg-background-base rounded-sm min-h-14">
+            {/* The list grows with the number of servers, which pushed the popover
+                down over the composer. Cap the height and let it scroll instead. */}
+            <div class="flex flex-col p-3 bg-background-base rounded-sm max-h-[260px] overflow-y-auto min-h-14">
               <Show
                 when={mcpNames().length > 0}
                 fallback={
