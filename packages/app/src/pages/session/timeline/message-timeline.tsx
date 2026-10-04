@@ -349,17 +349,13 @@ export function MessageTimeline(props: {
   const TTS_SERVER = "http://127.0.0.1:19810"
 
   // TTS SERIAL queue — ONE audio at a time, never parallel
-  const ttsAudioQueue: Array<{ buffer: ArrayBuffer; text: string }> = []
-  let ttsPlaying = false
+  const ttsAudioQueue: ArrayBuffer[] = []
   let ttsFetching = false
   let ttsAbortController: AbortController | null = null
   // Text waiting to be sent to TTS — FIFO queue, never dropped
   const ttsPendingText: string[] = []
   // Safety: reset ttsFetching if stuck for more than 60 seconds
   let ttsLastFetchTime = 0
-  // Word-by-word live caption while speaking — floats above the chat box
-  const [ttsCaption, setTtsCaption] = createSignal("")
-  let ttsCaptionTimer: ReturnType<typeof setTimeout> | null = null
 
   // Echo guard — mirrors main-process TTS state so the renderer never paints
   // its own voice into the chat box or re-speaks itself while playing
@@ -369,38 +365,24 @@ export function MessageTimeline(props: {
     if (api?.setVoiceTTSActive) api.setVoiceTTSActive(active)
   }
 
-  function revealCaption(text: string, durationMs: number) {
-    if (ttsCaptionTimer) { clearTimeout(ttsCaptionTimer); ttsCaptionTimer = null }
-    const tokens = text.split(/(\s+)/).filter((t) => t.trim())
-    if (tokens.length === 0) { setTtsCaption(""); return }
-    const step = Math.max(45, Math.floor(durationMs / tokens.length))
-    let idx = 0
-    setTtsCaption(tokens[0])
-    const tick = () => {
-      idx++
-      if (idx >= tokens.length) { setTtsCaption(""); return }
-      setTtsCaption(tokens.slice(0, idx + 1).join(" "))
-      ttsCaptionTimer = setTimeout(tick, step)
-    }
-    ttsCaptionTimer = setTimeout(tick, step)
-  }
-
   function stopAllTTS() {
     ttsGeneration++
-    if (ttsCaptionTimer) { clearTimeout(ttsCaptionTimer); ttsCaptionTimer = null }
-    setTtsCaption("")
     setRenderTTSActive(false)
     if (ttsAbortController) {
       ttsAbortController.abort()
       ttsAbortController = null
     }
+    // Tear the live stream down explicitly: aborting the fetch only unwinds the
+    // reader, it does not silence an <audio> element that is already playing.
+    ttsStreamPlayer?.dispose()
+    ttsStreamPlayer = null
+    ttsDeferredBuffers.length = 0
     if (ttsActiveSource) {
       try { ttsActiveSource.onended = null; ttsActiveSource.stop() } catch {}
       ttsActiveSource = null
     }
     ttsNextStartAt = 0
     ttsAudioQueue.length = 0
-    ttsPlaying = false
     ttsFetching = false
     ttsPendingText.length = 0
   }
@@ -415,15 +397,23 @@ export function MessageTimeline(props: {
 
   function getTTSContext(): AudioContext {
     if (!ttsAudioContext) ttsAudioContext = new AudioContext()
-    if (ttsAudioContext.state === "suspended") void ttsAudioContext.resume()
     return ttsAudioContext
+  }
+
+  // Constructing an AudioContext and getting it out of the suspended state both cost
+  // real time, and a suspended context reports a frozen currentTime, so scheduling
+  // against it before it runs pushes chunk boundaries into the past and drops audio.
+  // Warm it at mount so the first utterance schedules against a running clock.
+  async function warmTTSContext() {
+    const ctx = getTTSContext()
+    try {
+      if (ctx.state !== "running") await ctx.resume()
+    } catch {}
   }
 
   function finishTTSPlayback(generation: number) {
     if (ttsGeneration !== generation) return
-    ttsPlaying = false
     ttsActiveSource = null
-    setTtsCaption("")
     setRenderTTSActive(false)
   }
 
@@ -433,23 +423,30 @@ export function MessageTimeline(props: {
     const generation = ttsGeneration
     try {
       while (ttsAudioQueue.length > 0) {
-        const entry = ttsAudioQueue.shift()!
+        const buffer = ttsAudioQueue.shift()!
         const ctx = getTTSContext()
+        // Never schedule against a suspended clock — resume first, then re-check so a
+        // stop() that landed during the await still wins.
+        if (ctx.state !== "running") {
+          try { await ctx.resume() } catch {}
+          if (ttsGeneration !== generation) return
+        }
         let audio: AudioBuffer
         try {
-          audio = await ctx.decodeAudioData(entry.buffer.slice(0))
+          audio = await ctx.decodeAudioData(buffer.slice(0))
         } catch {
           continue
         }
         if (ttsGeneration !== generation) return
-        const startAt = Math.max(ctx.currentTime + 0.02, ttsNextStartAt)
+        // Small epsilon only — the gapless queue already guarantees the next chunk
+        // starts exactly where this one ends, so no real pre-roll is needed.
+        const startAt = Math.max(ctx.currentTime + 0.005, ttsNextStartAt)
         ttsNextStartAt = startAt + audio.duration
         const source = ctx.createBufferSource()
         source.buffer = audio
         source.connect(ctx.destination)
         source.start(startAt)
         ttsActiveSource = source
-        revealCaption(entry.text, audio.duration * 1000)
         source.onended = () => {
           if (ttsGeneration !== generation) return
           if (ttsAudioQueue.length > 0 || ttsScheduling) {
@@ -471,9 +468,14 @@ export function MessageTimeline(props: {
     if (!ttsActiveSource) finishTTSPlayback(generation)
   }
 
-  function playTTSBuffer(buffer: ArrayBuffer, text = "") {
-    ttsAudioQueue.push({ buffer, text })
-    ttsPlaying = true
+  function playTTSBuffer(buffer: ArrayBuffer) {
+    // A streamed utterance owns the audio graph until it ends. Anything handed
+    // over in the meantime waits rather than talking over it.
+    if (ttsStreamPlayer) {
+      ttsDeferredBuffers.push(buffer)
+      return
+    }
+    ttsAudioQueue.push(buffer)
     setRenderTTSActive(true)
     void scheduleFromQueue()
   }
@@ -481,10 +483,234 @@ export function MessageTimeline(props: {
   // Expose stopAllTTS globally
   ;(window as any).__stopTTS = stopAllTTS
 
+  // ---------------------------------------------------------------------------
+  // Streaming TTS playback
+  //
+  // /speak is a chunked audio/mpeg response: Edge pushes MP3 frames as it makes
+  // them, the main-process shim pipes them straight through, and this layer
+  // appends each frame to a MediaSource SourceBuffer the moment it arrives.
+  // Playback therefore begins when the FIRST frame lands instead of after the
+  // whole reply has been synthesised.
+  //
+  // MediaSource is the only browser primitive that can play a *growing* MP3 —
+  // decodeAudioData needs a whole file — so it is gated on
+  // MediaSource.isTypeSupported. Where it is unavailable the body is buffered and
+  // handed to the gapless queue above, which stays correct but has to wait for
+  // the last byte.
+  // ---------------------------------------------------------------------------
+  const TTS_MIME = "audio/mpeg"
+  let ttsStreamPlayer: { dispose: () => void } | null = null
+  const ttsDeferredBuffers: ArrayBuffer[] = []
+
+  function ttsCanStream() {
+    return typeof MediaSource !== "undefined" && MediaSource.isTypeSupported(TTS_MIME)
+  }
+
+  // Already-played audio is evicted from the SourceBuffer past this size. Only a
+  // pathologically long single utterance reaches it, but it is what stops a runaway
+  // response from growing the buffer without bound.
+  const TTS_EVICT_ABOVE_BYTES = 8 * 1024 * 1024
+
+  // The stream must not start on top of a queue buffer that is already playing, or
+  // the two would overlap. Polling is fine here: the only caller is serialised
+  // behind ttsFetching, so nothing piles up waiting.
+  async function waitForTTSQueueIdle(generation: number) {
+    while (ttsGeneration === generation && (ttsAudioQueue.length > 0 || ttsActiveSource)) {
+      await new Promise((r) => setTimeout(r, 30))
+    }
+  }
+
+  // Plays a /speak response body as it arrives. Returns false only when the stream
+  // failed before a single frame was played, so the caller may safely fall back to
+  // buffering; once any audio has been played the stream owns the utterance.
+  async function playTTSStream(
+    resp: Response,
+    controller: AbortController,
+    generation: number
+  ): Promise<boolean> {
+    const body = resp.body
+    if (!body) return false
+    let played = false
+    let consumed = false
+
+    const reader = body.getReader()
+    const ctx = getTTSContext()
+    if (ctx.state !== "running") {
+      try { await ctx.resume() } catch {}
+      if (ttsGeneration !== generation) {
+        void reader.cancel()
+        return true
+      }
+    }
+
+    const mediaSource = new MediaSource()
+    const objectUrl = URL.createObjectURL(mediaSource)
+    const audio = new Audio()
+    audio.src = objectUrl
+    audio.autoplay = true
+    // Routed through the same AudioContext as everything else so the graph, the
+    // resume path and the teardown all stay in one place. If the context is
+    // already closed the element still plays straight to the output on its own,
+    // which beats dropping the utterance.
+    let sourceNode: MediaElementAudioSourceNode | null = null
+    try {
+      sourceNode = ctx.createMediaElementSource(audio)
+      sourceNode.connect(ctx.destination)
+    } catch {
+      sourceNode = null
+    }
+
+    let disposed = false
+    const dispose = () => {
+      if (disposed) return
+      disposed = true
+      try { void reader.cancel() } catch {}
+      try { audio.pause() } catch {}
+      try { audio.removeAttribute("src") } catch {}
+      try { audio.load() } catch {}
+      try { sourceNode?.disconnect() } catch {}
+      URL.revokeObjectURL(objectUrl)
+      if (ttsStreamPlayer?.dispose === dispose) ttsStreamPlayer = null
+      if (ttsGeneration !== generation) return
+      setRenderTTSActive(false)
+      // Buffers that arrived over IPC while this stream was speaking now have the
+      // audio graph to themselves.
+      const deferred = ttsDeferredBuffers.splice(0)
+      for (const buf of deferred) playTTSBuffer(buf)
+    }
+
+    ttsStreamPlayer = { dispose }
+    setRenderTTSActive(true)
+    const onNaturalEnd = () => dispose()
+    audio.addEventListener("ended", onNaturalEnd)
+    audio.addEventListener("error", onNaturalEnd)
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        mediaSource.addEventListener("sourceopen", () => resolve(), { once: true })
+        mediaSource.addEventListener(
+          "error",
+          () => reject(new Error("MediaSource failed to open")),
+          { once: true }
+        )
+      })
+      if (ttsGeneration !== generation || controller.signal.aborted) {
+        dispose()
+        return true
+      }
+
+      const sourceBuffer = mediaSource.addSourceBuffer(TTS_MIME)
+      // MP3 has no clusters, so every appended byte is played exactly once and in
+      // order — this is what keeps a streamed reply free of repeats and overlaps.
+      sourceBuffer.mode = "sequence"
+
+      const pending: Uint8Array<ArrayBuffer>[] = []
+      const appendWaiters: Array<() => void> = []
+      let appendError: unknown = null
+      let appendedBytes = 0
+      let evicted = false
+      const settleAppends = () => {
+        const waiters = appendWaiters.splice(0)
+        for (const w of waiters) w()
+      }
+      // Resolves when the append that is currently in flight completes. Only ever
+      // awaited while an append really is in flight.
+      const nextAppendDone = () => new Promise<void>((r) => appendWaiters.push(r))
+      // Defensive bound on the SourceBuffer. Upstream every utterance is capped at
+      // 60–300 characters, so this only fires for a pathological single response;
+      // it runs at most once per stream so the removal can never move the time
+      // origin underneath the playhead and cause a repeat or a gap.
+      const evictPlayed = () => {
+        if (evicted || appendedBytes <= TTS_EVICT_ABOVE_BYTES || sourceBuffer.updating) return
+        const playhead = audio.currentTime
+        if (!Number.isFinite(playhead) || playhead <= 0) return
+        const buffered = sourceBuffer.buffered
+        if (!buffered.length) return
+        // Leave a second of audio behind the playhead so eviction can never catch
+        // up with playback.
+        const upto = Math.min(playhead - 1, buffered.end(buffered.length - 1) - 1)
+        if (upto <= buffered.start(0)) return
+        try {
+          sourceBuffer.remove(buffered.start(0), upto)
+          evicted = true
+        } catch {}
+      }
+      sourceBuffer.addEventListener("updateend", () => {
+        settleAppends()
+        while (!sourceBuffer.updating && pending.length > 0 && !appendError) {
+          try {
+            sourceBuffer.appendBuffer(pending.shift()!)
+          } catch (e) {
+            appendError = e
+            break
+          }
+        }
+        evictPlayed()
+      })
+      sourceBuffer.addEventListener("error", () => {
+        appendError = new Error("SourceBuffer append failed")
+        settleAppends()
+      })
+
+      for (;;) {
+        const { done, value } = await reader.read()
+        consumed = true
+        if (done) break
+        if (controller.signal.aborted || ttsGeneration !== generation) break
+        if (!value || value.byteLength === 0 || appendError) continue
+        appendedBytes += value.byteLength
+        // The DOM lib types a reader chunk as Uint8Array<ArrayBufferLike> while
+        // appendBuffer only accepts a non-shared ArrayBuffer. Fetch never hands
+        // back a SharedArrayBuffer, so this is the one place that difference has to
+        // be papered over.
+        const chunk = value as Uint8Array<ArrayBuffer>
+        if (sourceBuffer.updating || pending.length > 0) pending.push(chunk)
+        else {
+          try {
+            sourceBuffer.appendBuffer(chunk)
+          } catch (e) {
+            appendError = e
+            break
+          }
+        }
+        // Start on the first frame that actually made it into the buffer. From
+        // here on playback is continuous, so nothing waits for the synthesis that
+        // is still in flight.
+        if (!played) {
+          await nextAppendDone()
+          if (appendError) break
+          played = true
+          void audio.play().catch(() => {})
+        }
+      }
+
+      if (played && !appendError && !controller.signal.aborted && ttsGeneration === generation) {
+        while (sourceBuffer.updating || pending.length > 0) {
+          await nextAppendDone()
+          if (appendError) break
+        }
+        if (!appendError) {
+          try { mediaSource.endOfStream() } catch {}
+          void audio.play().catch(() => {})
+          return true
+        }
+      }
+      dispose()
+      // Once a single byte has been pulled off the body the caller must NOT retry
+      // with arrayBuffer(): that would replay the frames already spoken. Falling
+      // back is only safe while the body is untouched.
+      return consumed || played
+    } catch (e) {
+      console.warn("[TTS] Stream playback failed:", e)
+      dispose()
+      return consumed || played
+    }
+  }
+
   // Play TTS audio delivered over IPC (e.g. the Settings "Test Voice" button)
   // through the same serial queue so it can NEVER overlap the response TTS
   const removeVoiceTTSAudio = (window as any).api?.onVoiceTTSAudio?.((buffer: ArrayBuffer) => {
-    playTTSBuffer(buffer, "")
+    playTTSBuffer(buffer)
   }) as (() => void) | undefined
 
   function loadPersistedSpokenIds(): string[] {
@@ -630,17 +856,11 @@ export function MessageTimeline(props: {
       const chunk = ttsPendingText.shift()!
       if (!chunk || chunk.trim().length === 0) continue
 
-      // Wait for previous audio to finish
-      const waitStart = Date.now()
-      while (ttsPlaying) {
-        await new Promise(r => setTimeout(r, 50))
-        if (Date.now() - waitStart > 15000) { ttsPlaying = false; break }
-      }
-
-      if (ttsAbortController) {
-        ttsAbortController.abort()
-        ttsAbortController = null
-      }
+      // Deliberately NOT waiting for the previous chunk to finish playing.
+      // Synthesis is a cloud round trip, so waiting here meant every chunk cost a
+      // dead gap plus a full fetch that only began once the previous audio had
+      // finished. Fetching ahead into the gapless audio queue keeps the speech
+      // buffer primed and removes the silence between chunks entirely.
 
       const gender = settings.general.voiceGender?.() === "male" ? "m" : "f"
       const voiceLang = settings.general.voiceLanguage?.() || "en-US"
@@ -649,16 +869,35 @@ export function MessageTimeline(props: {
 
       const controller = new AbortController()
       ttsAbortController = controller
+      // The deadline only guards getting a response head. A long reply streams for
+      // longer than that, so it is dropped the moment the headers are in and the
+      // body is left to finish on its own rather than being cut off mid-sentence.
+      const deadline = setTimeout(() => controller.abort(), 30000)
 
       try {
-        const resp = await fetch(url, { signal: AbortSignal.timeout(30000) })
+        const resp = await fetch(url, { signal: controller.signal })
+        clearTimeout(deadline)
         if (!resp.ok || controller.signal.aborted) continue
+        ttsLastFetchTime = Date.now()
+
+        // Play as the frames arrive, so the first word is audible while Edge is
+        // still synthesising the rest of it.
+        if (ttsCanStream() && resp.body) {
+          const generation = ttsGeneration
+          await waitForTTSQueueIdle(generation)
+          if (ttsGeneration !== generation || controller.signal.aborted) continue
+          if (await playTTSStream(resp, controller, generation)) continue
+        }
+
         const buf = await resp.arrayBuffer()
         if (buf && buf.byteLength > 100 && !controller.signal.aborted) {
-          playTTSBuffer(buf, chunk)
+          playTTSBuffer(buf)
         }
       } catch (e: any) {
         if (e?.name !== "AbortError") ttsServerHealthy = false
+      } finally {
+        clearTimeout(deadline)
+        ttsLastFetchTime = Date.now()
       }
     }
     ttsFetching = false
@@ -668,15 +907,13 @@ export function MessageTimeline(props: {
   const mountedMessageIDs = new Set<string>()
   let mountedSnapshotDone = false
   let ttsProcessingGuard = false
-  // Track which messages are actively being processed to prevent re-entry
-  const ttsActiveProcessing = new Set<string>()
   // Track last TTS chunk per message to prevent duplicate sends across retries
   const ttsLastChunkHash = new Map<string, string>()
-  // Real-time pacing: while the AI is still writing, speak short chunks on a fixed
-  // cadence so audio starts immediately instead of waiting for the whole reply.
-  const ttsLastFlushAt = new Map<string, number>()
-  const TTS_FLUSH_INTERVAL_MS = 120
-  const TTS_FLUSH_MIN_CHARS = 4
+  // Real-time pacing: while the AI is still writing, flush short chunks as soon as
+  // there is a whole word to speak, so audio starts on the first opportunity rather
+  // than after a fixed cadence. The gapless audio queue absorbs bursts, and
+  // ttsSentText advancing past what was already spoken is what prevents re-sends.
+  const TTS_FLUSH_MIN_CHARS = 3
   const TTS_FLUSH_MAX_CHARS = 60
 
   function processTTSForMessages() {
@@ -707,8 +944,6 @@ export function MessageTimeline(props: {
         if (msg.role !== "assistant") continue
         if (mountedMessageIDs.has(msg.id)) continue
         if (ttsSpokenIds.has(msg.id)) continue
-        // Prevent re-entry for the same message across rapid polling cycles
-        if (ttsActiveProcessing.has(msg.id)) continue
 
         const isActive = typeof msg.time?.completed !== "number"
         const fullText = extractTTSText(msg.id)
@@ -725,19 +960,17 @@ export function MessageTimeline(props: {
         const alreadySent = ttsSentText.get(msg.id) || ""
 
         if (isActive) {
-          // Mark as actively processing to prevent re-entry
-          ttsActiveProcessing.add(msg.id)
-
           // ACTIVE message: speak while the AI is still writing — flush whole words
-          // on a short cadence, never waiting for a sentence end.
+          // as soon as one is available, never waiting for a sentence end.
+          // ttsSentText already records everything spoken, so when nothing new has
+          // arrived this is empty and nothing is re-sent. No per-message lockout is
+          // needed, and adding one here is what used to space out a reply into
+          // widely separated bursts.
           const unsentText = fullText.slice(alreadySent.length)
-          if (unsentText.length < 1) { ttsActiveProcessing.delete(msg.id); continue }
+          if (unsentText.length < 1) continue
 
-          const now = Date.now()
-          const sinceFlush = now - (ttsLastFlushAt.get(msg.id) ?? 0)
           const endsAtWordBoundary = /\s/.test(unsentText[unsentText.length - 1] ?? "")
-          const sizeGate = sinceFlush >= TTS_FLUSH_INTERVAL_MS ? TTS_FLUSH_MIN_CHARS : TTS_FLUSH_MAX_CHARS
-          if (unsentText.length < sizeGate || !endsAtWordBoundary) {
+          if (unsentText.length < TTS_FLUSH_MIN_CHARS || !endsAtWordBoundary) {
             // waiting for more words
           } else {
             let cut = unsentText.length
@@ -750,15 +983,11 @@ export function MessageTimeline(props: {
             if (chunk.length >= 3) {
               ttsSentText.set(msg.id, alreadySent + chunk)
               ttsLastChunkHash.set(msg.id, textHash)
-              ttsLastFlushAt.set(msg.id, now)
               sendTTSText(chunk)
             }
           }
-          // Release processing flag after a short delay to allow next cycle to check
-          setTimeout(() => ttsActiveProcessing.delete(msg.id), 2000)
         } else {
           // COMPLETED message: send remaining in large sentence-level chunks
-          ttsActiveProcessing.delete(msg.id)
           ttsSpokenIds.add(msg.id)
           ttsSpokenContentHashes.add(textHash)
           persistSpokenIds()
@@ -816,6 +1045,9 @@ export function MessageTimeline(props: {
     processTTSForMessages()
   }, 80)
 
+  // Get the AudioContext running now rather than on the first reply
+  void warmTTSContext()
+
   // Listen for TTS stop events (when user sends a new message)
   const handleTTSStop = () => stopAllTTS()
   window.addEventListener("tts-stop", handleTTSStop)
@@ -826,6 +1058,12 @@ export function MessageTimeline(props: {
     if (removeVoiceTTSAudio) removeVoiceTTSAudio()
     delete (window as any).__stopTTS
     stopAllTTS()
+    // The context is created eagerly for latency, so it must be released here or
+    // every session this view mounts would strand an audio thread.
+    if (ttsAudioContext) {
+      try { void ttsAudioContext.close() } catch {}
+      ttsAudioContext = null
+    }
   })
 
   let prependAnchor: { key: string; offset: number } | undefined
@@ -1817,19 +2055,6 @@ export function MessageTimeline(props: {
 
   return (
     <div class="relative w-full h-full min-w-0">
-      <Show when={ttsCaption()}>
-        <div class="absolute bottom-20 left-1/2 z-[70] -translate-x-1/2 pointer-events-none max-w-[70%]">
-          <div
-            class="px-4 py-2 rounded-xl text-[14px] leading-6 text-center text-v2-text-text-muted"
-            style={{
-              background: "color-mix(in srgb, var(--v2-background-bg-base) 94%, transparent)",
-              "box-shadow": "var(--v2-elevation-raised)",
-            }}
-          >
-            {ttsCaption()}
-          </div>
-        </div>
-      </Show>
       <div
         class="absolute left-1/2 -translate-x-1/2 z-[60] pointer-events-none transition-all duration-200 ease-out"
         classList={{
