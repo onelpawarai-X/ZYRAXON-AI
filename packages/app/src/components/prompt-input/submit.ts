@@ -16,7 +16,7 @@ import { type ContextItem, type ImageAttachmentPart, type Prompt, type usePrompt
 import { useSDK, type DirectorySDK } from "@/context/sdk"
 import { useSync, type DirectorySync } from "@/context/sync"
 import { useSettings } from "@/context/settings"
-import { replyLanguageName } from "@zyraxon-ai/session-ui/v2/components/prompt-input/reply-language"
+import { replyLanguageName } from "@zyraxon-ai/session-ui/v2/prompt-input/reply-language"
 import { Identifier } from "@/utils/id"
 import { Worktree as WorktreeState } from "@/utils/worktree"
 import { buildRequestParts } from "./build-request-parts"
