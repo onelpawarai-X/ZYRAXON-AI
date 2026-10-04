@@ -73,7 +73,7 @@ button:hover{background:rgba(255,255,255,.16)}
 <h1>MCP Connect</h1>
 <div class="sub">Every app below signs in once, then its tools go straight to the agent.</div>
 <div class="stats">
-  <div class="stat"><b>${apps.length}</b><span>curated apps</span></div>
+  <div class="stat"><b>${apps.length}</b><span>MCP servers/apps</span></div>
   <div class="stat"><b>${apps.filter((a) => a.zeroSetup).length}</b><span>need nothing from you</span></div>
   <div class="stat"><b>${cache.count.toLocaleString()}</b><span>servers in the registry cache</span></div>
   <div class="stat"><b>${cache.servers.filter((s) => s.remote).length.toLocaleString()}</b><span>hosted, ready to connect</span></div>
