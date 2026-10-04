@@ -54,11 +54,14 @@ Verified live:
 | Stripe | yes |
 | Cloudflare | yes |
 | Figma | yes |
+| ElevenLabs | yes |
 | GitHub | no |
 
 ## Scale
 
-- 27 curated apps
+- **83 total MCP servers/apps in the curated inventory**
+- 4 built-in local MCP servers
+- 79 remote app MCP connections
 - 9,580 servers in the local cache, 8,517 hosted
 - 18,000+ in the live registry, and growing
 
