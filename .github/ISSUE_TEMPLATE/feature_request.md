@@ -2,7 +2,8 @@
 name: Feature Request
 about: Suggest a new feature for ZYRAXON-AI
 title: "[FEATURE] "
-labels: enhancement
+labels: accessibility, bug, design, documentation, duplicate, enhancement, good first
+  issue, help wanted, invalid, question, video, wontfix
 assignees: ''
 
 ---
