@@ -232,6 +232,14 @@ const api: ElectronAPI = {
     return () => ipcRenderer.removeListener("daily-task:activate", handler)
   },
 
+  taskDaemon: {
+    install: () => ipcRenderer.invoke("task-daemon:install"),
+    uninstall: () => ipcRenderer.invoke("task-daemon:uninstall"),
+    start: () => ipcRenderer.invoke("task-daemon:start"),
+    stop: () => ipcRenderer.invoke("task-daemon:stop"),
+    status: () => ipcRenderer.invoke("task-daemon:status"),
+  },
+
   // Cloud Agent — opens in separate BrowserWindow (mic works natively)
   cloudAgentOpen: () => ipcRenderer.invoke("cloud-agent:open"),
 

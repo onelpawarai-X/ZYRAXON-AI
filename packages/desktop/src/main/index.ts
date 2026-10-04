@@ -49,6 +49,7 @@ import { registerWslIpcHandlers } from "./wsl/ipc"
 import { spawnWslSidecar } from "./wsl/sidecar"
 import { migrate } from "./migrate"
 import { cleanupStoreFiles } from "./store-cleanup"
+import { registerTaskDaemonIpcHandlers } from "./task-daemon"
 
 const APP_NAMES: Record<string, string> = {
   dev: "ZYRAXON Dev",
@@ -383,6 +384,7 @@ const main = Effect.gen(function* () {
     recordFatalRendererError: (error) => writeLog("renderer", "fatal renderer error", { ...error }, "error"),
   })
   registerWslIpcHandlers(wslServers)
+  registerTaskDaemonIpcHandlers()
 
   void updater.start()
 
@@ -560,8 +562,18 @@ const main = Effect.gen(function* () {
   void (async () => {
     try {
       const { ensurePython } = await import("./python-installer")
-      await ensurePython()
+      const python = await ensurePython()
       logger.info("Python check complete")
+      // The daemon's logon entry runs the same interpreter, so it takes the path from
+      // here rather than calling ensurePython() again and racing the download.
+      const { installTaskDaemon } = await import("./task-daemon")
+      const daemon = await installTaskDaemon(python)
+      logger.info("Task daemon install checked", {
+        supported: daemon.supported,
+        installed: daemon.installed,
+        registered: daemon.registered,
+        reason: daemon.reason,
+      })
     } catch (error) {
       logger.warn("Python auto-install failed (MCP may not work):", error)
     }
