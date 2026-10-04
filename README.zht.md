@@ -125,4 +125,27 @@ ZYRAXON 內建了兩種 Agent，您可以使用 `Tab` 鍵快速切換。
 
 ---
 
-**加入我們的社群** [飞书](https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=52ao9352-5623-4fa0-b7dd-3407c392c1af&qr_code=true) 
+**加入我們的社群** [飞书](https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=52ao9352-5623-4fa0-b7dd-3407c392c1af&qr_code=true)
+
+
+---
+
+## 📬 Contact / যোগাযোগ
+
+| | |
+|:--|:--|
+| Author | **onelpawarai** |
+| Based in | Bangladesh · operating globally |
+| Email | [sayidilxs@gmail.com](mailto:sayidilxs@gmail.com) |
+| Website | [zyraxonai.lovable.app](https://zyraxonai.lovable.app/) |
+| Cloud Agent | [zyraxon-pro-x.lovable.app](https://zyraxon-pro-x.lovable.app/) |
+| Portfolio | [onelpawarai.lovable.app](https://onelpawarai.lovable.app/) |
+| YouTube | [@ZYRAXONAI](https://www.youtube.com/@ZYRAXONAI) |
+| Facebook | [onelpawarai](https://www.facebook.com/onelpawarai) |
+| Access codes | [ZYRAXON Group](https://zyraxon-group-x.lovable.app/) |
+
+---
+
+<p align="center">
+  <sub>Built by <a href="https://onelpawarai.lovable.app/">Zyraxon Labs</a> — Bangladesh, operating globally.</sub>
+</p>

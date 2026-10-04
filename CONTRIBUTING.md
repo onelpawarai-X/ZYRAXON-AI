@@ -1,308 +1,344 @@
+<!--
+  Copyright (c) 2026 onelpawarai. All rights reserved.
+  SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+-->
+
 # Contributing to ZYRAXON
 
-Thank you for wanting to build with us. ZYRAXON grows in proportion to the people
-who contribute to it, and this document explains exactly how to join, what we are
-building next, and where things honestly stand today.
+First of all: thank you. Whether you are fixing a typo, reporting something that
+behaves strangely, or rewriting a subsystem — all of it counts, and all of it is
+reviewed by a person who reads the code.
 
-- **Repository:** https://github.com/onelpawarai-X/ZYRAXON-AI
-- **Default branch:** `dev`
-- **Licence:** [ZSL-X](LICENSE) — free to use, free to change, not for sale.
-- **Questions:** open a [Discussion](https://github.com/onelpawarai-X/ZYRAXON-AI/discussions)
+This document is the whole of what you need. It is deliberately short.
 
 ---
 
-## 1. The short version
+## Contents
 
-1. Fork the repository and branch off `dev`.
-2. Branch names are at most three words, hyphenated. No slashes, no type prefixes.
-   Good: `session-recovery`. Bad: `feat/new-thing-v2`.
-3. Make one focused change.
-4. Add the licence header to any new source file (see section 7).
-5. Run the tests from a package directory, never from the repository root.
-6. Open a pull request against `dev` using a conventional commit title.
-
-That is the whole process. Everything below is detail.
+- [Before you start](#before-you-start)
+- [Setting up](#setting-up)
+- [How the codebase is organised](#how-the-codebase-is-organised)
+- [Making a change](#making-a-change)
+- [Commit and branch naming](#commit-and-branch-naming)
+- [Checks](#checks)
+- [Opening a pull request](#opening-a-pull-request)
+- [What a good pull request looks like](#what-a-good-pull-request-looks-like)
+- [Review](#review)
+- [Reporting a bug](#reporting-a-bug)
+- [Proposing something large](#proposing-something-large)
+- [Adding a tool](#adding-a-tool)
+- [Adding an MCP app](#adding-an-mcp-app)
+- [Adding a translation](#adding-a-translation)
+- [Style](#style)
+- [Security](#security)
+- [Code of conduct](#code-of-conduct)
+- [License](#license)
 
 ---
 
-## 2. Setting up
+## Before you start
 
-**You need:** Bun 1.3 or newer, Node.js 20 or newer, Git.
+- Search the [issues](https://github.com/onelpawarai-X/ZYRAXON-AI/issues) and
+  open pull requests first. Someone may already be working on it, and a
+  duplicate costs everyone more than a small delay.
+- If you are unsure whether something is a bug or intended behaviour, open an
+  issue and ask. That is a perfectly good contribution.
+- **Security problems do not go in the issue tracker.** See
+  [SECURITY.md](SECURITY.md).
+
+## Setting up
+
+Requires [Bun](https://bun.sh) and Node 20 or newer.
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/ZYRAXON-AI.git
+git clone https://github.com/onelpawarai-X/ZYRAXON-AI
 cd ZYRAXON-AI
 bun install
+bun run dev
 ```
 
-**Run it locally:**
+To run the desktop application:
 
 ```bash
-bun run dev            # the agent
-bun run dev:desktop    # the desktop app
-bun run dev:web        # the web app
+bun run --cwd packages/desktop dev
 ```
 
-**Build everything, including the SDK:**
+Useful things to know before your first build:
+
+- The build runs in **five ordered steps** — core, node sidecar, web UI, Electron
+  shell, installer. Each depends on the last, so skipping ahead produces a
+  confusing error rather than a useful one.
+- If the build runs out of memory, raise the heap first:
+
+  ```bash
+  export NODE_OPTIONS="--max-old-space-size=16384"
+  ```
+
+- Tests cannot run from the repository root. Run them from the package you
+  changed:
+
+  ```bash
+  bun test --cwd packages/zyraxon
+  ```
+
+## How the codebase is organised
+
+Dependencies point one way and only one way:
+
+```
+Desktop / TUI / SDK  →  Client · Session-UI  →  SDK · Protocol  →  Core · Schema · Server
+```
+
+Client runtime code may depend on Schema and Protocol but **never** on Core or
+Server. If you find yourself wanting to import from Core into a client module,
+that is a signal the thing you need belongs somewhere else — ask in an issue
+rather than reaching across the boundary.
+
+| Package | Holds |
+|:--|:--|
+| `packages/schema` | The data shapes everything agrees on |
+| `packages/core` | Effects runtime, configuration, database, utilities |
+| `packages/protocol` | The wire types |
+| `packages/server` | HTTP API and server routes |
+| `packages/zyraxon` | The agent: tools, session, MCP, prompts |
+| `packages/sdk` | Generated client |
+| `packages/client` | UI state and data layer |
+| `packages/app` | The application shell |
+| `packages/ui` | Design system |
+| `packages/session-ui` | Chat, timeline and composer |
+| `packages/desktop` | Electron shell, TTS, task daemon, packaging |
+
+Two conventions worth knowing on day one:
+
+**The agent is written against Effect, not ad-hoc async.** Cancellation, timeouts,
+retries and resource lifetimes are part of a function's type rather than
+something each call site has to remember. If you are reaching for a bare promise
+where an Effect would do, that is worth a second look.
+
+**Generated code is generated.** After changing the public Protocol or the server
+HTTP API, run `bun run generate` from `packages/client`. Do not edit anything
+under `src/generated` by hand — it will be overwritten.
+
+## Making a change
+
+1. Fork the repository and create a branch.
+2. Make the smallest change that fully solves the problem.
+3. Run the checks (below).
+4. Open a pull request against `dev`.
+
+### Guidelines that save everyone time
+
+- **Match the surrounding code.** Indentation, naming, comment density — follow
+  what is already there rather than your own preference.
+- **Comment the non-obvious, not the obvious.** A line that restates itself is
+  noise. A comment explaining *why* something is done this way is worth more
+  than the line it sits above.
+- **Avoid `try`/`catch` and `any`.** Both are almost always avoidable here, and
+  both hide failures rather than handling them.
+- **Prefer `const`.** Reassignment is rarely the clearest option.
+- **Prefer early returns to `else`.**
+- **No stray test files.** Scratch scripts and temporary probes do not get
+  committed.
+- **Never commit secrets.** No API keys, tokens, logs or customer data — not in
+  source, not in a fixture, not in a comment.
+
+## Commit and branch naming
+
+Conventional commits, always:
+
+```
+type(scope): summary
+```
+
+Valid types are `feat`, `fix`, `docs`, `chore`, `refactor` and `test`. The scope
+is optional and should name the package or area when it helps:
+
+```
+feat(mcp): add Stripe to the verified catalog
+fix(composer): stop dictation from erasing the typed draft
+docs: correct the tool counts in the README
+```
+
+Branch names are up to three words, hyphen-separated. No slashes, no type
+prefixes:
+
+```
+session-recovery
+fix-scroll-state
+regenerate-sdk
+```
+
+## Checks
+
+Run what your change touches:
 
 ```bash
-bun run zyraxon:build
+# types
+bun typecheck --cwd packages/<package>
+
+# tests
+bun test --cwd packages/<package>
+
+# lint, if the package has it
+bun run lint --cwd packages/<package>
 ```
 
-The SDK is built as part of this command. You never need to build it separately,
-and you should not commit anything from `dist` or `out`. Those directories are
-build output, they are ignored, and the build regenerates them every time.
+A change that touches the Protocol or the server HTTP API also needs
+`bun run generate` from `packages/client`.
 
----
+If a check fails for a reason that predates your change, say so in the pull
+request. Do not silently fix unrelated failures in the same commit — it makes the
+review impossible.
 
-## 3. Before you open a pull request
+## Opening a pull request
 
-Run these from inside the package you changed. Tests are blocked at the repository
-root on purpose, so a root-level run will refuse to start.
+Your description should let a reviewer understand the change **without opening
+it**. That means:
 
-```bash
-cd packages/zyraxon
-bun test
-bun run typecheck
+- **What** you changed and **why** — the problem, not just the diff.
+- **How** you verified it. What you ran, what you clicked, what you observed.
+- **What** you deliberately did not do, if it came up.
+- Anything you are unsure about, stated plainly. "This works on my machine and I
+  could not reproduce the failure on Windows" is genuinely useful.
+
+Use a clear title:
+
+```
+fix(voice): submit the transcript when the bridge send button is used
 ```
 
-**Commit messages and pull request titles** follow conventional commits:
-`type(scope): summary`. Valid types are `feat`, `fix`, `docs`, `chore`, `refactor`,
-`test`. Scopes are optional. Examples: `fix(tui): simplify thinking toggle styling`,
-`chore(sdk): regenerate types`.
+Draft pull requests are welcome if you want a design opinion before finishing.
 
-**Generated code is never hand-edited.** If you change a public protocol or HTTP
-API, run the generator instead:
+## What a good pull request looks like
 
-```bash
-cd packages/client
-bun run generate
-```
+- One concern. If it does two things, it is two pull requests.
+- The description explains why, not what — the diff already says what.
+- Reviewers can verify the claim from the description alone.
+- No drive-by reformatting. If you ran a formatter, that belongs in its own
+  commit.
+- No unexplained binary or generated-file changes.
 
-Never edit anything under `src/generated` or `src/generated-effect` directly.
+## Review
 
-**When you change a legacy SDK**, regenerate it rather than patching it:
+Every pull request is read by a human. Expect comments — they are about the code,
+not about you. Reply to each one, even if the reply is "good catch, fixed". When
+review asks for a change, push a commit rather than force-pushing, so the
+discussion stays attached to the code.
 
-```bash
-./packages/sdk/js/script/build.ts
-```
+Once approved it will be merged into `dev`. The `main` branch is cut for
+releases.
 
----
+## Reporting a bug
 
-## 4. What we are building next
+A good report contains:
 
-This is the direction we are committed to. Contributions that move any of these
-forward are the most welcome contributions there are.
+1. **What you did**, and **what happened instead** — numbered steps are ideal.
+2. **What you expected** to happen.
+3. **The exact version or commit** you tested.
+4. **Your platform** — OS, version, architecture.
+5. The relevant log output, if you have it.
 
-### 4.1 Our own provider
+Screenshots help for anything visual. Please redact anything personal from them.
 
-We are building a first-party model provider so that ZYRAXON can run on our own
-inference rather than depending entirely on third parties. This is the single
-largest piece of infrastructure work ahead of us.
+## Proposing something large
 
-It has to be genuinely good, not merely present. That means routing, failover,
-quota accounting, streaming, tool-calling correctness, and a cost model that
-survives real use.
+Architecture changes, new subsystems and anything that rewrites a package
+boundary are better discussed before written. Open an issue describing the
+problem and your proposed shape. That is not a gate on contributing — it just
+means a week of discussion is cheaper than a week of work in the wrong direction.
 
-### 4.2 Community providers
+## Adding a tool
 
-We want third-party providers to be first-class, and we want to credit the people
-who make that happen.
+1. Create the tool under `packages/zyraxon/src/tool/`.
+2. Register it in `packages/zyraxon/src/tool/registry.ts`.
+3. Record its required tier in
+   `packages/zyraxon/src/subscription/tier-map.ts`. This file is sorted by tier —
+   keep it that way, and do not add a tier that is not already defined.
+4. Describe it so clearly that a model can decide when to reach for it. The
+   description is the only thing the model sees.
 
-If you build or maintain a provider that works with ZYRAXON, open a pull request
-adding it to the provider list. Once merged you are listed as a supported provider
-in the documentation and in the application, and contributors to that provider are
-acknowledged alongside it.
+## Adding an MCP app
 
-This is a standing offer, not a one-time campaign. Provider support is treated as
-a first-class contribution category, alongside tools and agents.
+Apps live in `MCP Hub/catalog/seed.ts`.
 
-### 4.3 Marketplace
+**Verify the endpoint before adding it.** An entry that connects but cannot call a
+tool is worse than no entry, because it looks like it works:
 
-The marketplace exists. It is the weakest part of the product today and the
-clearest opportunity for new contributors. Improvements we want: better search
-and ranking, real install and update flows, verification that a listed package
-actually works, screenshots and previews in the listing, and honest presentation
-of what a package does before install.
+1. Send an `initialize` request.
+2. Check the `WWW-Authenticate` header for `resource_metadata` — that is what
+   tells you the server speaks OAuth with discovery.
+3. Fetch `/.well-known/oauth-authorization-server` and confirm a
+   `registration_endpoint` exists if you are marking the app `oauth`.
+4. Send `tools/list`.
+5. Call one read-only tool and confirm real data comes back.
 
-### 4.4 Cloud agents
+Then pick the `kind` honestly:
 
-Agents that run for you rather than waiting for you to type. Long-running tasks,
-scheduled work, and background execution are the goal. The interesting part is not
-the scheduling, it is the safety: a cloud agent that can take real actions needs
-permissions that are explicit, visible, and revocable.
+| `kind` | Use when |
+|:--|:--|
+| `oauth` | It completes sign-in through the vendor's own OAuth |
+| `none` | It answers with no sign-in at all |
+| `token` | It needs a key the user creates themselves |
 
-### 4.5 The control systems, and what the tiers really mean
+A 401 is **not** evidence of OAuth. Plenty of servers simply refuse an anonymous
+request. Check for the metadata.
 
-ZYRAXON ships a large set of control systems spanning aircraft, ground vehicles,
-drones, boats, rockets, robots, algorithms, sensors and actuators. They are not
-decorative labels, and they are not a list of stubs. They are the long-term shape
-of the product, and we are bringing them online.
+Set `via` when the server is not run by the vendor — it is shown on the card so
+nobody hands an account to a third party by surprise.
 
-The agent tiers — General, Build, Plan, Beast, PRO, APEX PREDATOR, DARK EMPEROR,
-VISION, PRO BUILDER — are the delivery mechanism. Each tier should grant access to
-capabilities that are real at the moment of use. A tier that advertises a
-capability must have a working implementation behind it.
+## Adding a translation
 
-**Being honest about where this stands.** Some tiers already do real work. The
-computer-control, media, planning, learning and browser-automation tool sets are
-implemented and covered by tests. Large parts of the higher-tier vehicle, marine,
-aviation and space control surfaces are still being wired to live subsystems. We
-will not claim a capability works before it does, and we would rather tell you
-something is in progress than have you discover it yourself.
+Translated READMEs live beside the main one as `README.<locale>.md`. If you
+speak a language we do not have, adding it is genuinely useful.
 
-**The most valuable thing you can contribute here is a gap.** Find a tier that
-advertises something which is not yet real, and either implement it or tell us
-precisely what is missing. Closing the gap between what is promised and what is
-real is the most respected contribution we can receive, and we will credit it.
+Keep the structure of `README.md` intact and translate the prose. Leave code
+blocks, badge URLs and link targets untouched — a translated README with a broken
+build badge is worse than none.
 
----
+## Style
 
-## 5. Adding a tool
+Follow what is already in the file you are editing. Beyond that:
 
-A tool that reports a fixed answer is not a tool. It must do the work, and it must
-fail honestly when it cannot. A tool that invents a plausible result is worse than
-a missing tool, because it cannot be detected from the outside.
+- Two-space indentation.
+- Double quotes.
+- No semicolons at end of statements, except where the file uses them.
+- Comments explain *why*. Never restate the code.
 
-```bash
-# 1. implement
-packages/zyraxon/src/tool/your_tool.ts
+## Security
 
-# 2. describe
-packages/zyraxon/src/tool/your_tool.txt
+Do not open a public issue for a security problem. Follow
+[SECURITY.md](SECURITY.md) — private advisory, acknowledged within three days.
 
-# 3. register
-packages/zyraxon/src/tool/registry.ts
+## Code of conduct
 
-# 4. prove it
-packages/zyraxon/test/your_tool.test.ts
-```
+Participation is governed by [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). Please
+read it; it is short and it is enforced.
 
-**The rules that matter:**
+## License
 
-- Do the real work. Call the real system.
-- Never return a fabricated success, a simulated result, or a hardcoded verdict.
-- When a prerequisite is missing, say so plainly and name what is missing.
-- Never leave a test file behind. Tests belong in the suite or they do not exist.
-- Register the tool so the registry actually exposes it, then verify the ID
-  resolves. A tool that is written but unregistered is invisible.
+Contributions are accepted under [ZSL-X](LICENSE). By opening a pull request you
+agree that your contribution is licensed under it.
 
 ---
 
-## 6. Adding an agent mode
+## The team
 
-1. Define the agent in `packages/zyraxon/src/agent/agent.ts` with its name,
-   description, permissions and tool access.
-2. Add the prompt in `packages/zyraxon/src/agent/prompt/`.
-3. Map the mode to a subscription tier in the tier map, so gating is explicit.
-4. If the mode is a fork of an earlier edition, record that lineage in its own
-   licence file. Never imply a fork is the upstream edition.
+Maintained by **Zyraxon Labs**.
 
----
-
-## 7. Licence headers
-
-New source files do not carry a per-file licence identifier. ZSL-X is ZYRAXON's own
-licence and is not published to any registry, so an SPDX identifier would assert a
-standardisation it has not been through. The licence and the required attribution
-live in `LICENSE` at the repository root, which is what Section 6 asks for.
-
-If you want a short provenance note at the top of a file, use:
-
-```ts
-// Copyright (c) 2026 onelpawarai. All rights reserved.
-```
-
-For other languages, use that language's comment syntax and keep the same line.
-`scripts/copyright-header.ts` applies the correct form for each file type:
-
-```bash
-bun run scripts/copyright-header.ts           # apply to everything that can carry it
-bun run scripts/copyright-header.ts --check   # report only, write nothing
-bun run scripts/copyright-year.ts             # restamp the year
-```
-
-The script never edits a file that cannot legally hold a comment: JSON, lockfiles,
-images, fonts, archives, and generated trees. If your file is skipped, that is why.
+| | |
+|:--|:--|
+| Author | **onelpawarai** |
+| Based in | Bangladesh · operating globally |
+| Email | [sayidilxs@gmail.com](mailto:sayidilxs@gmail.com) |
+| Website | [zyraxonai.lovable.app](https://zyraxonai.lovable.app/) |
+| Cloud Agent | [zyraxon-pro-x.lovable.app](https://zyraxon-pro-x.lovable.app/) |
+| Portfolio | [onelpawarai.lovable.app](https://onelpawarai.lovable.app/) |
+| YouTube | [@ZYRAXONAI](https://www.youtube.com/@ZYRAXONAI) |
+| Facebook | [onelpawarai](https://www.facebook.com/onelpawarai) |
+| Access codes | [ZYRAXON Group](https://zyraxon-group-x.lovable.app/) |
 
 ---
 
-## 8. What contributions are welcome
-
-- **Tools** that do real work and fail honestly.
-- **Providers**, per section 4.2.
-- **Marketplace**, per section 4.3.
-- **Cloud agents**, per section 4.4.
-- **Control system gaps**, per section 4.5.
-- **Tests** for anything currently untested.
-- **Documentation**, including translations.
-- **Build and packaging fixes.**
-
-The common thread: we would rather have a smaller, working thing than a larger
-promised one.
-
----
-
-## 9. Reporting a bug
-
-1. Search existing issues first.
-2. Use the **Bug Report** template.
-3. Include reproduction steps, expected behaviour, actual behaviour, your OS, and
-   your ZYRAXON version.
-4. Attach a screenshot or a screen recording if the issue is visual.
-
-**Security issues** should not be opened as a public issue. Contact the maintainer
-privately first so a fix can be prepared before disclosure. See section 11.
-
----
-
-## 10. Reporting a licence violation
-
-If you believe someone is reselling ZYRAXON, publishing a modified copy as their
-own, or stripping the origin notice, send:
-
-- Your contact details
-- The URL or location of the infringing copy
-- What the infringement is
-- Any evidence you have, with dates
-
-Legal notices go to the maintainer's designated address, not to the issue tracker.
-Full procedure and evidence requirements are in [legal/DMCA-NOTICE.md](legal/DMCA-NOTICE.md).
-
-We take this seriously and we act on it. Licensing is what funds the project.
-
----
-
-## 11. Security disclosure
-
-Discover a vulnerability? Report it privately before any public disclosure. We will
-make a genuine effort to address it promptly. Please give us a reasonable window to
-ship a fix before you disclose publicly.
-
----
-
-## 12. Conduct
-
-Be decent to each other. Assume good faith, critique the work and never the person,
-and help newcomers. The full expectations are in
-[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
-
----
-
-## 13. Licence of contributions
-
-Contributions are accepted under ZSL-X. You keep ownership of what you write, and
-you grant the patent and copyright permissions set out in the licence. By opening a
-pull request you confirm that you have the right to contribute the work, and that
-you are not knowingly submitting anything that infringes someone else's rights or
-that would remove a protection the licence depends on.
-
----
-
-## 14. One last thing
-
-If you find a bug, a broken tool, an overstated claim, or a gap between what the
-documentation promises and what the code does, tell us. That report is worth more
-than a polished pull request, and we treat it that way.
-
-Welcome. Build something real.
+<p align="center">
+  <sub>Questions? <a href="mailto:sayidilxs@gmail.com">sayidilxs@gmail.com</a></sub>
+</p>
