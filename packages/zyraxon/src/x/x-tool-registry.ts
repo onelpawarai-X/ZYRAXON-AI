@@ -4340,10 +4340,20 @@ export const xToolRegistry: XToolDef[] = [
     const siteId = String(a.site_id ?? "").trim()
     if (!siteId) return { ok: false, error: "site_id is required" }
     try {
-      const { getSiteManager } = await import("../pro-builder/engine")
+      // This entry shadows tool/site_preview.ts in the tool registry, so it owns the
+      // preview-state.json write too — the desktop Preview panel only ever reads
+      // ~/.zyraxon/websites/preview-state.json and would show nothing without it.
+      const { getSiteManager, writePreviewState } = await import("../pro-builder/engine")
       const manager = await getSiteManager()
-      if (!manager.getSite(siteId)) return { ok: false, error: `Site not found: ${siteId}` }
+      const site = manager.getSite(siteId)
+      if (!site) return { ok: false, error: `Site not found: ${siteId}` }
       const url = await manager.startServer(siteId)
+      await writePreviewState({
+        url,
+        siteName: site.name,
+        siteId: site.id,
+        timestamp: new Date().toISOString(),
+      })
       return { ok: true, data: { siteId, previewUrl: url } }
     } catch (e) {
       return { ok: false, error: `site_preview failed: ${e instanceof Error ? e.message : String(e)}` }
