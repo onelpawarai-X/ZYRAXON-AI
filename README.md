@@ -1,736 +1,316 @@
-<!-- UNLOCK GROUP BANNER -->
-<div align="center">
-
-### 🔓 Access Code Membership
-
-Need a **secret access code** to unlock ZYRAXON **PRO / MAX / ULTRA** modes?
-
-👉 **Join our membership group first:** [**ZYRAXON GROUP X**](https://zyraxon-group-x.lovable.app/)
-
-Members receive the latest unlock codes from the community. Codes are **only** shared inside the group — secure, verified, and never posted publicly.
-
-</div>
-
-<hr/>
+<!--
+  Copyright (c) 2026 onelpawarai. All rights reserved.
+  SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+-->
 
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=900&size=32&duration=3000&pause=1000&color=00D4FF&center=true&vCenter=true&multiline=true&repeat=true&width=800&height=120&lines=%E2%9A%A1+What+if+your+AI+could+DO+everything%3F+%F0%9F%A4%A0;Not+just+talk.+But+build.+Code.+Deploy.+Think.+Act." alt="Typing SVG" />
+<img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=700&size=26&duration=4500&pause=1200&color=00D4FF&center=true&vCenter=true&width=820&lines=Not+just+talk.+Build%2C+code%2C+deploy%2C+think%2C+act.;A+coding+agent+that+drives+your+machine.;889+tools.+106+verified+MCP+integrations." alt="Typing" />
 
 <br/>
 
 <picture>
   <source srcset="packages/console/app/src/asset/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
   <source srcset="packages/console/app/src/asset/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
-  <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="ZYRAXON AI" width="400">
+  <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="ZYRAXON" width="400">
 </picture>
 
-<h1 style="font-family: Orbitron; letter-spacing: 4px; color: #00D4FF;">ZYRAXON AI</h1>
+<h1 align="center">ZYRAXON AI</h1>
 
-<p style="font-size: 18px; color: #8B949E;">
-  <em>All in one. Anything. Nothing is impossible.</em>
+<p align="center">
+  <strong>All in one. Anything.</strong><br/>
+  An agent engine that reads your code, runs your commands, drives your browser,
+  and reports back — on Windows, macOS and Linux.
 </p>
 
-<a href="https://zyraxonai.lovable.app"><img alt="ZYRAXON AI" src="https://img.shields.io/badge/ZYRAXON_AI-live-00D4FF?style=for-the-badge&logo=googlechrome&logoColor=white" /></a>
-<a href="https://zyraxon-pro-x.lovable.app"><img alt="ZYRAXON Pro" src="https://img.shields.io/badge/Cloud_Agent-online-FF6B35?style=for-the-badge&logo=cloudflare&logoColor=white" /></a>
-<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><img alt="Version" src="https://img.shields.io/badge/Version-19.0.5-blue?style=for-the-badge&logo=github" /></a>
-<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/onelpawarai-X/ZYRAXON-AI?style=for-the-badge&color=yellow" /></a>
-<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/onelpawarai-X/ZYRAXON-AI/total?style=for-the-badge&color=purple" /></a>
-<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-ZSL--X-00D4FF?style=for-the-badge" /></a>
+<br/>
+
+<a href="https://zyraxonai.lovable.app"><img alt="Website" src="https://img.shields.io/badge/Website-00D4FF?style=flat-square&logo=googlechrome&logoColor=001018" /></a>
+<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><img alt="Release" src="https://img.shields.io/badge/Release-v19.0.5-00D4FF?style=flat-square&logo=github&logoColor=001018" /></a>
+<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/onelpawarai-X/ZYRAXON-AI/total?style=flat-square&logo=github&logoColor=001018&color=00D4FF" /></a>
+<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/onelpawarai-X/ZYRAXON-AI?style=flat-square&logo=github&logoColor=001018&color=00D4FF" /></a>
+<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/blob/main/CONTRIBUTING.md"><img alt="Contributing" src="https://img.shields.io/badge/PRs_welcome-yes-00D4FF?style=flat-square" /></a>
+<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-ZSL--X-00D4FF?style=flat-square" /></a>
 
 <br/>
 
-<a href="https://zyraxonai.lovable.app">Website</a> · <a href="https://zyraxon-pro-x.lovable.app">Cloud Agent</a> · <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases">Download</a> · <a href="https://youtube.com/@zyraxon-aix">YouTube</a>
-
-<br/>
-
-![Profile Views](https://komarev.com/ghpvc/?username=onelpawarai-X&color=00D4FF&style=for-the-badge&label=BUILDERS)
+[Website](https://zyraxonai.lovable.app) ·
+[Cloud Agent](https://zyraxon-pro-x.lovable.app) ·
+[Download](https://github.com/onelpawarai-X/ZYRAXON-AI/releases) ·
+[Contributing](CONTRIBUTING.md) ·
+[Security](SECURITY.md) ·
+[Code of Conduct](CODE_OF_CONDUCT.md)
 
 </div>
 
 ---
 
-<br/>
+## 🔑 Access Code Membership
 
-<div align="center">
+PRO, MAX and ULTRA modes are unlocked with an access code.
 
-## 🌍 Our Mission — Help Us Get to 100,000 Stars
-
-**ZYRAXON is an agent engine today. It is a family of companies tomorrow.**
-
-We are building toward something we can be completely honest about today: a future in which **we run our own models, through our own provider, inside our own company** — and the path there runs straight through this repository.
-
-That future is not a slogan. It is the entire reason the architecture looks the way it does.
-
-</div>
-
-<br/>
-
-<div align="center">
-
-### Why this is technically reachable
-
-ZYRAXON is **provider-agnostic by design**. OpenAI, Anthropic, Google, Groq, OpenRouter, Ollama, Mistral and the Chinese open-weight ecosystem are all plug-ins behind one interface. The engine never hardcodes a vendor — it routes.
-
-That single architectural decision means:
-
-- **We can ship our own models without breaking a single existing user.** Nothing in the codebase assumes somebody else's weights.
-- **Nobody can switch us off.** There is no one company that can raise the price, throttle access, or shut the door. That is a promise, not marketing.
-- **Every user benefit from better routing today**, whether or not our own model ever arrives.
-
-</div>
-
-<br/>
-
-<div align="center">
-
-### 🆓 The commitment that matters most — free for the people
-
-Think mobile data. The airtime costs money, and yet people use the internet every single day anyway. That is how ZYRAXON will work.
-
-**ZYRAXON is free to use, and it will stay free to use.** The core engine, the tools, the sub-agents, the code work — all of it runs on the free tier. Nobody has to pay a rupee to install it, use it every day, or get real work out of it. We will not put the useful parts behind a paywall.
-
-Where the subscription comes in is capacity, not access. Free plans get a generous allowance; paid plans get more of it, faster runs, deeper sub-agent parallelism and priority access to the heaviest models. That is the difference between a good plan and a bigger plan — never between working and not working.
-
-And this is the part we care about: **every subscription funds the work toward our own model and our own provider.** Our goal is that when it arrives, it costs nobody anything to use. The people who support us today are paying for the build that gets us there.
-
-We are not in this to squeeze the people who use us. We are in this to put an open AI into every hand that wants one.
-
-</div>
-
-<br/>
-
-<div align="center">
-
-### 🚀 What we are asking for
-
-**If this project reaches 100,000 stars, we commit to the following:**
-
-- 🧠 **Our own model** — our own weights, trained on our own infrastructure
-- 🔌 **Our own provider** — zero dependency on any other company
-- 🌐 **Our own ecosystem** — tools, SDK, marketplace, integrations
-- 🏢 **Our own company** — built to last, owned by the people who build it
-
-<div align="center">
-
-**⭐ <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/stargazers">Star ZYRAXON</a> and help us get there. ⭐**
-
-Every star is one vote for the version of the future we described above.
-
-</div>
+**[Join the ZYRAXON Group](https://zyraxon-group-x.lovable.app/)** to receive the
+current codes from the community. Codes are shared only inside the group and are
+never posted publicly.
 
 ---
 
-<br/>
+## 📊 What is in the box
 
-<div align="center">
+Every number below is counted from the source tree, not estimated.
 
-## *"A chatbot talks. ZYRAXON acts."*
+| | Count | |
+|---|---:|---|
+| **Tools** | 889 | each one registered with a required tier |
+| **MCP integrations** | 106 | every app probed by hand before being listed |
+| **Agent modes** | 12 | from scoped exploration to full autonomy |
+| **Tool categories** | 63 | aircraft, marine, finance, medical, robotics, and more |
+| **Bundled local MCP servers** | 5 | ship with the app, nothing to install |
 
-<br/>
+### Tools by tier
 
-**10 Agent Modes** · **805 Tools** · **Eternal Memory** · **Self-Healing** · **Voice Bridge** · **Self-Evolution**
+Tier is a property of the tool, recorded in one place
+(`packages/zyraxon/src/subscription/tier-map.ts`), so what a given account can call
+is answerable without reading the whole registry.
 
-</div>
+| Tier | Tools | Unlocks |
+|:--|--:|---|
+| `free` | 189 | Read, write, patch, bash, grep, glob, search, plan, MCP, memory |
+| `pro` | 316 | Browser control, document tooling, media analysis |
+| `max` | 323 | Knowledge graph, causal reasoning, simulation |
+| `ultra` | 61 | OMNI-KERNEL, autonomous and self-extending operation |
 
-<br/>
+### How the MCP catalog connects
 
----
+The Hub connects your accounts so the agent can use them directly — GitHub,
+Figma, Notion, Slack, Stripe, Linear, Google Workspace, Upwork, PayPal, Square,
+HubSpot and 90-odd more.
 
-## What is ZYRAXON AI?
+Each entry was verified with a real `initialize`, then `tools/list`, and where a
+read-only tool existed, an actual `tools/call`.
 
-ZYRAXON is not a chatbot. It's a **desktop AI agent** that reads your files, writes your code, runs your commands, builds your projects, deploys your apps, and **evolves itself** — all while you watch. Built on **Electron + SolidJS + Bun**, it runs 100% locally on your machine. No cloud dependency. No data leaves your computer.
+| Result | Count | What the user does |
+|---|--:|---|
+| Completes sign-in through the vendor's own OAuth | 54 | Press Connect, allow in the browser |
+| Answers with no sign-in at all | 46 | Press Connect |
+| Needs a key they create themselves | 6 | Paste the token once |
 
-**The question at the top isn't rhetorical.** What if your AI could truly do everything? That's what we're building.
-
----
-
-<br/>
-
-<div align="center">
-
-### THE 10 MODES OF POWER
-
-</div>
-
-<br/>
-
-| Mode | Power | What It Unlocks |
-|:-----|:-----:|:----------------|
-| **Build** | ★★★ | Full filesystem + persistent memory. The reliable workhorse. |
-| **Plan** | ★★☆ | Read-only strategic analysis. Plans before action. |
-| **Beast** | ★★★★ | Mission Control (3-level subagents) + Self-Evolution + Subagent Army |
-| **PRO** | ★★★★ | Strict quality + security scans + Self-Healing |
-| **APEX PREDATOR** | ★★★★★ | Omega Command Center + Eternal Memory + Annihilation Engine |
-| **DARK EMPEROR** | ★★★★★ | Supreme Sovereignty + 8 ULTRA tools. **Zero Refusal.** |
-| **Vision** | ★★★ | AI's Eyes — 2s continuous screen capture, frame memory, scene analysis |
-| **Pro Builder** | ★★★★ | Website genesis from natural language. Auto-deploys to GitHub Pages. |
-| **AUTO** | ★★★★★ | Autonomous orchestrator — analyzes tasks, delegates to a parallel sub-agent army, coordinates, delivers. |
-| **General** | ★★☆ | Subagent for delegated tasks. |
-
-<br/>
-
-### DARK EMPEROR — 8 ULTRA Tools
-
-<table>
-<tr>
-<td>
-
-**ultraCodeGen**
-Code generation with Vector3/Matrix math, DirectedGraph analysis, Shannon entropy
-
-</td>
-<td>
-
-**ultraAutoDeploy**
-One-command cloud deploy with DeploymentGraph DAG, RollbackPlanner
-
-</td>
-</tr>
-<tr>
-<td>
-
-**ultraSecuritySweep**
-Full security audit — Miller-Rabin, Pollard-Rho, RSA attacks, NIST SP 800-22
-
-</td>
-<td>
-
-**ultraPerformance**
-Performance engine — ANOVA, OLS regression, Grubbs test, Holt-Winters
-
-</td>
-</tr>
-<tr>
-<td>
-
-**ultraRefactor**
-AI refactoring — CategoryTheory, DesignPatternDetector, DependencyAnalyzer
-
-</td>
-<td>
-
-**ultraTestGen**
-Test generation — Pairwise NIST ACTS, MutationTesting, FormalVerifier
-
-</td>
-</tr>
-<tr>
-<td>
-
-**ultraDocGen**
-Auto-documentation with API reference extraction
-
-</td>
-<td>
-
-**ultraDebug**
-Advanced debugging engine with stack trace analysis
-
-</td>
-</tr>
-</table>
+Nothing is listed that was not observed working. Where a vendor has no usable MCP
+endpoint, the app is absent rather than present and broken — Replit and Zapier
+were removed for exactly that reason. Full per-app detail is in
+[`MCP Hub/README.md`](MCP%20Hub/README.md).
 
 ---
 
-<br/>
+## 🧠 Agent modes
 
-<div align="center">
+Each mode is a different relationship to autonomy, not a difficulty slider.
 
-### 805 TOOLS ACROSS 63 CATEGORIES
-
-</div>
-
-<br/>
-
-<table>
-<tr>
-<td width="50%">
-
-#### Core Engine (28)
-| Tool | Purpose |
-|:-----|:--------|
-| shell | Execute terminal commands |
-| read | Read files |
-| write | Write files |
-| edit | Edit files |
-| glob | Find files by pattern |
-| grep | Search file contents |
-| task | Delegate to subagents |
-| fetch | Fetch web content |
-| search | Web search |
-| todo | Task management |
-| skill | AI skill management |
-| memory | Persistent memory |
-| self\_evolve | Self-evolution |
-| screen\_vision | Screen capture |
-| api\_tester | API testing |
-| code\_analyzer | Code analysis |
-| system\_info | System information |
-| site\_create | Website creation |
-| site\_publish | Deploy to GitHub Pages |
-| site\_domain | Custom domain |
-| media\_fetch | Media download |
-| svg\_generate | SVG generation |
-| github\_connect | GitHub integration |
-| patch | Apply patches |
-| question | Ask user |
-| execute | Code mode |
-| lsp | Language server |
-| plan | Plan mode |
-| invalid | Fallback handler |
-
-</td>
-<td width="50%">
-
-#### Registered Tools by Tier (805 total)
-| Tier | Tools | What It Unlocks |
-|:-----|:-----:|:----------------|
-| **Free** | 126 | Core engine + life/math/docs/memory basics |
-| **Pro** | 304 | Domain math, chemistry, finance, games, networking, robotics |
-| **Max** | 337 | Vehicles, aviation, drone, marine, security, construction |
-| **Ultra** | 38 | OMNI-KERNEL, ULTRA suite, guardian, singularity, rockets, satellites |
-
-**63 tool categories** in the ecosystem (aircraft, car, drone,
-boat, rocket, robot, vehicles, security, aviation, marine,
-agriculture, construction, industrial, infrastructure, medical,
-survey, sensors, SDR, space, and more).
-
-</td>
-</tr>
-</table>
+| Mode | For |
+|:--|:--|
+| `explore` | Read-only searching and mapping an unfamiliar codebase |
+| `plan` | Architecture and design before anything is written |
+| `build` | Everyday implementation work |
+| `auto` | Picks the mode itself and says which one it chose |
+| `beast` | Aggressive editing with automatic test-and-fix |
+| `pro` | Strict quality, security scanning, documentation |
+| `apex` | Maximum surface area, autonomous operation |
+| `dark-emperor` | Full autonomy, self-healing included |
+| `vision` | Live screen capture and scene analysis |
+| `pro-builder` | Website generation from a natural-language brief |
+| `title` | Conversation and message titling |
 
 ---
 
-<br/>
+## 🏗 Architecture
 
-<div align="center">
+Dependencies point one way and only one way. Client runtime code may depend on
+Schema and Protocol but never on Core or Server — which is what keeps a provider
+change from rippling into the UI.
 
-### WHAT MAKES ZYRAXON DIFFERENT
-
-</div>
-
-<br/>
-
-<table>
-<tr>
-<td width="33%" align="center">
-
-#### Voice Bridge
-
-| Component | Tech |
-|:----------|:-----|
-| Input | Chrome SpeechRecognition |
-| Output | Edge Neural TTS |
-| Port | 19800 / 19810 |
-| Comm | Bidirectional IPC |
-
-Mic → Chrome → SpeechRecognition → AI → Edge TTS → You hear it.
-
-</td>
-<td width="34%" align="center">
-
-#### Monaco AI Editor
-
-1. **Double-click** in the editor
-2. Floating AI button appears
-3. Click — AI generates code with live streaming
-4. Supports: EN, BN, AR, JA, ZH, RU, KO, HI
-
-</td>
-<td width="33%" align="center">
-
-#### Self-Healing
-
-1. You ask for something
-2. Missing tool detected
-3. ZYRAXON searches online
-4. Installs MCP/npm/Python
-5. Uses it immediately
-6. **Zero failures**
-
-</td>
-</tr>
-</table>
-
----
-
-<br/>
-
-<div align="center">
-
-### ETERNAL MEMORY
-
-</div>
-
-<br/>
-
-| Layer | What It Does |
-|:------|:-------------|
-| SQLite WAL | Persistent storage with 8 compound indexes |
-| Ring Buffer | Last 50 conversation pairs, crash-resilient |
-| Brain Daemon | Runs every 1 second, tails opencode.db |
-| permanent\_brain.json | Live brain state |
-| full\_chat\_history.txt | Static cache (85,000+ lines) |
-| Compression | Automatic at 50K+ entries |
-| Reset Survives | Task Scheduler on boot |
-
-**It remembers everything. Forever.**
-
----
-
-<br/>
-
-<div align="center">
-
-### ZYRAXON vs THE WORLD
-
-</div>
-
-<br/>
-
-| Capability | **ZYRAXON** | Cursor | Copilot | Devin | OpenHands |
-|:-----------|:-----------:|:------:|:-------:|:-----:|:---------:|
-| Desktop App | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Embedded VS Code Editor | ✅ | ✅ | ✅ | ❌ | ❌ |
-| 10 Agent Modes | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Self-Healing | ✅ | ❌ | ❌ | ⚠️ | ⚠️ |
-| Self-Evolution | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Eternal Memory (50K+) | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
-| Desktop Automation | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Screen Vision | ✅ | ❌ | ❌ | ⚠️ | ❌ |
-| Voice Communication | ✅ | ❌ | ❌ | ❌ | ❌ |
-| 805 Tools Built-in | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
-| 25+ AI Providers | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
-| Free & Source-Available | - | ❌ | ❌ | ❌ | ✅ |
-
-> Cursor is a sports car. Devin is an airline. ZYRAXON is a transformer — a complete autonomous AI workforce in one app.
-
----
-
-<br/>
-
-<div align="center">
-
-### SUBSCRIPTION SYSTEM
-
-</div>
-
-<br/>
-
-| Tier | Price | Modes | Tools |
-|:-----|:------|:-----:|:-----:|
-| **Free** | $0 / forever | general, build, plan, explore, vision | 126 |
-| **Pro** | $5 / 15 days | + pro, pro-builder | 304 |
-| **Max** | $15 / 2 months | + beast | 337 |
-| **Ultra** | $99 / year | + auto, apex, dark-emperor | 38 ULTRA + everything |
-
-**Secret codes** unlock permanent access. No server. No internet. Pure local.
-
----
-
-<br/>
-
-<div align="center">
-
-### TECH STACK
-
-</div>
-
-<br/>
-
-<table>
-<tr>
-<td width="50%">
-
-| Layer | Tech |
-|:------|:-----|
-| Runtime | Bun 1.3.14+ |
-| Desktop | Electron 42 + electron-vite |
-| UI | SolidJS + TailwindCSS |
-| Database | SQLite (drizzle-orm) WAL |
-| Build | electron-builder |
-| Language | TypeScript |
-| LLM Runtime | AI SDK (Vercel) |
-
-</td>
-<td width="50%">
-
-| Layer | Tech |
-|:------|:-----|
-| Voice Input | Chrome SpeechRecognition |
-| Voice Output | Edge Neural TTS |
-| Browser | Playwright (Chromium) |
-| Providers | 25+ (OpenAI, Anthropic, Google, Azure, xAI, Mistral...) |
-| Memory | SQLite WAL + Ring Buffer + Brain Daemon |
-| Subagents | 3-level deep Mission Control |
-| Package Manager | bun (not npm) |
-
-</td>
-</tr>
-</table>
-
----
-
-<br/>
-
-<div align="center">
-
-### SDK — Build with ZYRAXON
-
-</div>
-
-<br/>
-
-ZYRAXON AI provides a powerful JavaScript/TypeScript SDK for developers who want to integrate AI capabilities into their own applications.
-
-#### Quick Start
-
-```bash
-npm install @zyraxon-ai/sdk
+```
+                    ┌──────────────────────────────┐
+                    │        Desktop / TUI / SDK   │   ← what you interact with
+                    └───────────────┬──────────────┘
+                                    │
+                    ┌───────────────▼──────────────┐
+                    │      Client  ·  Session-UI   │   ← state, chat, composer
+                    └───────────────┬──────────────┘
+                                    │  depends on Schema + Protocol only
+                    ┌───────────────▼──────────────┐
+                    │         SDK  ·  Protocol     │   ← wire types, generated client
+                    └───────────────┬──────────────┘
+                                    │
+                    ┌───────────────▼──────────────┐
+                    │            Core              │   ← effects runtime, config,
+                    │   Schema   Server   Agent    │     database, tools, MCP
+                    └──────────────────────────────┘
 ```
 
-```typescript
-import { createZyraxonClient } from '@zyraxon-ai/sdk'
+| Package | Holds |
+|:--|:--|
+| `packages/schema` | The data shapes everything agrees on |
+| `packages/core` | Effects runtime, configuration, database, utilities |
+| `packages/protocol` | The wire types |
+| `packages/server` | HTTP API and server routes |
+| `packages/zyraxon` | The agent: tools, session, MCP, prompts |
+| `packages/sdk` | Generated client |
+| `packages/client` | UI state and data layer |
+| `packages/app` | The application shell |
+| `packages/ui` | Design system |
+| `packages/session-ui` | Chat, timeline and composer |
+| `packages/desktop` | Electron shell, TTS, task daemon, packaging |
 
-const client = createZyraxonClient({
-  baseUrl: 'http://localhost:3000',  // ZYRAXON server port
-})
-
-// Chat with AI
-const response = await client.chat({
-  message: 'Hello ZYRAXON!',
-})
-
-console.log(response.text)
-```
-
-#### What You Can Do
-
-| Feature | Description |
-|:--------|:------------|
-| **AI Chat** | converse with 25+ LLM providers |
-| **Tool Execution** | Run 805 tools programmatically |
-| **Session Management** | Create and manage AI sessions |
-| **Memory** | Store and retrieve memories |
-| **Voice** | Speech recognition & TTS |
-| **Vision** | Screen capture & analysis |
-
-#### Full Documentation
-
-See **[SDK.md](./SDK.md)** for complete API reference, examples, and guides.
+The agent is written against the Effect runtime rather than ad-hoc async control
+flow. Cancellation, timeouts, retries and resource lifetimes are part of the type
+of a function instead of something to remember at each call site — which is why a
+dropped MCP connection or a timed-out fetch cannot leave a resource dangling.
 
 ---
 
-<br/>
+## ✨ What makes it different
 
-<div align="center">
+### Voice bridge
 
-### DOWNLOAD
+Hold the mic and speak. Chrome's recogniser transcribes in the language you pick,
+the interim text streams into the composer as you talk, and switching language
+mid-sentence takes effect on the utterance you are speaking right now. Text you
+typed before pressing the mic is kept.
 
-</div>
+### Self-healing
 
-<br/>
+When a tool fails, the engine does not stop. It looks for another route, retries
+with backoff, and reports what it did instead of surfacing a dead end.
 
-| Platform | File | Arch |
-|:---------|:-----|:----:|
-| Windows | `ZYRAXON-Dev-win-installer.exe` | x64 |
-| macOS | `zyraxon-desktop-mac-arm64.dmg` | Apple Silicon |
-| macOS | `zyraxon-desktop-mac-x64.dmg` | Intel |
-| Linux | `zyraxon-desktop-linux-x86_64.AppImage` | x64 |
-| Linux | `zyraxon-desktop-linux-amd64.deb` | x64 |
-| Linux | `zyraxon-desktop-linux-x86_64.rpm` | x64 |
+### Eternal memory
 
-Download from **[Releases](https://github.com/onelpawarai-X/ZYRAXON-AI/releases)**
+Decisions, conventions and architecture notes persist across sessions and
+projects, so the second week of a project starts with the first week's context
+already loaded.
 
-> **macOS:** the build is not signed with an Apple Developer ID yet, so Gatekeeper
-> will stop the first launch. Right click the app and choose **Open**, then
-> confirm. It is a one time thing and it only happens once.
->
-> **Linux:** the AppImage needs no install at all. Make it executable with
-> `chmod +x`, then run it. The `deb` is for Debian and Ubuntu, the `rpm` for
-> Fedora.
+### Provider-agnostic by design
+
+OpenAI, Anthropic, Google, Groq, OpenRouter, Ollama, Mistral and the open-weight
+ecosystem are plug-ins behind one interface. The engine routes between them; it
+never hardcodes a vendor.
+
+### Studio
+
+An Electron desktop application, a terminal client, and a server you can point
+other tools at — from one repository.
 
 ---
 
-<br/>
+## ⌨️ Running it
 
-<div align="center">
-
-### BUILD FROM SOURCE
-
-</div>
-
-<br/>
+Requires [Bun](https://bun.sh).
 
 ```bash
-git clone https://github.com/onelpawarai-X/ZYRAXON-AI.git
+git clone https://github.com/onelpawarai-X/ZYRAXON-AI
 cd ZYRAXON-AI
 bun install
-bun run zyraxon:full:win    # Windows
-bun run zyraxon:full:linux  # Linux
-bun run zyraxon:full:mac    # macOS
+bun run dev
 ```
 
-<details>
-<summary>Step-by-step build</summary>
+Desktop application:
 
 ```bash
-# Step 1: Core (AI engine)
-bun run --cwd packages/zyraxon script/build.ts --single --skip-install
+bun run --cwd packages/desktop dev
+```
 
-# Step 2: Node sidecar
-bun run --cwd packages/zyraxon script/build-node.ts
+Prebuilt installers for Windows, macOS and Linux are on the
+[releases page](https://github.com/onelpawarai-X/ZYRAXON-AI/releases).
 
-# Step 3: Web UI
-NODE_OPTIONS="--max-old-space-size=16384" bun run --cwd packages/app build
+### Building from source
 
-# Step 4: Electron shell
+The build runs in five ordered steps. Each depends on the previous one, so a
+failure in an earlier step is a real failure rather than a stale artefact.
+
+```bash
+# 1. Core — the AI engine and server
+bun run --cwd packages/zyraxon build
+
+# 2. Node sidecar
+bun run --cwd packages/cli build
+
+# 3. Web UI
+bun run --cwd packages/app build
+
+# 4. Electron shell
 bun run --cwd packages/desktop build
 
-# Step 5: EXE package
-bun run --cwd packages/desktop package:win
+# 5. Installer
+bun run --cwd packages/desktop package
 ```
 
-</details>
-
----
-
-<br/>
-
-<div align="center">
-
-### PROJECT STRUCTURE
-
-</div>
-
-```
-ZYRAXON-AI/
-├── packages/
-│   ├── zyraxon/          # Core AI engine
-│   │   ├── src/
-│   │   │   ├── agent/    # 10 agent modes
-│   │   │   ├── mcp/      # MCP servers + tools
-│   │   │   ├── tool/     # Core tools
-│   │   │   ├── x/        # 805 registered tools
-│   │   │   ├── session/  # LLM streaming
-│   │   │   ├── screen/   # Vision system
-│   │   │   └── memory/   # Eternal memory
-│   ├── desktop/          # Electron app
-│   ├── app/              # SolidJS UI
-│   ├── ui/               # Shared components
-│   ├── core/             # Database, utilities
-│   ├── llm/              # 25+ provider routing
-│   └── session-ui/       # Session UI
-```
-
----
-
-<br/>
-
-<div align="center">
-
-### CONTRIBUTE
-
-**Everything we are building, and everything we plan to build:**
-[FEATURES.txt](blob/main/FEATURES.txt)
-
-**Full contribution guide:**
-[CONTRIBUTING.md](blob/main/CONTRIBUTING.md)
-
-</div>
-
-1. **Fork** the repo
-2. **Clone**: `git clone https://github.com/onelpawarai-X/ZYRAXON-AI.git`
-3. **Install**: `bun install`
-4. **Build**: `cd packages/zyraxon && bun run dev`
-5. **Branch**: `git checkout -b my-feature` (three words max, no slashes, no type prefix)
-6. **Commit**: `git commit -m "feat: add my feature"`
-7. **Push**: `git push origin my-feature`
-8. **Open PR** against `dev`
-
----
-
-<br/>
-
-<div align="center">
-
-### ECOSYSTEM
-
-</div>
-
-| Project | Description |
-|:--------|:------------|
-| [ZYRAXON AI](https://github.com/onelpawarai-X/ZYRAXON-AI) | Desktop AI agent — the main project |
-| [ZYRAXON Website](https://zyraxonai.lovable.app) | Main website |
-| [Cloud Agent](https://zyraxon-pro-x.lovable.app) | Cloud-based agent interface |
-
----
-
-<br/>
-
-<div align="center">
-
-### NPM PACKAGES & PUBLISHING
-
-</div>
-
-<br/>
-
-ZYRAXON AI publishes **12 packages** to npm under the `@zyraxon-ai` scope.
-
-#### Quick Install
+On a machine with less than 16 GB available to the build, raise the heap first:
 
 ```bash
-# Most users — just the SDK
+export NODE_OPTIONS="--max-old-space-size=16384"
+```
+
+---
+
+## 🔌 SDK
+
+Build on top of ZYRAXON from Node.
+
+```bash
 npm install @zyraxon-ai/sdk
-
-# Plugin developers
-npm install @zyraxon-ai/plugin
 ```
 
-#### All Packages
+```ts
+import { createZYRAXON } from "@zyraxon-ai/sdk"
 
-See **[PACKAGES.md](./PACKAGES.md)** for full documentation of all 12 packages, dependency graph, and usage guides.
+const zyraxon = await createZYRAXON({ directory: process.cwd() })
 
-#### Publishing
+const session = await zyraxon.session.create()
 
-Use the all-in-one publish script to build and publish all packages at once:
-
-```powershell
-# Publish all 12 packages to npm
-.\publish-all.ps1
-
-# Dry run (no actual publish)
-.\publish-all.ps1 -DryRun
-
-# Custom version
-.\publish-all.ps1 -Version "20.0.0"
+for await (const event of zyraxon.session.prompt({
+  sessionID: session.id,
+  parts: [{ type: "text", text: "Explain this repository" }],
+})) {
+  console.log(event.type)
+}
 ```
 
-The script handles everything: resolves dependencies, compiles TypeScript, and publishes in correct order.
+Full documentation is in [SDK.md](SDK.md) and
+[PACKAGES.md](PACKAGES.md).
 
 ---
 
-<br/>
+## 🤝 Contributing
 
-<div align="center">
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. It covers
+setup, the commit format, the review process, and what a good change looks like
+here.
 
-### LICENSE
-
-**Zyraxon Sovereign License — X Edition (ZSL-X)**
-
-Free for all uses including commercial. Attribution required.
-Automatically transitions to MEKRA-X on January 1, 2028.
-
-</div>
+Security reports go through [SECURITY.md](SECURITY.md), not the issue tracker.
 
 ---
 
-<br/>
+## 📬 Contact
+
+| | |
+|:--|:--|
+| Author | **onelpawarai** |
+| Based in | Bangladesh · operating globally |
+| Email | [sayidilxs@gmail.com](mailto:sayidilxs@gmail.com) |
+| Website | [zyraxonai.lovable.app](https://zyraxonai.lovable.app/) |
+| Cloud Agent | [zyraxon-pro-x.lovable.app](https://zyraxon-pro-x.lovable.app/) |
+| Portfolio | [onelpawarai.lovable.app](https://onelpawarai.lovable.app/) |
+| YouTube | [@ZYRAXONAI](https://www.youtube.com/@ZYRAXONAI) |
+| Facebook | [onelpawarai](https://www.facebook.com/onelpawarai) |
+| Access codes | [ZYRAXON Group](https://zyraxon-group-x.lovable.app/) |
+
+---
+
+## 📄 License
+
+ZSL-X. See [LICENSE](LICENSE).
+
+---
 
 <div align="center">
-
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0D1117,50:00D4FF,100:FF6B35&height=120&section=footer&text=ZYRAXON+AI&fontSize=24&fontColor=00D4FF&fontAlignY=35&descAlign=85&descSize=12&animation=fadeIn" alt="footer" />
-
+  <sub>Built by <a href="https://onelpawarai.lovable.app/">Zyraxon Labs</a> — Bangladesh, operating globally.</sub>
 </div>

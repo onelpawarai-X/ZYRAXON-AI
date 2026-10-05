@@ -1,5 +1,4 @@
 import type { McpRuntime, McpStatusEntry } from "./connect";
-const KNOWN: Set<string>;
 /** The slice of the generated client the Hub actually drives. */
 export interface McpClientLike {
     mcp: {

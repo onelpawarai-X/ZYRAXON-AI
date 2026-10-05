@@ -15,6 +15,8 @@ import { usePermission } from "@/context/permission"
 import { type ContextItem, type ImageAttachmentPart, type Prompt, type usePrompt } from "@/context/prompt"
 import { useSDK, type DirectorySDK } from "@/context/sdk"
 import { useSync, type DirectorySync } from "@/context/sync"
+import { useSettings } from "@/context/settings"
+import { replyLanguageName } from "@zyraxon-ai/session-ui/v2/prompt-input/reply-language"
 import { Identifier } from "@/utils/id"
 import { Worktree as WorktreeState } from "@/utils/worktree"
 import { buildRequestParts } from "./build-request-parts"
@@ -48,6 +50,8 @@ type FollowupSendInput = {
   messageID?: string
   optimisticBusy?: boolean
   before?: () => Promise<boolean> | boolean
+  /** Locale code from the composer's language picker, e.g. "bn-BD". */
+  replyLanguage?: string
 }
 
 const draftText = (prompt: Prompt) => prompt.map((part) => ("content" in part ? part.content : "")).join("")
@@ -161,6 +165,10 @@ export async function sendFollowupDraft(input: FollowupSendInput) {
       messageID,
       parts: requestParts,
       variant: input.draft.variant,
+      // The composer's language picker, resolved to a name the model can act on.
+      // Without it the choice only reached speech recognition and every answer came
+      // back in English regardless of what was selected.
+      replyLanguage: replyLanguageName(input.replyLanguage),
     })
     return true
   } catch (err) {
@@ -206,6 +214,7 @@ export function createPromptSubmit(input: PromptSubmitInput) {
   const prompt = input.prompt
   const layout = useLayout()
   const language = useLanguage()
+  const settings = useSettings()
   const params = useParams()
   const [search] = useSearchParams<{ draftId?: string }>()
   const tabs = useTabs()
@@ -596,6 +605,7 @@ export function createPromptSubmit(input: PromptSubmitInput) {
       messageID,
       optimisticBusy: sessionDirectory === projectDirectory,
       before: waitForWorktree,
+      replyLanguage: settings.general.voiceLanguage(),
     }).catch((err) => {
       pending.delete(pendingKey(session.id))
       if (sessionDirectory === projectDirectory) {

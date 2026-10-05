@@ -1,0 +1,160 @@
+---
+title: Contributing
+description: How to set up ZYRAXON, what a good pull request looks like, and how it gets reviewed.
+---
+
+ZYRAXON is built by people who read the code. Whether you are fixing a typo,
+reporting something that behaves strangely, or rewriting a subsystem, your change
+is reviewed by a human.
+
+This page is the short version. The complete version lives in
+[`CONTRIBUTING.md`](https://github.com/onelpawarai-X/ZYRAXON-AI/blob/main/CONTRIBUTING.md)
+in the repository.
+
+---
+
+## Before you start
+
+Search the [issues](https://github.com/onelpawarai-X/ZYRAXON-AI/issues) and open
+pull requests first. Someone may already be working on it.
+
+If you are unsure whether something is a bug or intended behaviour, open an issue
+and ask — that is a perfectly good contribution.
+
+**Security problems do not go in the issue tracker.** See
+[Security](/docs/security).
+
+---
+
+## Setup
+
+Requires [Bun](https://bun.sh) and Node 20 or newer.
+
+```bash
+git clone https://github.com/onelpawarai-X/ZYRAXON-AI
+cd ZYRAXON-AI
+bun install
+bun run dev
+```
+
+To run the desktop application:
+
+```bash
+bun run --cwd packages/desktop dev
+```
+
+---
+
+## Architecture
+
+Dependencies point one way and only one way:
+
+```
+Desktop / TUI / SDK  →  Client · Session-UI  →  SDK · Protocol  →  Core · Schema · Server
+```
+
+Client runtime code may depend on Schema and Protocol but never on Core or Server.
+That boundary is what keeps a provider change from rippling into the UI.
+
+---
+
+## Making a change
+
+1. Fork the repository and create a branch.
+2. Make the smallest change that fully solves the problem.
+3. Run the checks.
+4. Open a pull request against `dev`.
+
+---
+
+## Commit and branch naming
+
+Conventional commits:
+
+```
+type(scope): summary
+```
+
+Valid types are `feat`, `fix`, `docs`, `chore`, `refactor` and `test`.
+
+Branch names are up to three words, hyphen-separated. No slashes, no type
+prefixes — `session-recovery`, not `feat/session-recovery`.
+
+---
+
+## Checks
+
+```bash
+bun typecheck --cwd packages/<package>
+bun test --cwd packages/<package>
+```
+
+Tests cannot run from the repository root. Run them from the package you
+changed.
+
+If a check fails for a reason that predates your change, say so in the pull
+request rather than fixing unrelated failures in the same commit — it makes the
+review impossible.
+
+---
+
+## Adding a tool
+
+1. Create it under `packages/zyraxon/src/tool/`.
+2. Register it in `packages/zyraxon/src/tool/registry.ts`.
+3. Record its tier in `packages/zyraxon/src/subscription/tier-map.ts`.
+4. Write a description clear enough that a model can decide when to use it. That
+   description is the only thing the model sees.
+
+---
+
+## Adding an MCP app
+
+Apps live in `MCP Hub/catalog/seed.ts`, and **the endpoint must be verified
+before it is listed**:
+
+1. Send an `initialize` request.
+2. Check `WWW-Authenticate` for `resource_metadata`.
+3. Fetch `/.well-known/oauth-authorization-server` and confirm a
+   `registration_endpoint` exists if marking the app `oauth`.
+4. Send `tools/list`.
+5. Call one read-only tool and confirm real data comes back.
+
+A 401 is not evidence of OAuth. Plenty of servers simply refuse anonymous
+requests.
+
+Set `via` when the server is not run by the vendor, so nobody hands an account to
+a third party by surprise.
+
+---
+
+## What a good pull request looks like
+
+- One concern.
+- The description explains **why**, not what — the diff already says what.
+- A reviewer can verify the claim from the description alone.
+- No drive-by reformatting.
+- No unexplained binary or generated-file changes.
+
+---
+
+## Review
+
+Every pull request is read by a human. Comments are about the code, not about
+you. Approved changes are merged into `dev`; `main` is cut for releases.
+
+---
+
+## The team
+
+Maintained by **Zyraxon Labs**.
+
+| | |
+|:--|:--|
+| Author | **onelpawarai** |
+| Based in | Bangladesh · operating globally |
+| Email | [sayidilxs@gmail.com](mailto:sayidilxs@gmail.com) |
+| YouTube | [@ZYRAXONAI](https://www.youtube.com/@ZYRAXONAI) |
+| Facebook | [onelpawarai](https://www.facebook.com/onelpawarai) |
+| Website | [zyraxonai.lovable.app](https://zyraxonai.lovable.app/) |
+| Portfolio | [onelpawarai.lovable.app](https://onelpawarai.lovable.app/) |

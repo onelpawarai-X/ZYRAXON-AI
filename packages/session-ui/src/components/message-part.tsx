@@ -883,6 +883,28 @@ function contextToolDetail(part: ToolPart): string | undefined {
   return undefined
 }
 
+/**
+ * What the agent is doing to a media file right now.
+ *
+ * A model that takes audio or video does not answer instantly — a full clip is
+ * decoded frame by frame — so the row used to sit on a static file name with
+ * nothing moving, which read as a hang. This names the work and lets the shimmer
+ * run until the tool settles.
+ */
+function mediaAnalysisLabel(part: ToolPart, i18n: ReturnType<typeof useI18n>) {
+  const input = (part.state.input ?? {}) as Record<string, unknown>
+  const filePath = typeof input.filePath === "string" ? input.filePath : undefined
+  if (part.tool !== "read" || !filePath || part.state.status !== "running") return undefined
+  const name = getFilename(filePath)
+  const ext = filePath.slice(filePath.lastIndexOf(".") + 1).toLowerCase()
+  const kind = ["mp4", "mov", "mkv", "webm", "avi", "m4v"].includes(ext)
+    ? i18n.t("ui.tool.read.video")
+    : ["mp3", "wav", "m4a", "flac", "ogg", "aac", "opus"].includes(ext)
+      ? i18n.t("ui.tool.read.audio")
+      : i18n.t("ui.tool.read.media")
+  return kind ? `${kind} · ${name}` : undefined
+}
+
 function contextToolTrigger(part: ToolPart, i18n: ReturnType<typeof useI18n>) {
   const input = (part.state.input ?? {}) as Record<string, unknown>
   const path = typeof input.path === "string" ? input.path : "/"
@@ -1162,6 +1184,9 @@ export function ContextToolGroup(props: {
               const running = createMemo(
                 () => partAccessor().state.status === "pending" || partAccessor().state.status === "running",
               )
+              // Media analysis can take many seconds and shows no output until it is
+              // done, so the row names what it is doing instead of sitting on "Read".
+              const analysis = createMemo(() => mediaAnalysisLabel(partAccessor(), i18n))
               return (
                 <div data-slot="context-tool-group-item">
                   <div data-component="tool-trigger">
@@ -1169,9 +1194,20 @@ export function ContextToolGroup(props: {
                       <div data-slot="basic-tool-tool-info">
                         <div data-slot="basic-tool-tool-info-structured">
                           <div data-slot="basic-tool-tool-info-main">
-                            <span data-slot="basic-tool-tool-title">
-                              <TextShimmer text={trigger().title} active={running()} />
-                            </span>
+                            <Show
+                              when={analysis()}
+                              fallback={
+                                <span data-slot="basic-tool-tool-title">
+                                  <TextShimmer text={trigger().title} active={running()} />
+                                </span>
+                              }
+                            >
+                              {(label) => (
+                                <span data-slot="basic-tool-tool-title">
+                                  <TextShimmer text={label()} active={running()} />
+                                </span>
+                              )}
+                            </Show>
                             <Show when={!running() && trigger().subtitle}>
                               <span data-slot="basic-tool-tool-subtitle">{trigger().subtitle}</span>
                             </Show>

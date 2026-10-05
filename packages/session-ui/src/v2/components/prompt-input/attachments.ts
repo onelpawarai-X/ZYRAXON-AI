@@ -10,6 +10,31 @@ const accepted = [
   "image/gif",
   "image/webp",
   "application/pdf",
+  // Providers that advertise `audio` and `video` in their model's input list can
+  // read these directly. They were missing here, so a model that showed
+  // "audio, video" in its capabilities still refused the file at the picker.
+  "audio/mpeg",
+  "audio/mp4",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/webm",
+  "audio/ogg",
+  "audio/flac",
+  "audio/aac",
+  "audio/m4a",
+  "audio/amr",
+  "audio/3gpp",
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+  "video/x-matroska",
+  "video/x-msvideo",
+  "video/mpeg",
+  "video/ogg",
+  "video/3gpp",
+  "video/x-flv",
+  "audio/*",
+  "video/*",
   "text/*",
   "application/json",
   "application/ld+json",
@@ -106,7 +131,10 @@ export function createPromptInputV2Attachments(
     const url = await dataUrl(file, mime)
     if (!url) return false
     const attachment: PromptInputV2Attachment = {
-      type: "image",
+      // The renderer branches on this. Hardcoding "image" made every attachment
+      // draw an <img>, so an mp4 or mp3 was accepted and then displayed as a
+      // broken image, and the composer had no way to show it as media.
+      type: mime.startsWith("audio/") ? "audio" : mime.startsWith("video/") ? "video" : "image",
       id: globalThis.crypto?.randomUUID?.() ?? Math.random().toString(16).slice(2),
       filename: file.name,
       sourcePath: input.getPathForFile?.(file) || undefined,
@@ -224,6 +252,68 @@ const imageExtensions = new Map([
   ["png", "image/png"],
   ["webp", "image/webp"],
 ])
+
+/**
+ * Audio and video pass through with their real MIME type.
+ *
+ * Anything that is not text has to be reported truthfully, because the model
+ * decides what to do with it from this string: `read` cannot parse an mp3, so a
+ * clip mislabelled as text/plain looks readable and comes back as mojibake.
+ */
+const audioExtensions = new Map([
+  ["aac", "audio/aac"],
+  ["aiff", "audio/aiff"],
+  ["amr", "audio/amr"],
+  ["flac", "audio/flac"],
+  ["m4a", "audio/mp4"],
+  ["mid", "audio/midi"],
+  ["midi", "audio/midi"],
+  ["mp3", "audio/mpeg"],
+  ["oga", "audio/ogg"],
+  ["ogg", "audio/ogg"],
+  ["opus", "audio/opus"],
+  ["wav", "audio/wav"],
+  ["weba", "audio/webm"],
+])
+const videoExtensions = new Map([
+  ["3gp", "video/3gpp"],
+  ["avi", "video/x-msvideo"],
+  ["flv", "video/x-flv"],
+  ["m4v", "video/mp4"],
+  ["mkv", "video/x-matroska"],
+  ["mov", "video/quicktime"],
+  ["mp4", "video/mp4"],
+  ["mpeg", "video/mpeg"],
+  ["mpg", "video/mpeg"],
+  ["ogv", "video/ogg"],
+  ["webm", "video/webm"],
+])
+
+const mediaMimes = new Set([
+  ...audioExtensions.values(),
+  ...videoExtensions.values(),
+  "audio/mpeg",
+  "audio/mp4",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/webm",
+  "audio/ogg",
+  "audio/flac",
+  "audio/aac",
+  "audio/m4a",
+  "audio/amr",
+  "audio/3gpp",
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+  "video/x-matroska",
+  "video/x-msvideo",
+  "video/mpeg",
+  "video/ogg",
+  "video/3gpp",
+  "video/x-flv",
+])
+
 const textMimes = new Set([
   "application/json",
   "application/ld+json",
@@ -239,8 +329,17 @@ async function attachmentMime(file: File) {
   if (imageMimes.has(type) || type === "application/pdf") return type
   const index = file.name.lastIndexOf(".")
   const suffix = index === -1 ? "" : file.name.slice(index + 1).toLowerCase()
-  const fallback = imageExtensions.get(suffix) ?? (suffix === "pdf" ? "application/pdf" : undefined)
-  if ((!type || type === "application/octet-stream") && fallback) return fallback
+  // A media file with no usable type still has an extension, and Windows hands
+  // plenty of them over as application/octet-stream. The byte sniff below would
+  // reject those outright, so resolve the extension first.
+  const byExtension =
+    imageExtensions.get(suffix) ??
+    (suffix === "pdf" ? "application/pdf" : undefined) ??
+    audioExtensions.get(suffix) ??
+    videoExtensions.get(suffix)
+  if ((!type || type === "application/octet-stream") && byExtension) return byExtension
+  if (type.startsWith("audio/") || type.startsWith("video/")) return type
+  if (mediaMimes.has(type)) return type
   if (type.startsWith("text/") || textMimes.has(type) || type.endsWith("+json") || type.endsWith("+xml")) {
     return "text/plain"
   }

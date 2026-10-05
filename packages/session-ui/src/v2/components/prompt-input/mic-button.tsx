@@ -4,52 +4,9 @@ import { createEffect, createSignal, onCleanup, For } from "solid-js"
 import { IconButton } from "@zyraxon-ai/ui/icon-button"
 import { MenuV2 } from "@zyraxon-ai/ui/v2/menu-v2"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
+import { VOICE_LANGUAGES } from "./reply-language"
 
 type VoiceState = "idle" | "recording" | "processing"
-
-const VOICE_LANGUAGES: Array<{ code: string; label: string }> = [
-  { code: "auto", label: "Auto-Detect" },
-  { code: "bn-BD", label: "Bengali" },
-  { code: "hi-IN", label: "Hindi" },
-  { code: "en-US", label: "English (US)" },
-  { code: "en-GB", label: "English (UK)" },
-  { code: "en-IN", label: "English (India)" },
-  { code: "ar-SA", label: "Arabic" },
-  { code: "es-ES", label: "Spanish" },
-  { code: "fr-FR", label: "French" },
-  { code: "de-DE", label: "German" },
-  { code: "pt-BR", label: "Portuguese" },
-  { code: "ru-RU", label: "Russian" },
-  { code: "ja-JP", label: "Japanese" },
-  { code: "ko-KR", label: "Korean" },
-  { code: "zh-CN", label: "Chinese (Simplified)" },
-  { code: "zh-TW", label: "Chinese (Traditional)" },
-  { code: "vi-VN", label: "Vietnamese" },
-  { code: "it-IT", label: "Italian" },
-  { code: "th-TH", label: "Thai" },
-  { code: "tr-TR", label: "Turkish" },
-  { code: "pl-PL", label: "Polish" },
-  { code: "nl-NL", label: "Dutch" },
-  { code: "uk-UA", label: "Ukrainian" },
-  { code: "sv-SE", label: "Swedish" },
-  { code: "da-DK", label: "Danish" },
-  { code: "fi-FI", label: "Finnish" },
-  { code: "nb-NO", label: "Norwegian" },
-  { code: "cs-CZ", label: "Czech" },
-  { code: "ro-RO", label: "Romanian" },
-  { code: "el-GR", label: "Greek" },
-  { code: "he-IL", label: "Hebrew" },
-  { code: "hu-HU", label: "Hungarian" },
-  { code: "id-ID", label: "Indonesian" },
-  { code: "ms-MY", label: "Malay" },
-  { code: "ta-IN", label: "Tamil" },
-  { code: "te-IN", label: "Telugu" },
-  { code: "ur-PK", label: "Urdu" },
-  { code: "pa-IN", label: "Punjabi" },
-  { code: "fa-IR", label: "Persian" },
-  { code: "sw-KE", label: "Swahili" },
-  { code: "af-ZA", label: "Afrikaans" },
-]
 
 export type MicButtonProps = {
   onTranscript: (text: string, lang: string) => void
@@ -58,6 +15,8 @@ export type MicButtonProps = {
   disabled?: boolean
   language?: string
   onLanguageChange?: (lang: string) => void
+  /** Submit the prompt. Needed because the bridge window cannot press Send itself. */
+  onSubmit?: () => void
 }
 
 const isInsideIframe = (() => {
@@ -72,14 +31,19 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
   const [state, setState] = createSignal<VoiceState>("idle")
   const [selectedLang, setSelectedLang] = createSignal(props.language || "auto")
   let finalText = ""
+  let lastSelected: string | undefined
   let removeVoiceListener: (() => void) | null = null
   let safetyTimeout: ReturnType<typeof setTimeout> | null = null
 
+  // Create the effect only when the component is created, not on every render.
   createEffect(() => {
     const lang = props.language
-    if (lang && lang !== selectedLang()) {
+    // Adopt an externally-set language (e.g. restored app locale) but keep a
+    // user-selected voice locale stable across unrelated re-renders.
+    if (lang && lang !== selectedLang() && lang !== lastSelected) {
       setSelectedLang(lang)
     }
+    lastSelected = selectedLang()
   })
 
   const clearSafetyTimeout = () => {
@@ -151,6 +115,9 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
         }
       } else if (event.type === "voice-send") {
         deliverOnce(event.text || "", event.lang || selectedLang())
+        // The bridge's own Send button was pressed, so the composer must submit too.
+        // Waiting for the next tick left the text on screen with nothing sent.
+        if (event.submit) requestAnimationFrame(() => props.onSubmit?.())
       }
     })
   }
@@ -289,8 +256,11 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     setSelectedLang(code)
     props.onLanguageChange?.(code)
     const api = (window as any).api
-    if (api && state() === "recording") {
-      api.voiceSetLanguage(code).catch(() => {})
+    // Switching language mid-sentence has to take effect on the utterance being
+    // recorded right now, not on the next one. Without this the recogniser kept
+    // transcribing in the language picked before the mic was opened.
+    if (api && (state() === "recording" || state() === "processing")) {
+      Promise.resolve(api.voiceSetLanguage?.(code)).catch(() => {})
     }
   }
 
@@ -304,7 +274,11 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
 
   return (
     <div class="flex items-center gap-1">
-      <MenuV2 gutter={4} placement="top-start">
+      {/* The composer is anchored to the bottom of the viewport, so an upward menu
+          would cover the conversation and a downward one renders past the bottom
+          edge. top-end mirrors the menu to the trigger's right edge, which keeps it
+          inside the composer while still opening above the row. */}
+      <MenuV2 gutter={4} placement="top-end">
         <MenuV2.Trigger
           as={IconButton}
           type="button"

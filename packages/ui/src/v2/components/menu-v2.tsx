@@ -185,6 +185,9 @@ function MenuV2Content(props: ComponentProps<typeof DropdownMenu.Content>) {
 }
 
 function MenuV2Root(props: ComponentProps<typeof DropdownMenu>) {
+  // Positioning must stay with Kobalte. Disabling flip/slide/fitViewport made
+  // every menu keep its requested side even when that side fell outside the
+  // viewport, which pushed composer menus past the bottom edge of the window.
   return <DropdownMenu {...props} />
 }
 

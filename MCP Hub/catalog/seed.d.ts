@@ -15,23 +15,41 @@ export interface AppEntry {
     color: string;
     /** Simple Icons slug, used to render the app's real logo */
     icon?: string;
+    /**
+     * The product's own web domain, used to fetch its real favicon.
+     * Simple Icons only covers a few thousand brands, so this is what guarantees a
+     * real mark for everything else rather than a lettered tile.
+     */
+    iconDomain?: string;
+    /**
+     * Who actually runs the server, when it is not the vendor itself. Shown on the
+     * card so nobody is surprised about handing an account to a third party.
+     */
+    via?: string;
     /** true when the server registers clients dynamically, so nothing is asked of the user */
     zeroSetup?: boolean;
 }
 /**
- * Render an app's real brand mark. Simple Icons is used because it carries one
- * consistent, recognisable glyph per product and degrades to the brand colour when
- * the network is unavailable — the panel still reads correctly offline.
+ * Render an app's real brand mark.
+ *
+ * Simple Icons first, because it gives a clean monochrome glyph for the brands it
+ * covers. Then the product's own favicon, which is the only way to get a real
+ * mark for everything else. A lettered tile is a last resort, not the norm.
  */
 export declare function appIcon(app: AppEntry, size?: number): string;
 /**
- * Apps that complete an OAuth flow without the user supplying a client id.
- * Verified against each server's /.well-known/oauth-authorization-server.
+ * The vendor's own server, and a one-click sign-in.
+ *
+ * Each of these answered 401 with a `WWW-Authenticate` challenge and advertises
+ * an authorization endpoint with dynamic client registration, which is what lets
+ * the whole flow be: press Connect, allow in the browser, connected.
  */
 export declare const zeroSetupApps: AppEntry[];
 /**
- * Apps that need a token or a one-time OAuth client.
- * GitHub is here because its authorization server has no dynamic registration.
+ * The vendor runs the server, but it will not sign you in without a key.
+ *
+ * Each of these answered 401 and advertised no authorization endpoint, so
+ * pressing Connect asks for a token instead of opening a browser.
  */
 export declare const tokenApps: AppEntry[];
 /**
@@ -40,12 +58,11 @@ export declare const tokenApps: AppEntry[];
  */
 export declare const localApps: AppEntry[];
 /**
- * Social and communication apps.
+ * Apps with no server of their own, reached through a hosted community server.
  *
- * None of these have an official hosted MCP server, so they are reached through
- * community servers published in the registry, or through the provider's own
- * API with a token. Every one of them is in the registry, which is why the
- * panel can offer them without shipping a special case for each.
+ * These are the ones worth being careful about. The endpoint is real and was
+ * probed, but it belongs to a third party rather than to the vendor, so an
+ * account there may be needed. Each entry names who runs it.
  */
 export declare const socialApps: AppEntry[];
 export declare const allSeedApps: () => AppEntry[];

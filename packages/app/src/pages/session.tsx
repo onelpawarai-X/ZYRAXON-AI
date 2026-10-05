@@ -391,13 +391,29 @@ export default function Page() {
     })
   })
 
-  // Daily task activation: listen for scheduler-triggered prompts
+  // Daily task activation: listen for scheduler-triggered prompts.
+  // The main process already recorded the run, so an activation that arrives before the
+  // prompt store is ready used to be dropped forever. Hold it instead and apply it as
+  // soon as the store reports ready.
+  const [pendingDailyTask, setPendingDailyTask] = createSignal<{ taskId: string; prompt: string } | undefined>()
+
   onMount(() => {
     const handleDailyTaskRun = (event: Event) => {
       const detail = (event as CustomEvent).detail
       if (!detail?.prompt) return
-      if (!prompt.ready()) return
-      const text = detail.prompt
+      setPendingDailyTask({ taskId: detail.taskId, prompt: detail.prompt })
+    }
+    window.addEventListener("daily-task-run", handleDailyTaskRun)
+    onCleanup(() => window.removeEventListener("daily-task-run", handleDailyTaskRun))
+  })
+
+  createEffect(() => {
+    const pending = pendingDailyTask()
+    if (!pending) return
+    if (!prompt.ready()) return
+    setPendingDailyTask(undefined)
+    untrack(() => {
+      const text = pending.prompt
       prompt.set([{ type: "text", content: text, start: 0, end: text.length }], text.length)
       // Trigger form submit after a short delay to ensure prompt state is updated
       setTimeout(() => {
@@ -413,9 +429,7 @@ export default function Page() {
         const submitBtn = document.querySelector('[data-action="prompt-submit"]')
         if (submitBtn) submitBtn.click()
       }, 100)
-    }
-    window.addEventListener("daily-task-run", handleDailyTaskRun)
-    onCleanup(() => window.removeEventListener("daily-task-run", handleDailyTaskRun))
+    })
   })
 
   const [ui, setUi] = createStore({
@@ -1831,6 +1845,7 @@ export default function Page() {
         serverSync: serverSync(),
         draft: item,
         optimisticBusy: item.sessionDirectory === sdk().directory,
+        replyLanguage: settings.general.voiceLanguage(),
       }).catch((err) => {
         setFollowup("failed", input.sessionID, input.id)
         fail(err)

@@ -10,7 +10,7 @@ import DESCRIPTION from "./read.txt"
 import { InstanceState } from "@/effect/instance-state"
 import { assertExternalDirectoryEffect } from "./external-directory"
 import { Instruction } from "../session/instruction"
-import { isPdfAttachment, sniffAttachmentMime } from "@/util/media"
+import { isMedia, isPdfAttachment, sniffAttachmentMime } from "@/util/media"
 
 const DEFAULT_READ_LIMIT = 2000
 const MAX_LINE_LENGTH = 2000
@@ -305,9 +305,18 @@ export const ReadTool = Tool.define<
       const mime = sniffAttachmentMime(sample, FSUtil.mimeType(filepath))
       const isImage = SUPPORTED_IMAGE_MIMES.has(mime)
 
-      if (isImage || isPdfAttachment(mime)) {
+      // Audio and video are handed straight to the model. Every current provider
+      // advertises `audio` and `video` in its input list, so refusing them here
+      // sent the agent off to install FFmpeg and rebuild a pipeline for something
+      // the model reads natively. If the selected model cannot take the type, the
+      // provider says so itself, which beats "Cannot read binary file".
+      if (isImage || isPdfAttachment(mime) || isMedia(mime)) {
         const bytes = yield* fs.readFile(filepath)
-        const msg = isPdfAttachment(mime) ? "PDF read successfully" : "Image read successfully"
+        const msg = isPdfAttachment(mime)
+          ? "PDF read successfully"
+          : isMedia(mime)
+            ? `${mime.startsWith("audio/") ? "Audio" : "Video"} read successfully`
+            : "Image read successfully"
         return {
           title,
           output: msg,

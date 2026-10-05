@@ -80,14 +80,17 @@ export function createPromptInputV2Controller(input: {
     createEffect(on(input.identity, () => setState(reconcile(createPromptInputV2InteractionState())), { defer: true }))
   }
   function addPart(part: PromptInputV2PersistedState["prompt"][number]) {
-    if (part.type === "image") return false
+    // Attachments go through addAttachment, never addPart. Matching only "image"
+    // here meant an audio or video attachment fell through to the text branch
+    // below and was silently dropped.
+    if (part.type === "image" || part.type === "video" || part.type === "audio") return false
     if (part.type === "file" || part.type === "agent") {
       draft.addMention(part)
       return true
     }
     const text = draft.state.prompt.map((item) => ("content" in item ? item.content : "")).join("")
     const cursor = draft.state.cursor ?? text.length
-    draft.setText(text.slice(0, cursor) + part.content + text.slice(cursor))
+    draft.setText(text.slice(0, cursor) + ("content" in part ? part.content : "") + text.slice(cursor))
     return true
   }
   const attachments = input.attachments
@@ -178,7 +181,10 @@ export function createPromptInputV2Controller(input: {
       if (!action) return result.handled
       if (event.item.kind === "command") {
         draft.setPrompt(
-          draft.state.prompt.filter((part): part is PromptInputV2Attachment => part.type === "image"),
+          draft.state.prompt.filter(
+        (part): part is PromptInputV2Attachment =>
+          part.type === "image" || part.type === "video" || part.type === "audio",
+      ),
           0,
         )
       }
@@ -311,7 +317,10 @@ export function createPromptInputV2Controller(input: {
       return draft.state.context.items.filter((item) => !!item.comment?.trim())
     },
     attachments(): PromptInputV2Attachment[] {
-      return draft.state.prompt.filter((part): part is PromptInputV2Attachment => part.type === "image")
+      return draft.state.prompt.filter(
+        (part): part is PromptInputV2Attachment =>
+          part.type === "image" || part.type === "video" || part.type === "audio",
+      )
     },
     toggleContext(id: string) {
       dispatch({ type: "context.active", id })
@@ -331,7 +340,10 @@ export function createPromptInputV2Controller(input: {
     },
     canSubmit() {
       const persisted = draft.state
-      if (persisted.prompt.some((part) => part.type === "image")) return true
+      if (
+      persisted.prompt.some((part) => part.type === "image" || part.type === "video" || part.type === "audio")
+    )
+      return true
       if (persisted.context.items.some((item) => !!item.comment?.trim())) return true
       return persisted.prompt.some((part) => "content" in part && !!part.content.trim())
     },

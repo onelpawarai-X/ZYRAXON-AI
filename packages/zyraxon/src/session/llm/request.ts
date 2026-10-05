@@ -57,11 +57,17 @@ const mergeOptions = (target: Record<string, any>, source: Record<string, any> |
 
 export const prepare = Effect.fn("LLMRequestPrep.prepare")(function* (input: PrepareInput) {
   const isOpenaiOauth = input.provider.id === "openai" && input.auth?.type === "oauth"
+  // The composer's language picker used to reach only speech recognition, so choosing
+  // Bengali still produced English answers. This puts the choice where the model
+  // actually reads it, and only when the user picked a real language (not auto).
+  const replyLanguage = input.user.replyLanguage?.trim()
+  const languageDirective = replyLanguage ? `Always respond in ${replyLanguage}.` : undefined
   const system = [
     [
       ...(input.agent.prompt ? [input.agent.prompt] : SystemPrompt.provider(input.model)),
       ...input.system,
       ...(input.user.system ? [input.user.system] : []),
+      ...(languageDirective ? [languageDirective] : []),
     ]
       .filter((x) => x)
       .join("\n"),

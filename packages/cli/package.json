@@ -17,13 +17,13 @@
   },
   "dependencies": {
     "@effect/platform-node": "catalog:",
+    "@opentui/core": "catalog:",
+    "@opentui/solid": "catalog:",
+    "@parcel/watcher": "2.5.1",
     "@zyraxon-ai/core": "workspace:*",
     "@zyraxon-ai/sdk": "workspace:*",
     "@zyraxon-ai/server": "workspace:*",
     "@zyraxon-ai/tui": "workspace:*",
-    "@opentui/core": "catalog:",
-    "@opentui/solid": "catalog:",
-    "@parcel/watcher": "2.5.1",
     "effect": "catalog:",
     "solid-js": "catalog:"
   },

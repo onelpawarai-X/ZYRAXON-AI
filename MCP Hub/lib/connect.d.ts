@@ -45,23 +45,20 @@ export interface McpRuntime {
 }
 /** Build the ZYRAXON config entry for an app. */
 export declare function toServerConfig(app: AppEntry, token?: string): Record<string, unknown>;
-/** statuses that mean the server has stopped moving */
-declare const SETTLED: Set<string>;
-/** how long a transport gets to answer before we call it unreachable */
-declare const CONNECT_TIMEOUT_MS: number;
-/** a person has to read a consent page and press Allow, so allow minutes */
-declare const AUTH_TIMEOUT_MS: number;
-declare const POLL_MS: number;
-declare function delay(ms: number): Promise<void>;
 /**
- * Watch one server until it says something final.
+ * Watch one server until it reaches a state worth acting on.
  *
  * A connect attempt is asynchronous: the runtime opens the transport, negotiates
  * a session, and only then reports connected, needs_auth or failed. Reading the
  * status on the very next tick sees nothing useful, which is what used to leave
  * every card on "Connecting…" forever with no sign-in ever offered.
+ *
+ * `until` exists because "settled" means different things at different moments.
+ * Before sign-in, needs_auth is the interesting answer and waiting past it is
+ * wrong. After sign-in starts it is the answer we already have, so the only
+ * useful thing left to wait for is a state that is no longer needs_auth.
  */
-export declare function waitForStatus(runtime: McpRuntime, name: string, timeoutMs?: number): Promise<McpStatusEntry>;
+export declare function waitForStatus(runtime: McpRuntime, name: string, timeoutMs?: number, until?: (status: McpStatusEntry["status"]) => boolean): Promise<McpStatusEntry>;
 export interface ConnectOptions {
     /** bearer token, for apps that do not speak OAuth */
     token?: string;
@@ -75,8 +72,6 @@ export interface ConnectOptions {
  * profile, which is why signing in leaves the app already logged in.
  */
 export declare function connectApp(runtime: McpRuntime, app: AppEntry, options?: ConnectOptions): Promise<ConnectionState>;
-/** Turn a server status into the state a card renders. */
-declare function settle(runtime: McpRuntime, name: string, status: McpStatusEntry): ConnectionState;
 /** How many of the agent's tools came from this server. */
 export declare function countTools(runtime: McpRuntime, serverName: string): Promise<number>;
 /**

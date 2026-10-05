@@ -43,6 +43,7 @@ import { SvgGenerateTool } from "./svg_generate"
 import { SiteDomainTool } from "./site_domain"
 import { SitePreviewTool } from "./site_preview"
 import { GithubConnectTool } from "./github_connect"
+import { McpCatalogTool, McpStatusTool, McpConnectTool } from "./mcp-control"
 import { ModeSwitchTool } from "./mode-switch"
 import {
   SessionListTool,
@@ -169,6 +170,9 @@ const layer = Layer.effect(
     const siteDomainToolDef = yield* SiteDomainTool
     const sitePreviewToolDef = yield* SitePreviewTool
     const githubConnectToolDef = yield* GithubConnectTool
+const mcpCatalogToolDef = yield* McpCatalogTool
+const mcpStatusToolDef = yield* McpStatusTool
+const mcpConnectToolDef = yield* McpConnectTool
     const modeSwitchToolDef = yield* ModeSwitchTool
     const sessionListToolDef = yield* SessionListTool
     const sessionOpenToolDef = yield* SessionOpenTool
@@ -422,6 +426,9 @@ const layer = Layer.effect(
           site_domain: Tool.init(siteDomainToolDef),
           site_preview: Tool.init(sitePreviewToolDef),
           github_connect: Tool.init(githubConnectToolDef),
+  mcp_catalog: Tool.init(mcpCatalogToolDef),
+  mcp_status: Tool.init(mcpStatusToolDef),
+  mcp_connect: Tool.init(mcpConnectToolDef),
           x_mode_switch: Tool.init(modeSwitchToolDef),
           x_session_list: Tool.init(sessionListToolDef),
           x_session_open: Tool.init(sessionOpenToolDef),
@@ -482,7 +489,11 @@ const layer = Layer.effect(
             tool.svg_generate,
             tool.site_domain,
             tool.site_preview,
+            tool.x_preview_open_url,
             tool.github_connect,
+  tool.mcp_catalog,
+  tool.mcp_status,
+  tool.mcp_connect,
             tool.x_mode_switch,
             ...(tool.execute ? [tool.execute] : []),
             ...(flags.experimentalLspTool ? [tool.lsp] : []),

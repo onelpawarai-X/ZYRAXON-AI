@@ -1,6 +1,6 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-import { For, Match, Show, Switch, createEffect, createMemo, createSignal, onCleanup, type JSX } from "solid-js"
+import { For, Match, Show, Switch, createEffect, createMemo, createSignal, on, onCleanup, type JSX } from "solid-js"
 import { createStore } from "solid-js/store"
 import { createMediaQuery } from "@solid-primitives/media"
 import { DragDropProvider as DndKitProvider, PointerSensor } from "@dnd-kit/solid"
@@ -183,12 +183,15 @@ export function SessionSidePanel(props: {
   const openedTabs = tabState.openedTabs
   const activeTab = tabState.activeTab
   const activeFileTab = tabState.activeFileTab
-  const open = createMemo(
-    () => reviewOpen() || previewActive() || activeTab() === "allfiles",
-  )
+  // The preview surface is reached two ways — the header Preview button, which flips
+  // previewActive, and the Preview tab in this panel's own tab bar. Both have to open
+  // the panel at the preview width, because session.tsx already mounts the panel as
+  // soon as the tab is selected.
+  const showingPreview = createMemo(() => previewActive() || activeTab() === "preview")
+  const open = createMemo(() => reviewOpen() || showingPreview() || activeTab() === "allfiles")
   const panelWidth = createMemo(() => {
     if (!open()) return "0px"
-    if (previewActive()) return `${previewWidth()}px`
+    if (showingPreview()) return `${previewWidth()}px`
     return "auto"
   })
   const treeWidth = createMemo(() => "0px")
@@ -225,25 +228,21 @@ export function SessionSidePanel(props: {
     const path = file.pathFromTab(next)
     if (path) void file.load(path)
     if (next === "review") openReviewPanel()
-    setPreviewActive(false)
+    // The preview surface owns the panel's split width through the global preview
+    // singleton, so selecting its tab has to open that mode and every other tab has to
+    // close it. Without this the tab mounts SitePreview inside a collapsed panel.
+    setPreviewActive(next === "preview")
     tabs().setActive(next)
   }
 
-  // Sync preview state with actual tab. previewActive is a global singleton —
-  // if the tab changed away from preview (e.g. session switch), reset it
-  // so the side panel doesn't stay open with empty content.
-  let skipPreviewSync = false
-  createEffect(() => {
-    const isActive = previewActive()
-    if (skipPreviewSync) {
-      skipPreviewSync = false
-      return
-    }
-    if (isActive && activeTab() !== "review") {
-      skipPreviewSync = true
-      setPreviewActive(false)
-    }
-  })
+  // The tab can also move without activateTab (command palette, file tab, session
+  // switch). Keyed on the tab alone so this never fights the header Preview toggle,
+  // which opens preview mode first and only then selects the preview tab.
+  createEffect(
+    on(activeTab, (tab) => {
+      if (tab !== "preview") setPreviewActive(false)
+    }, { defer: true }),
+  )
   const browserTab = createMemo(() => {
     if (!props.fileBrowserState) return undefined
     const active = activeTab()
@@ -338,7 +337,10 @@ export function SessionSidePanel(props: {
               "border-l border-border-weaker-base": !settings.general.newLayoutDesigns(),
             }}
           >
-            <Show when={reviewOpen() || previewActive() || activeTab() === "ecosystem"}>
+            {/* This is the panel body — the tab bar and every tab's content. Gating it on
+                anything narrower than open() leaves the aside at full width with nothing
+                inside it, which is how the Preview tab ended up rendering a blank panel. */}
+            <Show when={open()}>
               <div
                 class="relative min-w-0 h-full flex-1 overflow-hidden"
                 classList={{
@@ -347,7 +349,7 @@ export function SessionSidePanel(props: {
                 }}
               >
                 {/* Preview resize handle — drag to make preview bigger/smaller */}
-                <Show when={previewActive()}>
+                <Show when={showingPreview()}>
                   <div onPointerDown={() => props.size.start()}>
                     <ResizeHandle
                       direction="horizontal"
@@ -798,6 +800,19 @@ export function SessionSidePanel(props: {
                             <div class="flex-1 min-h-0 overflow-hidden">
                               {props.reviewPanel()}
                             </div>
+                          </div>
+                        </Show>
+
+                        <Show when={canPreview() && activeTab() === "preview"}>
+                          <div
+                            id={previewTabPanelID}
+                            role="tabpanel"
+                            aria-labelledby={previewTabID}
+                            tabIndex={0}
+                            data-slot="tabs-content"
+                            class="flex flex-col h-full overflow-hidden contain-strict"
+                          >
+                            <SitePreview />
                           </div>
                         </Show>
 

@@ -28,7 +28,11 @@ export type PromptInputV2AgentPart = PromptInputV2PartBase & {
 }
 
 export type PromptInputV2Attachment = {
-  type: "image"
+  /**
+   * Which element previews it. Kept narrow on purpose: the composer renders a
+   * thumbnail, a playable clip or an audio row, and it needs to know which.
+   */
+  type: "image" | "video" | "audio"
   id: string
   filename: string
   sourcePath?: string

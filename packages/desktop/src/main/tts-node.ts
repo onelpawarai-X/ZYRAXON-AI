@@ -6,7 +6,8 @@ import { join } from "path"
 import { existsSync, mkdirSync } from "fs"
 import { tmpdir } from "os"
 import { createHash } from "crypto"
-import { Readable } from "stream"
+import { PassThrough, Readable } from "stream"
+import { pipeline } from "stream/promises"
 
 const TTS_PORT = 19810
 let ttsServer: ReturnType<typeof createServer> | null = null
@@ -93,67 +94,182 @@ function cacheKey(text: string, voice: string): string {
   return createHash("md5").update(text + voice).digest("hex")
 }
 
-function streamToBuffer(stream: Readable): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = []
-    stream.on("data", (chunk: Buffer) => chunks.push(chunk))
-    stream.on("end", () => resolve(Buffer.concat(chunks)))
-    stream.on("error", reject)
-  })
-}
-
-// Per-voice queue — serialize to avoid contention
-const voiceQueues = new Map<string, Promise<Buffer>>()
+// The single utterance-sized buffer that used to live here is gone on purpose.
+// msedge-tts pushes MP3 frames into its Readable the moment they arrive off the
+// WebSocket (MsEdgeTTS.js `_pushAudioData`), so the audio exists incrementally.
+// Collecting that Readable into one Buffer before answering was the only reason
+// playback could not begin until the ENTIRE utterance had been synthesised —
+// the bytes are now piped straight to the client instead.
 
 // Global lock — only ONE TTS generation at a time across all voices.
-// Prevents overlapping EdgeTTS streams that cause double-speak.
-let globalTtsLock: Promise<Buffer> = Promise.resolve(Buffer.alloc(0))
+// Prevents overlapping EdgeTTS streams that cause double-speak. It is released
+// when the response has finished STREAMING, not when the stream is created, so
+// the next utterance can never interleave frames with this one on the socket.
+let globalTtsLock: Promise<void> = Promise.resolve()
 
-// Generate TTS using official Edge voice — plain text, no SSML, no custom profiles
-async function tryGenerateVoice(text: string, voice: string): Promise<Buffer> {
-  const tts = new MsEdgeTTS()
-  await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3)
-  const cleanText = text.replace(/[\n\r\t]+/g, " ").replace(/\s+/g, " ").trim()
-  const result = tts.toStream(cleanText)
-  const audioData = await streamToBuffer(result.audioStream)
-  if (audioData.length < 100) throw new Error("Audio too small")
-  return audioData
+// Hands back the release function for the global lock once every earlier holder
+// has let go. Callers must invoke it exactly once the response is finished,
+// otherwise every later request blocks forever.
+function acquireTTSLock(): Promise<() => void> {
+  const previous = globalTtsLock
+  let release!: () => void
+  globalTtsLock = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  return previous.then(() => {
+    let released = false
+    return () => {
+      if (released) return
+      released = true
+      release()
+    }
+  })
 }
 
-async function generateTTS(text: string, voice: string, lang: string): Promise<Buffer> {
-  ensureCacheDir()
-  const key = cacheKey(text, voice)
-  if (audioCache.has(key)) return audioCache.get(key)!
+// One live MsEdgeTTS client per voice, kept for the life of the server.
+//
+// setMetadata() only skips its WebSocket handshake when the client it is called on
+// is ALREADY configured for that same voice with that same output format and its
+// socket is still open. Building a fresh client per request therefore made every
+// single utterance pay a full TLS + WSS round trip to speech.platform.bing.com
+// before it could even ask for audio — which is a large, constant, avoidable tax
+// on the delay before the first sample is played.
+//
+// The clients are safe to share because the global lock above is held for the whole
+// streaming response, so only one synthesis is ever in flight per process.
+const ttsClients = new Map<string, MsEdgeTTS>()
 
-  const voices = VOICES[lang] || VOICES.en
-  const fallbackVoice = lang === "en" ? "en-US-GuyNeural" : VOICES.en.f
+// The empty metadata options argument is not optional in practice. setMetadata
+// dereferences `metadataOptions.voiceLocale` once voiceLocale is already set, so
+// omitting the argument makes the SECOND call on a cached client throw. That threw
+// the client away and forced a fresh TLS + WSS handshake — plus, for `gender=f`,
+// silently answered the first request with the fallback voice. Passing `{}` is
+// behaviourally identical to omitting it and never throws.
+async function ttsForVoice(voice: string) {
+  const existing = ttsClients.get(voice)
+  if (existing) {
+    // Returns almost immediately when the socket is healthy, and transparently
+    // reconnects when the server dropped it since the last use.
+    await existing.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3, {})
+    return existing
+  }
+  const tts = new MsEdgeTTS()
+  await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3, {})
+  ttsClients.set(voice, tts)
+  return tts
+}
 
-  const voiceCandidates = [voice]
-  if (fallbackVoice !== voice) voiceCandidates.push(fallbackVoice)
+// Opens the socket for the default voice ahead of the first request so the very
+// first utterance does not pay the handshake. Fire-and-forget on purpose: a failed
+// or slow warm-up must never delay or block server startup, and ttsForVoice()
+// rebuilds the client on demand anyway.
+function prewarmVoice(voice: string) {
+  void ttsForVoice(voice)
+    .then(() => console.log(`[TTS] Pre-warmed voice ${voice}`))
+    .catch((e) => console.log(`[TTS] Pre-warm skipped for ${voice}: ${e?.message?.slice(0, 60)}`))
+}
 
-  // Chain onto the global lock so only one generation runs at a time
-  const prev = globalTtsLock
-  const result = prev.then(async () => {
-    for (const v of voiceCandidates) {
-      try {
-        const audioData = await tryGenerateVoice(text, v)
-        if (audioCache.size >= MAX_CACHE) {
-          const firstKey = audioCache.keys().next().value
-          if (firstKey) audioCache.delete(firstKey)
-        }
-        audioCache.set(key, audioData)
-        return audioData
-      } catch (e: any) {
-        console.log(`[TTS] Voice ${v} failed: ${e.message?.slice(0, 60)}, trying next...`)
-      }
+// Cache the frames on their way past so a repeat of the same text is served
+// from memory while still being emitted the instant they arrive. The
+// accumulator is dropped rather than flushed if an utterance is implausibly
+// large, so a runaway stream can never grow memory without bound.
+const CACHE_MAX_BYTES = 8 * 1024 * 1024
+
+// Interposes a PassThrough between the synthesis stream and the HTTP response so
+// the cache can observe every frame without the response having to buffer them
+// first. pipe() honours backpressure, so a long message cannot pile up in memory
+// while nobody is draining the response.
+function teeForCache(stream: Readable, key: string): PassThrough {
+  const parts: Buffer[] = []
+  let size = 0
+  let cacheable = true
+  stream.on("data", (chunk: Buffer) => {
+    if (!cacheable) return
+    size += chunk.length
+    if (size > CACHE_MAX_BYTES) {
+      cacheable = false
+      parts.length = 0
+      return
     }
-    console.error("[TTS] All voice candidates failed for lang:", lang)
-    return Buffer.alloc(0)
+    parts.push(chunk)
   })
+  stream.on("end", () => {
+    if (!cacheable || size < 100) return
+    if (audioCache.size >= MAX_CACHE) {
+      const firstKey = audioCache.keys().next().value
+      if (firstKey) audioCache.delete(firstKey)
+    }
+    audioCache.set(key, Buffer.concat(parts))
+  })
+  const through = new PassThrough()
+  // pipe() does not forward source errors, and a synthesis stream that dies
+  // mid-utterance would otherwise leave the response hanging forever.
+  stream.on("error", (err) => through.destroy(err))
+  stream.on("close", () => through.destroy())
+  stream.pipe(through)
+  return through
+}
 
-  // Update the global lock (catch so a failure doesn't stall the lock forever)
-  globalTtsLock = result.catch(() => Buffer.alloc(0))
-  return result
+// Resolve once the stream has produced its first frame, or resolve false if it
+// ended or failed without one. 'readable' rather than 'data' on purpose: it does
+// not consume, so the first frame stays in the internal buffer for the pipeline
+// and the first syllable of the reply is never clipped off.
+function waitForFirstChunk(stream: Readable): Promise<boolean> {
+  return new Promise((resolve) => {
+    const settle = (ok: boolean) => {
+      stream.off("readable", onReadable)
+      stream.off("end", onEnd)
+      stream.off("error", onError)
+      resolve(ok)
+    }
+    const onReadable = () => settle(true)
+    const onEnd = () => settle(false)
+    const onError = () => settle(false)
+    if (stream.readableEnded || stream.readableLength > 0) {
+      resolve(stream.readableLength > 0 && !stream.readableEnded)
+      return
+    }
+    stream.on("readable", onReadable)
+    stream.once("end", onEnd)
+    stream.once("error", onError)
+  })
+}
+
+// Opens a live Readable of MP3 frames for plain text — no SSML, no custom
+// profiles, just the raw Edge voice. Returns null when every candidate failed.
+async function openTTSStream(
+  text: string,
+  voiceCandidates: string[],
+  key: string
+): Promise<{ stream: PassThrough; source: Readable; voice: string } | null> {
+  for (const v of voiceCandidates) {
+    let source: Readable | null = null
+    let stream: PassThrough | null = null
+    try {
+      const tts = await ttsForVoice(v)
+      const cleanText = text.replace(/[\n\r\t]+/g, " ").replace(/\s+/g, " ").trim()
+      source = tts.toStream(cleanText).audioStream
+      stream = teeForCache(source, key)
+      // A dead socket surfaces as an error on the stream (MsEdgeTTS.js destroys
+      // it when the socket closes before turn.end). Waiting for the first frame
+      // here is what lets a stale connection still fall through to the next
+      // candidate — and it costs nothing, because there is no audio to send until
+      // the first frame exists anyway.
+      if (await waitForFirstChunk(stream)) return { stream, source, voice: v }
+      console.log(`[TTS] Voice ${v} produced no audio, trying next...`)
+    } catch (e: any) {
+      // A failed synthesis usually means this voice's socket is dead. Drop it so
+      // the next request builds a fresh client instead of reusing the broken one.
+      console.log(`[TTS] Voice ${v} failed: ${e?.message?.slice(0, 60)}, trying next...`)
+    }
+    // Only reached when this candidate is being abandoned. The caller owns both
+    // handles on success, so the synthesis is torn down here rather than left
+    // running for an utterance nobody will ever hear.
+    ttsClients.delete(v)
+    stream?.destroy()
+    source?.destroy()
+  }
+  return null
 }
 
 function handleSpeak(req: IncomingMessage, res: ServerResponse) {
@@ -174,25 +290,83 @@ function handleSpeak(req: IncomingMessage, res: ServerResponse) {
   }
 
   const voice = VOICES[lang]?.[gender as "f" | "m"] || VOICES.en[gender as "f" | "m"] || VOICES.en.f
+  const fallbackVoice = lang === "en" ? "en-US-GuyNeural" : VOICES.en.f
+  const voiceCandidates = [voice]
+  if (fallbackVoice !== voice) voiceCandidates.push(fallbackVoice)
 
   console.log(`[TTS] lang=${lang} gender=${gender} voice=${voice} len=${text.length}`)
 
-  generateTTS(text, voice, lang)
-    .then((data) => {
-      console.log(`[TTS] Generated ${data.length} bytes`)
+  ensureCacheDir()
+  const key = cacheKey(text, voice)
+  const cached = audioCache.get(key)
+
+  void (async () => {
+    const release = await acquireTTSLock()
+    // Cancelling the request must tear the synthesis stream down too, otherwise a
+    // stopped utterance keeps being synthesised — and, worse, could later be served
+    // from the cache as if it had actually been spoken.
+    let live: { stream: PassThrough; source: Readable; voice: string } | null = null
+    const onClientGone = () => {
+      live?.stream.destroy()
+      live?.source.destroy()
+      if (live) ttsClients.delete(live.voice)
+      live = null
+    }
+    req.once("aborted", onClientGone)
+    res.once("close", onClientGone)
+
+    try {
+      // No Content-Length anywhere: the body is chunked transfer encoding, so the
+      // first frame is flushed to the client the moment it exists and playback can
+      // start while Edge is still synthesising the rest of the sentence.
       res.writeHead(200, {
         "Content-Type": "audio/mpeg",
-        "Content-Length": data.length,
+        "Cache-Control": "no-store",
         "Access-Control-Allow-Origin": "*",
-        "Cache-Control": "public, max-age=3600",
+        Connection: "keep-alive",
+        "X-Accel-Buffering": "no",
       })
-      res.end(data)
-    })
-    .catch((err) => {
-      console.error("[TTS] Generate error:", err)
-      res.writeHead(500, { "Access-Control-Allow-Origin": "*" })
-      res.end(JSON.stringify({ error: String(err) }))
-    })
+
+      if (cached) {
+        console.log(`[TTS] Cached ${cached.length} bytes`)
+        res.end(cached)
+        return
+      }
+
+      live = await openTTSStream(text, voiceCandidates, key)
+      if (!live) {
+        console.error("[TTS] All voice candidates failed for lang:", lang)
+        res.end()
+        return
+      }
+
+      const { stream, source, voice } = live
+      // A synthesis that dies after the first byte is already on the wire cannot be
+      // retried without speaking the same words twice, so the response is simply
+      // ended and the partial audio is kept. This is the only behaviour that does
+      // not risk a duplicated phrase, and the socket must be dropped either way
+      // because that is what a mid-turn failure always means.
+      await new Promise<void>((resolve) => {
+        stream.once("error", (err: Error) => {
+          ttsClients.delete(voice)
+          console.error("[TTS] Stream error:", err.message?.slice(0, 80))
+          if (!res.writableEnded) res.end()
+          resolve()
+        })
+        void pipeline(stream, res).catch(() => {}).then(resolve)
+      })
+      source.destroy()
+    } catch (err) {
+      console.error("[TTS] Speak error:", err)
+      if (!res.headersSent) res.writeHead(500, { "Access-Control-Allow-Origin": "*" })
+      if (!res.writableEnded) res.end(JSON.stringify({ error: String(err) }))
+    } finally {
+      live = null
+      req.off("aborted", onClientGone)
+      res.off("close", onClientGone)
+      release()
+    }
+  })()
 }
 
 function handleHealth(_req: IncomingMessage, res: ServerResponse) {
@@ -255,6 +429,8 @@ export function startNodeTTS(): Promise<void> {
     ttsServer.listen(TTS_PORT, "127.0.0.1", () => {
       console.log(`[TTS] Official Edge Neural TTS on http://127.0.0.1:${TTS_PORT}`)
       console.log(`[TTS] Auto language detect: enabled`)
+      // Background only — never awaited, so startup is not gated on the cloud.
+      prewarmVoice(VOICES.en.f)
       resolve()
     })
   })
@@ -265,4 +441,8 @@ export function stopNodeTTS() {
     ttsServer.close()
     ttsServer = null
   }
+  for (const tts of ttsClients.values()) {
+    try { tts.close() } catch {}
+  }
+  ttsClients.clear()
 }
