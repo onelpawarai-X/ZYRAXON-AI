@@ -45,6 +45,15 @@ export interface McpRuntime {
    * callback. So this only settles once the user has clicked Allow.
    */
   authenticate: (name: string) => Promise<void>
+  /**
+   * Detach a server.
+   *
+   * Separate from `connect` on purpose: a connected server keeps its tools callable
+   * by the agent, so leaving one attached has to be possible without editing config
+   * by hand. `forgetCredentials` also clears any stored tokens, which is what a user
+   * means by "disconnect my GitHub".
+   */
+  disconnect?: (name: string, options?: { forgetCredentials?: boolean }) => Promise<void>
 }
 
 /** Build the ZYRAXON config entry for an app. */
@@ -63,7 +72,13 @@ export function toServerConfig(app: AppEntry, token?: string): Record<string, un
   if (token) {
     config.headers = { Authorization: `Bearer ${token}` }
   } else if (app.kind === "oauth") {
-    config.oauth = app.scope ? { scope: app.scope } : {}
+    // Recorded endpoints come first; the scope is only meaningful alongside them,
+    // and a server that publishes discovery gets scope from there instead.
+    config.oauth = app.oauth
+      ? { authorizationUrl: app.oauth.authorizationUrl, tokenUrl: app.oauth.tokenUrl, ...(app.scope ? { scope: app.scope } : {}) }
+      : app.scope
+        ? { scope: app.scope }
+        : {}
   }
   return config
 }
@@ -280,10 +295,40 @@ async function settle(runtime: McpRuntime, name: string, status: McpStatusEntry)
   // UI a Promise, which rendered as an empty tool count and made a live server look
   // like it had contributed nothing to the agent.
   if (status.status === "connected") return { status: "connected", toolCount: await countTools(runtime, name) }
-  if (status.status === "failed") return { status: "failed", error: status.error ?? "the server refused the connection" }
+  if (status.status === "failed") return { status: "failed", error: explain(name, status.error) }
   if (status.status === "needs_auth" || status.status === "needs_client_registration")
-    return { status: "failed", error: status.error ?? "sign-in was never completed" }
+    return { status: "failed", error: explain(name, status.error ?? "sign-in was never completed") }
   return { status: "failed", error: `never finished connecting (last status: ${status.status})` }
+}
+
+/**
+ * Some servers refuse in a way that is really a missing setup step, and the raw
+ * status does not say so. Atlassian is the clearest case: its remote MCP is scoped
+ * to a site, so a signed-in account with no site — or one that is not an admin of
+ * the site it picked — gets "Access denied" and no way to tell that from a real
+ * permission problem.
+ *
+ * Naming the missing step is the difference between a user who can fix it and a
+ * user who gives up on the app.
+ */
+function explain(name: string, error: string | undefined): string {
+  const message = error ?? "the server refused the connection"
+
+  if (/access denied|forbidden|403/i.test(message) && /atlassian|jira|confluence/i.test(name)) {
+    return (
+      "Atlassian refused this account. Its MCP is scoped to a single site, so an account that has not created one — " +
+      "or is not an admin of the site it defaults to — is denied. Create a site or pick a different one at " +
+      "https://id.atlassian.com/manage-sites, then try again."
+    )
+  }
+
+  // An SSE refusal says nothing useful; the real cause is almost always the first
+  // transport, which the server side now preserves.
+  if (/^SSE error/i.test(message)) {
+    return `The server did not accept the connection. ${message.replace(/^SSE error:?\s*/i, "").trim()}`
+  }
+
+  return message
 }
 
 /** How many of the agent's tools came from this server. */
