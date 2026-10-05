@@ -291,15 +291,6 @@ wrong. Fix the copy.
 <!-- CRITICAL-RULES:END -->
 
 
-
-
-
-
-
-
-
-
-
 # ZYRAXON AI — AGENTS.md
 
 #
