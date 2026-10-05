@@ -60,7 +60,6 @@ export function SitePreview() {
   const [sources, setSources] = createSignal<CaptureSource[]>([])
   const [attached, setAttached] = createSignal<CaptureSource | null>(null)
   const [streamError, setStreamError] = createSignal<string | null>(null)
-  const [loading, setLoading] = createSignal(true)
   const [picking, setPicking] = createSignal(false)
 
   let videoRef: HTMLVideoElement | undefined
@@ -115,26 +114,22 @@ export function SitePreview() {
     setMode("url")
   }
 
-  onMount(async () => {
-    if (window.api?.getPreviewState) {
-      try {
-        const state = await window.api.getPreviewState()
-        if (state.url) {
-          setPreview(state)
-          setLoading(false)
-        }
-      } catch {}
-    }
+  onMount(() => {
+    // Subscribe before reading the current state so an update published while the read is
+    // in flight is still delivered. onCleanup has to run in this synchronous scope: after an
+    // await there is no owner left to attach it to, and Solid's onCleanup silently drops it,
+    // which leaks one IPC listener every time the panel is mounted.
+    const unsubscribe = window.api?.onSitePreviewUpdate?.((state) => setPreview(state))
+    if (unsubscribe) onCleanup(unsubscribe)
 
-    if (window.api?.onSitePreviewUpdate) {
-      const unsub = window.api.onSitePreviewUpdate((state) => {
-        setPreview(state)
-        if (state.url) setLoading(false)
-      })
-      onCleanup(unsub)
-    }
-
-    await loadSources()
+    void (async () => {
+      if (window.api?.getPreviewState) {
+        try {
+          setPreview(await window.api.getPreviewState())
+        } catch {}
+      }
+      await loadSources()
+    })()
   })
 
   onCleanup(stopStream)
@@ -298,7 +293,7 @@ export function SitePreview() {
         </div>
       </div>
 
-      <Show when={!loading() && (hasUrl() || isWindow())}>
+      <Show when={hasUrl() || isWindow()}>
         <div class="shrink-0 flex items-center justify-between px-3 py-1.5 rounded-lg border border-border-weaker-base bg-surface-base">
           <div class="text-11-regular text-text-faint truncate max-w-[260px]">
             {isWindow() ? attached()!.name : preview().url}

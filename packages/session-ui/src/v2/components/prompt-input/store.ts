@@ -96,10 +96,10 @@ function insertMention(
 ): PromptInputV2Prompt {
   let position = 0
   const parts = prompt.flatMap<PromptInputV2Prompt[number]>((part) => {
-    if (part.type === "image") return [part]
+    if (part.type !== "text") return [part]
     const partStart = position
     position += part.content.length
-    if (part.type !== "text" || start < partStart || end > position) return [part]
+    if (start < partStart || end > position) return [part]
     const before = part.content.slice(0, start - partStart)
     const after = part.content.slice(end - partStart)
     return [
@@ -110,7 +110,9 @@ function insertMention(
   })
   let offset = 0
   return parts.map((part) => {
-    if (part.type === "image") return part
+    // Only text carries a cursor position. Media parts carry none, so folding them
+    // into the offset arithmetic produced `undefined` lengths downstream.
+    if (part.type !== "text") return part
     const next = { ...part, start: offset, end: offset + part.content.length }
     offset = next.end
     return next

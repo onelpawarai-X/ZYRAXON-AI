@@ -30,7 +30,11 @@ function getBackendManager() {
 }
 
   // TTS Server — auto-start + health check (ensures port 19810 is always alive)
+let ttsServerKnownUp = false
 async function ensureTTSServer(): Promise<boolean> {
+  // Already proven reachable this session — skip the health round trip so a speak
+  // request never pays a network wait before it can start talking.
+  if (ttsServerKnownUp) return true
   try {
     const http = await import("node:http")
     // Quick health check
@@ -40,12 +44,14 @@ async function ensureTTSServer(): Promise<boolean> {
         resolve()
       }).on("error", () => reject(new Error("not running")))
     })
+    ttsServerKnownUp = true
     return true
   } catch {
     // Not running — start it
     try {
       const tts = await import("./tts-node")
       await tts.startNodeTTS()
+      ttsServerKnownUp = true
       return true
     } catch (e) {
       console.error("[TTS] Auto-start failed:", e)
@@ -515,12 +521,15 @@ export function registerIpcHandlers(deps: Deps) {
     try {
       const tts = await import("./tts-node")
       tts.stopNodeTTS()
+      ttsServerKnownUp = false
       await new Promise(r => setTimeout(r, 500))
       await tts.startNodeTTS()
+      ttsServerKnownUp = true
       console.log("[TTS] Server restarted successfully")
       return true
     } catch (e) {
       console.error("[TTS] Restart failed:", e)
+      ttsServerKnownUp = false
       return false
     }
   })

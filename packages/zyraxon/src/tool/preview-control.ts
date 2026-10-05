@@ -211,7 +211,9 @@ const OpenParameters = Schema.Struct({
 })
 
 export const PreviewOpenUrlTool = Tool.define<typeof OpenParameters, Metadata, never>(
-  "preview_open_url",
+  // Registered under the x_ prefix because that is the id the registry key, the
+  // subscription tier map and the agent prompts all use for this tool.
+  "x_preview_open_url",
   Effect.gen(function* () {
     return {
       description: `Show a URL inside the Preview panel.

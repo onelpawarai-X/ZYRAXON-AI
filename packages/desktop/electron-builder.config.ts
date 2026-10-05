@@ -186,6 +186,19 @@ const getBase = (appId: string): Configuration => ({
       to: "desktop-commander",
       filter: ["*.cjs", "*.js", "*.json", "*.md", "LICENSE", "dist/**/*", "node_modules/**/*"],
     },
+    ...(existsSync(path.join(packageDir, "resources", "zyraxon-task-daemon"))
+      ? [
+          {
+            from: "resources/zyraxon-task-daemon",
+            to: "zyraxon-task-daemon",
+            // Only the daemon's own sources. The daemon also writes daemon-state.json,
+            // daemon.lock and daemon.log next to the script, so a developer who ran it
+            // in place would otherwise have their wake markers - and a task already
+            // consumed for the day - packaged into every install.
+            filter: ["*.py", "*.md"],
+          },
+        ]
+      : []),
     {
       from: "assets/videos",
       to: "videos",
@@ -221,6 +234,9 @@ const getBase = (appId: string): Configuration => ({
     perMachine: false,
     installerIcon: `resources/icons/icon.ico`,
     installerHeaderIcon: `resources/icons/icon.ico`,
+    // The task daemon registers itself for logon under HKCU on first run, so the
+    // uninstaller has to take that entry (and the copied script) back out.
+    include: "resources/installer.nsh",
     // ${productName} carries the channel name with a space in it ("ZYRAXON Dev"),
     // and spaces in a release asset name become dots in the GitHub download URL
     // while electron-updater looks the asset up under the sanitized name written

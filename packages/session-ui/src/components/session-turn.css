@@ -1,4 +1,4 @@
-   Copyright (c) 2026 onelpawarai. All rights reserved. */
+   /*    Copyright (c) 2026 onelpawarai. All rights reserved. */
 
 [data-component="session-turn"] {
   --sticky-header-height: calc(var(--session-title-height, 0px) + 24px);

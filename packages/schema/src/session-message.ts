@@ -49,6 +49,10 @@ export const User = Schema.Struct({
   text: Prompt.fields.text,
   files: Prompt.fields.files,
   agents: Prompt.fields.agents,
+  // Language the user picked in the composer. Carried on the message so the reply is
+  // written in it; without this the picker only ever changed speech recognition and
+  // the assistant kept answering in English.
+  replyLanguage: Schema.optional(Schema.String),
   type: Schema.Literal("user"),
 }).annotate({ identifier: "Session.Message.User" })
 

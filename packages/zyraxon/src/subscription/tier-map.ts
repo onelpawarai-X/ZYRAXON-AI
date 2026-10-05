@@ -55,8 +55,12 @@ export const TOOL_TIER_MAP: Record<string, Tier> = {
   x_task_scheduler_status: "free", x_task_start_scheduler: "free", x_task_toggle: "free", x_world_add_object: "free",
   task: "free", system_info: "free",
 
-  // MCP TOOL FALLBACKS — always free (the 4 MCP servers' tools)
+  // MCP TOOLS — always free. Covers the 82 catalog apps (4 bundled local servers
+  // plus every app ZYRAXON can authorize on the user's behalf) and the agent-facing
+  // MCP control tools. Connecting an app the user already paid for must never be
+  // gated behind a tier, or the agent would tell the user it cannot do the job.
   mcp_websearch: "free",
+  mcp_catalog: "free", mcp_status: "free", mcp_connect: "free",
   nuphus_screenshot: "free", nuphus_list_windows: "free", nuphus_focus_window: "free", nuphus_click: "free",
   nuphus_type: "free", nuphus_hotkey: "free", nuphus_scroll: "free", nuphus_mouse_move: "free",
   nuphus_drag: "free", nuphus_ocr: "free", nuphus_clipboard_get: "free", nuphus_clipboard_set: "free",

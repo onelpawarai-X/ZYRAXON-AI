@@ -127,3 +127,26 @@ XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://ZYRAXON.ai/install | bash
 ---
 
 **Присоединяйтесь к нашему сообществу** [Discord](https://discord.gg/GP8yX33NA)
+
+
+---
+
+## 📬 Contact / যোগাযোগ
+
+| | |
+|:--|:--|
+| Author | **onelpawarai** |
+| Based in | Bangladesh · operating globally |
+| Email | [sayidilxs@gmail.com](mailto:sayidilxs@gmail.com) |
+| Website | [zyraxonai.lovable.app](https://zyraxonai.lovable.app/) |
+| Cloud Agent | [zyraxon-pro-x.lovable.app](https://zyraxon-pro-x.lovable.app/) |
+| Portfolio | [onelpawarai.lovable.app](https://onelpawarai.lovable.app/) |
+| YouTube | [@ZYRAXONAI](https://www.youtube.com/@ZYRAXONAI) |
+| Facebook | [onelpawarai](https://www.facebook.com/onelpawarai) |
+| Access codes | [ZYRAXON Group](https://zyraxon-group-x.lovable.app/) |
+
+---
+
+<p align="center">
+  <sub>Built by <a href="https://onelpawarai.lovable.app/">Zyraxon Labs</a> — Bangladesh, operating globally.</sub>
+</p>

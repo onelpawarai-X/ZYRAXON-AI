@@ -713,6 +713,7 @@ const layer = Layer.effect(
         },
         system: input.system,
         format: input.format,
+        replyLanguage: input.replyLanguage,
       }
 
       const current = yield* sessions.get(input.sessionID).pipe(Effect.orDie)
@@ -1768,6 +1769,8 @@ export const PromptInput = Schema.Struct({
   format: Schema.optional(SessionV1.Format),
   system: Schema.optional(Schema.String),
   variant: Schema.optional(Schema.String),
+  /** Human-readable language name from the composer's picker, e.g. "Bengali". */
+  replyLanguage: Schema.optional(Schema.String),
   parts: Schema.Array(
     Schema.Union([
       SessionV1.TextPartInput,

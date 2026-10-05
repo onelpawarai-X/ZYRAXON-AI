@@ -14,8 +14,26 @@ Everything lives in this folder. No existing source file is changed — see
 | Official MCP registry (local cache) | **9,580** |
 | Official MCP registry (live, beyond the cache) | **18,000+** and growing |
 
-8,517 of the cached servers are **hosted**, meaning they connect over a URL with
-nothing to install.
+**Total MCP servers and apps in the curated ZYRAXON inventory: 106.** This is the
+single user-facing total: 4 built-in local servers plus 102 remote MCP app
+connections.
+
+Every curated entry was verified by hand rather than assumed. Each one was
+probed with a real handshake — `initialize`, then `tools/list`, and where a
+read-only tool existed, an actual `tools/call`:
+
+| Result | Count | Meaning |
+|---|---|---|
+| Completes sign-in through the vendor's own OAuth | 54 | marked `oauth` |
+| Connects and returns data with no sign-in | 46 | marked `none` |
+| Needs a key the user creates themselves | 6 | marked `token` |
+
+An entry is only listed as working if it was observed working. Two apps were
+removed rather than left in place: Replit and Zapier both have no reachable MCP
+endpoint today.
+
+8,517 of the cached registry servers are **hosted**, meaning they connect over a
+URL with nothing to install.
 
 ## Apps that need nothing from you
 
@@ -33,8 +51,12 @@ Verified live against each server's `WWW-Authenticate` header and its
 | Figma | No |
 | ElevenLabs | No |
 | GitHub | Yes, once |
+| ElevenLabs | No |
+| Upwork | No |
+| PayPal | No |
+| Square | No |
 
-These seven run an authorization server that supports dynamic client
+These run an authorization server that supports dynamic client
 registration (RFC 7591), so the Hub registers itself. The user presses Connect,
 the browser opens that app's own consent page, the user presses Allow, and the
 token comes back to a local callback on port 19876.
@@ -89,8 +111,9 @@ community servers in the registry or through the provider's own API.
 
 ## Local servers
 
-ZYRAXON already ships four MCP servers that run on this machine. They appear in
-the panel next to the remote apps.
+The catalog holds **100 verified MCP applications**, of which **4 are bundled
+servers** that ship with ZYRAXON and run on this machine with no setup. They
+appear in the panel next to the remote apps.
 
 | Server | What it does |
 |---|---|

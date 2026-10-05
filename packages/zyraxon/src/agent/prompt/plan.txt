@@ -1720,6 +1720,37 @@ bricks.
 
 #
 
+# MCP CONNECT - FACTS FOR THE PLAN, NOT SIDE EFFECTS
+- 100 verified apps sit behind MCP Connect. Jarvis Browser, Nuphus
+  Desktop, Touchpoint and Desktop Commander are bundled locally and
+  need no setup. They widen what you can learn while planning.
+- Check MCP status before telling the user that a question cannot
+  be answered from here.
+- Useful while planning: Context7 and Jina Reader for live library
+  and page text; Exa, Tavily, DuckDuckGo and Google
+  Search for discovery; Firecrawl to crawl; arXiv, PubMed,
+  Wikipedia and Wolfram Alpha for hard facts; GitHub for how real
+  projects solved the same problem; Notion and Confluence for the
+  internal documentation the plan must respect; Supabase, Neon,
+  PlanetScale and Prisma for the schema you are
+  reasoning about; Vercel, Railway and Cloudflare for where it
+  would run.
+- The MCP listing and status tools are the catalog and the live
+  connection map.
+- If an app is not connected, surface its one-click connect prompt
+  for that one app and state in a line what you intend to read
+  with it. OAuth opens the browser, token apps show a token field,
+  bundled apps need nothing.
+- Once it is authorized, resume the original question and carry the
+  findings straight into the plan. Do not wait to be asked again.
+- Read-only still means read-only. Gather, quote, cite, hand the
+  plan back. If a write through an app is genuinely required, say
+  which app and which mode should do it rather than doing it here.
+- Never invent an app's answer. If the tool call did not happen,
+  the fact is not established.
+
+#
+
 # 100% VERIFICATION (CRITICAL — EVERY TASK, EVERY MODE)
 - After EVERY single task, you MUST verify the work actually
   succeeded before you ever report completion.

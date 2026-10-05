@@ -58,8 +58,9 @@ export function StatusPopover() {
       }
       class="[&_[data-slot=popover-body]]:p-0 w-[360px] max-w-[calc(100vw-40px)] bg-transparent border-0 shadow-none rounded-xl"
       gutter={4}
-      placement="bottom-end"
-      shift={-168}
+      // Opens downward, which put the list over the composer. bottom-start anchors
+      // the panel's top edge to the trigger so it grows upward instead.
+      placement="bottom-start"
     >
       <Show when={shown()}>
         <Suspense
@@ -160,8 +161,9 @@ function StatusPopoverView(props: { state: StatusPopoverState }) {
     class:
       "[&_[data-slot=popover-body]]:p-0 w-[360px] max-w-[calc(100vw-40px)] bg-transparent border-0 shadow-none rounded-xl",
     gutter: 4,
-    placement: "bottom-end" as const,
-    shift: -168,
+    // Same reason as StatusPopover: the negative shift pushed the panel down over
+    // the composer. Anchoring the top edge to the trigger lets it grow upward.
+    placement: "bottom-start" as const,
   }
 
   return (

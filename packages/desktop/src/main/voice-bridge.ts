@@ -133,7 +133,10 @@ function handleMessage(raw: string) {
     }
     else if (data.type === "send-to-chat") {
       if (ttsSpeaking) return
-      rendererCallback?.({ type: "voice-send", text: data.text, lang: data.lang })
+      // submit:true means the person pressed the bridge's Send button, so the composer
+      // has to submit too. Without it the transcript was inserted and left sitting in
+      // the chat box, which read as "voice does not work".
+      rendererCallback?.({ type: "voice-send", text: data.text, lang: data.lang, submit: !!data.submit })
       // The utterance now lives in the chat — drop it so it can never come back
       clearAccumulatedTranscript()
     }

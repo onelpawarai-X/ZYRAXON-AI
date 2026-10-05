@@ -18,6 +18,7 @@ interface DailyTask {
 }
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+const TIME_PATTERN = /^([01]?\d|2[0-3]):([0-5]\d)$/
 
 export function DailyTasksPanel() {
   const [tasks, setTasks] = createSignal<DailyTask[]>([])
@@ -26,8 +27,17 @@ export function DailyTasksPanel() {
   const [newTime, setNewTime] = createSignal("09:00")
   const [newDays, setNewDays] = createSignal<string[]>(["Mon", "Tue", "Wed", "Thu", "Fri"])
 
+  // The form is uncontrolled: nothing writes back into the textarea while the user types,
+  // so the field can only ever hold what the browser put there. addTask reads this
+  // element directly instead of trusting a mirrored signal.
+  let promptEl: HTMLTextAreaElement | undefined
+  // addTask writes the whole array back, so it must not run against the empty state the
+  // panel starts in - that is how an add issued before the initial load finished wiped
+  // every task that was already stored.
+  let ready: Promise<unknown>
+
   onMount(() => {
-    loadTasks()
+    ready = loadTasks()
     // Listen for refresh events
     const handler = () => loadTasks()
     window.addEventListener("daily-tasks-refresh", handler)
@@ -46,36 +56,58 @@ export function DailyTasksPanel() {
     }
   }
 
+  // Returns false instead of throwing when the write did not land, so callers cannot
+  // report success for a task that was never persisted.
   const saveTasks = async (newTasks: DailyTask[]) => {
+    const api = (window as any).api
+    if (!api?.dailyTasksSave) {
+      console.error("[DailyTasks] dailyTasksSave unavailable")
+      return false
+    }
     try {
-      const api = (window as any).api
-      if (api?.dailyTasksSave) {
-        await api.dailyTasksSave(newTasks)
-        setTasks(newTasks)
+      if (!(await api.dailyTasksSave(newTasks))) {
+        console.error("[DailyTasks] save rejected")
+        return false
       }
+      setTasks(newTasks)
+      return true
     } catch (error) {
       console.error("[DailyTasks] Failed to save:", error)
+      return false
     }
   }
 
   const addTask = async () => {
-    const prompt = newPrompt().trim()
+    const prompt = (promptEl?.value ?? newPrompt()).trim()
     if (!prompt) {
       showToast({ variant: "error", title: "Please enter a prompt" })
+      return
+    }
+
+    // <input type="time"> reports "" whenever it is touched and left incomplete, and the
+    // scheduler read an empty time as midnight - so the task was stored looking valid
+    // but could only ever run at 00:00. Refuse to store it instead.
+    const time = newTime()
+    if (!TIME_PATTERN.test(time)) {
+      showToast({ variant: "error", title: "Please set a valid time" })
       return
     }
 
     const task: DailyTask = {
       id: `dt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       prompt,
-      time: newTime(),
+      time,
       days: newDays(),
       enabled: true,
       createdAt: new Date().toISOString(),
+      status: "idle",
     }
 
-    const newTasks = [...tasks(), task]
-    await saveTasks(newTasks)
+    await ready
+    if (!(await saveTasks([...tasks(), task]))) {
+      showToast({ variant: "error", title: "Could not save daily task" })
+      return
+    }
 
     // Reset form
     setNewPrompt("")
@@ -88,12 +120,15 @@ export function DailyTasksPanel() {
 
   const toggleTask = async (id: string) => {
     const newTasks = tasks().map((t) => (t.id === id ? { ...t, enabled: !t.enabled } : t))
-    await saveTasks(newTasks)
+    if (!(await saveTasks(newTasks))) showToast({ variant: "error", title: "Could not save daily task" })
   }
 
   const deleteTask = async (id: string) => {
     const newTasks = tasks().filter((t) => t.id !== id)
-    await saveTasks(newTasks)
+    if (!(await saveTasks(newTasks))) {
+      showToast({ variant: "error", title: "Could not save daily task" })
+      return
+    }
     showToast({ variant: "success", title: "Task deleted" })
   }
 
@@ -126,7 +161,7 @@ export function DailyTasksPanel() {
           <div class="space-y-2">
             {/* Prompt input */}
             <textarea
-              value={newPrompt()}
+              ref={(el) => (promptEl = el)}
               onInput={(e) => setNewPrompt(e.currentTarget.value)}
               placeholder="What should AI do? (e.g., Open Chrome and check emails)"
               class="w-full px-2 py-1.5 text-13-regular text-text-strong bg-background rounded border border-border focus:outline-none focus:border-border-active resize-none"

@@ -127,3 +127,26 @@ Hvis du jobber med et prosjekt som er relatert til ZYRAXON og bruker "ZYRAXON" s
 ---
 
 **Bli med i fellesskapet** [Discord](https://discord.gg/GP8yX33NA)
+
+
+---
+
+## 📬 Contact / যোগাযোগ
+
+| | |
+|:--|:--|
+| Author | **onelpawarai** |
+| Based in | Bangladesh · operating globally |
+| Email | [sayidilxs@gmail.com](mailto:sayidilxs@gmail.com) |
+| Website | [zyraxonai.lovable.app](https://zyraxonai.lovable.app/) |
+| Cloud Agent | [zyraxon-pro-x.lovable.app](https://zyraxon-pro-x.lovable.app/) |
+| Portfolio | [onelpawarai.lovable.app](https://onelpawarai.lovable.app/) |
+| YouTube | [@ZYRAXONAI](https://www.youtube.com/@ZYRAXONAI) |
+| Facebook | [onelpawarai](https://www.facebook.com/onelpawarai) |
+| Access codes | [ZYRAXON Group](https://zyraxon-group-x.lovable.app/) |
+
+---
+
+<p align="center">
+  <sub>Built by <a href="https://onelpawarai.lovable.app/">Zyraxon Labs</a> — Bangladesh, operating globally.</sub>
+</p>

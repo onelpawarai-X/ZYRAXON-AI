@@ -73,6 +73,26 @@ export type PreviewState = {
   timestamp: string
 }
 
+export type TaskDaemonState = {
+  /** Autostart registration is implemented for this platform and build. */
+  supported: boolean
+  installed: boolean
+  registered: boolean
+  running: boolean
+  packaged: boolean
+  platform: string
+  installDir: string
+  tasksFile: string
+  script: string | null
+  /** Interpreter the logon entry runs: pythonw.exe when it sits beside python.exe. */
+  python: string | null
+  /** What the autostart registration writes to: HKCU Run value, plist path or unit path. */
+  autostart: string | null
+  pid: number | null
+  /** Why a request was a no-op (not packaged, platform not wired yet, not installed). */
+  reason?: string
+}
+
 /**
  * A window that can be mirrored into the in-app Preview panel. Produced by
  * Electron's desktopCapturer, which enumerates windows identically on
@@ -217,6 +237,15 @@ export type ElectronAPI = {
   dailyTasksSave: (tasks: any[]) => Promise<boolean>
   dailyTasksRun: (task: any) => Promise<boolean>
   onDailyTaskActivate: (cb: (data: { taskId: string; prompt: string; time: string }) => void) => () => void
+
+  // Daily Tasks — background daemon that wakes the app while it is closed
+  taskDaemon: {
+    install: () => Promise<TaskDaemonState>
+    uninstall: () => Promise<TaskDaemonState>
+    start: () => Promise<TaskDaemonState>
+    stop: () => Promise<TaskDaemonState>
+    status: () => Promise<TaskDaemonState>
+  }
 
   // Cloud Agent
   cloudAgentOpen: () => Promise<boolean>

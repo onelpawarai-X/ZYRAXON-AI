@@ -315,7 +315,7 @@ ZYRAXON
 │   ├── Core Tools (68) — Telemetry, Sensors, Actuators
 │   └── Systems (19) — Voice, Memory, Behavior, IoT
 ├── Knowledge Base (200+ PDFs)
-├── MCP Servers (4)
+├── MCP Servers (100 verified apps, 4 bundled)
 ├── Self-Healing + Self-Evolution
 └── Eternal Memory (50,000+)
 ```
