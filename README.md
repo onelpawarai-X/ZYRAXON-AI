@@ -147,6 +147,45 @@ change from rippling into the UI.
                     └──────────────────────────────┘
 ```
 
+# ZYRAXON
+
+### Autonomous AI Agent Infrastructure
+
+| **Capability**                |                                     **ZYRAXON**                                     |   **Cursor**   |   **Copilot**  |    **Devin**    | **Claude Code** | **Windsurf** |
+| :---------------------------- | :---------------------------------------------------------------------------------: | :------------: | :------------: | :-------------: | :-------------: | :----------: |
+| **Full Desktop Control**      |                   **● FULL**<br>Click · Type · Scroll · Open Apps                   |        —       |        —       | ◐ Cloud Browser |        —        |       —      |
+| **105+ MCP Applications**     | **● CONNECTED ECOSYSTEM**<br>105+ Applications · MCP Connectors · External Services |      ◐ MCP     |      ◐ MCP     |      ◐ MCP      |      ◐ MCP      |     ◐ MCP    |
+| **805+ Control Tools**        |          **● NATIVE TOOL LAYER**<br>Automation · System · Browser · Control         |        —       |      ◐ MCP     |      ◐ MCP      |    ◐ Limited    |     ◐ MCP    |
+| **Vehicle & Machine Control** |        **● 805 TOOLS**<br>Aircraft · Cars · Drones · Boats · Rockets · Robots       |        —       |        —       |        —        |        —        |       —      |
+| **Autonomous Flight**         |                   **● FULL**<br>Autoland · GCAS · TCAS · Approach                   |        —       |        —       |        —        |        —        |       —      |
+| **Autonomous Driving**        |                  **● FULL**<br>Sensor Fusion · AEB · Lane · Parking                 |        —       |        —       |        —        |        —        |       —      |
+| **Self-Healing**              |              **● AUTONOMOUS**<br>Automatic Tool Installation & Recovery             |        —       |        —       |        —        |        —        |       —      |
+| **Self-Evolution**            |                  **● RUNTIME**<br>Builds & Extends Tools at Runtime                 |        —       |        —       |        —        |        —        |       —      |
+| **Persistent Memory**         |                     **● 50,000+**<br>Compressed Long-Term Memory                    |        —       |        —       |    ◐ Session    |        —        |       —      |
+| **Agent Modes**               |                      **● 10 MODES**<br>General → APEX PREDATOR                      |        —       |        —       |        —        |        —        |       —      |
+| **Real-Time Screen Vision**   |                          **● LIVE**<br>Screen Capture + OCR                         |        —       |        —       |  ◐ Screenshots  |        —        |       —      |
+| **YouTube Live Streaming**    |                     **● NATIVE**<br>App / Screen Capture + RTMP                     |        —       |        —       |        —        |        —        |       —      |
+| **AI Provider Routing**       |                    **● 25+ PROVIDERS**<br>Automatic Model Routing                   | ◐ Subscription | ◐ Subscription |  ◐ Subscription |    ◐ Internal   |   ◐ BYO Key  |
+| **Security Toolkit**          |                  **● 20+ TOOLS**<br>Security & System Capabilities                  |        —       |        —       |        —        |        —        |       —      |
+| **Source Availability**       |                     **● ZSL-X**<br>Source-Available Architecture                    |     — Paid     |     — Paid     |      — Paid     |      — Paid     |    — Paid    |
+| **Fully Local / Offline**     |                  **● FULL**<br>Local Execution & Offline Operation                  |    ◐ Partial   |     — Cloud    |    ◐ Partial    |     — Cloud     |   ◐ Partial  |
+
+### Legend
+
+**● Native / Full Capability**
+**◐ Partial / Conditional Capability**
+**— No Comparable Native Capability**
+
+### ZYRAXON
+
+**105+ MCP Applications**
+**805+ Control Tools**
+**25+ AI Providers**
+**50,000+ Persistent Memories**
+**10 Agent Modes**
+
+**One Autonomous Infrastructure — Multiple Execution Environments**
+
 | Package | Holds |
 |:--|:--|
 | `packages/schema` | The data shapes everything agrees on |
