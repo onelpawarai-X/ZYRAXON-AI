@@ -138,7 +138,10 @@ export function McpHubPanel(props: McpHubPanelProps) {
   const [states, setStates] = createSignal<Record<string, ConnectionState>>(persistedStates)
   createEffect(() => setStates((prev) => Object.assign(persistedStates, prev)))
   const [busy, setBusy] = createSignal<string | null>(null)
+  const [busySince, setBusySince] = createSignal<number>(0)
+  const [tick, setTick] = createSignal(0)
   const [tokenFor, setTokenFor] = createSignal<AppEntry | null>(null)
+  const [detailsFor, setDetailsFor] = createSignal<AppEntry | null>(null)
   const [tokenValue, setTokenValue] = createSignal("")
   const [registryHits, setRegistryHits] = createSignal<RegistryServer[]>([])
   const [registryTerm, setRegistryTerm] = createSignal("")
@@ -166,6 +169,66 @@ export function McpHubPanel(props: McpHubPanelProps) {
 
   const setState = (id: string, s: ConnectionState) => setStates((prev) => ({ ...prev, [id]: s }))
 
+  /** the catalog app being connected right now, if any */
+  const busyApp = createMemo(() => {
+    const id = busy()
+    // "registry" is the registry search box, not an app, so it never takes over the body.
+    if (!id || id === "registry") return undefined
+    return apps.find((a) => a.id === id)
+  })
+
+  /**
+   * Progress the user can trust.
+   *
+   * There is no honest total here, so nothing is faked. The first stretch is real
+   * work with a known end — resolving the server, finding its OAuth endpoints and
+   * opening the consent page — and it is worth 70%. After that the wait belongs to
+   * the person reading the consent page, so it creeps toward 95% and stops rather
+   * than continuing to promise progress that only the user can make.
+   */
+  const EXPECTED_WORK_MS = 4_000
+  const WAIT_CEILING_MS = 30_000
+
+  const progress = createMemo(() => {
+    void tick()
+    const elapsed = Math.max(0, Date.now() - busySince())
+    if (elapsed <= 0) return { percent: 0, label: "Starting…", elapsed: 0 }
+
+    const workDone = Math.min(1, elapsed / EXPECTED_WORK_MS)
+    const state = busyApp() ? states()[busyApp()!.id] : undefined
+    const waitingOnUser = state?.status === "needs_auth"
+
+    if (!waitingOnUser && workDone < 1) {
+      return { percent: Math.round(workDone * 70), label: "Reaching the server", elapsed: Math.floor(elapsed / 1000) }
+    }
+
+    const wait = elapsed - EXPECTED_WORK_MS
+    const creep = Math.min(1, wait / WAIT_CEILING_MS)
+    return {
+      percent: Math.round(70 + creep * 25),
+      label: waitingOnUser ? "Waiting for you to approve" : "Finishing up",
+      elapsed: Math.floor(elapsed / 1000),
+    }
+  })
+
+  // Repaint the elapsed counter. A one-second interval is enough for a number that
+  // only shows whole seconds, and it stops the moment nothing is connecting.
+  createEffect(() => {
+    if (!busy()) return
+    const id = setInterval(() => setTick((n) => n + 1), 250)
+    onCleanup(() => clearInterval(id))
+  })
+
+  const cancel = (id: string) => {
+    busyIds.delete(id)
+    setBusy(null)
+    setBusySince(0)
+    setState(id, { status: "disconnected" })
+  }
+
+  /** app ids with a connect in flight, so the status poll leaves those cards alone */
+  let busyIds = new Set<string>()
+
   /**
    * Keep every card honest while the panel is open.
    *
@@ -177,7 +240,6 @@ export function McpHubPanel(props: McpHubPanelProps) {
    * Cards the user is actively working on are left alone, so this poll cannot
    * fight an in-flight connect with its own intermediate state.
    */
-  let busyIds = new Set<string>()
 
   onMount(() => {
     let stopped = false
@@ -261,6 +323,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
     if (busy()) return
     busyIds.add(app.id)
     setBusy(app.id)
+    setBusySince(Date.now())
     setState(app.id, { status: "connecting" })
 
     try {
@@ -290,6 +353,31 @@ export function McpHubPanel(props: McpHubPanelProps) {
     } finally {
       busyIds.delete(app.id)
       setBusy(null)
+      setBusySince(0)
+    }
+  }
+
+  /**
+ * Detach an app.
+ *
+ * The runtime owns the transport, so the panel asks it to drop the server and then
+ * clears the card. Leaving the local signal alone was what made a disconnected
+ * server look connected until the panel was reopened.
+ */
+const onDisconnect = async (app: AppEntry) => {
+    if (busy()) return
+    setBusy(app.id)
+    setBusySince(Date.now())
+    setState(app.id, { status: "disconnected" })
+    try {
+      await props.runtime.disconnect?.(app.id)
+    } catch {
+      // The card is already marked disconnected and the server is gone from the
+      // runtime's view either way; a failure here has nothing left to report.
+    } finally {
+      busyIds.delete(app.id)
+      setBusy(null)
+      setBusySince(0)
     }
   }
 
@@ -299,6 +387,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
     if (!app || !token) return
     busyIds.add(app.id)
     setBusy(app.id)
+    setBusySince(Date.now())
     setState(app.id, { status: "connecting" })
     try {
       setState(app.id, await connectApp(props.runtime, app, { token, onProgress: (s) => setState(app.id, s) }))
@@ -324,13 +413,6 @@ export function McpHubPanel(props: McpHubPanelProps) {
   }
 
   const stateFor = (id: string): ConnectionState => states()[id] ?? { status: "disconnected" }
-
-  /** the catalog app being connected right now, if any */
-  const busyApp = createMemo(() => {
-    const id = busy()
-    if (!id || id === "registry") return undefined
-    return apps.find((a) => a.id === id)
-  })
 
   const connectedCount = createMemo(() => {
     const all: ConnectionState[] = Object.values(states())
@@ -501,18 +583,47 @@ export function McpHubPanel(props: McpHubPanelProps) {
             </Show>
 
             <div
-              class="h-1 w-40 overflow-hidden rounded-full"
+              class="h-1 w-56 overflow-hidden rounded-full"
               style={{ background: fill() }}
               role="progressbar"
               aria-label={`Connecting ${app().name}`}
+              aria-valuenow={progress().percent}
+              aria-valuemin={0}
+              aria-valuemax={100}
             >
-              {/* Matches the panel's own accent rather than a hardcoded blue, so it
-                  never reads as a link in either theme. */}
+              {/* The bar used to sit at a third forever, which looked like progress
+                  and never was. The width now tracks the actual phase: reaching the
+                  consent page is real work that completes, while the wait for the
+                  user to press Allow is genuinely unbounded and creeps toward the
+                  limit instead of pretending to be a percentage of a known total. */}
               <div
-                class="h-full w-1/3 animate-pulse rounded-full"
-                style={{ background: accent() }}
+                class="h-full rounded-full transition-[width] duration-500 ease-out"
+                style={{ width: `${progress().percent}%`, background: accent() }}
               />
             </div>
+
+            <div class="flex items-center gap-2 text-[12px] text-[var(--mcp-text-weak)]">
+              <span class="font-[600] tabular-nums" style={{ color: accent() }}>
+                {progress().percent}%
+              </span>
+              <span>·</span>
+              <span>{progress().label}</span>
+              <span>·</span>
+              <span class="tabular-nums">{progress().elapsed}s</span>
+            </div>
+
+            {/* A wait the user is in control of needs a way out. Without this the
+                only escape was closing the whole panel and losing every card. */}
+            <button
+              type="button"
+              class="rounded-md border border-[var(--mcp-border-strong)] px-3 py-1.5 text-[12px] font-[600]"
+              style={{ background: fill() }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = fillHover())}
+              onMouseLeave={(e) => (e.currentTarget.style.background = fill())}
+              onClick={() => cancel(app().id)}
+            >
+              Cancel this connection
+            </button>
           </div>
         )}
       </Show>
@@ -611,19 +722,50 @@ export function McpHubPanel(props: McpHubPanelProps) {
                     <span class="truncate text-[12px] text-[var(--mcp-text-weak)]">{describe(st())}</span>
                     <Show
                       when={st().status !== "connected"}
-                      fallback={<span class="text-[12px] font-[600] text-emerald-400">Connected</span>}
+                      fallback={
+                        <div class="flex shrink-0 items-center gap-1.5">
+                          {/* Being able to detach an account matters as much as being
+                              able to attach one: a server left connected keeps its
+                              tools callable by the agent forever. */}
+                          <button
+                            type="button"
+                            aria-label={`Disconnect ${app.name}`}
+                            class="rounded-md border border-[var(--mcp-border-strong)] px-2.5 py-1.5 text-[12px] font-[600]"
+                            style={{ background: fill() }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = fillHover())}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = fill())}
+                            onClick={() => onDisconnect(app)}
+                          >
+                            Disconnect
+                          </button>
+                        </div>
+                      }
                     >
-                      <button
-                        type="button"
-                        disabled={busy() === app.id}
-                        class="rounded-md px-3 py-1.5 text-[12px] font-[600] disabled:opacity-50"
-                        style={{ background: fill() }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = fillHover())}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = fill())}
-                        onClick={() => onConnect(app)}
-                      >
-                        {busy() === app.id ? "Working…" : "Connect"}
-                      </button>
+                      <div class="flex shrink-0 items-center gap-1.5">
+                        <button
+                          type="button"
+                          aria-label={`Details for ${app.name}`}
+                          title={`What ${app.name} can do, and what it needs`}
+                          class="rounded-md border border-[var(--mcp-border)] px-2.5 py-1.5 text-[12px] font-[600]"
+                          style={{ background: fill() }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = fillHover())}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = fill())}
+                          onClick={() => setDetailsFor(app)}
+                        >
+                          Details
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy() === app.id}
+                          class="rounded-md px-3 py-1.5 text-[12px] font-[600] disabled:opacity-50"
+                          style={{ background: fill() }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = fillHover())}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = fill())}
+                          onClick={() => onConnect(app)}
+                        >
+                          {busy() === app.id ? "Working…" : "Connect"}
+                        </button>
+                      </div>
                     </Show>
                   </div>
                 </div>
@@ -674,6 +816,113 @@ export function McpHubPanel(props: McpHubPanelProps) {
         </div>
         </div>
         </div>
+      </Show>
+
+      {/* details dialog: what an app can do, and what it will ask for */}
+      <Show when={detailsFor()}>
+        {(app) => (
+          <div
+            style={{
+              position: "fixed",
+              inset: "0",
+              "z-index": "2147483100",
+              display: "flex",
+              "align-items": "center",
+              "justify-content": "center",
+              padding: "1.5rem",
+              background: overlayTint(),
+              "pointer-events": "auto",
+            }}
+            onClick={(e) => e.target === e.currentTarget && setDetailsFor(null)}
+          >
+            <div
+              class="flex max-h-[70vh] w-full max-w-[480px] flex-col gap-4 overflow-y-auto rounded-xl border border-[var(--mcp-border-strong)] p-5"
+              style={{ background: raised(), "box-shadow": "0 24px 64px rgba(0,0,0,0.35)" }}
+            >
+              <div class="flex items-start gap-3">
+                <div
+                  class="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg"
+                  style={{ background: fill() }}
+                >
+                  <img src={appIcon(app()) || faviconUrl(app())} width={40} height={40} alt="" class="size-9 object-contain" />
+                </div>
+                <div class="min-w-0">
+                  <div class="text-[15px] font-[600]">{app().name}</div>
+                  <div class="text-[12px] text-[var(--mcp-text-weak)]">{app().description}</div>
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-2 text-[13px]">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-[var(--mcp-text-weak)]">How it connects</span>
+                  <span>{FLOW_HINT[flowOf(app())]}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-[var(--mcp-text-weak)]">Category</span>
+                  <span>{app().category}</span>
+                </div>
+                <Show when={app().url}>
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="shrink-0 text-[var(--mcp-text-weak)]">Endpoint</span>
+                    <span class="truncate font-mono text-[11px]" title={app().url}>
+                      {app().url}
+                    </span>
+                  </div>
+                </Show>
+                <Show when={app().via}>
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="text-[var(--mcp-text-weak)]">Hosted by</span>
+                    <span>{app().via}</span>
+                  </div>
+                </Show>
+                <Show when={app().tokenUrl}>
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="text-[var(--mcp-text-weak)]">Create a token</span>
+                    <a
+                      href={app().tokenUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      class="underline"
+                      style={{ color: accent() }}
+                    >
+                      Open
+                    </a>
+                  </div>
+                </Show>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-[var(--mcp-text-weak)]">Tools available</span>
+                  <span>{describe(stateFor(app().id))}</span>
+                </div>
+              </div>
+
+              {/* A card gives a name and a category. This says whether the entry was
+                  verified and how, so a user deciding whether to trust it with an
+                  account is not left to guess. */}
+              <div
+                class="rounded-lg p-3 text-[12px]"
+                style={{ background: fill(), color: "var(--mcp-text-weak)" }}
+              >
+                {app().kind === "oauth" &&
+                  "Connects through this app's own sign-in. The consent page opens in Chrome and the token is stored on this machine — it is never sent anywhere else."}
+                {app().kind === "none" && "No sign-in at all. The server answers with public data as soon as you press Connect."}
+                {app().kind === "token" &&
+                  "Needs an access token you create yourself. It is sent as a bearer header and stored on this machine."}
+                {app().kind === "local" && "Runs on this machine as a process. Nothing is sent to a remote server."}
+              </div>
+
+              <div class="flex justify-end">
+                <button
+                  type="button"
+                  class="rounded-md border border-[var(--mcp-border-strong)] px-4 py-1.5 text-[13px] font-[600]"
+                  style={{ background: fill() }}
+                  onClick={() => setDetailsFor(null)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </Show>
 
       {/* token dialog */}

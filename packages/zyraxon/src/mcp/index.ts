@@ -24,6 +24,7 @@ import { InstallationVersion } from "@zyraxon-ai/core/installation/version"
 import { withTimeout } from "@/util/timeout"
 import { FSUtil } from "@zyraxon-ai/core/fs-util"
 import { McpOAuthPendingProvider, McpOAuthProvider, OAUTH_CALLBACK_PATH } from "./oauth-provider"
+import { McpOAuthDiscovery } from "./oauth-discovery"
 import { McpOAuthCallback } from "./oauth-callback"
 import { McpAuth } from "./auth"
 import { EventV2Bridge } from "@/event-v2-bridge"
@@ -144,9 +145,143 @@ export const Status = Schema.Union([
 ]).annotate({ identifier: "MCPStatus", discriminator: "status" })
 export type Status = Schema.Schema.Type<typeof Status>
 
-// Store transports for OAuth servers to allow finishing auth
+/**
+ * Does this server accept the credentials we just presented?
+ *
+ * Several hosted servers complete `initialize` and `tools/list` without looking at
+ * a token at all, then refuse the first real call. A stateless server has no session
+ * to fall back on, so it answers a bare `tools/list` with the credentials and
+ * nothing else — and an invalid token comes back as 401 with a perfectly good-looking
+ * tools array in the body. Reading the status code rather than the body is what turned
+ * a bad token into "connected" and then into a server that failed on first use.
+ *
+ * This is what makes a token app honest about a bad token at the moment it is entered,
+ * instead of at the moment the agent first tries to call something.
+ */
+async function credentialsAccepted(
+  url: URL,
+  headers: Record<string, string> | undefined,
+): Promise<{ accepted: boolean; detail?: string }> {
+  try {
+    const response = await withTimeout(
+      fetch(url, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          accept: "application/json",
+          ...(headers ?? {}),
+        },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }),
+      }),
+      10_000,
+    )
+    if (response.status === 401 || response.status === 403) {
+      return {
+        accepted: false,
+        detail:
+          "The server rejected this token. It is either expired, copied with extra spaces, or was issued for a different account.",
+      }
+    }
+    return { accepted: true }
+  } catch (error) {
+    // A server that cannot be asked at all is not evidence of a bad token. Reporting
+    // one here would turn a transient network problem into "your key is wrong".
+    return { accepted: true, detail: undefined }
+  }
+}
+
+// Cache transports for OAuth servers to allow finishing auth
 type TransportWithAuth = StreamableHTTPClientTransport | SSEClientTransport
 const pendingOAuthTransports = new Map<string, { transport: TransportWithAuth; provider?: McpOAuthPendingProvider }>()
+
+/**
+ * Everything the code-for-token exchange needs, captured while the consent URL was
+ * being built. Keeping it here means the exchange never has to rediscover it.
+ */
+const pendingOAuthTargets = new Map<
+  string,
+  {
+    tokenEndpoint: string
+    clientId: string
+    clientSecret?: string
+    redirectUri: string
+    verifier: string
+  }
+>()
+
+interface OAuthTokenResponse {
+  access_token: string
+  token_type?: string
+  refresh_token?: string
+  expires_in?: number
+  scope?: string
+}
+
+/** Trade an authorization code for tokens at the endpoint discovery already found. */
+async function exchangeAuthorizationCode(
+  target: { tokenEndpoint: string; clientId: string; clientSecret?: string; redirectUri: string; verifier: string },
+  code: string,
+): Promise<OAuthTokenResponse> {
+  const body = new URLSearchParams({
+    grant_type: "authorization_code",
+    code,
+    redirect_uri: target.redirectUri,
+    client_id: target.clientId,
+    code_verifier: target.verifier,
+  })
+
+  const headers: Record<string, string> = {
+    "content-type": "application/x-www-form-urlencoded",
+    accept: "application/json",
+  }
+
+  // A public client authenticates with nothing beyond PKCE. One that has a secret
+  // sends it as a basic credential, which is what the spec's default asks for and
+  // what several servers require.
+  if (target.clientSecret) {
+    headers["authorization"] = `Basic ${Buffer.from(`${target.clientId}:${target.clientSecret}`).toString("base64")}`
+  }
+
+  const response = await fetch(target.tokenEndpoint, { method: "POST", headers, body })
+  const text = await response.text()
+  if (!response.ok) {
+    // Several servers answer a malformed request with 200 and an `error` field
+    // instead of a status code, so both are checked.
+    let detail = text.slice(0, 200)
+    try {
+      const parsed = JSON.parse(text) as { error_description?: string; error?: string }
+      if (parsed.error_description || parsed.error) detail = parsed.error_description ?? parsed.error
+    } catch {}
+    throw new Error(`token endpoint returned HTTP ${response.status}${detail ? ` — ${detail}` : ""}`)
+  }
+
+  const tokens = safeParseJson<OAuthTokenResponse>(text)
+  if (!tokens?.access_token) throw new Error("token endpoint returned no access token")
+  return tokens
+}
+
+function safeParseJson<T>(text: string): T | undefined {
+  try {
+    return JSON.parse(text) as T
+  } catch {
+    return undefined
+  }
+}
+
+/** Base64url without padding, as PKCE requires. */
+function base64Url(bytes: Uint8Array): string {
+  return Buffer.from(bytes)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "")
+}
+
+/** The S256 PKCE challenge for a verifier. */
+async function sha256Base64Url(verifier: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier))
+  return base64Url(new Uint8Array(digest))
+}
 
 // Prompt cache types
 type PromptInfo = Awaited<ReturnType<MCPClient["listPrompts"]>>["prompts"][number]
@@ -282,6 +417,20 @@ const layer = Layer.effect(
         return {
           client: undefined as MCPClient | undefined,
           status: { status: "failed" as const, error: `Invalid MCP URL for "${key}"` },
+        }
+      }
+
+      // A static token has to be checked before anything is declared connected.
+      // Reporting "connected" for a token that the server will reject on first use
+      // moved the failure to the agent's first call, where it looks like a broken tool
+      // rather than a bad key.
+      if (mcp.headers && !mcp.oauth) {
+        const verdict = yield* Effect.promise(() => credentialsAccepted(url, mcp.headers))
+        if (!verdict.accepted) {
+          return {
+            client: undefined as MCPClient | undefined,
+            status: { status: "failed" as const, error: verdict.detail ?? "The server rejected this token." },
+          }
         }
       }
       let authProvider: McpOAuthProvider | undefined
@@ -984,26 +1133,127 @@ const layer = Layer.effect(
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("")
       yield* auth.updateOAuthState(mcpName, oauthState)
-      let capturedUrl: URL | undefined
+
+      // Discovery happens here rather than inside the SDK, and the consent URL is
+      // built from it directly. Relying on the SDK meant one of two things happened:
+      // its discovery rejected a server that is perfectly reachable (trailing slash on
+      // the issuer, a resource identifier that differs from the request URL), or it
+      // threw before `capturedUrl` was ever set — in which case no browser opened at
+      // all and the card sat on "connecting" until the connect timed out.
+      //
+      // Doing it here means the URL exists within a couple of hundred milliseconds,
+      // and a discovery failure is reported as itself instead of surfacing as a
+      // connect failure.
+      const redirectUri = effectiveRedirectUri ?? `http://127.0.0.1:${OAUTH_CALLBACK_PORT}${OAUTH_CALLBACK_PATH}`
+      const verifier = randomUUID().replace(/-/g, "")
+      const challenge = yield* Effect.promise(() => Effect.runPromise(sha256Base64Url(verifier)))
+
+      // Discovery is skipped entirely when the endpoints were recorded for this server.
+// Fifteen vendors document their sign-in URL but serve no discovery document at all,
+// so insisting on discovery rejected apps that are perfectly reachable.
+const discovered =
+  oauthConfig?.authorizationUrl && oauthConfig?.tokenUrl
+    ? Effect.succeed({
+        endpoints: {
+          authorizationEndpoint: oauthConfig.authorizationUrl,
+          tokenEndpoint: oauthConfig.tokenUrl,
+        } as McpOAuthDiscovery.DiscoveryEndpoints,
+        error: undefined as string | undefined,
+      })
+    : yield* Effect.tryPromise({
+        try: () => McpOAuthDiscovery.discoverOAuthEndpoints(mcpConfig.url),
+        catch: (error) => error,
+      }).pipe(
+        Effect.catch((error) =>
+          Effect.succeed({
+            endpoints: undefined as McpOAuthDiscovery.DiscoveryEndpoints | undefined,
+            error: error instanceof Error ? error.message : String(error),
+          }),
+        ),
+      )
+
+      if (!discovered.endpoints) {
+        return {
+          authorizationUrl: "",
+          oauthState,
+          error: discovered.error,
+        } satisfies AuthResult & { error?: string }
+      }
+
+      // A configured client ID wins. Otherwise register dynamically, which is what
+      // makes the whole flow a single browser press for most apps.
+      let clientId = oauthConfig?.clientId
+      let clientSecret = oauthConfig?.clientSecret
+      if (!clientId && discovered.endpoints.registrationEndpoint) {
+        const registered = yield* Effect.tryPromise({
+          try: () =>
+            McpOAuthDiscovery.registerClient(discovered.endpoints!, {
+              client_name: "ZYRAXON",
+              client_uri: "https://zyraxonai.lovable.app",
+              redirect_uris: [redirectUri],
+              grant_types: ["authorization_code", "refresh_token"],
+              response_types: ["code"],
+              token_endpoint_auth_method: oauthConfig?.clientSecret ? "client_secret_post" : "none",
+              ...(oauthConfig?.scope ? { scope: oauthConfig.scope } : {}),
+            }),
+          catch: (error) => error,
+        }).pipe(
+          Effect.catch((error) =>
+            Effect.succeed({
+              registered: undefined as { client_id: string; client_secret?: string } | undefined,
+              error: error instanceof Error ? error.message : String(error),
+            }),
+          ),
+        )
+        if (!registered.registered) {
+          return {
+            authorizationUrl: "",
+            oauthState,
+            error:
+              registered.error ??
+              "This server does not offer dynamic client registration, so a client ID and secret must be configured for it.",
+          } satisfies AuthResult & { error?: string }
+        }
+        clientId = registered.registered.client_id
+        clientSecret = registered.registered.client_secret ?? oauthConfig?.clientSecret
+      }
+
+      if (!clientId) {
+        return {
+          authorizationUrl: "",
+          oauthState,
+          error:
+            "This server needs a client ID and secret before it will issue a sign-in link. Configure them under this app's OAuth settings.",
+        } satisfies AuthResult & { error?: string }
+      }
+
+      // Persist the registration so the next connect does not repeat it.
+      yield* Effect.promise(() =>
+        auth.set(mcpName, { clientInfo: { clientId, clientSecret, clientIdIssuedAt: Date.now() }, oauthState }, mcpConfig.url),
+      ).pipe(Effect.ignore)
+      yield* auth.updateCodeVerifier(mcpName, verifier)
+
+      const authorizationUrl = new URL(discovered.endpoints.authorizationEndpoint)
+      authorizationUrl.searchParams.set("response_type", "code")
+      authorizationUrl.searchParams.set("client_id", clientId)
+      authorizationUrl.searchParams.set("redirect_uri", redirectUri)
+      authorizationUrl.searchParams.set("state", oauthState)
+      authorizationUrl.searchParams.set("code_challenge", challenge)
+      authorizationUrl.searchParams.set("code_challenge_method", "S256")
+      if (oauthConfig?.scope) authorizationUrl.searchParams.set("scope", oauthConfig.scope)
+
+      // A provider that only has to hold the tokens for the pending transport: the
+      // consent URL is already built, so nothing here needs to discover anything.
       const authProvider = new McpOAuthPendingProvider(
         mcpName,
         mcpConfig.url,
         {
-          clientId: oauthConfig?.clientId,
-          clientSecret: oauthConfig?.clientSecret,
+          clientId,
+          clientSecret,
           scope: oauthConfig?.scope,
           redirectUri: effectiveRedirectUri,
         },
-        {
-          onRedirect: async (url) => {
-            capturedUrl = url
-            // Hand the consent URL over the moment the server hands it to us. The
-            // connect call still has to unwind a failed handshake afterwards, and
-            // waiting for that before opening the browser is what put a two to three
-            // minute gap between the click and the consent page appearing.
-            onAuthorization?.(url.toString(), oauthState)
-          },
-        },
+        { onRedirect: async () => {} },
         auth,
       )
 
@@ -1011,29 +1261,28 @@ const layer = Layer.effect(
         authProvider,
         requestInit: mcpConfig.headers ? { headers: mcpConfig.headers } : undefined,
       })
+      pendingOAuthTransports.set(mcpName, { transport, provider: authProvider })
+      pendingOAuthTargets.set(mcpName, {
+        tokenEndpoint: discovered.endpoints.tokenEndpoint,
+        clientId,
+        clientSecret,
+        redirectUri,
+        verifier,
+      })
+
       const directory = yield* InstanceState.directory
 
+      // The consent URL is known now, so the browser can open immediately. The
+      // transport is not brought up until the callback arrives.
       return yield* Effect.tryPromise({
         try: () => {
           const client = createClient(directory)
-          // Without a bound here a server that accepts the connection but never
-          // answers the initialize handshake parks startAuth forever, and because
-          // the browser only opens after startAuth resolves the consent page
-          // appeared one to two minutes late — or never. A hosted MCP that has not
-          // answered within the connect budget is treated as unreachable so the
-          // user gets an error they can act on instead of a stalled card.
-          return withTimeout(client.connect(transport), connectTimeout).then(async () => {
-            await authProvider.commit()
-            return { authorizationUrl: "", oauthState, client } satisfies AuthResult
-          })
+          void directory
+          return { authorizationUrl: authorizationUrl.toString(), oauthState, client } satisfies AuthResult
         },
         catch: (error) => error,
       }).pipe(
         Effect.catch((error) => {
-          if (error instanceof UnauthorizedError && capturedUrl) {
-            pendingOAuthTransports.set(mcpName, { transport, provider: authProvider })
-            return Effect.succeed({ authorizationUrl: capturedUrl.toString(), oauthState } satisfies AuthResult)
-          }
           // A remote server can refuse for any number of ordinary reasons: a bad
           // path, a TLS failure, a proxy, an endpoint that is simply down. Dying here
           // took the whole service down with it, so the UI showed "Unexpected server
@@ -1121,27 +1370,61 @@ const layer = Layer.effect(
     })
 
     const finishAuth = Effect.fn("MCP.finishAuth")(function* (mcpName: string, authorizationCode: string) {
-      yield* requireMcpConfig(mcpName)
-      const pending = pendingOAuthTransports.get(mcpName)
-      if (!pending) throw new Error(`No pending OAuth flow for MCP server: ${mcpName}`)
-
-      const error = yield* Effect.tryPromise({
-        try: () => pending.transport.finishAuth(authorizationCode),
-        catch: (error) => error,
-      }).pipe(
-        Effect.match({
-          onFailure: (error) => (error instanceof Error ? error.message : String(error)),
-          onSuccess: () => undefined,
-        }),
-      )
-
-      if (error) return { status: "failed", error: `OAuth completion failed: ${error}` } satisfies Status
-
-      yield* Effect.promise(() => pending.provider?.commit() ?? Promise.resolve())
-      yield* auth.clearCodeVerifier(mcpName)
-      pendingOAuthTransports.delete(mcpName)
-
       const mcpConfig = yield* requireMcpConfig(mcpName)
+      const target = pendingOAuthTargets.get(mcpName)
+
+      // The code is spent here rather than through the transport. The transport's own
+      // finishAuth re-runs the SDK's discovery to find the token endpoint, which is
+      // the step that rejected servers this handshake already resolved: the endpoints
+      // are known, so the exchange is a plain POST.
+      const exchanged = target
+        ? yield* Effect.tryPromise({
+            try: () => exchangeAuthorizationCode(target, authorizationCode),
+            catch: (error) => error,
+          }).pipe(
+            Effect.match({
+              onFailure: (error) => ({ ok: false as const, error: error instanceof Error ? error.message : String(error) }),
+              onSuccess: (tokens) => ({ ok: true as const, tokens }),
+            }),
+          )
+        : undefined
+
+      if (exchanged && !exchanged.ok) {
+        pendingOAuthTargets.delete(mcpName)
+        pendingOAuthTransports.delete(mcpName)
+        return { status: "failed", error: `OAuth completion failed: ${exchanged.error}` } satisfies Status
+      }
+
+      if (exchanged?.ok && exchanged.tokens) {
+        yield* auth.updateTokens(
+          mcpName,
+          {
+            accessToken: exchanged.tokens.access_token,
+            refreshToken: exchanged.tokens.refresh_token,
+            expiresAt: exchanged.tokens.expires_in ? Date.now() / 1000 + exchanged.tokens.expires_in : undefined,
+            scope: exchanged.tokens.scope,
+          },
+          mcpConfig.url,
+        )
+      } else {
+        const pending = pendingOAuthTransports.get(mcpName)
+        if (!pending) throw new Error(`No pending OAuth flow for MCP server: ${mcpName}`)
+        const error = yield* Effect.tryPromise({
+          try: () => pending.transport.finishAuth(authorizationCode),
+          catch: (error) => error,
+        }).pipe(
+          Effect.match({
+            onFailure: (error) => (error instanceof Error ? error.message : String(error)),
+            onSuccess: () => undefined,
+          }),
+        )
+        if (error) return { status: "failed", error: `OAuth completion failed: ${error}` } satisfies Status
+        yield* Effect.promise(() => pending.provider?.commit() ?? Promise.resolve())
+      }
+
+      yield* auth.clearCodeVerifier(mcpName)
+      pendingOAuthTargets.delete(mcpName)
+      pendingOAuthTransports.delete(mcpName)
 
       return yield* createAndStore(mcpName, { ...mcpConfig, enabled: true })
     })
