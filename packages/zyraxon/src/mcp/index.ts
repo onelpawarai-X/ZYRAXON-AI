@@ -363,6 +363,17 @@ type TransportWithAuth = StreamableHTTPClientTransport | SSEClientTransport
 const pendingOAuthTransports = new Map<string, { transport: TransportWithAuth; provider?: McpOAuthPendingProvider }>()
 
 /**
+ * Who, if anyone, is driving the consent page for a server right now.
+ *
+ * `connect` builds a provider of its own, and the SDK asks it to redirect whenever the
+ * server turns out to want consent. With nothing registered here that request went
+ * nowhere, so a connect that needed a fresh token produced no browser and no error. A
+ * live `authenticate` registers itself for the duration of the handshake, which is what
+ * turns that redirect into a page the user can actually approve.
+ */
+const liveConsent = new Map<string, (url: string) => Effect.Effect<void>>()
+
+/**
  * Everything the code-for-token exchange needs, captured while the consent URL was
  * being built. Keeping it here means the exchange never has to rediscover it.
  */
@@ -622,7 +633,30 @@ const layer = Layer.effect(
             redirectUri: oauthConfig?.redirectUri,
           },
           {
-            onRedirect: async () => {},
+            // The SDK asks the provider to redirect when it meets a server that wants
+            // consent. That request was being dropped on the floor, so a reconnect that
+            // needed a fresh token sat there instead of showing the sign-in page. The
+            // browser belongs to whoever is driving the connect, so the live handshake
+            // takes over; outside one there is nobody to hand it to and the page is not
+            // opened behind the user's back.
+            onRedirect: async (url: URL) => {
+              const open = liveConsent.get(key)
+              if (!open) return
+              // A plain async callback has no generator to yield into, so the page is
+              // opened the same way the handshake opens it: run the effect on the already
+              // available runtime and report a failure rather than rejecting into the SDK.
+              await Effect.runPromise(
+                Effect.logInfo("oauth redirect during connect", { server: key, url: url.toString() }).pipe(
+                  Effect.andThen(open(url.toString())),
+                  Effect.catchCause((cause) =>
+                    Effect.logWarning("oauth redirect could not open a page", {
+                      server: key,
+                      reason: Cause.pretty(cause),
+                    }).pipe(Effect.ignore),
+                  ),
+                ),
+              )
+            },
           },
           auth,
         )
@@ -1462,6 +1496,27 @@ const discovered =
       authorizationUrl.searchParams.set("code_challenge_method", "S256")
       if (oauthConfig?.scope) authorizationUrl.searchParams.set("scope", oauthConfig.scope)
 
+      const consentUrl = authorizationUrl.toString()
+
+      // Hand the consent page over the moment it exists.
+      //
+      // This was the missing link in every OAuth connect. `startAuth` takes an
+      // `onAuthorization` callback and the provider takes an `onRedirect`, and both were
+      // wired to nothing: the provider's was an empty `async () => {}` and the callback
+      // was simply never invoked. So no browser ever opened, `authenticate` sat waiting on
+      // a loopback callback that could not be sent because nobody was ever sent to approve
+      // it, and the connect died on its timeout as `Unknown error: undefined` — for all
+      // sixty-odd apps, not for one vendor. Nothing here is app-specific; the sign-in page
+      // was built correctly and then never shown to anybody.
+      //
+      // Both routes now open the browser: the direct hand-off for the page just built, and
+      // the provider's redirect for the case where a later refresh is what needs consent.
+      const openConsent = Effect.fn("MCP.openConsent")(function* (url: string) {
+        yield* Effect.logInfo("oauth consent url ready", { server: mcpName, url })
+        onAuthorization?.(url, oauthState)
+      })
+      yield* openConsent(consentUrl)
+
       // A provider that only has to hold the tokens for the pending transport: the
       // consent URL is already built, so nothing here needs to discover anything.
       const authProvider = new McpOAuthPendingProvider(
@@ -1473,7 +1528,24 @@ const discovered =
           scope: oauthConfig?.scope,
           redirectUri: effectiveRedirectUri,
         },
-        { onRedirect: async () => {} },
+        {
+          // Plain async callback, so the page is opened by running the effect rather than
+          // by yielding: a redirect arriving here means this handshake still wants
+          // consent, and the browser belongs to whoever is driving it.
+          onRedirect: async (url: URL) => {
+            await Effect.runPromise(
+              Effect.logInfo("oauth redirect during handshake", { server: mcpName, url: url.toString() }).pipe(
+                Effect.andThen(openConsent(url.toString())),
+                Effect.catchCause((cause) =>
+                  Effect.logWarning("oauth redirect could not open a page", {
+                    server: mcpName,
+                    reason: Cause.pretty(cause),
+                  }).pipe(Effect.ignore),
+                ),
+              ),
+            )
+          },
+        },
         auth,
       )
 
@@ -1537,24 +1609,26 @@ const discovered =
         // that fires while the failed handshake is still unwinding. Logging is what
         // makes a consent page that never appears answerable: the line before this
         // proves the URL was built, and the lines here say whether the browser took it.
-        Effect.runPromise(
-          Effect.logInfo("opening consent page", { server: mcpName, url: authorizationUrl }).pipe(
-            Effect.andThen(browser.open(authorizationUrl)),
+        const open = (url: string) =>
+          Effect.logInfo("opening consent page", { server: mcpName, url }).pipe(
+            Effect.andThen(browser.open(url)),
             Effect.tap(() => Effect.logInfo("consent page opened", { server: mcpName })),
             Effect.catch((error) =>
               Effect.logError("consent page did not open", {
                 server: mcpName,
-                url: authorizationUrl,
+                url,
                 reason: error instanceof Error ? error.message : String(error),
               }).pipe(
-                Effect.andThen(
-                  events.publish(BrowserOpenFailed, { mcpName, url: authorizationUrl }).pipe(Effect.ignore),
-                ),
+                Effect.andThen(events.publish(BrowserOpenFailed, { mcpName, url }).pipe(Effect.ignore)),
                 Effect.as(error),
               ),
             ),
-          ),
-        ).catch(() => {})
+          )
+        // Registered before the launch so the SDK's own redirect lands on the same page
+        // rather than being dropped, which is what left a reconnect waiting for a browser
+        // that was never asked for.
+        liveConsent.set(mcpName, (url: string) => open(url).pipe(Effect.ignore))
+        Effect.runPromise(open(authorizationUrl)).catch(() => {})
       }
       const result = yield* startAuth(mcpName, openConsentPage)
       if (!result.authorizationUrl) {
@@ -1593,15 +1667,25 @@ const discovered =
       // The consent page already opened from the redirect callback, and the callback
       // waiter was registered alongside it. Re-registering here would orphan the first
       // promise, and opening again would show the user two consent tabs.
-      const code = yield* Effect.promise(() => callback ?? McpOAuthCallback.waitForCallback(result.oauthState, mcpName))
+      //
+      // The handshake owns the registration for its whole length: the SDK can ask for a
+      // redirect at any point while it is still unwinding, and clearing it before the
+      // waiter resolves is what used to leave a reconnect with no way to show consent.
+      // `ensuring` releases it on every exit, including a timeout or an interruption, so
+      // a dead attempt never becomes the next connect's owner of the browser.
+      return yield* Effect.gen(function* () {
+        const code = yield* Effect.promise(
+          () => callback ?? McpOAuthCallback.waitForCallback(result.oauthState, mcpName),
+        )
 
-      const storedState = yield* auth.getOAuthState(mcpName)
-      if (storedState !== result.oauthState) {
+        const storedState = yield* auth.getOAuthState(mcpName)
+        if (storedState !== result.oauthState) {
+          yield* auth.clearOAuthState(mcpName)
+          throw new Error("OAuth state mismatch - potential CSRF attack")
+        }
         yield* auth.clearOAuthState(mcpName)
-        throw new Error("OAuth state mismatch - potential CSRF attack")
-      }
-      yield* auth.clearOAuthState(mcpName)
-      return yield* finishAuth(mcpName, code)
+        return yield* finishAuth(mcpName, code)
+      }).pipe(Effect.ensuring(Effect.sync(() => liveConsent.delete(mcpName))))
     })
 
     const finishAuth = Effect.fn("MCP.finishAuth")(function* (mcpName: string, authorizationCode: string) {
@@ -1668,6 +1752,7 @@ const discovered =
       yield* auth.remove(mcpName)
       McpOAuthCallback.cancelPending(mcpName)
       pendingOAuthTransports.delete(mcpName)
+      liveConsent.delete(mcpName)
     })
 
     const supportsOAuth = Effect.fn("MCP.supportsOAuth")(function* (mcpName: string) {
