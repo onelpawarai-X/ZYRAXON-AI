@@ -30,6 +30,37 @@ export interface AppEntry {
     };
     /** scopes worth requesting by default */
     scope?: string;
+    /**
+     * A client ID this vendor only issues from its own developer console.
+     *
+     * Around a dozen publishers answer `/register` with a refusal or publish no
+     * registration endpoint at all, because they only trust clients they created. The
+     * catalog cannot create those, so the ID is supplied by whoever holds the account —
+     * and the Details panel says exactly where to get one, which button to press, and
+     * what to paste back.
+     */
+    clientId?: string;
+    /**
+     * The developer console for a vendor that issues clients by hand.
+     *
+     * Shown on the Details panel next to the field it belongs to, so nobody has to go
+     * hunting for a page the app already knows about.
+     */
+    consoleUrl?: string;
+    /**
+     * The exact steps for connecting this app, in the order they are taken.
+     *
+     * The Details panel shows this instead of describing the flow in prose, because the
+     * difference between "click Allow in the browser" and "paste the client ID back here"
+     * is the difference between a working app and a dead one.
+     */
+    steps?: string[];
+    /**
+     * Why this app needs a credential, stated by the vendor where the vendor says it.
+     *
+     * Empty means the app needs nothing, which is the norm and not worth a note.
+     */
+    note?: string;
     /** brand colour used by the UI */
     color: string;
     /** Simple Icons slug, for a clean monochrome glyph */

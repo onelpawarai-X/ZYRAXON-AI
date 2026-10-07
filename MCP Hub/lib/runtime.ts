@@ -22,6 +22,15 @@ export interface McpClientLike {
     disconnect: (input: { name: string }) => Promise<unknown>
     auth: {
       authenticate: (input: { name: string }) => Promise<unknown>
+      /**
+       * Build the consent URL and report it without waiting for the callback.
+       *
+       * The Details panel's Generate button uses this: the person can copy the link, open
+       * it in whatever browser holds their session, approve it there, and the loopback
+       * still reaches ZYRAXON. That is the only way to finish a sign-in when the default
+       * browser is not the one already signed in.
+       */
+      start: (input: { name: string }) => Promise<{ data?: { authorizationUrl?: string; oauthState?: string } }>
       /** whether a stored sign-in exists, so a refusal can be told apart from a bad key */
       hasTokens: (input: { name: string }) => Promise<{ data?: { hasTokens?: boolean } }>
       /** forget stored tokens and client registration for a server */
@@ -66,7 +75,16 @@ export type McpRemoteConfig = {
   enabled: boolean
   timeout?: number
   headers?: Record<string, string>
-  oauth?: false | { scope?: string; authorizationUrl?: string; tokenUrl?: string }
+  oauth?:
+    | false
+    | {
+        scope?: string
+        authorizationUrl?: string
+        tokenUrl?: string
+        /** issued by the vendor's own console, for the publishers that refuse self-registration */
+        clientId?: string
+        clientSecret?: string
+      }
 }
 
 export interface HostBindings {
@@ -120,6 +138,19 @@ export function bindRuntime(host: HostBindings): McpRuntime {
     },
     authenticate: async (name) => {
       await host.client.mcp.auth.authenticate({ name })
+    },
+
+    /**
+     * The consent URL for a server, without opening anything.
+     *
+     * Returned rather than opened so the caller decides where it goes. The server is
+     * already registered at this point, so the link is complete and can be handed to any
+     * browser — which is what makes signing in possible when the account lives in a
+     * different profile from the default browser.
+     */
+    startAuth: async (name) => {
+      const data = await host.client.mcp.auth.start({ name })
+      return data.data?.authorizationUrl ?? ""
     },
 
     /**

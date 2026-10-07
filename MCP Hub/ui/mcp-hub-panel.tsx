@@ -203,6 +203,19 @@ export function McpHubPanel(props: McpHubPanelProps) {
   const [tokenFor, setTokenFor] = createSignal<AppEntry | null>(null)
   const [detailsFor, setDetailsFor] = createSignal<AppEntry | null>(null)
   const [tokenValue, setTokenValue] = createSignal("")
+  /**
+   * The client credentials a console-issued app needs, keyed by app.
+   *
+   * These live here rather than in the catalog because they belong to the person who owns
+   * the vendor account, not to the app list: one user's Slack client ID is nobody else's.
+   * Holding them for the session is enough — the server keeps the registration once a
+   * handshake completes.
+   */
+  const [clientIds, setClientIds] = createSignal<Record<string, { id: string; secret?: string }>>({})
+  /** the app whose sign-in link is being built, so the button can say so */
+  const [generating, setGenerating] = createSignal<string | null>(null)
+  /** the sign-in link produced by Generate, shown with copy and open */
+  const [consentUrl, setConsentUrl] = createSignal<string | null>(null)
   const [registryHits, setRegistryHits] = createSignal<RegistryServer[]>([])
   const [registryTerm, setRegistryTerm] = createSignal("")
   /** which registry server each app resolved to */
@@ -518,6 +531,61 @@ export function McpHubPanel(props: McpHubPanelProps) {
       setBusy(null)
       setTokenFor(null)
       setTokenValue("")
+    }
+  }
+
+  /**
+   * Connect an app that needs a client its vendor's console issued.
+   *
+   * The client is written into the server's config as part of the connect, so the
+   * handshake has something to ask for consent with. Without it the server tries to
+   * register one itself, which the publishers behind these consoles refuse — so this
+   * field is the whole difference between them working and not.
+   */
+  const submitClientId = async () => {
+    const app = detailsFor()
+    const credentials = app ? clientIds()[app.id] : undefined
+    if (!app || !credentials?.id?.trim()) return
+    busyIds.add(app.id)
+    setBusy(app.id)
+    setBusySince(Date.now())
+    setState(app.id, { status: "connecting" })
+    try {
+      setState(
+        app.id,
+        await connectApp(props.runtime, app, {
+          clientId: credentials.id.trim(),
+          clientSecret: credentials.secret?.trim(),
+          onProgress: (s) => setState(app.id, s),
+        }),
+      )
+      if (states()[app.id]?.status === "connected") setDetailsFor(null)
+    } finally {
+      busyIds.delete(app.id)
+      setBusy(null)
+      setBusySince(0)
+    }
+  }
+
+  /**
+   * Build the sign-in link without opening it.
+   *
+   * Discovery, client registration and PKCE all happen on the server, so what comes back
+   * is a complete consent URL. Handing it over instead of opening it is the point: the
+   * account is often already signed in somewhere other than the default browser, and
+   * approving there still delivers the reply to ZYRAXON's loopback. Opening it is offered
+   * right beside the link for the other case.
+   */
+  const generateConsentUrl = async (app: AppEntry) => {
+    setGenerating(app.id)
+    setConsentUrl(null)
+    try {
+      const url = await props.runtime.startAuth(app.id)
+      setConsentUrl(url || null)
+    } catch {
+      setConsentUrl(null)
+    } finally {
+      setGenerating(null)
     }
   }
 
@@ -1009,112 +1077,6 @@ export function McpHubPanel(props: McpHubPanelProps) {
         </div>
       </Show>
 
-      {/* details dialog: what an app can do, and what it will ask for */}
-      <Show when={detailsFor()}>
-        {(app) => (
-          <div
-            style={{
-              position: "fixed",
-              inset: "0",
-              "z-index": "2147483100",
-              display: "flex",
-              "align-items": "center",
-              "justify-content": "center",
-              padding: "1.5rem",
-              background: overlayTint(),
-              "pointer-events": "auto",
-            }}
-            onClick={(e) => e.target === e.currentTarget && setDetailsFor(null)}
-          >
-            <div
-              class="flex max-h-[70vh] w-full max-w-[480px] flex-col gap-4 overflow-y-auto rounded-xl border border-[var(--mcp-border-strong)] p-5"
-              style={{ background: raised(), "box-shadow": "0 24px 64px rgba(0,0,0,0.35)" }}
-            >
-              <div class="flex items-start gap-3">
-                <div
-                  class="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg"
-                  style={{ background: fill() }}
-                >
-                  <img src={appIcon(app()) || faviconUrl(app())} width={40} height={40} alt="" class="size-9 object-contain" />
-                </div>
-                <div class="min-w-0">
-                  <div class="text-[15px] font-[600]">{app().name}</div>
-                  <div class="text-[12px] text-[var(--mcp-text-weak)]">{app().description}</div>
-                </div>
-              </div>
-
-              <div class="flex flex-col gap-2 text-[13px]">
-                <div class="flex items-center justify-between gap-3">
-                  <span class="text-[var(--mcp-text-weak)]">How it connects</span>
-                  <span>{FLOW_HINT[flowOf(app())]}</span>
-                </div>
-                <div class="flex items-center justify-between gap-3">
-                  <span class="text-[var(--mcp-text-weak)]">Category</span>
-                  <span>{app().category}</span>
-                </div>
-                <Show when={app().url}>
-                  <div class="flex items-center justify-between gap-3">
-                    <span class="shrink-0 text-[var(--mcp-text-weak)]">Endpoint</span>
-                    <span class="truncate font-mono text-[11px]" title={app().url}>
-                      {app().url}
-                    </span>
-                  </div>
-                </Show>
-                <Show when={app().via}>
-                  <div class="flex items-center justify-between gap-3">
-                    <span class="text-[var(--mcp-text-weak)]">Hosted by</span>
-                    <span>{app().via}</span>
-                  </div>
-                </Show>
-                <Show when={app().tokenUrl}>
-                  <div class="flex items-center justify-between gap-3">
-                    <span class="text-[var(--mcp-text-weak)]">Create a token</span>
-                    <a
-                      href={app().tokenUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      class="underline"
-                      style={{ color: accent() }}
-                    >
-                      Open
-                    </a>
-                  </div>
-                </Show>
-                <div class="flex items-center justify-between gap-3">
-                  <span class="text-[var(--mcp-text-weak)]">Tools available</span>
-                  <span>{describe(stateFor(app().id))}</span>
-                </div>
-              </div>
-
-              {/* A card gives a name and a category. This says whether the entry was
-                  verified and how, so a user deciding whether to trust it with an
-                  account is not left to guess. */}
-              <div
-                class="rounded-lg p-3 text-[12px]"
-                style={{ background: fill(), color: "var(--mcp-text-weak)" }}
-              >
-                {app().kind === "oauth" &&
-                  "Connects through this app's own sign-in. The consent page opens in Chrome and the token is stored on this machine — it is never sent anywhere else."}
-                {app().kind === "none" && "No sign-in at all. The server answers with public data as soon as you press Connect."}
-                {app().kind === "token" &&
-                  "Needs an access token you create yourself. It is sent as a bearer header and stored on this machine."}
-                {app().kind === "local" && "Runs on this machine as a process. Nothing is sent to a remote server."}
-              </div>
-
-              <div class="flex justify-end">
-                <button
-                  type="button"
-                  class="rounded-md border border-[var(--mcp-border-strong)] px-4 py-1.5 text-[13px] font-[600]"
-                  style={{ background: fill() }}
-                  onClick={() => setDetailsFor(null)}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </Show>
 
       {/* token dialog */}
       <Show when={tokenFor()}>
@@ -1175,6 +1137,177 @@ export function McpHubPanel(props: McpHubPanelProps) {
                   Connect
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+      </Show>
+
+      <Show when={detailsFor()}>
+        {(app) => (
+          <div
+            style={{
+              position: "fixed",
+              inset: "0",
+              "z-index": "2147483100",
+              display: "flex",
+              "align-items": "center",
+              "justify-content": "center",
+              background: overlayTint(),
+              padding: "1.5rem",
+              "pointer-events": "auto",
+            }}
+          >
+            <div
+              class="w-full max-w-[560px] overflow-y-auto rounded-xl border border-[var(--mcp-border-strong)] p-5"
+              style={{ background: raised(), "box-shadow": "0 24px 64px rgba(0,0,0,0.35)" }}
+            >
+              <div class="mb-1 flex items-center gap-2 text-[15px] font-[600]">
+                <img src={appIcon(app(), 18)} alt="" class="h-[18px] w-[18px] rounded" />
+                {app().name}
+                <span class="text-[12px] font-[400] text-[var(--mcp-text-weak)]">{app().category}</span>
+              </div>
+              <div class="mb-4 text-[12px] text-[var(--mcp-text-weak)]">{app().description}</div>
+
+              <Show when={app().note}>
+                <div class="mb-4 rounded-md border border-[var(--mcp-border)] p-3 text-[12px]">
+                  {app().note}
+                </div>
+              </Show>
+
+              <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">Endpoint</div>
+              <div class="mb-4 select-all break-all rounded-md border border-[var(--mcp-border)] p-2 font-mono text-[11px]">
+                {app().url ?? app().command?.command ?? "runs on this machine"}
+              </div>
+
+              <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">How to connect</div>
+              <ol class="mb-4 ml-4 list-decimal space-y-1 text-[12px]">
+                <Show
+                  when={app().steps?.length}
+                  fallback={
+                    <li>
+                      {app().kind === "none"
+                        ? "Nothing to do. Press Connect and its tools are usable straight away."
+                        : app().kind === "local"
+                          ? "It ships with ZYRAXON and starts on its own. Press Connect to wake it."
+                          : "Press Connect. A sign-in page opens in your browser; approve it there and this card turns green."}
+                    </li>
+                  }
+                >
+                  {app().steps!.map((step) => (
+                    <li>{step}</li>
+                  ))}
+                </Show>
+              </ol>
+
+              <Show when={app().scope}>
+                <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">Scopes requested</div>
+                <div class="mb-4 select-all break-all rounded-md border border-[var(--mcp-border)] p-2 font-mono text-[11px]">
+                  {app().scope}
+                </div>
+              </Show>
+
+              <Show when={app().kind === "oauth" && app().consoleUrl}>
+                <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">
+                  OAuth client ID
+                </div>
+                <div class="mb-2 text-[11px] text-[var(--mcp-text-weak)]">
+                  This vendor only accepts clients it issued. Create one at{" "}
+                  <a class="underline" href={app().consoleUrl} target="_blank" rel="noopener">
+                    {app().consoleUrl}
+                  </a>
+                  , using{" "}
+                  <code class="font-mono">http://127.0.0.1:19876/oauth/callback</code> as the redirect URL, then
+                  paste it here.
+                </div>
+                <input
+                  value={clientIds()[app().id]?.id ?? ""}
+                  onInput={(e) =>
+                    setClientIds((prev) => ({
+                      ...prev,
+                      [app().id]: { ...prev[app().id], id: e.currentTarget.value },
+                    }))
+                  }
+                  placeholder="Paste client ID"
+                  class="mb-2 h-9 w-full rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
+                />
+                <input
+                  value={clientIds()[app().id]?.secret ?? ""}
+                  onInput={(e) =>
+                    setClientIds((prev) => ({
+                      ...prev,
+                      [app().id]: { id: prev[app().id]?.id ?? "", secret: e.currentTarget.value },
+                    }))
+                  }
+                  placeholder="Client secret (only if the console showed one)"
+                  class="mb-3 h-9 w-full rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
+                />
+              </Show>
+
+              <div class="flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5"
+                  onClick={() => setDetailsFor(null)}
+                >
+                  Close
+                </button>
+                <Show when={app().consoleUrl}>
+                  <button
+                    type="button"
+                    class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5"
+                    onClick={() => window.open(app().consoleUrl, "_blank", "noopener")}
+                  >
+                    Open console
+                  </button>
+                </Show>
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5 disabled:opacity-50"
+                  disabled={busy() !== null}
+                  title="Build the sign-in link so it can be opened in whichever browser holds your account"
+                  onClick={() => generateConsentUrl(app())}
+                >
+                  {generating() === app().id ? "Generating…" : "Generate sign-in link"}
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] font-[600] disabled:opacity-50"
+                  disabled={busy() !== null}
+                  style={{ background: fill() }}
+                  onClick={() => submitClientId()}
+                >
+                  Connect
+                </button>
+              </div>
+
+              <Show when={consentUrl()}>
+                {(url) => (
+                  <div class="mt-4 rounded-md border border-[var(--mcp-border)] p-3">
+                    <div class="mb-1 text-[12px] font-[600]">Sign-in link</div>
+                    <div class="mb-2 text-[11px] text-[var(--mcp-text-weak)]">
+                      Open it in the browser where you are signed in, approve the app, then come back here. ZYRAXON
+                      receives the reply automatically.
+                    </div>
+                    <div class="select-all break-all font-mono text-[11px]">{url()}</div>
+                    <div class="mt-2 flex gap-2">
+                      <button
+                        type="button"
+                        class="rounded-md border border-[var(--mcp-border)] px-2 py-1 text-[12px] hover:bg-white/5"
+                        onClick={() => navigator.clipboard?.writeText(url())}
+                      >
+                        Copy link
+                      </button>
+                      <button
+                        type="button"
+                        class="rounded-md border border-[var(--mcp-border)] px-2 py-1 text-[12px] hover:bg-white/5"
+                        onClick={() => window.open(url(), "_blank", "noopener")}
+                      >
+                        Open link
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </Show>
             </div>
           </div>
         )}

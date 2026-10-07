@@ -261,6 +261,14 @@ const ConnectParameters = Schema.Struct({
     description:
       "API key for a token app. Omit it on the first call - that opens the page where the key is created in the user's browser. Then call again with token set to exactly the key the user gave you.",
   }),
+  clientId: Schema.optional(Schema.String).annotate({
+    description:
+      "OAuth client ID for a vendor that only issues clients from its own developer console (Slack, Figma, MongoDB, Stripe and about a dozen others). Omit it on the first call: that opens the vendor's console, lists the exact steps, and asks the user for the ID. Then call again with clientId set to exactly what they gave you.",
+  }),
+  clientSecret: Schema.optional(Schema.String).annotate({
+    description:
+      "OAuth client secret, when the vendor's console showed one next to the client ID. Most of these apps work with the ID alone.",
+  }),
 })
 
 export const McpConnectTool = Tool.define<typeof ConnectParameters, Metadata, MCP.Service | Config.Service>(
@@ -285,7 +293,16 @@ export const McpConnectTool = Tool.define<typeof ConnectParameters, Metadata, MC
           if (app.kind === "token") return yield* tokenFlow(mcp, config, app, params.token?.trim())
           if (app.kind === "local") return yield* local(mcp, app)
 
-          const entry = serverEntry(app)
+          const clientId = params.clientId?.trim()
+          const clientSecret = params.clientSecret?.trim()
+
+          // A vendor that only issues clients from its own console needs one before any
+          // sign-in link exists, because there is no client to ask for consent with. The
+          // console is opened, the exact steps are handed over, and the second call
+          // finishes the job — the same two-call shape a key app already uses.
+          if (!clientId && !app.clientId && needsClientId(app)) return yield* needsClientIdFlow(mcp, app)
+
+          const entry = serverEntry(app, undefined, clientId ?? app.clientId, clientSecret)
           const global = yield* config.getGlobal()
           yield* config.updateGlobal({ ...global, mcp: { ...global.mcp, [app.id]: entry } })
           const added = (yield* mcp.add(app.id, entry)).status
@@ -419,15 +436,86 @@ const local = Effect.fn("McpControl.local")(function* (mcp: MCP.Interface, app: 
   return yield* report(mcp, app, status)
 })
 
-function serverEntry(app: AppEntry, token?: string): ConfigMCPV1.Info {
+function serverEntry(app: AppEntry, token?: string, clientId?: string, clientSecret?: string): ConfigMCPV1.Info {
   if (!app.url) throw new Error(`MCP app "${app.id}" has no endpoint in the catalog`)
   const base = { type: "remote", url: app.url, enabled: true, timeout: REMOTE_TIMEOUT_MS } as const
   // A key rides as a plain header: the server never sees an OAuth dance, it just wants
   // the credential on every request. Bearer is what every catalogued key app expects.
   if (token) return { ...base, headers: { Authorization: `Bearer ${token}` } }
   if (app.kind !== "oauth") return base
-  return { ...base, oauth: app.scope ? { scope: app.scope } : {} }
+  // The catalogued endpoints matter as much as the scope. Without them the client has to
+  // discover the sign-in details itself, and the vendors that publish no discovery
+  // document — Slack, Box, MongoDB, Zoom, Figma and the rest — then failed before a
+  // browser could open. These are the endpoints each vendor states, so the handshake can
+  // be built without guessing and without a round trip that returns nothing.
+  //
+  // The client ID is what makes the handshake possible at all for a vendor that issues
+  // clients only from its own console, and when it is absent for a server that supports
+  // self-registration the server is left to register one itself.
+  return {
+    ...base,
+    oauth: {
+      ...(app.oauth ? { authorizationUrl: app.oauth.authorizationUrl, tokenUrl: app.oauth.tokenUrl } : {}),
+      ...(clientId ? { clientId } : {}),
+      ...(clientSecret ? { clientSecret } : {}),
+      ...(app.scope ? { scope: app.scope } : {}),
+    },
+  }
 }
+
+/**
+ * Whether this app can only be reached with a client the vendor itself issued.
+ *
+ * The catalogued steps are the marker: an app that has them is one whose developer
+ * console has to be visited, and everything else either self-registers or needs nothing.
+ */
+function needsClientId(app: AppEntry) {
+  return app.kind === "oauth" && !app.clientId && !!app.consoleUrl
+}
+
+/**
+ * The first half of a console-issued client: open the vendor's page and hand over the
+ * exact steps, so the model asks for one specific value instead of "a client ID".
+ *
+ * Opening the console rather than describing it is what makes this one step for the user:
+ * they are already looking at the form when the model asks, which is the same reason the
+ * token flow opens the page that issues a key.
+ */
+const needsClientIdFlow = Effect.fn("McpControl.needsClientIdFlow")(function* (mcp: MCP.Interface, app: AppEntry) {
+  if (app.consoleUrl) yield* mcp.openUrl(app.consoleUrl).pipe(Effect.ignore)
+  return {
+    title: `${app.name} needs an OAuth client ID`,
+    metadata: {
+      app: app.id,
+      connected: false,
+      requiresUserAction: true,
+      openedConsole: !!app.consoleUrl,
+    },
+    output: JSON.stringify(
+      {
+        app: app.id,
+        name: app.name,
+        connected: false,
+        needsUserAction: true,
+        why:
+          app.note ??
+          `${app.name} only accepts OAuth clients that were created in its own developer console, so a client ID has to come from the account holder. Everything else about this connection already works.`,
+        consoleOpened: app.consoleUrl ?? null,
+        redirectUri: "http://127.0.0.1:19876/oauth/callback",
+        scopes: app.scope ?? null,
+        steps: app.steps ?? [
+          `Open ${app.consoleUrl ?? "the vendor's developer console"} and create an OAuth app.`,
+          "Set its redirect URL to http://127.0.0.1:19876/oauth/callback.",
+          "Copy the client ID it shows.",
+          "Then call mcp_connect again on this app with clientId set to exactly that value.",
+        ],
+        next: "Ask the user for the client ID now, then retry with the clientId parameter.",
+      },
+      null,
+      2,
+    ),
+  }
+})
 
 // `add` answers with a single status for this server, or the whole map once the
 // caller already had one registered, so both shapes have to be read.

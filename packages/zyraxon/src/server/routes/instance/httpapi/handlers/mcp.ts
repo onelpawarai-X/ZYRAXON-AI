@@ -1,7 +1,7 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import { MCP } from "@/mcp"
-import { Effect, Schema } from "effect"
+import { Cause, Effect, Schema } from "effect"
 import { HttpApiBuilder, HttpApiError } from "effect/unstable/httpapi"
 import { InstanceHttpApi } from "../api"
 import { McpServerNotFoundError } from "../errors"
@@ -69,6 +69,25 @@ export const mcpHandlers = HttpApiBuilder.group(InstanceHttpApi, "mcp", (handler
       }).pipe(
         Effect.catchTag("MCP.NotFoundError", (error) =>
           Effect.fail(new McpServerNotFoundError({ name: error.name, message: `MCP server not found: ${error.name}` })),
+        ),
+        // A handshake that times out, is interrupted, or dies on its own is a failure
+        // with a reason, not a defect. Left as a defect it became a 500 whose body was
+        // `Unknown error: undefined`, which is what every card showed: the wait ended,
+        // the browser never appeared, and nothing said why. The reason travels back as a
+        // normal status so the card can show it.
+        Effect.catchAll((error) =>
+          Effect.logWarning("mcp authenticate failed", {
+            server: ctx.params.name,
+            reason: Cause.pretty(error),
+          }).pipe(Effect.andThen(Effect.succeed({ status: "failed" as const, error: Cause.pretty(error) }))),
+        ),
+        Effect.catchAllDefect((defect) =>
+          Effect.logError("mcp authenticate defect", {
+            server: ctx.params.name,
+            reason: Cause.pretty(defect),
+          }).pipe(
+            Effect.andThen(Effect.succeed({ status: "failed" as const, error: `The sign-in attempt failed: ${Cause.pretty(defect)}` })),
+          ),
         ),
       )
     })

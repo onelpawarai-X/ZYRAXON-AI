@@ -47,6 +47,16 @@ export interface McpRuntime {
      */
     authenticate: (name: string) => Promise<void>;
     /**
+     * Build a server's consent URL and hand it back instead of opening it.
+     *
+     * The URL is complete — the client is registered by the time it exists — so it can be
+     * copied into whichever browser actually holds the sign-in. That is what makes the
+     * "Generate" action on the Details panel useful: a user whose account is open in
+     * Chrome while ZYRAXON defaults to Edge can approve in the right place, and the loopback
+     * still comes back here.
+     */
+    startAuth: (name: string) => Promise<string>;
+    /**
      * Detach a server for good.
   *
      * This stops the live transport and marks the config entry disabled, and - with
@@ -80,7 +90,7 @@ export interface McpRuntime {
     hasTokens: (name: string) => Promise<boolean>;
 }
 /** Build the ZYRAXON config entry for an app. */
-export declare function toServerConfig(app: AppEntry, token?: string): McpLocalConfig | McpRemoteConfig | Record<string, never>;
+export declare function toServerConfig(app: AppEntry, token?: string, clientId?: string, clientSecret?: string): McpLocalConfig | McpRemoteConfig | Record<string, never>;
 /**
  * Watch one server until it reaches a state worth acting on.
  *
@@ -98,6 +108,16 @@ export declare function waitForStatus(runtime: McpRuntime, name: string, timeout
 export interface ConnectOptions {
     /** bearer token, for apps that do not speak OAuth */
     token?: string;
+    /**
+     * An OAuth client the vendor's own console issued.
+     *
+     * Around a dozen publishers refuse self-registration outright, so for those the client
+     * has to exist before a sign-in link can be built at all. Passing it here is what turns
+     * those apps from "needs a client ID" into a connect that opens the browser.
+     */
+    clientId?: string;
+    /** the secret, where the console showed one next to the ID */
+    clientSecret?: string;
     /** report intermediate states so a card can say "check your browser" */
     onProgress?: (state: ConnectionState) => void;
 }

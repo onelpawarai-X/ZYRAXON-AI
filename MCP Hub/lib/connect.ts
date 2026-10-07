@@ -57,6 +57,16 @@ export interface McpRuntime {
    */
   authenticate: (name: string) => Promise<void>
   /**
+   * Build a server's consent URL and hand it back instead of opening it.
+   *
+   * The URL is complete — the client is registered by the time it exists — so it can be
+   * copied into whichever browser actually holds the sign-in. That is what makes the
+   * "Generate" action on the Details panel useful: a user whose account is open in
+   * Chrome while ZYRAXON defaults to Edge can approve in the right place, and the loopback
+   * still comes back here.
+   */
+  startAuth: (name: string) => Promise<string>
+  /**
    * Detach a server for good.
 *
    * This stops the live transport and marks the config entry disabled, and - with
@@ -120,6 +130,15 @@ const CONNECT_TIMEOUT_MS = 180_000
 const NEEDS_AUTH_PROBE_MS = 1_200
 
 /**
+ * How long to let `add` finish writing before the handshake reads the entry back.
+ *
+ * The status can already say `needs_auth` while the write is still on its way, and the
+ * handshake then looks up a name that is not there yet. A short bound is enough: the
+ * write is local, so this only ever waits as long as it actually needs.
+ */
+const SERVER_WRITE_GRACE_MS = 3_000
+
+/**
  * How long the sign-in itself is given.
  *
  * Matches the connect budget: three minutes from the moment the consent page opens.
@@ -160,7 +179,12 @@ const isSettledEarly = (status: McpStatusEntry["status"]) =>
   afterAuth(status) || status === "needs_auth"
 
 /** Build the ZYRAXON config entry for an app. */
-export function toServerConfig(app: AppEntry, token?: string): McpLocalConfig | McpRemoteConfig | Record<string, never> {
+export function toServerConfig(
+  app: AppEntry,
+  token?: string,
+  clientId?: string,
+  clientSecret?: string,
+): McpLocalConfig | McpRemoteConfig | Record<string, never> {
   if (app.kind === "local") {
     // Bundled local servers are declared by ZYRAXON's own defaults and need nothing.
     // One that ships its own launch command has to be declared here or it can never
@@ -181,15 +205,22 @@ export function toServerConfig(app: AppEntry, token?: string): McpLocalConfig | 
   if (app.kind === "oauth") {
     // Recorded endpoints come first; the scope is only meaningful alongside them, and
     // a server that publishes discovery gets scope from there instead.
-    config.oauth = app.oauth
-      ? {
-          authorizationUrl: app.oauth.authorizationUrl,
-          tokenUrl: app.oauth.tokenUrl,
-          ...(app.scope ? { scope: app.scope } : {}),
-        }
-      : app.scope
-        ? { scope: app.scope }
-        : {}
+    //
+    // The client ID is what makes the handshake possible for a vendor that issues
+    // clients only from its own console. Left out, the server is asked to register one
+    // itself, which a dozen publishers refuse — so passing the ID the user pasted in is
+    // the whole difference between those apps connecting and not.
+    config.oauth = {
+      ...(app.oauth
+        ? {
+            authorizationUrl: app.oauth.authorizationUrl,
+            tokenUrl: app.oauth.tokenUrl,
+          }
+        : {}),
+      ...(clientId ? { clientId } : app.clientId ? { clientId: app.clientId } : {}),
+      ...(clientSecret ? { clientSecret } : {}),
+      ...(app.scope ? { scope: app.scope } : {}),
+    }
   }
 
   return config
@@ -234,6 +265,16 @@ export async function waitForStatus(
 export interface ConnectOptions {
   /** bearer token, for apps that do not speak OAuth */
   token?: string
+  /**
+   * An OAuth client the vendor's own console issued.
+   *
+   * Around a dozen publishers refuse self-registration outright, so for those the client
+   * has to exist before a sign-in link can be built at all. Passing it here is what turns
+   * those apps from "needs a client ID" into a connect that opens the browser.
+   */
+  clientId?: string
+  /** the secret, where the console showed one next to the ID */
+  clientSecret?: string
   /** report intermediate states so a card can say "check your browser" */
   onProgress?: (state: ConnectionState) => void
 }
@@ -248,7 +289,7 @@ export async function connectApp(runtime: McpRuntime, app: AppEntry, options: Co
   // One deadline for the whole press, retries included, so the three minutes promised to
   // the user is a ceiling on the wait rather than a per-attempt budget.
   const deadline = Date.now() + CONNECT_TIMEOUT_MS
-  return await attempt(runtime, app, options.token, options.onProgress, 0, deadline)
+  return await attempt(runtime, app, options.token, options.onProgress, 0, deadline, options)
 }
 
 /** Milliseconds left on a deadline, never below zero — a poll that has run out stops. */
@@ -268,6 +309,7 @@ async function attempt(
   onProgress: ((state: ConnectionState) => void) | undefined,
   retry: number,
   deadline: number,
+  options: ConnectOptions = {},
 ): Promise<ConnectionState> {
   let reason = "could not reach the server"
   // A retry re-opens the consent page from scratch, so it is only fair before the
@@ -276,7 +318,7 @@ async function attempt(
   let signedIn = false
 
   try {
-    const config = toServerConfig(app, token)
+    const config = toServerConfig(app, token, options.clientId, options.clientSecret)
     onProgress?.({ status: "connecting" })
 
     // Local servers are already declared by ZYRAXON's own defaults, so there is
@@ -299,7 +341,7 @@ async function attempt(
     // The empty entry was handled above, so this is one of the two real server shapes.
     const serverConfig = config as McpLocalConfig | McpRemoteConfig
     const addPromise = runtime.addServer(app.id, serverConfig).catch((error: unknown) => {
-      reason = error instanceof Error ? error.message : String(error)
+      reason = reasonOf(error)
       return undefined
     })
 
@@ -327,20 +369,26 @@ async function attempt(
     // trying. A server that already holds a token keeps its failure: that is a bad token,
     // and re-prompting would not fix it.
     const alreadySignedIn = signedIn || (await runtime.hasTokens(app.id).catch(() => false))
-    if (first.status === "failed" && alreadySignedIn) {
+    const alreadyLive = first.status === "needs_auth" || first.status === "needs_client_registration"
+
+    // `add` writes the entry to config and then probes the server, so it is not finished
+    // when the status flips to `needs_auth`. The handshake reads that same entry, and
+    // asking for it a moment too early is what produced `Unknown error: undefined` — the
+    // server had no name to hand back. Waiting for the write to land costs a few hundred
+    // milliseconds and removes the race entirely.
+    await Promise.race([addPromise.catch(() => undefined), delay(SERVER_WRITE_GRACE_MS)])
+
+    if ((first.status === "failed" || alreadyLive) && alreadySignedIn && !alreadyLive) {
       reason = first.error ?? reason
     } else {
       signedIn = true
       onProgress?.({ status: "needs_auth" })
-      // addServer is deliberately not awaited: the handshake owns the outcome from
-      // here, and waiting on the abandoned connect would re-introduce the delay.
-      void addPromise
       const settled = await authenticate(runtime, app.id, deadline)
       if (settled.status !== "failed") return await settle(runtime, app.id, settled)
       reason = settled.error ?? reason
     }
   } catch (error) {
-    reason = error instanceof Error ? error.message : String(error)
+    reason = reasonOf(error)
   }
 
   // A retry is only worth starting while there is still part of the shared budget left.
@@ -353,7 +401,42 @@ async function attempt(
   // A brief, growing pause, so a struggling endpoint gets room without a frozen screen.
   onProgress?.({ status: "connecting" })
   await delay(RETRY_BASE_MS * (retry + 1))
-  return await attempt(runtime, app, token, onProgress, retry + 1, deadline)
+  return await attempt(runtime, app, token, onProgress, retry + 1, deadline, options)
+}
+
+/**
+ * Run the OAuth handshake, letting a rejection win the race against the poll.
+ *
+ * authenticate's *return* is not the answer. Resolving it means the browser flow
+ * finished and the runtime still has to spend the new token and report connected, so a
+ * successful resolve must never settle this function on its own — only the status poll
+ * may do that.
+ *
+ * It previously mapped a successful resolve to `needs_auth` and raced it against the
+ * poll. A resolved promise wins in a microtask while the poll sleeps, so every
+ * completed sign-in returned instantly with `needs_auth` and the card reported "sign-in
+ * was never completed" while Chrome sat on "Authorization successful".
+ */
+/**
+ * Read something a thrown value can be asked for.
+ *
+ * The generated client rejects with its own error object, which carries the server's
+ * message under `data` and often nothing at all under `message`. Reading only `message`
+ * is what made every handshake failure display as the word "undefined", which told the
+ * user nothing and hid the real reason behind six layers of card text.
+ */
+function reasonOf(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message
+  if (typeof error === "string" && error) return error
+  const candidate = error as { data?: unknown; error?: unknown; body?: unknown; message?: unknown } | null
+  for (const value of [candidate?.data, candidate?.error, candidate?.body, candidate?.message]) {
+    if (typeof value === "string" && value) return value
+    if (value && typeof value === "object") {
+      const inner = (value as { message?: unknown; error?: unknown }).message ?? (value as { error?: unknown }).error
+      if (typeof inner === "string" && inner) return inner
+    }
+  }
+  return "the sign-in attempt was refused without a reason"
 }
 
 /**
@@ -373,10 +456,7 @@ async function authenticate(runtime: McpRuntime, name: string, deadline: number)
   const rejection = runtime.authenticate(name).then(
     // Success hands the answer to the status poll and waits for it.
     () => new Promise<McpStatusEntry>(() => {}),
-    (error: unknown): McpStatusEntry => ({
-      status: "failed",
-      error: error instanceof Error ? error.message : String(error),
-    }),
+    (error: unknown): McpStatusEntry => ({ status: "failed", error: reasonOf(error) }),
   )
 
   // Whichever ends first: the sign-in budget, the shared connect deadline, or a refusal.
@@ -427,6 +507,27 @@ function explain(name: string, error: string | undefined): string {
       `${name} does not let a new client register itself, so it needs a client ID created in that vendor's own ` +
       "developer console before it can connect. The sign-in details were found; only the client ID is missing."
     )
+  }
+
+  // Vendors that publish a registration endpoint and still answer 403. The audit found
+  // these refusals against the real servers, so naming them is the difference between a
+  // user who knows what to do and a user who concludes the app is broken. Each entry is
+  // the page where that vendor issues a client, taken from its own documentation.
+  const CONSOLE: Record<string, string> = {
+    figma: "https://www.figma.com/developers/mcp",
+    fal: "https://fal.ai/dashboard/keys",
+    linear: "https://linear.app/settings/api",
+  }
+  if (/403|forbidden/i.test(message)) {
+    const console_ = CONSOLE[name]
+    if (console_) {
+      return (
+        `${name} refused to register a client from this app, so its MCP server only accepts clients it issued itself. ` +
+        `Create one at ${console_} with this app's redirect URL ` +
+        "(http://127.0.0.1:19876/oauth/callback), then paste the client ID into this app's OAuth settings. " +
+        "Everything else about this connection is already working."
+      )
+    }
   }
 
   // An SSE refusal says nothing useful; the real cause is almost always the first
