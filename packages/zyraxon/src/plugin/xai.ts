@@ -3,8 +3,9 @@
 import type { Hooks, PluginInput } from "@zyraxon-ai/plugin"
 import { OAUTH_DUMMY_KEY } from "../auth"
 import { createServer } from "http"
-import { InstallationVersion } from "@zyraxon-ai/core/installation/version"
+
 import { OauthCallbackPage } from "@zyraxon-ai/core/oauth/page"
+import { freeTierUserAgent } from "@opencode-ai/core/installation/version"
 
 // Public Grok-CLI OAuth client. xAI's auth server rejects loopback OAuth from
 // non-allowlisted clients, so we reuse the Grok-CLI client_id that xAI ships
@@ -90,7 +91,7 @@ function authHeaders() {
   return {
     "Content-Type": "application/x-www-form-urlencoded",
     Accept: "application/json",
-    "User-Agent": `opencode/${InstallationVersion}`,
+    "User-Agent": `freeTierUserAgent()`,
   }
 }
 
@@ -543,7 +544,7 @@ export async function XaiAuthPlugin(input: PluginInput, options: XaiAuthPluginOp
               }
             }
             headers.set("authorization", `Bearer ${currentAuth.access}`)
-            headers.set("User-Agent", `opencode/${InstallationVersion}`)
+            headers.set("User-Agent", `freeTierUserAgent()`)
 
             return fetch(requestInput, { ...init, headers })
           },

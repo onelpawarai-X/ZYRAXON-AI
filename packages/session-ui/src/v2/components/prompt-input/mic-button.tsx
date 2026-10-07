@@ -31,19 +31,29 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
   const [state, setState] = createSignal<VoiceState>("idle")
   const [selectedLang, setSelectedLang] = createSignal(props.language || "auto")
   let finalText = ""
-  let lastSelected: string | undefined
   let removeVoiceListener: (() => void) | null = null
   let safetyTimeout: ReturnType<typeof setTimeout> | null = null
 
   // Create the effect only when the component is created, not on every render.
+  //
+  // `userChosen` is what makes this work, and its absence is what broke it. The old effect
+  // compared the incoming locale against the previously seen selection to decide whether the
+  // change came from outside. That comparison could not tell an external change from the
+  // user's own pick, because after picking a voice language the two differ by definition:
+  // the app locale is "en-US" and the choice is "bn", so the effect read every user pick as
+  // an external change and snapped the selection straight back to the app locale. The
+  // language menu went back to Auto-Detect the moment you chose anything, which read as the
+  // setting refusing to save.
+  //
+  // So the fact is recorded directly instead of inferred. While the user has chosen
+  // nothing, an external locale is adopted — that is the initial value coming in. Once they
+  // choose, the app locale stops being their voice language, and it starts being again if
+  // the component remounts, which is what a new session does.
+  let userChosen = false
   createEffect(() => {
     const lang = props.language
-    // Adopt an externally-set language (e.g. restored app locale) but keep a
-    // user-selected voice locale stable across unrelated re-renders.
-    if (lang && lang !== selectedLang() && lang !== lastSelected) {
-      setSelectedLang(lang)
-    }
-    lastSelected = selectedLang()
+    if (!lang || userChosen) return
+    if (lang !== selectedLang()) setSelectedLang(lang)
   })
 
   const clearSafetyTimeout = () => {
@@ -253,6 +263,8 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
   }
 
   const selectLang = (code: string) => {
+    // Recorded before anything else so the adoption effect above leaves it alone.
+    userChosen = true
     setSelectedLang(code)
     props.onLanguageChange?.(code)
     const api = (window as any).api

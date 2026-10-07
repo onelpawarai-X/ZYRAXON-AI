@@ -131,7 +131,7 @@ export const dict = {
     "ZYRAXON Zenは、コーディングエージェント向けに最適化された信頼性の高いモデルへのアクセスを提供します。",
   "provider.connect.zyraxonZen.line2": "1つのAPIキーで、Claude、GPT、Gemini、GLMなどのモデルにアクセスできます。",
   "provider.connect.zyraxonZen.visit.prefix": " ",
-  "provider.connect.zyraxonZen.visit.link": "zyraxon.ai/zen",
+  "provider.connect.zyraxonZen.visit.link": "zyraxonai.lovable.app/zen",
   "provider.connect.zyraxonZen.visit.suffix": " にアクセスしてAPIキーを取得してください。",
   "provider.connect.oauth.code.visit.prefix": " ",
   "provider.connect.oauth.code.visit.link": "このリンク",

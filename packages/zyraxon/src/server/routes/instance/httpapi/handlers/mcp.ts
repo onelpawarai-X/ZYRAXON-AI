@@ -35,6 +35,16 @@ export const mcpHandlers = HttpApiBuilder.group(InstanceHttpApi, "mcp", (handler
       )
     })
 
+    const authHasTokens = Effect.fn("McpHttpApi.authHasTokens")(function* (ctx: { params: { name: string } }) {
+      const status = yield* mcp.status()
+      if (!(ctx.params.name in status))
+        return yield* new McpServerNotFoundError({
+          name: ctx.params.name,
+          message: `MCP server not found: ${ctx.params.name}`,
+        })
+      return { hasTokens: yield* mcp.hasStoredTokens(ctx.params.name) }
+    })
+
     const authCallback = Effect.fn("McpHttpApi.authCallback")(function* (ctx: {
       params: { name: string }
       payload: typeof AuthCallbackPayload.Type
@@ -105,7 +115,8 @@ export const mcpHandlers = HttpApiBuilder.group(InstanceHttpApi, "mcp", (handler
       .handle("add", add)
       .handle("authStart", authStart)
       .handle("authCallback", authCallback)
-      .handle("authAuthenticate", authAuthenticate)
+      .handle("authHasTokens", authHasTokens)
+    .handle("authAuthenticate", authAuthenticate)
       .handle("authRemove", authRemove)
       .handle("connect", connect)
       .handle("disconnect", disconnect)

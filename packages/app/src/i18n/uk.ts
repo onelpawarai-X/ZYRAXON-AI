@@ -144,7 +144,7 @@ export const dict = {
   "provider.connect.zyraxonZen.line2":
     "З одним ключем API ви отримаєте доступ до таких моделей, як Claude, GPT, Gemini, GLM та інших.",
   "provider.connect.zyraxonZen.visit.prefix": "Відвідайте ",
-  "provider.connect.zyraxonZen.visit.link": "zyraxon.ai/zen",
+  "provider.connect.zyraxonZen.visit.link": "zyraxonai.lovable.app/zen",
   "provider.connect.zyraxonZen.visit.suffix": ", щоб отримати ключ API.",
   "provider.connect.oauth.code.visit.prefix": "Відвідайте ",
   "provider.connect.oauth.code.visit.link": "це посилання",

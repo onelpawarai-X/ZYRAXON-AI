@@ -136,7 +136,7 @@ export const dict = {
   "provider.connect.zyraxonZen.line2":
     "Mit einem einzigen API-Schlüssel erhalten Sie Zugriff auf Modelle wie Claude, GPT, Gemini, GLM und mehr.",
   "provider.connect.zyraxonZen.visit.prefix": "Besuchen Sie ",
-  "provider.connect.zyraxonZen.visit.link": "zyraxon.ai/zen",
+  "provider.connect.zyraxonZen.visit.link": "zyraxonai.lovable.app/zen",
   "provider.connect.zyraxonZen.visit.suffix": ", um Ihren API-Schlüssel zu erhalten.",
   "provider.connect.oauth.code.visit.prefix": "Besuchen Sie ",
   "provider.connect.oauth.code.visit.link": "diesen Link",

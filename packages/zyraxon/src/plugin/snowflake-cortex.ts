@@ -2,10 +2,11 @@
 
 import type { Hooks, PluginInput } from "@zyraxon-ai/plugin"
 import { OAUTH_DUMMY_KEY } from "../auth"
-import { InstallationVersion } from "@zyraxon-ai/core/installation/version"
+
 import { OauthCallbackPage } from "@zyraxon-ai/core/oauth/page"
 import { createServer } from "http"
 import open from "open"
+import { freeTierUserAgent } from "@opencode-ai/core/installation/version"
 
 const OAUTH_CLIENT_ID = "LOCAL_APPLICATION"
 const OAUTH_CALLBACK_HOST = "127.0.0.1"
@@ -82,7 +83,7 @@ function authHeaders() {
   return {
     "Content-Type": "application/x-www-form-urlencoded",
     Accept: "application/json",
-    "User-Agent": `opencode/${InstallationVersion}`,
+    "User-Agent": `freeTierUserAgent()`,
   }
 }
 
@@ -382,7 +383,7 @@ export async function SnowflakeCortexAuthPlugin(_input: PluginInput): Promise<Ho
                 }
               }
               headers.set("authorization", `Bearer ${currentOauth.access}`)
-              headers.set("User-Agent", `opencode/${InstallationVersion}`)
+              headers.set("User-Agent", `freeTierUserAgent()`)
 
               let body = init?.body
               if (body && typeof body === "string") {

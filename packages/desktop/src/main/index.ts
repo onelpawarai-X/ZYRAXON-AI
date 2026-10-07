@@ -586,7 +586,7 @@ const main = Effect.gen(function* () {
       // Commands use the __RESOURCES_PATH__ placeholder so configs never bake
       // machine-specific absolute paths; the MCP loader expands it at spawn time.
       const defaultConfig = {
-        "$schema": "https://zyraxon.ai/config.json",
+        "$schema": "https://zyraxonai.lovable.app/config.json",
         "mcp": {
           "jarvis-browser": {
             "type": "local",

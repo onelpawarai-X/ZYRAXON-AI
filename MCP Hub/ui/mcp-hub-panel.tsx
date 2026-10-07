@@ -4,7 +4,7 @@
 
 import { For, Show, createEffect, createMemo, createSignal, onCleanup, onMount } from "solid-js"
 import type { AppEntry } from "../catalog/seed"
-import { allSeedApps, appIcon, categories } from "../catalog/seed"
+import { allSeedApps, appIcon, browserApps, categories } from "../catalog/seed"
 import { connectApp, describe, type ConnectionState, type McpRuntime } from "../lib/connect"
 import type { Resolution } from "../lib/resolve"
 import { searchRegistry, supportsZeroSetup, type RegistryServer } from "../lib/registry"
@@ -22,6 +22,22 @@ const authLabel: Record<string, string> = {
   oauth: "Sign in with the browser",
   token: "Needs an access token",
   local: "Runs on this machine",
+}
+
+/**
+ * Registry copy is only true while it stays true.
+ *
+ * These numbers used to be typed in by hand and drifted every time the registry moved:
+ * the header said 9,580 while the box below it promised "18,000+", on the same screen.
+ * Now the summary written by the build script decides, and if it is missing the caption
+ * says so plainly instead of quoting a figure nobody checked.
+ */
+const REGISTRY_FALLBACK = "thousands more in the official registry"
+
+function registryCaption(count: number | undefined): string {
+  if (count === undefined) return REGISTRY_FALLBACK
+  if (count === 0) return "registry cache empty — run scripts/build-registry-cache.mjs"
+  return `${count.toLocaleString("en-US")} servers in the official registry`
 }
 
 /**
@@ -129,6 +145,50 @@ export function McpHubPanel(props: McpHubPanelProps) {
 
   const [query, setQuery] = createSignal("")
   const [category, setCategory] = createSignal<string>("All")
+
+  /**
+   * Browser used for OAuth sign-in and for links the agent opens. Empty means the
+   * server discovers installed browsers on its own. Kept light: the value rides in
+   * one config key the server already reads, so nothing here reaches into the app.
+   */
+  const [browserPath, setBrowserPath] = createSignal("")
+  const [browserState, setBrowserState] = createSignal<"idle" | "saving" | "saved">("idle")
+  let browserFileInput: HTMLInputElement | undefined
+
+  onMount(() => {
+    props.runtime
+      .getBrowserPath()
+      .then((value) => setBrowserPath(value ?? ""))
+      .catch(() => {})
+  })
+
+  function pickBrowserFile() {
+    browserFileInput?.click()
+  }
+
+  function onBrowserFilePicked(e: Event) {
+    const input = e.target as HTMLInputElement
+    const file = input.files?.[0]
+    input.value = ""
+    const legacy = file as (File & { path?: string }) | undefined
+    const web = window as unknown as { webUtils?: { getPathForFile?: (f: File) => string } }
+    const path = (legacy?.path || (file ? web.webUtils?.getPathForFile?.(file) : "") || "").trim()
+    if (path) setBrowserPath(path)
+  }
+
+  async function saveBrowserPath() {
+    const path = browserPath().trim()
+    setBrowserState("saving")
+    try {
+      await props.runtime.setBrowserPath(path)
+      setBrowserState("saved")
+      window.setTimeout(() => {
+        if (browserState() === "saved") setBrowserState("idle")
+      }, 1600)
+    } catch {
+      setBrowserState("idle")
+    }
+  }
   /**
    * Connection state outlives this panel. The servers themselves live in the server
    * process, so navigating to another route and coming back used to wipe the local
@@ -147,6 +207,63 @@ export function McpHubPanel(props: McpHubPanelProps) {
   const [registryTerm, setRegistryTerm] = createSignal("")
   /** which registry server each app resolved to */
   const [resolved, setResolved] = createSignal<Record<string, string>>({})
+
+  /**
+   * Whether one-click sign-in is actually possible for an app, checked against the live
+   * server instead of the catalog.
+   *
+   * The catalog used to carry a hand-set `zeroSetup` flag, and a live pass over every
+   * OAuth app showed 29 of them redirect the sign-in to a different host than the
+   * endpoint, with 9 offering no dynamic client registration at all. A badge that says
+   * "No setup" for those apps is a promise the connector cannot keep, so the badge is
+   * now only shown once the discovery chain has actually answered for that endpoint.
+   */
+  const [oneClick, setOneClick] = createSignal<Record<string, boolean>>({})
+
+  /**
+   * How many servers the registry actually holds, read from the summary written next to
+   * the cache.
+   *
+   * Loaded lazily because the panel must paint before it touches the filesystem, and the
+   * count is only ever decoration. It used to be typed into this markup twice — once as
+   * 9,580 and once as "18,000+", on the same screen.
+   */
+  const [registryCount, setRegistryCount] = createSignal<number | undefined>(undefined)
+
+  onMount(() => {
+    let stopped = false
+
+    void (async () => {
+      const { registryCount: count } = await import("../catalog/registry-cache")
+      if (!stopped) setRegistryCount(count())
+    })()
+
+    onCleanup(() => {
+      stopped = true
+    })
+  })
+
+  onMount(() => {
+    let stopped = false
+    const controller = new AbortController()
+
+    void (async () => {
+      const checked: Record<string, boolean> = {}
+      // Sequential on purpose: firing 53 discovery chains at once looks like an attack
+      // and gets the whole panel rate-limited by the servers it is asking.
+      for (const app of browserApps) {
+        if (stopped || !app.url) continue
+        checked[app.id] = await supportsZeroSetup(app.url).catch(() => false)
+        if (stopped) return
+        setOneClick((prev) => ({ ...prev, ...checked }))
+      }
+    })()
+
+    onCleanup(() => {
+      stopped = true
+      controller.abort()
+    })
+  })
 
   const filtered = createMemo(() =>
     apps.filter((a) => {
@@ -357,29 +474,34 @@ export function McpHubPanel(props: McpHubPanelProps) {
     }
   }
 
-  /**
- * Detach an app.
- *
- * The runtime owns the transport, so the panel asks it to drop the server and then
- * clears the card. Leaving the local signal alone was what made a disconnected
- * server look connected until the panel was reopened.
- */
-const onDisconnect = async (app: AppEntry) => {
-    if (busy()) return
-    setBusy(app.id)
-    setBusySince(Date.now())
-    setState(app.id, { status: "disconnected" })
-    try {
-      await props.runtime.disconnect?.(app.id)
-    } catch {
-      // The card is already marked disconnected and the server is gone from the
-      // runtime's view either way; a failure here has nothing left to report.
-    } finally {
-      busyIds.delete(app.id)
-      setBusy(null)
-      setBusySince(0)
-    }
-  }
+/**
+       * Detach an app.
+       *
+       * The runtime owns the transport, so the panel asks it to drop the server and then
+       * clears the card. Leaving the local signal alone was what made a disconnected
+       * server look connected until the panel was reopened.
+       *
+       * `forgetCredentials` is what the button means. Without it the stored tokens and
+       * the client registration stay on disk and the next start quietly signs the app
+       * back in, so a user who pressed Disconnect finds the account reattached with no
+       * explanation.
+       */
+      const onDisconnect = async (app: AppEntry) => {
+        if (busy()) return
+        setBusy(app.id)
+        setBusySince(Date.now())
+        setState(app.id, { status: "disconnected" })
+        try {
+          await props.runtime.disconnect(app.id, { forgetCredentials: true })
+        } catch {
+          // The card is already marked disconnected and the server is gone from the
+          // runtime's view either way; a failure here has nothing left to report.
+        } finally {
+          busyIds.delete(app.id)
+          setBusy(null)
+          setBusySince(0)
+        }
+      }
 
   const submitToken = async () => {
     const app = tokenFor()
@@ -467,7 +589,7 @@ const onDisconnect = async (app: AppEntry) => {
         <div class="flex flex-col">
           <span class="text-[17px] font-[600] tracking-[-0.2px]">MCP Connect</span>
           <span class="text-[12px] text-[var(--text-weak,#8b95ad)]">
-            {connectedCount()} connected · {apps.length} MCP servers/apps ready · thousands more in the registry
+            {connectedCount()} connected · {apps.length} MCP servers/apps ready · {registryCaption(registryCount())}
           </span>
         </div>
         <Show when={props.onClose}>
@@ -484,6 +606,63 @@ const onDisconnect = async (app: AppEntry) => {
             onClick={() => props.onClose?.()}
           >
             Cancel
+          </button>
+        </Show>
+      </div>
+
+      {/* browser for sign-in */}
+      <div class="flex items-center gap-2 border-b border-[var(--mcp-border)] px-6 py-3">
+        <input
+          ref={browserFileInput}
+          type="file"
+          accept=".exe,.app,.bin,application/octet-stream"
+          class="hidden"
+          aria-hidden="true"
+          tabIndex={-1}
+          onChange={onBrowserFilePicked}
+        />
+        <span class="shrink-0 text-[12px] text-[var(--text-weak,#8b95ad)]">Sign-in browser</span>
+        <input
+          value={browserPath()}
+          onInput={(e) => {
+            setBrowserPath(e.currentTarget.value)
+            if (browserState() === "saved") setBrowserState("idle")
+          }}
+          placeholder="C:\Program Files\Google\Chrome\Application\chrome.exe"
+          spellcheck={false}
+          class="h-8 min-w-[240px] flex-1 rounded-md border border-[var(--mcp-border)] bg-transparent px-3 font-mono text-[12px] outline-none placeholder:text-[var(--mcp-text-weak)]"
+        />
+        <button
+          type="button"
+          onClick={pickBrowserFile}
+          class="h-8 shrink-0 rounded-md border border-[var(--mcp-border-strong)] px-3 text-[12px] font-[600] transition-colors"
+          style={{ background: fill() }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = fillHover())}
+          onMouseLeave={(e) => (e.currentTarget.style.background = fill())}
+        >
+          Browse…
+        </button>
+        <button
+          type="button"
+          onClick={saveBrowserPath}
+          disabled={browserState() === "saving"}
+          class="h-8 shrink-0 rounded-md border px-3 text-[12px] font-[600] transition-colors"
+          style={{
+            background: browserState() === "saved" ? "transparent" : fill(),
+            color: browserState() === "saved" ? "var(--accent,#4ade80)" : undefined,
+            borderColor: browserState() === "saved" ? "var(--accent,#4ade80)" : "var(--mcp-border-strong)",
+          }}
+        >
+          {browserState() === "saving" ? "Saving…" : browserState() === "saved" ? "Saved" : "Save"}
+        </button>
+        <Show when={browserPath().trim().length > 0}>
+          <button
+            type="button"
+            onClick={() => setBrowserPath("")}
+            class="h-8 shrink-0 rounded-md border border-[var(--mcp-border)] px-2 text-[12px] text-[var(--text-weak,#8b95ad)] transition-colors"
+            title="Use the browser ZYRAXON finds on its own"
+          >
+            Clear
           </button>
         </Show>
       </div>
@@ -693,9 +872,21 @@ const onDisconnect = async (app: AppEntry) => {
                     <span class="rounded-full px-2 py-0.5" style={{ background: fill() }}>
                       {app.category}
                     </span>
-                    <Show when={app.zeroSetup}>
+                    <Show when={oneClick()[app.id] === true}>
                       <span class="rounded-full bg-emerald-500/15 px-2 py-0.5 text-emerald-600 dark:text-emerald-300">
-                        No setup
+                        One click
+                      </span>
+                    </Show>
+                    <Show when={app.kind === "oauth" && oneClick()[app.id] === false}>
+                      {/* Saying this up front is the whole point. These apps hand the
+                          sign-in to another host and expect their own client id, so the
+                          card would otherwise look broken rather than explained. */}
+                      <span
+                        class="rounded-full px-2 py-0.5"
+                        style={{ background: fill() }}
+                        title="Sign-in happens on another host, so it may ask you to paste an app id"
+                      >
+                        Extra step
                       </span>
                     </Show>
                     {/* Say who actually runs the endpoint. More than half the catalog
@@ -781,7 +972,7 @@ const onDisconnect = async (app: AppEntry) => {
           <div class="flex flex-col gap-3 rounded-xl border border-[var(--mcp-border)] p-4">
           <span class="text-[13px] font-[600]">Search the full MCP registry</span>
           <span class="text-[12px] text-[var(--mcp-text-weak)]">
-            18,000+ servers published by the community. Search, then add any of them.
+            {registryCaption(registryCount())}. Search, then add any of them.
           </span>
           <div class="flex gap-2">
             <input

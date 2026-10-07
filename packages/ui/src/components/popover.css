@@ -4,8 +4,17 @@
   display: inline-flex;
 }
 
+/*
+ * The floating layer, 100.
+ *
+ * A popover was 50 — the same tier as the dialog it usually opens from, and well below the
+ * composer region at 70. So a popover anchored to anything in the chat box was painted
+ * underneath the chat box, which is the same complaint as the dropdown had, and a tooltip
+ * layered on top of it would vanish. 100 puts it with the menus and selects and the context
+ * menu, and leaves toasts and tooltips at 1000 on top as they should be.
+ */
 [data-component="popover-content"] {
-  z-index: 50;
+  z-index: 100;
   min-width: 200px;
   max-width: 320px;
   border-radius: var(--radius-md);

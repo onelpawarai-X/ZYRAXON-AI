@@ -1,132 +1,201 @@
 #!/usr/bin/env node
-// End-to-end smoke test for MCP Hub.
+// End-to-end smoke test for the Hub, against real servers.
 //
-//   node scripts/smoke.mjs
+//   node "MCP Hub/scripts/smoke.mjs"                 one open server, one OAuth server
+//   node "MCP Hub/scripts/smoke.mjs" --apps 6        sample six of each kind
+//   node "MCP Hub/scripts/smoke.mjs" --only open     one kind only
 //
-// Checks, against the live internet:
-//   1. every app in the catalog has a reachable endpoint or a token page
-//   2. which apps support zero-setup OAuth (dynamic client registration)
-//   3. the registry answers and how many servers it holds
-//   4. a real MCP handshake against a hosted server
+// "Smoke" here means the whole path, not a unit test: catalog entry, client, JSON-RPC
+// handshake, tool listing, and the timing budget. A server that answers 200 to initialize
+// is not proof of anything, so every step below checks a value it could only have got from
+// the server itself.
+//
+// Authenticated servers are expected to stop at needs_auth. That is the pass condition,
+// not a skip: reaching the point where the server asks for a token means discovery, the
+// transport and the client all worked.
 
-import { readFile } from "node:fs/promises"
-import { dirname, join } from "node:path"
-import { fileURLToPath } from "node:url"
+import { allSeedApps } from "../catalog/seed.ts"
+import { McpClient } from "../lib/client.ts"
+import { discoverOAuth } from "../lib/registry.ts"
+import { pathToFileURL } from "node:url"
 
-const HERE = dirname(fileURLToPath(import.meta.url))
-const CATALOG = join(HERE, "..", "catalog", "seed.ts")
+const OPEN_BUDGET_MS = 15_000
+const OAUTH_BUDGET_MS = 10_000
 
-let pass = 0
-let fail = 0
-const ok = (m) => { pass++; console.log(`  PASS  ${m}`) }
-const bad = (m) => { fail++; console.log(`  FAIL  ${m}`) }
-
-/** pull the app entries straight out of the TypeScript source */
-async function loadApps() {
-  const src = await readFile(CATALOG, "utf8")
-  const apps = []
-  const re = /\{\s*id:\s*"([^"]+)"[\s\S]*?kind:\s*"([^"]+)"[\s\S]*?\}/g
-  let m
-  while ((m = re.exec(src))) {
-    const block = m[0]
-    const url = /url:\s*"([^"]+)"/.exec(block)?.[1]
-    const tokenUrl = /tokenUrl:\s*"([^"]+)"/.exec(block)?.[1]
-    apps.push({ id: m[1], kind: m[2], url, tokenUrl })
+export function parseArgs(argv) {
+  const flag = (name) => argv.includes(name)
+  const value = (name) => {
+    const at = argv.indexOf(name)
+    return at === -1 ? undefined : Number(argv[at + 1])
   }
-  return apps
+  return { help: flag("--help") || flag("-h"), apps: value("--apps") ?? 1, only: value("--only") }
 }
 
-async function head(url, method = "GET") {
-  try {
-    const ctrl = new AbortController()
-    const t = setTimeout(() => ctrl.abort(), 12000)
-    const res = await fetch(url, { method, signal: ctrl.signal, redirect: "manual" })
-    clearTimeout(t)
-    return res.status
-  } catch {
-    return 0
-  }
-}
+export const USAGE = `Smoke test the Hub against live servers.
 
-async function zeroSetup(url) {
-  try {
-    const origin = new URL(url).origin
-    const res = await fetch(`${origin}/.well-known/oauth-authorization-server`)
-    if (!res.ok) return false
-    const meta = await res.json()
-    return typeof meta?.registration_endpoint === "string" && meta.registration_endpoint.length > 0
-  } catch {
-    return false
-  }
-}
+  --apps <n>   how many of each kind to try (default 1)
+  --only <k>   just one kind: open, oauth, token or local
+  --help       show this text
+`
 
-async function mcpHandshake(url) {
-  // a real JSON-RPC call to a hosted MCP server
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: {
-        protocolVersion: "2024-11-05",
-        capabilities: {},
-        clientInfo: { name: "mcp-hub-smoke", version: "1.0.0" },
-      } }),
-    })
-    return { status: res.status, ok: res.status === 200 || res.status === 401 || res.status === 406 }
-  } catch (e) {
-    return { status: 0, ok: false, error: e.message }
+/**
+ * A runtime that records what the connector asked for instead of holding real servers.
+ *
+ * Kept for tests that need to drive the connector's state machine rather than a live
+ * server. The shape has to match McpRuntime exactly: a stub with `add` where the connector
+ * calls `addServer` does not report a weaker result, it reports `runtime.addServer is not
+ * a function` and every OAuth app looks broken for reasons that have nothing to do with it.
+ *
+ * It is not used by the checks below, because a stub that returns a status the real server
+ * would never return turns the test into a conversation with itself.
+ */
+export function recordingRuntime() {
+  const calls = []
+  return {
+    calls,
+    statuses: async () => ({}),
+    toolNames: async () => [],
+    connect: async (name) => {
+      calls.push(["connect", name])
+    },
+    addServer: async (name) => {
+      calls.push(["addServer", name])
+      return { status: "connected", tools: 1 }
+    },
+    authenticate: async (name) => {
+      calls.push(["authenticate", name])
+    },
+    disconnect: async (name) => {
+      calls.push(["disconnect", name])
+    },
   }
 }
 
-async function main() {
+/** One open server, end to end: initialize, then a real tool list. */
+export async function smokeOpen(app) {
+  const started = Date.now()
+  const client = new McpClient({ url: app.url, name: "mcp-hub-smoke", version: "1.0.0" })
+
+  const result = await client.initialize()
+  if (!result?.serverInfo?.name) {
+    throw new Error(`no serverInfo from ${app.url} — got ${JSON.stringify(result).slice(0, 200)}`)
+  }
+
+  const tools = await client.listTools()
+  if (!Array.isArray(tools)) throw new Error("tools/list did not return an array")
+
+  return {
+    name: app.name,
+    url: app.url,
+    ms: Date.now() - started,
+    server: result.serverInfo.name,
+    protocol: result.protocolVersion,
+    tools: tools.length,
+    withinBudget: Date.now() - started <= OPEN_BUDGET_MS,
+  }
+}
+
+/**
+ * One OAuth server, as far as it can be checked without a human.
+ *
+ * The useful question is whether the sign-in page can be found at all, so that is what
+ * gets tested, against the live server. Handing the connector a stub runtime instead only
+ * proved that the stub agreed with itself: the stub's own `addServer` returned
+ * "connected" and the test dutifully reported an app that demands a password as
+ * connected. Nothing about the real server was exercised.
+ */
+export async function smokeOauth(app) {
+  const started = Date.now()
+  const endpoints = await discoverOAuth(app.url)
+
+  if (!endpoints) throw new Error(`no OAuth endpoints discovered for ${app.url}`)
+
+  const authorize = new URL(endpoints.authorizationEndpoint)
+  const endpointHost = new URL(app.url).host
+  const crossHost = authorize.host !== endpointHost
+  const crossHostSafe = authorize.protocol === "https:"
+
+  return {
+    name: app.name,
+    url: app.url,
+    ms: Date.now() - started,
+    authorizeHost: authorize.host,
+    crossHost,
+    crossHostSafe,
+    oneClick: endpoints.registrationEndpoint !== undefined,
+    issuer: endpoints.issuer,
+    withinBudget: Date.now() - started <= OAUTH_BUDGET_MS,
+  }
+}
+
+export async function main(argv) {
+  const { help, apps, only } = parseArgs(argv)
+  if (help) {
+    console.log(USAGE)
+    return
+  }
+
+  const catalog = allSeedApps()
+  const kinds = ["open", "oauth", "token", "local"].filter((k) => !only || k === only)
+  const chosen = kinds.flatMap((kind) => catalog.filter((a) => a.kind === kind).slice(0, apps))
+
   console.log("MCP Hub smoke test")
   console.log("==================")
+  console.log(`${chosen.length} servers: ${kinds.join(", ")}\n`)
 
-  console.log("\n1. catalog")
-  const apps = await loadApps()
-  if (apps.length === 0) bad("catalog did not parse")
-  else ok(`parsed ${apps.length} apps from the catalog`)
+  let passed = 0
+  let failed = 0
 
-  console.log("\n2. endpoints reachable")
-  for (const a of apps) {
-    if (a.kind === "local") {
-      ok(`${a.id}: local server, no endpoint to reach`)
-      continue
+  for (const app of chosen) {
+    try {
+      const row =
+        app.kind === "local"
+          ? { name: app.name, note: "needs the real runtime to start a process" }
+          : app.kind === "open"
+            ? await smokeOpen(app)
+            : app.kind === "oauth"
+              ? await smokeOauth(app)
+              : await smokeToken(app)
+
+      const detail = Object.entries(row).filter(([k]) => k !== "name" && k !== "url")
+      const flags = [row.withinBudget === false ? "OVER BUDGET" : "", row.crossHost && !row.crossHostSafe ? "INSECURE CROSS-HOST" : ""]
+        .filter(Boolean)
+        .join(" ")
+      console.log(`  ok   ${app.name.padEnd(24)} ${detail.map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(" ")} ${flags}`)
+      passed++
+    } catch (e) {
+      console.log(`  FAIL ${app.name.padEnd(24)} ${e.message}`)
+      failed++
     }
-    const target = a.url ?? a.tokenUrl
-    if (!target) { bad(`${a.id}: no url`); continue }
-    const code = await head(target)
-    if (code === 0) bad(`${a.id}: no response from ${target}`)
-    else ok(`${a.id}: ${target} -> ${code}`)
   }
 
-  console.log("\n3. zero-setup OAuth (nothing asked of the user)")
-  for (const a of apps.filter((x) => x.kind === "oauth" && x.url)) {
-    const yes = await zeroSetup(a.url)
-    yes ? ok(`${a.id}: dynamic registration available`) : bad(`${a.id}: needs a client id`)
-  }
-
-  console.log("\n4. MCP handshake against a hosted server")
-  const hosted = apps.find((a) => a.url && a.id === "notion") ?? apps.find((a) => a.url)
-  if (hosted) {
-    const r = await mcpHandshake(hosted.url)
-    r.ok
-      ? ok(`${hosted.id}: handshake answered with ${r.status} (401 means the endpoint is live and wants auth)`)
-      : bad(`${hosted.id}: handshake failed ${r.status} ${r.error ?? ""}`)
-  }
-
-  console.log("\n5. registry")
-  try {
-    const res = await fetch("https://registry.modelcontextprotocol.io/v0/servers?limit=100")
-    const d = await res.json()
-    const n = (d?.servers ?? []).length
-    n > 0 ? ok(`registry answered with ${n} servers on the first page`) : bad("registry returned nothing")
-  } catch (e) {
-    bad(`registry unreachable: ${e.message}`)
-  }
-
-  console.log(`\n${pass} passed, ${fail} failed`)
-  process.exit(fail === 0 ? 0 : 1)
+  console.log(`\n${passed} passed, ${failed} failed`)
+  if (failed > 0) process.exitCode = 1
 }
 
-main()
+/**
+ * A token server, as far as it goes with no token.
+ *
+ * Reaching a 401 is the pass condition: it proves the transport reached the server and that
+ * the server wants the credential the panel would have collected.
+ */
+async function smokeToken(app) {
+  const started = Date.now()
+  const client = new McpClient({
+    url: app.url,
+    name: "mcp-hub-smoke",
+    version: "1.0.0",
+    headers: { authorization: "Bearer smoke-test-not-a-real-token" },
+  })
+
+  const outcome = await client.initialize().then(
+    () => "accepted",
+    (e) => (String(e.message ?? e).includes("40") ? "rejected" : e.message),
+  )
+
+  return { name: app.name, url: app.url, ms: Date.now() - started, outcome }
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  await main(process.argv.slice(2))
+}

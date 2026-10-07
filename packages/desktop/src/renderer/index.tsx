@@ -257,7 +257,7 @@ const createPlatform = (windowState: DesktopWindowState): Platform => {
 
       const notification = new Notification(title, {
         body: description ?? "",
-        icon: "https://zyraxon.ai/favicon-96x96-v3.png",
+        icon: "https://zyraxonai.lovable.app/favicon-96x96-v3.png",
       })
       notification.onclick = () => {
         void window.api.showWindow()

@@ -493,7 +493,7 @@ export const SettingsGeneralV2: Component<{
           description={
             <>
               {language.t("settings.general.row.theme.description")}{" "}
-              <Link class="settings-v2-link" href="https://zyraxon.ai/docs/themes/">
+              <Link class="settings-v2-link" href="https://zyraxonai.lovable.app/docs/themes/">
                 {language.t("common.learnMore")}
               </Link>
             </>
@@ -696,13 +696,29 @@ export const SettingsGeneralV2: Component<{
 
       <SettingsListV2>
         <SettingsRowV2
+          title="Real-time voice with the model"
+          description="Talk directly to the selected model — it listens and answers in the same breath. Turning this on stops the separate TTS voice, because hearing both at once overlaps them."
+        >
+          <div data-action="settings-voice-realtime">
+            <Switch
+              checked={settings.general.voiceRealtime()}
+              onChange={(checked) => settings.general.setVoiceRealtime(checked)}
+            />
+          </div>
+        </SettingsRowV2>
+
+        <SettingsRowV2
           title="Auto-speak responses"
-          description="AI responses are automatically spoken aloud using browser TTS"
+          description="AI responses are spoken aloud by the built-in voice"
         >
           <div data-action="settings-voice-auto-speak">
             <Switch
               checked={settings.general.voiceAutoSpeak()}
+              disabled={settings.general.voiceRealtime()}
               onChange={(checked) => {
+                // The switch is unavailable while the model is talking live, so this only
+                // ever runs with realtime off — where it is meaningful.
+                if (settings.general.voiceRealtime()) return
                 settings.general.setVoiceAutoSpeak(checked)
                 try { ;(window as any).api?.voiceTTSEnabled?.(checked) } catch {}
               }}

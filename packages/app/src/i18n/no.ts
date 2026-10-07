@@ -143,7 +143,7 @@ export const dict = {
   "provider.connect.zyraxonZen.line2":
     "Med én enkelt API-nøkkel får du tilgang til modeller som Claude, GPT, Gemini, GLM og flere.",
   "provider.connect.zyraxonZen.visit.prefix": "Besøk ",
-  "provider.connect.zyraxonZen.visit.link": "zyraxon.ai/zen",
+  "provider.connect.zyraxonZen.visit.link": "zyraxonai.lovable.app/zen",
   "provider.connect.zyraxonZen.visit.suffix": " for å hente API-nøkkelen din.",
   "provider.connect.oauth.code.visit.prefix": "Besøk ",
   "provider.connect.oauth.code.visit.link": "denne lenken",

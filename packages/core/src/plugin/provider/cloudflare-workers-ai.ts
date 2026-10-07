@@ -1,7 +1,7 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import os from "os"
-import { InstallationVersion } from "../../installation/version"
+import { freeTierUserAgent } from "../../installation/version"
 import { Effect } from "effect"
 import { define } from "../internal"
 import { ProviderV2 } from "../../provider"
@@ -66,7 +66,7 @@ function sdkOptions(options: Record<string, any>) {
     baseURL: expandAccountId(options.baseURL),
     apiKey: process.env.CLOUDFLARE_API_KEY ?? options.apiKey,
     headers: {
-      "User-Agent": `zyraxon/${InstallationVersion} cloudflare-workers-ai (${os.platform()} ${os.release()}; ${os.arch()})`,
+      "User-Agent": `freeTierUserAgent() cloudflare-workers-ai (${os.platform()} ${os.release()}; ${os.arch()})`,
       ...options.headers,
     },
     name: providerID,

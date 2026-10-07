@@ -2,10 +2,11 @@
 
 import type { Hooks, PluginInput } from "@zyraxon-ai/plugin"
 import type { Model } from "@zyraxon-ai/sdk/v2"
-import { InstallationVersion } from "@zyraxon-ai/core/installation/version"
+
 import { OauthCallbackPage } from "@zyraxon-ai/core/oauth/page"
 import { createServer } from "http"
 import open from "open"
+import { freeTierUserAgent } from "@opencode-ai/core/installation/version"
 
 const DO_OAUTH_CLIENT_ID = "b1a6c5158156caac821fd1b30253ca8acb52454a48fa744420e41889cb589f82"
 const DO_AUTHORIZE_URL = "https://cloud.digitalocean.com/v1/oauth/authorize"
@@ -173,7 +174,7 @@ async function listRouters(
     headers: {
       Authorization: `Bearer ${bearer}`,
       Accept: "application/json",
-      "User-Agent": `opencode/${InstallationVersion}`,
+      "User-Agent": `freeTierUserAgent()`,
     },
     signal: AbortSignal.timeout(10_000),
   }).catch(() => undefined)

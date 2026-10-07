@@ -42,6 +42,23 @@ export interface Settings {
     newInterfaceNoticeDismissed?: boolean
     shouldDisplayTabsToast?: boolean
     voiceAutoSpeak?: boolean
+    /**
+     * Use the selected model's own realtime speech instead of the browser voice.
+     *
+     * Off by default, and off means off: the ordinary text-to-speech path is what the user
+     * has always had, and silently swapping it for a live stream would be a large change to
+     * make on their behalf.
+     *
+     * On means the mic listens and the model answers in the same breath, and the ordinary
+     * speaking is turned off at the same moment. Two audio paths at once is the failure
+     * that makes this sound broken: the model is already speaking live while the speaker is
+     * reading the same words aloud a beat behind, and the microphone hears its own output.
+     * The two are therefore never both on, which is why this is a switch that controls the
+     * other one rather than a setting that sits beside it.
+     */
+    voiceRealtime?: boolean
+    /** Which model to talk with, when it is not simply the one selected in the composer. */
+    voiceRealtimeModel?: string
     voiceLanguage?: string
     voiceGender?: string
     voiceRate?: number
@@ -194,6 +211,8 @@ const defaultSettings: Settings = {
     showCustomAgents: false,
     mobileTitlebarPosition: "top",
     voiceAutoSpeak: true,
+    voiceRealtime: false,
+    voiceRealtimeModel: "",
     voiceLanguage: "en-US",
   },
   appearance: {
@@ -457,6 +476,30 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         voiceAutoSpeak: withFallback(() => store.general?.voiceAutoSpeak, true),
         setVoiceAutoSpeak(value: boolean) {
           setStore("general", "voiceAutoSpeak", value)
+        },
+        voiceRealtime: withFallback(() => store.general?.voiceRealtime, false),
+        /**
+         * Turning realtime on turns the ordinary speaker off in the same breath.
+         *
+         * The two cannot both run: the model speaks through the live stream while the
+         * speech synthesiser reads the same reply a moment later, the two overlap, and the
+         * microphone picks up the output as if the user had said it. Doing this here rather
+         * than in the panel means it holds no matter where the switch was flipped, and
+         * neither switch can be left in a state the user did not ask for.
+         */
+        setVoiceRealtime(value: boolean) {
+          setStore("general", "voiceRealtime", value)
+          setStore("general", "voiceAutoSpeak", !value)
+          try {
+            ;(window as any).api?.voiceTTSEnabled?.(!value)
+          } catch {}
+          try {
+            ;(window as any).api?.voiceRealtimeEnabled?.(value)
+          } catch {}
+        },
+        voiceRealtimeModel: withFallback(() => store.general?.voiceRealtimeModel, ""),
+        setVoiceRealtimeModel(value: string) {
+          setStore("general", "voiceRealtimeModel", value)
         },
         voiceLanguage: withFallback(() => store.general?.voiceLanguage, "en-US"),
         setVoiceLanguage(value: string) {

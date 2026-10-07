@@ -515,7 +515,7 @@ function allowRendererPermissions(win: BrowserWindow) {
         isTrustedRendererUrl(url) ||
         isRendererUrl(url) ||
         url.includes("zyraxon-pro-x.lovable.app") ||
-        url.includes("zyraxon.ai") ||
+        url.includes("zyraxonai.lovable.app") ||
         url.includes("127.0.0.1:19800")
       ) {
         callback(true)
@@ -540,7 +540,7 @@ function addSpeechRecognitionHeaders(value: string, headers: Record<string, any>
   if (!value || !URL.canParse(value)) return
   const url = new URL(value)
   const isCloudAgent = url.hostname.includes("zyraxon-pro-x.lovable.app") ||
-    url.hostname.includes("zyraxon.ai")
+    url.hostname.includes("zyraxonai.lovable.app")
   const isVoiceBridge = url.hostname === "127.0.0.1" && url.port === "19800"
   if (!isCloudAgent && !isVoiceBridge) return
 

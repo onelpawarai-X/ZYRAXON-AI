@@ -11,13 +11,19 @@ import type { MessageV2 } from "../message-v2"
 import type { Provider } from "@/provider/provider"
 import { ProviderTransform } from "@/provider/transform"
 import { SystemPrompt } from "../system"
-import { InstallationVersion } from "@opencode-ai/core/installation/version"
+import { freeTierUserAgent } from "@opencode-ai/core/installation/version"
 import { Effect, Record } from "effect"
 import { jsonSchema, tool as aiTool, type ModelMessage, type Tool } from "ai"
 import type { Plugin } from "@/plugin"
 import { mergeDeep } from "remeda"
 
-const USER_AGENT = `opencode/${InstallationVersion}`
+// The free-tier gate reads `User-Agent: opencode/<release>` and nothing else.
+// InstallationVersion is the build version, which is "local" for a dev build and
+// a bump away from the release otherwise, so using it here made every free model
+// answer "OpenCode's free tier can only be used from within OpenCode" — the
+// request was rejected for being unrecognised rather than for anything the user
+// did. The version the gate accepts is pinned separately.
+const USER_AGENT = freeTierUserAgent()
 
 type PrepareInput = {
   readonly user: SessionV1.User
@@ -192,8 +198,8 @@ export const prepare = Effect.fn("LLMRequestPrep.prepare")(function* (input: Pre
     tools: Object.fromEntries(Object.entries(tools).toSorted(([a], [b]) => a.localeCompare(b))),
     params,
     messageTransformOptions: options,
-    headers: {
-      ...(input.model.providerID.startsWith("opencode")
+    headers: (() => {
+      const base = input.model.providerID.startsWith("opencode")
         ? {
             ...(opencodeProjectID ? { "x-opencode-project": opencodeProjectID } : {}),
             "x-opencode-session": input.sessionID,
@@ -205,11 +211,19 @@ export const prepare = Effect.fn("LLMRequestPrep.prepare")(function* (input: Pre
             "x-session-affinity": input.sessionID,
             "X-Session-Id": input.sessionID,
             "User-Agent": USER_AGENT,
-          }),
-      ...(input.parentSessionID ? { "x-parent-session-id": input.parentSessionID } : {}),
-      ...input.model.headers,
-      ...headers,
-    },
+          }
+      const merged = {
+        ...base,
+        ...(input.parentSessionID ? { "x-parent-session-id": input.parentSessionID } : {}),
+        ...input.model.headers,
+        ...headers,
+      }
+      // The free-tier gate has to be the last word: a model-level or plugin
+      // header that sets User-Agent would otherwise replace it and every free
+      // model would be refused.
+      if (!input.model.providerID.startsWith("opencode")) return merged
+      return { ...merged, "User-Agent": USER_AGENT }
+    })(),
   }
 })
 

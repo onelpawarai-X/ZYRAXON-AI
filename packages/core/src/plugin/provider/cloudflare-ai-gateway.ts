@@ -1,7 +1,7 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import os from "os"
-import { InstallationVersion } from "../../installation/version"
+import { freeTierUserAgent } from "../../installation/version"
 import { Effect, Option, Schema } from "effect"
 import { define } from "../internal"
 
@@ -73,7 +73,7 @@ function gatewayOptions(options: Record<string, unknown>, metadata: unknown) {
     skipCache: options.skipCache,
     collectLog: options.collectLog,
     headers: {
-      "User-Agent": `zyraxon/${InstallationVersion} cloudflare-ai-gateway (${os.platform()} ${os.release()}; ${os.arch()})`,
+      "User-Agent": `freeTierUserAgent() cloudflare-ai-gateway (${os.platform()} ${os.release()}; ${os.arch()})`,
     },
   }
 }

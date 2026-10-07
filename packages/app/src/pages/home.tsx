@@ -765,7 +765,7 @@ function openMcpHub() {
             clearNotifications={clearNotifications}
             unseenCount={unseenCount}
             openSettings={openSettings}
-            openHelp={() => platform.openLink("https://zyraxon.ai/desktop-feedback")}
+            openHelp={() => platform.openLink("https://zyraxonai.lovable.app/desktop-feedback")}
             language={language}
             onWheel={(event) => {
               if (sessionViewport) containHomeWheel(event, sessionViewport)
@@ -881,7 +881,7 @@ function openMcpHub() {
           <HomeUtilityNav
             class="flex lg:hidden"
             openSettings={openSettings}
-            openHelp={() => platform.openLink("https://zyraxon.ai/desktop-feedback")}
+            openHelp={() => platform.openLink("https://zyraxonai.lovable.app/desktop-feedback")}
             language={language}
           />
         </div>

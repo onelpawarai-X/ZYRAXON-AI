@@ -22,8 +22,11 @@ export interface McpStatusEntry {
     error?: string;
 }
 /**
- * The ZYRAXON runtime exposes the MCP service through the app context.
- * The Hub receives it as a dependency so the module stays testable on its own.
+ * The ZYRAXON runtime exposes MCP through the app context.
+ *
+ * The Hub receives it as a dependency, which keeps this module testable without a
+ * running app behind it. Every member here is implemented by bindRuntime in
+ * ./runtime, so a card can rely on all of them.
  */
 export interface McpRuntime {
     /** live status of every configured server, keyed by name */
@@ -37,26 +40,37 @@ export interface McpRuntime {
     /**
      * Run the OAuth handshake to completion.
      *
-     * The server owns the browser: it opens the app's consent page in the real
-     * profile that already holds the session, then blocks on its own local
-     * callback. So this only settles once the user has clicked Allow.
+     * The server owns the browser: it opens the consent page in the real profile that
+     * already holds the session, then blocks on its own loopback callback. So this only
+     * settles once the user has clicked Allow.
      */
     authenticate: (name: string) => Promise<void>;
+    /**
+     * Detach a server for good.
+     *
+     * This takes the config entry out, stops the live transport, and — with
+     * `forgetCredentials` — clears the stored tokens and any client registration. That
+     * last part is what a user means by "disconnect my GitHub": leaving credentials
+     * behind would silently sign the app back in on the next start.
+     */
+    disconnect: (name: string, options?: {
+        forgetCredentials?: boolean;
+    }) => Promise<void>;
 }
 /** Build the ZYRAXON config entry for an app. */
 export declare function toServerConfig(app: AppEntry, token?: string): Record<string, unknown>;
 /**
  * Watch one server until it reaches a state worth acting on.
  *
- * A connect attempt is asynchronous: the runtime opens the transport, negotiates
- * a session, and only then reports connected, needs_auth or failed. Reading the
- * status on the very next tick sees nothing useful, which is what used to leave
- * every card on "Connecting…" forever with no sign-in ever offered.
+ * A connect is asynchronous: the runtime opens the transport, negotiates a session,
+ * and only then reports connected, needs_auth or failed. Reading the status on the
+ * next tick sees nothing useful, which is what used to leave every card on
+ * "Connecting…" forever with no sign-in ever offered.
  *
  * `until` exists because "settled" means different things at different moments.
  * Before sign-in, needs_auth is the interesting answer and waiting past it is
- * wrong. After sign-in starts it is the answer we already have, so the only
- * useful thing left to wait for is a state that is no longer needs_auth.
+ * wrong. After sign-in has started it is the answer already held, so the only useful
+ * thing left to wait for is a state that is no longer needs_auth.
  */
 export declare function waitForStatus(runtime: McpRuntime, name: string, timeoutMs?: number, until?: (status: McpStatusEntry["status"]) => boolean): Promise<McpStatusEntry>;
 export interface ConnectOptions {
@@ -66,7 +80,7 @@ export interface ConnectOptions {
     onProgress?: (state: ConnectionState) => void;
 }
 /**
- * Connect an app and return the state the card should render.
+ * Connect an app and return the state its card should render.
  *
  * The browser is never opened from here. The server does it, in the user's real
  * profile, which is why signing in leaves the app already logged in.

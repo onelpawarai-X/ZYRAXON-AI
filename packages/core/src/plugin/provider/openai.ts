@@ -191,7 +191,7 @@ export const OpenAIPlugin = define({
 } satisfies PluginInternal.Plugin<PluginInternal.Requirements | Scope.Scope>)
 
 function headers(contentType: string) {
-  return { "Content-Type": contentType, "User-Agent": `zyraxon/${InstallationVersion}` }
+  return { "Content-Type": contentType, "User-Agent": freeTierUserAgent() }
 }
 
 function exchange(code: string, redirect: string, pkce: Pkce) {

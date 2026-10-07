@@ -17,8 +17,15 @@ export interface McpClientLike {
         connect: (input: {
             name: string;
         }) => Promise<unknown>;
+        disconnect: (input: {
+            name: string;
+        }) => Promise<unknown>;
         auth: {
             authenticate: (input: {
+                name: string;
+            }) => Promise<unknown>;
+            /** forget stored tokens and client registration for a server */
+            remove: (input: {
                 name: string;
             }) => Promise<unknown>;
         };
@@ -30,13 +37,19 @@ export interface McpClientLike {
 export interface HostBindings {
     /** the connected ZYRAXON client */
     client: McpClientLike;
-    /** write a server into the project config so it survives a restart */
+    /**
+     * Write into the project config so a change survives a restart.
+     *
+     * This is a deep merge into the config on disk, which decides how a server is
+     * removed: a key that is simply left out of the patch survives the merge, so the
+     * config API cannot delete anything. `enabled: false` is the deletion.
+     */
     updateConfig: (patch: Record<string, unknown>) => Promise<unknown> | unknown;
 }
 /**
  * Build the runtime the panel talks to.
  *
- * Everything the cards display is read back from the server, which owns the
+ * Everything a card displays is read back from the server, which owns the
  * transports. Declaring a server is the one thing done twice on purpose: the
  * config write makes it permanent, and the add call makes it live right now
  * instead of on the next restart.

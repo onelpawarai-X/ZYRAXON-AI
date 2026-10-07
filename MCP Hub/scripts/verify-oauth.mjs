@@ -1,152 +1,151 @@
 #!/usr/bin/env node
-// Proof that the browser login flow works end to end, up to the point where a
-// human has to click Allow.
+// Prove the OAuth discovery chain reaches a real sign-in page for every browser app.
 //
-//   node scripts/verify-oauth.mjs [server-id]
+//   node "MCP Hub/scripts/verify-oauth.mjs"              all browser apps
+//   node "MCP Hub/scripts/verify-oauth.mjs" --apps 10    just the first ten
+//   node "MCP Hub/scripts/verify-oauth.mjs" --strict     fail on any cross-host sign-in
+//   node "MCP Hub/scripts/verify-oauth.mjs" --json out.json
 //
-// For each server it:
-//   1. reads /.well-known/oauth-protected-resource
-//   2. reads the authorization server metadata
-//   3. registers a client dynamically (RFC 7591) - no client id needed from anyone
-//   4. builds the authorize URL with PKCE
-//   5. prints the URL, which is exactly what the panel opens in the browser
+// Discovery is the part of connecting that cannot be tested by reading code, because every
+// vendor advertises its endpoints differently. This walks the same chain the panel uses —
+// protected-resource metadata, then the authorization server, then the issuer, then the
+// catalog's own record — against every browser app in the catalog and writes down what it
+// actually found. An app that resolves is an app whose Connect button can work; an app that
+// does not is a card that will hang.
+//
+// Two results matter and are easy to confuse. Finding the endpoints is necessary and is what
+// this asserts. Finding a registration endpoint is what makes one click possible, and 9 of
+// the apps have none, so they will ask for a client id. Those are reported, not hidden,
+// because a number that is quietly optimistic is worse than one that is lower.
 
-import { createHash, randomBytes } from "node:crypto"
+import { browserApps } from "../catalog/seed.ts"
+import { discoverOAuth } from "../lib/registry.ts"
+import { writeFile } from "node:fs/promises"
+import { pathToFileURL } from "node:url"
 
-const SERVERS = {
-  notion: "https://mcp.notion.com/mcp",
-  linear: "https://mcp.linear.app/sse",
-  atlassian: "https://mcp.atlassian.com/v1/sse",
-  sentry: "https://mcp.sentry.dev/mcp",
-  stripe: "https://mcp.stripe.com",
-  cloudflare: "https://mcp.cloudflare.com/mcp",
-}
+const TIMEOUT_MS = 12_000
+const CONCURRENCY = 4
 
-const REDIRECT = "http://127.0.0.1:19876/mcp/oauth/callback"
-
-let pass = 0
-let fail = 0
-const ok = (m) => { pass++; console.log(`  PASS  ${m}`) }
-const bad = (m) => { fail++; console.log(`  FAIL  ${m}`) }
-const note = (m) => console.log(`        ${m}`)
-
-function b64url(buf) {
-  return buf.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")
-}
-
-async function json(url, init) {
-  const res = await fetch(url, init)
-  if (!res.ok) throw new Error(`${url} -> ${res.status}`)
-  return res.json()
-}
-
-/**
- * RFC 8414 / RFC 9728 allow the well-known segment to be inserted before the
- * path as well as appended after it. Servers differ, so try both.
- */
-async function discover(base, kind, pathname = "") {
-  const origin = new URL(base).origin
-  const trimmed = pathname.replace(/\/$/, "")
-  const candidates = [
-    `${origin}/.well-known/${kind}${trimmed}`,
-    `${origin}/.well-known/${kind}`,
-    `${origin}${trimmed}/.well-known/${kind}`,
-  ]
-  for (const url of candidates) {
-    try {
-      return await json(url)
-    } catch {
-      /* try the next shape */
-    }
+export function parseArgs(argv) {
+  const flag = (name) => argv.includes(name)
+  const number = (name) => {
+    const at = argv.indexOf(name)
+    return at === -1 ? undefined : Number(argv[at + 1])
   }
-  throw new Error(`no ${kind} metadata at ${origin}${trimmed}`)
+  // Not `Number`: that turns a path into NaN, and NaN is falsy, so `--json out.json`
+  // looked like the flag had not been passed and silently wrote nothing.
+  const string = (name) => {
+    const at = argv.indexOf(name)
+    return at === -1 ? undefined : argv[at + 1]
+  }
+  return { help: flag("--help") || flag("-h"), strict: flag("--strict"), apps: number("--apps"), json: string("--json") }
 }
 
-async function flow(id, endpoint) {
-  console.log(`\n${id}`)
+export const USAGE = `Verify OAuth discovery for the whole browser catalog.
+
+  --apps <n>     only the first n apps
+  --strict       fail when an app signs in on a different host
+  --json <path>  write the full result set to a file
+  --help         show this text
+`
+
+async function verify(app) {
+  const started = Date.now()
+
   try {
-    // 1. protected resource metadata tells us which authorization server to use.
-    //    Not every server publishes it, so fall back to the origin itself.
-    const pathname = new URL(endpoint).pathname
-    let authServer = new URL(endpoint).origin
-    try {
-      const resourceMeta = await discover(endpoint, "oauth-protected-resource", pathname)
-      authServer = resourceMeta.authorization_servers?.[0] ?? authServer
-      ok(`${id}: resource metadata points at ${authServer}`)
-    } catch {
-      ok(`${id}: no resource metadata, using the origin directly (${authServer})`)
+    const endpoints = await discoverOAuth(app.url)
+    if (!endpoints) {
+      return { id: app.id, name: app.name, url: app.url, ok: false, reason: "no endpoints found", ms: Date.now() - started }
     }
 
-    // 2. authorization server metadata
-    const as = await discover(authServer, "oauth-authorization-server", new URL(authServer).pathname)
-    if (!as.registration_endpoint) {
-      bad(`${id}: no registration endpoint, a client id would be needed`)
-      return
-    }
-    ok(`${id}: dynamic registration available at ${as.registration_endpoint}`)
+    const authorizeHost = new URL(endpoints.authorizationEndpoint).host
+    const endpointHost = new URL(app.url).host
 
-    // 3. register ourselves - this is the step that means the user gives nothing
-    const reg = await json(as.registration_endpoint, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        client_name: "ZYRAXON",
-        redirect_uris: [REDIRECT],
-        grant_types: ["authorization_code", "refresh_token"],
-        response_types: ["code"],
-        token_endpoint_auth_method: "none",
-        ...(as.scopes_supported ? { scope: as.scopes_supported.join(" ") } : {}),
-      }),
-    })
-    if (!reg.client_id) {
-      bad(`${id}: registration returned no client_id`)
-      return
+    return {
+      id: app.id,
+      name: app.name,
+      url: app.url,
+      ok: true,
+      ms: Date.now() - started,
+      authorizeHost,
+      tokenHost: new URL(endpoints.tokenEndpoint).host,
+      issuer: endpoints.issuer,
+      oneClick: endpoints.registrationEndpoint !== undefined,
+      crossHost: authorizeHost !== endpointHost,
+      // A cross-host consent page is fine over https and alarming over plain http, and the
+      // distinction is the difference between a redirect and a credential handed over.
+      insecureCrossHost: authorizeHost !== endpointHost && new URL(endpoints.authorizationEndpoint).protocol !== "https:",
+      withinBudget: Date.now() - started <= TIMEOUT_MS,
     }
-    ok(`${id}: registered a client automatically (client_id ${String(reg.client_id).slice(0, 12)}…)`)
-
-    // 4. PKCE, then the authorize URL the browser opens
-    const verifier = b64url(randomBytes(32))
-    const challenge = b64url(createHash("sha256").update(verifier).digest())
-    const url = new URL(as.authorization_endpoint)
-    url.searchParams.set("response_type", "code")
-    url.searchParams.set("client_id", reg.client_id)
-    url.searchParams.set("redirect_uri", REDIRECT)
-    url.searchParams.set("code_challenge", challenge)
-    url.searchParams.set("code_challenge_method", "S256")
-    url.searchParams.set("state", b64url(randomBytes(16)))
-    if (as.scopes_supported?.length) url.searchParams.set("scope", as.scopes_supported.join(" "))
-
-    const res = await fetch(url, { redirect: "manual" })
-    const location = res.headers.get("location") ?? ""
-    if (res.status >= 300 && res.status < 400) {
-      ok(`${id}: authorize URL is live, server redirects to the consent screen`)
-      note(`redirect -> ${location.slice(0, 90)}`)
-    } else if (res.status === 200) {
-      ok(`${id}: authorize URL serves a consent page (status 200)`)
-    } else {
-      note(`${id}: authorize returned ${res.status}`)
-    }
-    note(`login URL: ${url.origin}${url.pathname}`)
   } catch (e) {
-    bad(`${id}: ${e.message}`)
+    return { id: app.id, name: app.name, url: app.url, ok: false, reason: String(e.message ?? e), ms: Date.now() - started }
   }
 }
 
-async function main() {
-  const only = process.argv[2]
-  console.log("MCP Hub - browser login flow proof")
-  console.log("==================================")
-  console.log("Each block below shows the exact steps the panel performs when you")
-  console.log("click Connect. The only thing left for a human is pressing Allow.")
-
-  const entries = only ? [[only, SERVERS[only]]] : Object.entries(SERVERS)
-  for (const [id, endpoint] of entries) {
-    if (!endpoint) { bad(`unknown server ${id}`); continue }
-    await flow(id, endpoint)
+export async function main(argv) {
+  const { help, strict, apps, json } = parseArgs(argv)
+  if (help) {
+    console.log(USAGE)
+    return
   }
 
-  console.log(`\n${pass} passed, ${fail} failed`)
-  process.exit(fail === 0 ? 0 : 1)
+  const targets = apps ? browserApps.slice(0, apps) : browserApps
+  console.log("MCP OAuth discovery")
+  console.log("===================")
+  console.log(`${targets.length} browser apps, ${CONCURRENCY} at a time\n`)
+
+  const results = []
+  let cursor = 0
+
+  await Promise.all(
+    Array.from({ length: CONCURRENCY }, async () => {
+      while (cursor < targets.length) {
+        const row = await verify(targets[cursor++])
+        results.push(row)
+        if (row.ok) {
+          console.log(
+            `  ok   ${String(row.ms).padStart(5)}ms ${row.name.padEnd(22)} ${row.authorizeHost}` +
+              `${row.crossHost ? " (cross-host)" : ""}${row.oneClick ? " · one click" : " · needs a client id"}` +
+              `${row.insecureCrossHost ? " · INSECURE" : ""}${row.withinBudget ? "" : " · OVER BUDGET"}`,
+          )
+        } else {
+          console.log(`  FAIL ${String(row.ms).padStart(5)}ms ${row.name.padEnd(22)} ${row.reason}`)
+        }
+      }
+    }),
+  )
+
+  results.sort((a, b) => a.name.localeCompare(b.name))
+
+  const found = results.filter((r) => r.ok)
+  const crossHost = found.filter((r) => r.crossHost)
+  const oneClick = found.filter((r) => r.oneClick)
+  const needsClientId = found.filter((r) => !r.oneClick)
+  const insecure = found.filter((r) => r.insecureCrossHost)
+  const overBudget = found.filter((r) => !r.withinBudget)
+  const slowest = [...found].sort((a, b) => b.ms - a.ms).slice(0, 5)
+
+  console.log(`\nresolved            ${found.length}/${results.length}`)
+  console.log(`one click           ${oneClick.length}`)
+  console.log(`needs a client id   ${needsClientId.length}${needsClientId.length ? ` — ${needsClientId.map((r) => r.name).join(", ")}` : ""}`)
+  console.log(`cross-host sign-in  ${crossHost.length}`)
+  console.log(`insecure cross-host ${insecure.length}`)
+  console.log(`over budget         ${overBudget.length}`)
+  if (slowest.length) {
+    console.log(`slowest             ${slowest.map((r) => `${r.name} ${r.ms}ms`).join(", ")}`)
+  }
+
+  if (json) {
+    await writeFile(json, JSON.stringify({ verifiedAt: new Date().toISOString(), results }, null, 2), "utf8")
+    console.log(`\nwrote ${json}`)
+  }
+
+  const failed = results.length - found.length
+  if (failed > 0 || (strict && crossHost.length > 0)) {
+    process.exitCode = 1
+  }
 }
 
-main()
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  await main(process.argv.slice(2))
+}

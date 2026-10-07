@@ -168,7 +168,7 @@ export const dict = {
   "provider.connect.zyraxonZen.line1": "ZYRAXON Zen 为你提供一组精选的可靠优化模型，用于代码智能体。",
   "provider.connect.zyraxonZen.line2": "只需一个 API 密钥，你就能使用 Claude、GPT、Gemini、GLM 等模型。",
   "provider.connect.zyraxonZen.visit.prefix": "访问 ",
-  "provider.connect.zyraxonZen.visit.link": "zyraxon.ai/zen",
+  "provider.connect.zyraxonZen.visit.link": "zyraxonai.lovable.app/zen",
   "provider.connect.zyraxonZen.visit.suffix": " 获取你的 API 密钥。",
   "provider.connect.oauth.code.visit.prefix": "访问 ",
   "provider.connect.oauth.code.visit.link": "此链接",

@@ -1,34 +1,55 @@
-import type { AppEntry } from "./catalog/seed";
-import { connectApp, toServerConfig, countTools, describe, type McpRuntime, type ConnectionState } from "./lib/connect";
+import type { AppEntry, AuthTier } from "./catalog/seed";
+import { allSeedApps, appIcon, browserApps, catalogSections, categories, keyApps, localApps, openApps, tierOf, } from "./catalog/seed";
+import { connectApp, countTools, describe, toServerConfig, type ConnectionState, type McpRuntime, } from "./lib/connect";
 import { McpClient } from "./lib/client";
 import { bindRuntime } from "./lib/runtime";
-import { type Resolution } from "./lib/resolve";
-import { fetchPage, walkRegistry, searchRegistry, supportsZeroSetup, type RegistryServer } from "./lib/registry";
+import { resolveApp, type Resolution } from "./lib/resolve";
+import { discoverOAuth, fetchPage, searchRegistry, supportsZeroSetup, walkRegistry, type OAuthEndpoints, type RegistryServer, } from "./lib/registry";
 import { McpHubPanel } from "./ui/mcp-hub-panel";
-export interface McpHubOptions {
+export interface McpHubPanelProps {
     runtime: McpRuntime;
     /** resolve an app to a real server when the catalog has no endpoint for it */
-    resolve?: (app: AppEntry) => Promise<Resolution>;
-    /** show the panel in a dialog instead of a page */
+    resolve: (app: AppEntry) => Promise<Resolution>;
     onClose?: () => void;
 }
 export interface McpHub {
     id: string;
     title: string;
-    /** the panel the host renders */
-    Panel: (props: McpHubOptions) => unknown;
+    /**
+     * The panel, to be rendered as a component.
+     *
+     * It is exposed as the component itself and not as a factory that calls it. Calling a
+     * Solid component as a plain function runs its body outside a reactive owner, so the
+     * signals it creates are never disposed and the first render is not tracked — the
+     * panel appeared to work and then stopped updating.
+     */
+    Panel: (props: McpHubPanelProps) => unknown;
     catalog: {
         all: () => AppEntry[];
-        zeroSetup: () => AppEntry[];
-        token: () => AppEntry[];
-        social: () => AppEntry[];
+        /** apps that sign in through a browser */
+        browser: () => AppEntry[];
+        /** apps that want an API key pasted in */
+        key: () => AppEntry[];
+        /** apps that connect with nothing at all */
+        open: () => AppEntry[];
         local: () => AppEntry[];
-        categories: () => string[];
+        /** the tiers in display order, each already sorted */
+        sections: () => {
+            tier: AuthTier;
+            title: string;
+            hint: string;
+            apps: AppEntry[];
+        }[];
+        categories: (apps?: AppEntry[]) => string[];
+        tierOf: (app: AppEntry) => AuthTier;
+        icon: (app: AppEntry, size?: number) => string;
     };
     registry: {
         page: typeof fetchPage;
         walk: typeof walkRegistry;
         search: typeof searchRegistry;
+        /** the full discovery chain, for a panel that wants to say why sign-in is needed */
+        discover: (serverUrl: string) => Promise<OAuthEndpoints | undefined>;
         supportsZeroSetup: typeof supportsZeroSetup;
     };
     connect: {
@@ -46,6 +67,6 @@ export interface McpHub {
 }
 /** Build the hub. The host calls this once and keeps the result. */
 export declare function createMcpHub(runtime: McpRuntime): McpHub;
-export type { AppEntry, McpRuntime, ConnectionState, RegistryServer };
+export type { AppEntry, AuthTier, ConnectionState, McpRuntime, OAuthEndpoints, RegistryServer, Resolution };
 export { McpHubPanel, bindRuntime };
 export default createMcpHub;

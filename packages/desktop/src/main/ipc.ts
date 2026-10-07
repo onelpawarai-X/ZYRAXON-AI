@@ -1035,14 +1035,14 @@ ipcMain.handle("cloud-agent:open", async () => {
   cloudAgentWindow.webContents.session.setPermissionCheckHandler((_wc, permission, _origin, details) => {
     if (permission === "media" || permission === "clipboard-sanitized-write" || permission === "notifications") {
       return details.requestingUrl?.startsWith("https://zyraxon-pro-x.lovable.app") ||
-        details.requestingUrl?.startsWith("https://zyraxon.ai") || false
+        details.requestingUrl?.startsWith("https://zyraxonai.lovable.app") || false
     }
     return false
   })
   cloudAgentWindow.webContents.session.setDevicePermissionHandler((details, callback) => {
     if (details.deviceType === "microphone" || details.deviceType === "camera") {
       const url = details.requestingUrl || details.origin
-      if (url.includes("zyraxon-pro-x.lovable.app") || url.includes("zyraxon.ai")) {
+      if (url.includes("zyraxon-pro-x.lovable.app") || url.includes("zyraxonai.lovable.app")) {
         callback(true)
         return
       }
