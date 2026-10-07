@@ -1,5 +1,5 @@
 import type { AppEntry } from "../catalog/seed";
-import { searchRegistry, type RegistryServer } from "./registry";
+import { type RegistryServer } from "./registry";
 export interface Resolution {
     /** the server the app resolved to */
     server?: RegistryServer;
@@ -10,19 +10,6 @@ export interface Resolution {
     /** why there is no result, when there is none */
     reason?: string;
 }
-/** Words that suggest a server is a good match for an app. */
-declare const GOOD: string[];
-/** Words that suggest it is not. */
-declare const BAD: string[];
-/**
- * Rank a candidate against one search term.
- *
- * A hosted endpoint is worth a lot: it is the difference between one click and asking
- * the user to install something. Name matches beat title matches beat description
- * matches, and a short specific name beats a long one, because "notion" should not lose
- * to "notion-advanced-example-mcp-server".
- */
-declare function score(server: RegistryServer, term: string): number;
 /**
  * Find the best connectable server for an app.
  *

@@ -12,7 +12,12 @@ const KNOWN = new Set(["connected", "failed", "needs_auth", "needs_client_regist
 export interface McpClientLike {
   mcp: {
     status: () => Promise<{ data?: Record<string, { status: string; error?: string }> }>
-    add: (input: { name: string; config: unknown }) => Promise<{ data?: Record<string, McpStatusEntry> }>
+    /**
+     * The generated client types this as `McpLocalConfig | McpRemoteConfig`, and `toServerConfig`
+     * builds exactly one of those two shapes, so the Hub accepts the same union rather than
+     * `unknown`. `unknown` is not assignable to the union, which broke the client binding.
+     */
+    add: (input: { name: string; config: McpLocalConfig | McpRemoteConfig }) => Promise<{ data?: Record<string, McpStatusEntry> }>
     connect: (input: { name: string }) => Promise<unknown>
     disconnect: (input: { name: string }) => Promise<unknown>
     auth: {
@@ -23,15 +28,45 @@ export interface McpClientLike {
       remove: (input: { name: string }) => Promise<unknown>
     }
   }
-  experimental: {
-    toolIDs: () => Promise<string[]>
-  }
+  /**
+   * The live tool ids, used only to count what a card contributed.
+   *
+   * Optional, and never required to match, because the generated client's `experimental`
+   * group is an empty interface for a build that has no tool-ids route yet. Declaring a
+   * property here would make the host's own (correct) type fail to assign, so the shape is
+   * read through a lookup instead: a missing call means the count is zero, never a failure.
+   */
+  experimental?: {
+    toolIDs?: () => Promise<string[] | { data?: string[] }>
+  } & Record<string, unknown>
   global: {
     config: {
       /** just the browser-path key: the full config type is not needed by this shape, only this key */
       get: () => Promise<{ data?: { mcp_browser?: string } }>
     }
   }
+}
+
+/**
+ * The two server shapes the generated client accepts.
+ *
+ * Declared here rather than imported so the Hub keeps its single seam: the host supplies
+ * a client, the Hub never imports the SDK. These match the client's own config union.
+ */
+export type McpLocalConfig = {
+  type: "local"
+  command: string[]
+  enabled: boolean
+  timeout?: number
+  environment?: Record<string, string>
+}
+export type McpRemoteConfig = {
+  type: "remote"
+  url: string
+  enabled: boolean
+  timeout?: number
+  headers?: Record<string, string>
+  oauth?: false | { scope?: string; authorizationUrl?: string; tokenUrl?: string }
 }
 
 export interface HostBindings {
@@ -66,7 +101,11 @@ export function bindRuntime(host: HostBindings): McpRuntime {
       return Object.fromEntries(Object.entries(raw).map(([name, value]) => [name, toEntry(value)]))
     },
 
-    toolNames: async () => (await host.client.experimental.toolIDs()) ?? [],
+    toolNames: async () => {
+      const raw = await host.client.experimental?.toolIDs?.()
+      if (Array.isArray(raw)) return raw
+      return (raw as { data?: string[] } | undefined)?.data ?? []
+    },
 
     connect: async (name) => {
       await host.client.mcp.connect({ name })
@@ -79,7 +118,6 @@ export function bindRuntime(host: HostBindings): McpRuntime {
       const added = (await host.client.mcp.add({ name, config })).data
       return added?.[name]
     },
-
     authenticate: async (name) => {
       await host.client.mcp.auth.authenticate({ name })
     },

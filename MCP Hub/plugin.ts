@@ -136,5 +136,8 @@ export function createMcpHub(runtime: McpRuntime): McpHub {
 }
 
 export type { AppEntry, AuthTier, ConnectionState, McpRuntime, OAuthEndpoints, RegistryServer, Resolution }
+// The client slice the Hub drives, so a host can satisfy it explicitly where its generated
+// client's own shape does not structurally match (an empty `experimental` group, say).
+export type { McpClientLike, McpLocalConfig, McpRemoteConfig } from "./lib/runtime"
 export { McpHubPanel, bindRuntime }
 export default createMcpHub

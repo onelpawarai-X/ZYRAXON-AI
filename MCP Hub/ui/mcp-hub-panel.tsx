@@ -650,7 +650,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
           style={{
             background: browserState() === "saved" ? "transparent" : fill(),
             color: browserState() === "saved" ? "var(--accent,#4ade80)" : undefined,
-            borderColor: browserState() === "saved" ? "var(--accent,#4ade80)" : "var(--mcp-border-strong)",
+            "border-color": browserState() === "saved" ? "var(--accent,#4ade80)" : "var(--mcp-border-strong)",
           }}
         >
           {browserState() === "saving" ? "Saving…" : browserState() === "saved" ? "Saved" : "Save"}

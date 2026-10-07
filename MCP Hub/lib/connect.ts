@@ -14,6 +14,7 @@
 import type { AppEntry } from "../catalog/seed"
 import { McpClient } from "./client"
 import { resolveApp, type Resolution } from "./resolve"
+import type { McpLocalConfig, McpRemoteConfig } from "./runtime"
 
 export { McpClient, resolveApp }
 export type { Resolution }
@@ -46,7 +47,7 @@ export interface McpRuntime {
   /** connect a server that the config already declares */
   connect: (name: string) => Promise<void>
   /** declare a new server and bring it up, reporting whatever it settles on */
-  addServer: (name: string, config: Record<string, unknown>) => Promise<McpStatusEntry | undefined>
+  addServer: (name: string, config: McpLocalConfig | McpRemoteConfig) => Promise<McpStatusEntry | undefined>
   /**
    * Run the OAuth handshake to completion.
    *
@@ -159,7 +160,7 @@ const isSettledEarly = (status: McpStatusEntry["status"]) =>
   afterAuth(status) || status === "needs_auth"
 
 /** Build the ZYRAXON config entry for an app. */
-export function toServerConfig(app: AppEntry, token?: string): Record<string, unknown> {
+export function toServerConfig(app: AppEntry, token?: string): McpLocalConfig | McpRemoteConfig | Record<string, never> {
   if (app.kind === "local") {
     // Bundled local servers are declared by ZYRAXON's own defaults and need nothing.
     // One that ships its own launch command has to be declared here or it can never
@@ -170,7 +171,7 @@ export function toServerConfig(app: AppEntry, token?: string): Record<string, un
 
   if (!app.url) return {}
 
-  const config: Record<string, unknown> = { type: "remote", url: app.url, enabled: true, timeout: REQUEST_TIMEOUT_MS }
+  const config: McpRemoteConfig = { type: "remote", url: app.url, enabled: true, timeout: REQUEST_TIMEOUT_MS }
 
   if (token) {
     config.headers = { Authorization: `Bearer ${token}` }
@@ -295,7 +296,9 @@ async function attempt(
     // Both start together and neither is awaited before the other has had its chance.
     // Whichever reaches needs_auth first moves us on; the connect result is still
     // collected so a server that turns out to be live does not get abandoned.
-    const addPromise = runtime.addServer(app.id, config).catch((error: unknown) => {
+    // The empty entry was handled above, so this is one of the two real server shapes.
+    const serverConfig = config as McpLocalConfig | McpRemoteConfig
+    const addPromise = runtime.addServer(app.id, serverConfig).catch((error: unknown) => {
       reason = error instanceof Error ? error.message : String(error)
       return undefined
     })

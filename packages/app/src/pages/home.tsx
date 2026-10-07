@@ -1,6 +1,7 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import type { Session } from "@zyraxon-ai/sdk/v2/client"
+import type { McpClientLike } from "../../../../MCP Hub/plugin"
 import {
   type ComponentProps,
   createEffect,
@@ -596,7 +597,7 @@ export function NewHome() {
    * as a plugin. Everything it needs is passed in here, so the Hub itself does
    * not reach into the app.
    */
-function openMcpHub() {
+ function openMcpHub() {
     void import("../../../../MCP Hub/plugin").then((hub) => {
       const conn = focusedServer() ?? server.current
       // MCP config is per project, so the Hub needs a directory-scoped client,
@@ -606,7 +607,12 @@ function openMcpHub() {
       const serverSDK = conn ? global.ensureServerCtx(conn)?.sdk : undefined
       if (!serverSDK || !directory) return
       const runtime = hub.bindRuntime({
-        client: serverSDK.createClient({ directory, throwOnError: true }),
+        // The Hub reads a narrow slice of the SDK client and nothing else, so it declares
+        // that slice structurally. The generated client's `experimental` group is an empty
+        // interface in this build, which TypeScript's weak-type rule refuses even though
+        // the Hub only ever probes it optionally. The shape is the Hub's own contract, so
+        // the cast stays in one place rather than loosening the interface for every host.
+        client: serverSDK.createClient({ directory, throwOnError: true }) as unknown as McpClientLike,
         updateConfig: (patch: Record<string, unknown>) => sync().updateConfig(patch),
       })
       const hubApi = hub.createMcpHub(runtime)

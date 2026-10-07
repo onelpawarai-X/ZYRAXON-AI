@@ -1,6 +1,7 @@
 import type { AppEntry } from "../catalog/seed";
 import { McpClient } from "./client";
 import { resolveApp, type Resolution } from "./resolve";
+import type { McpLocalConfig, McpRemoteConfig } from "./runtime";
 export { McpClient, resolveApp };
 export type { Resolution };
 export type ConnectionState = {
@@ -36,7 +37,7 @@ export interface McpRuntime {
     /** connect a server that the config already declares */
     connect: (name: string) => Promise<void>;
     /** declare a new server and bring it up, reporting whatever it settles on */
-    addServer: (name: string, config: Record<string, unknown>) => Promise<McpStatusEntry | undefined>;
+    addServer: (name: string, config: McpLocalConfig | McpRemoteConfig) => Promise<McpStatusEntry | undefined>;
     /**
      * Run the OAuth handshake to completion.
      *
@@ -47,18 +48,39 @@ export interface McpRuntime {
     authenticate: (name: string) => Promise<void>;
     /**
      * Detach a server for good.
-     *
-     * This takes the config entry out, stops the live transport, and — with
-     * `forgetCredentials` — clears the stored tokens and any client registration. That
+  *
+     * This stops the live transport and marks the config entry disabled, and - with
+     * `forgetCredentials` - clears the stored tokens and any client registration. That
      * last part is what a user means by "disconnect my GitHub": leaving credentials
      * behind would silently sign the app back in on the next start.
+     *
+     * The config write is a deep merge, so the entry is disabled rather than deleted. A
+     * key left out of a merge survives it, and this interface has no way to express a
+     * delete; the runtime documents the same thing where it does the write.
      */
     disconnect: (name: string, options?: {
         forgetCredentials?: boolean;
     }) => Promise<void>;
+    /**
+     * The browser used for MCP sign-in, when the user picked one by hand.
+     *
+     * Empty string means nobody chose one and the server discovers installed browsers.
+     * This is the same setting the agent's mcp_connect respects, so fixing it here fixes
+     * the consent pages the model opens too.
+     */
+    getBrowserPath: () => Promise<string>;
+    /** Set (or clear, with an empty string) the browser used for MCP sign-in. */
+    setBrowserPath: (path: string) => Promise<void>;
+    /**
+     * Whether a sign-in already exists for this server.
+     *
+     * This is what separates "the server refused because nobody is signed in" from "the
+     * credential we hold was rejected", and only the first is worth opening a browser for.
+     */
+    hasTokens: (name: string) => Promise<boolean>;
 }
 /** Build the ZYRAXON config entry for an app. */
-export declare function toServerConfig(app: AppEntry, token?: string): Record<string, unknown>;
+export declare function toServerConfig(app: AppEntry, token?: string): McpLocalConfig | McpRemoteConfig | Record<string, never>;
 /**
  * Watch one server until it reaches a state worth acting on.
  *
@@ -68,9 +90,9 @@ export declare function toServerConfig(app: AppEntry, token?: string): Record<st
  * "Connecting…" forever with no sign-in ever offered.
  *
  * `until` exists because "settled" means different things at different moments.
- * Before sign-in, needs_auth is the interesting answer and waiting past it is
- * wrong. After sign-in has started it is the answer already held, so the only useful
- * thing left to wait for is a state that is no longer needs_auth.
+ * Before sign-in, needs_auth is the interesting answer and waiting past it is wrong.
+ * After sign-in has started it is the answer already held, so the only useful thing
+ * left to wait for is a state that is no longer needs_auth.
  */
 export declare function waitForStatus(runtime: McpRuntime, name: string, timeoutMs?: number, until?: (status: McpStatusEntry["status"]) => boolean): Promise<McpStatusEntry>;
 export interface ConnectOptions {

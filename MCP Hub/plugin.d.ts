@@ -1,10 +1,9 @@
 import type { AppEntry, AuthTier } from "./catalog/seed";
-import { allSeedApps, appIcon, browserApps, catalogSections, categories, keyApps, localApps, openApps, tierOf, } from "./catalog/seed";
-import { connectApp, countTools, describe, toServerConfig, type ConnectionState, type McpRuntime, } from "./lib/connect";
+import { connectApp, countTools, describe, toServerConfig, type ConnectionState, type McpRuntime } from "./lib/connect";
 import { McpClient } from "./lib/client";
 import { bindRuntime } from "./lib/runtime";
-import { resolveApp, type Resolution } from "./lib/resolve";
-import { discoverOAuth, fetchPage, searchRegistry, supportsZeroSetup, walkRegistry, type OAuthEndpoints, type RegistryServer, } from "./lib/registry";
+import { type Resolution } from "./lib/resolve";
+import { fetchPage, searchRegistry, supportsZeroSetup, walkRegistry, type OAuthEndpoints, type RegistryServer } from "./lib/registry";
 import { McpHubPanel } from "./ui/mcp-hub-panel";
 export interface McpHubPanelProps {
     runtime: McpRuntime;
@@ -68,5 +67,6 @@ export interface McpHub {
 /** Build the hub. The host calls this once and keeps the result. */
 export declare function createMcpHub(runtime: McpRuntime): McpHub;
 export type { AppEntry, AuthTier, ConnectionState, McpRuntime, OAuthEndpoints, RegistryServer, Resolution };
+export type { McpClientLike, McpLocalConfig, McpRemoteConfig } from "./lib/runtime";
 export { McpHubPanel, bindRuntime };
 export default createMcpHub;
