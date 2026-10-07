@@ -1,163 +1,183 @@
 #!/usr/bin/env node
-// Proof that MCP tools reach the agent at runtime.
+// Check that the host actually wired the Hub into the app.
 //
-//   node scripts/verify-injection.mjs [--token ghp_xxx]
+//   node "MCP Hub/scripts/verify-injection.mjs"            check the source
+//   node "MCP Hub/scripts/verify-injection.mjs" --config   also check the user's config
 //
-// The point of this test: an agent can only use a tool it has been told about.
-// This shows, in order:
-//   1. a server is connected and its tools are discovered
-//   2. those tools are converted into agent tools with the exact shape the
-//      runtime uses (see packages/zyraxon/src/mcp/catalog.ts)
-//   3. the agent is asked, through the model, to call one of them
-//   4. the model answers with a tool call, and the tool returns real data
+// Everything in this folder can be perfect and still never appear, because the Hub reaches
+// the app through one thin seam: the host imports the plugin entry, renders its panel and
+// hands it an MCP runtime. If that seam is not wired, there is no button and no error —
+// the feature is simply absent.
 //
-// Step 4 is the real proof of injection: the model could not name the tool
-// unless the tool had been handed to it.
+// So this reads the host's own files and looks for the four things that have to be there:
+// the plugin entry registered, the plugin imported, the panel rendered as a component, and
+// a runtime passed in. It then loads this folder through the same URL the host uses, so a
+// plugin entry that does not even import is caught here rather than at startup.
 
-const PUBLIC = { id: "deepwiki", url: "https://mcp.deepwiki.com/mcp" }
-const GITHUB = { id: "github", url: "https://api.githubcopilot.com/mcp/" }
+import { readFile } from "node:fs/promises"
+import { homedir } from "node:os"
+import { dirname, join, resolve } from "node:path"
+import { fileURLToPath, pathToFileURL } from "node:url"
 
-let pass = 0
-let fail = 0
-const ok = (m) => { pass++; console.log(`  PASS  ${m}`) }
-const bad = (m) => { fail++; console.log(`  FAIL  ${m}`) }
-const note = (m) => console.log(`        ${m}`)
-
-function parseBody(text) {
-  const t = text.trim()
-  if (t.startsWith("{") || t.startsWith("[")) return JSON.parse(t)
-  const lines = t.split(/\r?\n/).filter((l) => l.startsWith("data:"))
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const p = lines[i].slice(5).trim()
-    if (p.startsWith("{")) { try { return JSON.parse(p) } catch {} }
-  }
-  throw new Error("unparseable: " + t.slice(0, 100))
-}
-
-class Client {
-  constructor(url, token) { this.url = url; this.token = token; this.sid = undefined; this.id = 1 }
-  async rpc(method, params = {}) {
-    const headers = { "content-type": "application/json", accept: "application/json, text/event-stream" }
-    if (this.token) headers.authorization = `Bearer ${this.token}`
-    if (this.sid) headers["mcp-session-id"] = this.sid
-    const res = await fetch(this.url, {
-      method: "POST", headers,
-      body: JSON.stringify({ jsonrpc: "2.0", id: this.id++, method, params }),
-    })
-    const sid = res.headers.get("mcp-session-id")
-    if (sid) this.sid = sid
-    if (!res.ok) throw new Error(`${method} -> HTTP ${res.status}`)
-    const text = await res.text()
-    if (!text.trim()) return undefined
-    const msg = parseBody(text)
-    if (msg?.error) throw new Error(`${method}: ${msg.error.message}`)
-    return msg?.result
-  }
-  async init() {
-    const r = await this.rpc("initialize", {
-      protocolVersion: "2025-06-18", capabilities: {},
-      clientInfo: { name: "injection-check", version: "1" },
-    })
-    return r
-  }
-  tools() { return this.rpc("tools/list", {}) }
-  call(name, args) { return this.rpc("tools/call", { name, arguments: args }) }
-}
+const HERE = dirname(fileURLToPath(import.meta.url))
+const HUB = resolve(HERE, "..")
+const REPO = resolve(HUB, "..")
 
 /**
- * The same conversion the runtime performs in mcp/catalog.ts: an MCP tool
- * becomes an agent tool with a name, a description and a JSON schema.
+ * Where the host is expected to reach the Hub from.
+ *
+ * The runtime binding lives in home.tsx rather than in a context module. It was assumed to
+ * be somewhere else once and this check reported a missing file that never existed, which
+ * is the failure mode of a verification script: it looks thorough and is quietly checking
+ * nothing. It reads what the app actually does.
  */
-function toAgentTool(serverId, mcpTool) {
-  return {
-    type: "function",
-    function: {
-      name: `${serverId}_${mcpTool.name}`,
-      description: mcpTool.description ?? "",
-      parameters: {
-        ...(mcpTool.inputSchema ?? {}),
-        type: "object",
-        additionalProperties: false,
-      },
-    },
+const HOST_FILES = [
+  { path: join("packages", "app", "src", "pages", "home.tsx"), why: "renders the MCP Connect button and binds the runtime" },
+]
+
+export function parseArgs(argv) {
+  const flag = (name) => argv.includes(name)
+  return { help: flag("--help") || flag("-h"), config: flag("--config") }
+}
+
+export const USAGE = `Check that the Hub is wired into the host app.
+
+  --config   also check that the plugin is registered in ~/.config/zyraxon/zyraxon.jsonc
+  --help     show this text
+`
+
+/** Strip comments so a match inside a comment does not count as wiring. */
+function stripComments(text) {
+  let out = ""
+  let inString = false
+  let escaped = false
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]
+    const next = text[i + 1]
+    if (inString) {
+      out += ch
+      if (escaped) escaped = false
+      else if (ch === "\\") escaped = true
+      else if (ch === '"') inString = false
+      continue
+    }
+    if (ch === '"') {
+      inString = true
+      out += ch
+      continue
+    }
+    if (ch === "/" && next === "/") {
+      while (i < text.length && text[i] !== "\n") i++
+      out += "\n"
+      continue
+    }
+    if (ch === "/" && next === "*") {
+      const end = text.indexOf("*/", i + 2)
+      i = end === -1 ? text.length : end + 1
+      continue
+    }
+    out += ch
+  }
+  return out
+}
+
+async function readOrSkip(path) {
+  try {
+    return await readFile(path, "utf8")
+  } catch {
+    return undefined
   }
 }
 
-async function main() {
-  const i = process.argv.indexOf("--token")
-  const token = i > -1 ? process.argv[i + 1] : undefined
-
-  console.log("MCP Hub - runtime tool injection proof")
-  console.log("======================================")
-  console.log("An agent cannot call a tool it has not been told about, so this")
-  console.log("walks the exact path a tool takes: discovery, conversion, then a call.\n")
-
-  // 1. connect and discover
-  console.log("1. connect and discover tools")
-  const client = new Client(PUBLIC.url)
-  await client.init()
-  const { tools = [] } = await client.tools()
-  tools.length > 0 ? ok(`${PUBLIC.id}: ${tools.length} tools discovered`) : bad("no tools discovered")
-  for (const t of tools) note(`raw MCP tool: ${t.name}`)
-
-  // 2. convert to agent tools
-  console.log("\n2. convert to agent tools (what the model is given)")
-  const agentTools = tools.map((t) => toAgentTool(PUBLIC.id, t))
-  const shaped = agentTools.every((t) => t.type === "function" && t.function.name && t.function.parameters?.type === "object")
-  shaped ? ok(`${agentTools.length} tools converted with a valid function schema`) : bad("conversion produced an invalid tool")
-  for (const t of agentTools) note(`agent tool: ${t.function.name}`)
-
-  // 3. prove the model can see them: a model asked to pick a tool can only
-  //    answer with a name that was supplied in the request
-  console.log("\n3. the agent sees the tools (name collision check)")
-  const names = new Set(agentTools.map((t) => t.function.name))
-  names.size === agentTools.length ? ok("every agent tool has a unique name, so the model can address it") : bad("duplicate tool names would confuse the model")
-  const callable = agentTools.find((t) => t.function.name.endsWith("read_wiki_contents")) ?? agentTools[0]
-  note(`the model would call: ${callable.function.name}`)
-  note(`with schema: ${JSON.stringify(callable.function.parameters).slice(0, 120)}…`)
-
-  // 4. perform the call the model chose
-  console.log("\n4. the chosen tool actually runs and returns data")
-  const raw = callable.function.name.slice(PUBLIC.id.length + 1)
-  try {
-    const result = await client.call(raw, { repoName: "facebook/react" })
-    const text = (result?.content ?? []).filter((c) => c.type === "text").map((c) => c.text).join("\n")
-    text.length > 100
-      ? ok(`agent tool ${callable.function.name} returned ${text.length} chars of real data`)
-      : bad("tool returned nothing")
-  } catch (e) {
-    bad(`tool call failed: ${e.message}`)
+export async function main(argv) {
+  const { help, config } = parseArgs(argv)
+  if (help) {
+    console.log(USAGE)
+    return
   }
 
-  // 5. the authenticated case, which is what a real user would have
-  console.log("\n5. authenticated server, same path")
-  if (!token) {
-    note("no --token given, skipping GitHub")
-  } else {
-    const gh = new Client(GITHUB.url, token)
-    await gh.init()
-    const r = await gh.tools()
-    const ghTools = r?.tools ?? []
-    ghTools.length > 0 ? ok(`github: ${ghTools.length} tools discovered`) : bad("github: no tools")
-    const ghAgent = ghTools.map((t) => toAgentTool("github", t))
-    note(`agent gains ${ghAgent.length} tools, e.g. ${ghAgent.slice(0, 3).map((t) => t.function.name).join(", ")}`)
+  console.log("MCP Hub injection")
+  console.log("=================")
+  console.log(`hub:  ${HUB}`)
+  console.log(`repo: ${REPO}\n`)
 
-    // run one that reads, so nothing is changed
-    const listTool = ghAgent.find((t) => t.function.name === "github_list_pull_requests")
-    if (listTool) {
-      try {
-        const res = await gh.call("list_pull_requests", { owner: "onelpawarai-X", repo: "ZYRAXON-AI", state: "open" })
-        const text = (res?.content ?? []).filter((c) => c.type === "text").map((c) => c.text).join("\n")
-        ok(`called github_list_pull_requests, got ${text.length} chars back`)
-        note(`first line: ${text.split("\n").find((l) => l.trim())?.slice(0, 90)}`)
-      } catch (e) {
-        note(`list_pull_requests not callable here: ${e.message.slice(0, 80)}`)
-      }
+  let problems = 0
+
+  // 1. the plugin entry has to actually import. This is the check that catches a rename,
+  //    a moved file or an export that was dropped, all of which used to be invisible until
+  //    the app was started.
+  const entry = pathToFileURL(join(HUB, "plugin.ts")).href
+  try {
+    const hub = await import(entry)
+    const built = hub.createMcpHub?.({})
+    if (!built) {
+      console.log(`  FAIL createMcpHub returned nothing from ${entry}`)
+      problems++
+    } else {
+      console.log(`  ok   plugin entry imports (${built.catalog.all().length} apps)`)
+    }
+  } catch (e) {
+    console.log(`  FAIL plugin entry does not import: ${e.message}`)
+    problems++
+  }
+
+  // 2. the host has to reach it
+  for (const file of HOST_FILES) {
+    const text = await readOrSkip(join(REPO, file.path))
+    if (text === undefined) {
+      console.log(`  --   ${file.path} not present (${file.why})`)
+      continue
+    }
+    const code = stripComments(text)
+    const mentionsHub = /mcp[- ]?hub|McpHub|createMcpHub/i.test(code)
+    console.log(`  ${mentionsHub ? "ok  " : "--  "} ${file.path}${mentionsHub ? "" : ` — no Hub reference (${file.why})`}`)
+  }
+
+  // 3. and render it as a component rather than calling it, which is the mistake that
+  //    makes a panel render once and then stop responding
+  const home = await readOrSkip(join(REPO, "packages", "app", "src", "pages", "home.tsx"))
+  if (home) {
+    const code = stripComments(home)
+    const asComponent = /<[A-Za-z]*\.?[A-Za-z]*McpHubPanel[\s/>]/.test(code)
+    const calledDirectly = /McpHubPanel\s*\(/.test(code)
+    if (calledDirectly && !asComponent) {
+      console.log("  FAIL home.tsx calls McpHubPanel(...) as a function — render it as a component instead")
+      problems++
+    } else if (asComponent) {
+      console.log("  ok   home.tsx renders the panel as a component")
+    }
+
+    // 4. the runtime has to be handed in, or every card is blank
+    if (/\.bindRuntime\s*\(|bindRuntime\s*\(/.test(code)) {
+      const passesClient = /bindRuntime\s*\(\s*\{[\s\S]{0,200}?client/.test(code)
+      const passesConfig = /bindRuntime\s*\(\s*\{[\s\S]{0,200}?updateConfig/.test(code)
+      console.log(`  ${passesClient ? "ok  " : "FAIL"} the app binds a connected MCP client`)
+      console.log(`  ${passesConfig ? "ok  " : "FAIL"} the app passes a config writer, so a connection survives a restart`)
+      if (!passesClient || !passesConfig) problems++
+    } else {
+      console.log("  FAIL no bindRuntime call found — the panel would have no runtime to talk to")
+      problems++
     }
   }
 
-  console.log(`\n${pass} passed, ${fail} failed`)
-  process.exit(fail === 0 ? 0 : 1)
+  if (config) {
+    const configPath = join(homedir(), ".config", "zyraxon", "zyraxon.jsonc")
+    const text = await readOrSkip(configPath)
+    if (text === undefined) {
+      console.log(`\n  FAIL ${configPath} does not exist — run: node "MCP Hub/install.mjs"`)
+      problems++
+    } else if (!text.includes(pathToFileURL(join(HUB, "plugin.ts")).pathname.slice(1))) {
+      console.log(`\n  --   the plugin is not registered in ${configPath}`)
+      console.log(`      run: node "MCP Hub/install.mjs"`)
+    } else {
+      console.log(`\n  ok   the plugin is registered in ${configPath}`)
+    }
+  }
+
+  console.log(problems === 0 ? "\nThe Hub is wired up." : `\n${problems} problem(s) found.`)
+  if (problems > 0) process.exitCode = 1
 }
 
-main()
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  await main(process.argv.slice(2))
+}

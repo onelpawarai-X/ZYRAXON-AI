@@ -9,14 +9,15 @@ import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstab
 import { EventV2 } from "../../event"
 import { Credential } from "../../credential"
 import { Integration } from "../../integration"
+import { freeTierUserAgent } from "../../installation/version"
 import { ModelV2 } from "../../model"
 import { ProviderV2 } from "../../provider"
 import { ConfigProviderV1 } from "../../v1/config/provider"
 import { ConfigProviderOptionsV1 } from "../../v1/config/provider-options"
 import { ConfigV1 } from "../../v1/config/config"
 
-const defaultServer = "https://console.zyraxon.ai"
-const clientID = "zyraxon-cli"
+const defaultServer = process.env["OPENCODE_CONSOLE_URL"] ?? "https://opencode.ai/console"
+const clientID = "opencode-cli"
 const methodID = Integration.MethodID.make("device")
 const RemoteResponse = Schema.Struct({ config: ConfigV1.Info })
 const Device = Schema.Struct({
@@ -168,6 +169,8 @@ export const ZyraxonPlugin = define<HttpClient.HttpClient | EventV2.Service | Sc
       if (!item) return
       const hasKey = Boolean(process.env.OPENCODE_API_KEY || connected || item.provider.request.body.apiKey)
       catalog.provider.update(item.provider.id, (provider) => {
+        // The free-tier gate identifies the client by this header alone.
+        provider.request.headers["User-Agent"] = freeTierUserAgent()
         if (!hasKey) provider.request.body.apiKey = "public"
       })
       if (hasKey) return

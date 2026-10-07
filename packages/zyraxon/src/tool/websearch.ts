@@ -6,8 +6,9 @@ import * as Tool from "./tool"
 import * as McpWebSearch from "./mcp-websearch"
 import DESCRIPTION from "./websearch.txt"
 import { checksum } from "@zyraxon-ai/core/util/encode"
-import { InstallationVersion } from "@zyraxon-ai/core/installation/version"
+
 import { RuntimeFlags } from "@/effect/runtime-flags"
+import { freeTierUserAgent } from "@opencode-ai/core/installation/version"
 
 export const Parameters = Schema.Struct({
   query: Schema.String.annotate({ description: "Websearch query" }),
@@ -54,7 +55,7 @@ export function webSearchModelName(extra: Tool.Context["extra"]) {
 }
 
 function parallelAuthHeaders() {
-  const headers = { "User-Agent": `opencode/${InstallationVersion}` }
+  const headers = { "User-Agent": `freeTierUserAgent()` }
   if (!process.env.PARALLEL_API_KEY) return headers
   return { ...headers, Authorization: `Bearer ${process.env.PARALLEL_API_KEY}` }
 }

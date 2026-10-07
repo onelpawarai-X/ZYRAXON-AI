@@ -6,7 +6,7 @@ import { define } from "@zyraxon-ai/plugin/v2/effect/plugin"
 import { Deferred, Effect } from "effect"
 import type { Scope } from "effect"
 import { Credential } from "../../credential"
-import { InstallationVersion } from "../../installation/version"
+import { InstallationVersion, freeTierUserAgent } from "../../installation/version"
 import { Integration } from "../../integration"
 import { ModelV2 } from "../../model"
 import { OauthCallbackPage } from "../../oauth/page"
@@ -191,7 +191,7 @@ export const OpenAIPlugin = define({
 } satisfies PluginInternal.Plugin<PluginInternal.Requirements | Scope.Scope>)
 
 function headers(contentType: string) {
-  return { "Content-Type": contentType, "User-Agent": `zyraxon/${InstallationVersion}` }
+  return { "Content-Type": contentType, "User-Agent": freeTierUserAgent() }
 }
 
 function exchange(code: string, redirect: string, pkce: Pkce) {

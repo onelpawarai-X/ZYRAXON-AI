@@ -13,7 +13,8 @@ export interface Resolution {
 /**
  * Find the best connectable server for an app.
  *
- * `preferredUrl` short-circuits the search when the catalog already knows the
- * endpoint (Notion, Linear and the other first-party servers).
+ * `preferredUrl` short-circuits the search entirely, and that is the normal path: the
+ * catalog carries a verified endpoint for every app that has one, and reaching for the
+ * registry instead would trade a known-good URL for a guessed one.
  */
 export declare function resolveApp(app: AppEntry, preferredUrl?: string): Promise<Resolution>;

@@ -10,7 +10,7 @@ import { Global } from "@zyraxon-ai/core/global"
 import { Filesystem } from "@/util/filesystem"
 import * as ConfigPaths from "@/config/paths"
 
-const TUI_SCHEMA_URL = "https://zyraxon.ai/tui.json"
+const TUI_SCHEMA_URL = "https://zyraxonai.lovable.app/tui.json"
 
 const decodeTheme = Schema.decodeUnknownOption(Schema.String)
 const decodeRecord = Schema.decodeUnknownOption(Schema.Record(Schema.String, Schema.Unknown))

@@ -554,6 +554,7 @@ export type SessionsContextOutput = {
           readonly name: string
           readonly source?: { readonly start: number; readonly end: number; readonly text: string }
         }>
+        readonly replyLanguage?: string | null
         readonly type: "user"
       }
     | {
@@ -1632,6 +1633,7 @@ export type SessionsMessageOutput = {
           readonly name: string
           readonly source?: { readonly start: number; readonly end: number; readonly text: string }
         }>
+        readonly replyLanguage?: string | null
         readonly type: "user"
       }
     | {
@@ -1804,6 +1806,7 @@ export type MessagesListOutput = {
           readonly name: string
           readonly source?: { readonly start: number; readonly end: number; readonly text: string }
         }>
+        readonly replyLanguage?: string | null
         readonly type: "user"
       }
     | {

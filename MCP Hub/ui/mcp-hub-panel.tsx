@@ -4,7 +4,7 @@
 
 import { For, Show, createEffect, createMemo, createSignal, onCleanup, onMount } from "solid-js"
 import type { AppEntry } from "../catalog/seed"
-import { allSeedApps, appIcon, categories } from "../catalog/seed"
+import { allSeedApps, appIcon, browserApps, categories } from "../catalog/seed"
 import { connectApp, describe, type ConnectionState, type McpRuntime } from "../lib/connect"
 import type { Resolution } from "../lib/resolve"
 import { searchRegistry, supportsZeroSetup, type RegistryServer } from "../lib/registry"
@@ -22,6 +22,22 @@ const authLabel: Record<string, string> = {
   oauth: "Sign in with the browser",
   token: "Needs an access token",
   local: "Runs on this machine",
+}
+
+/**
+ * Registry copy is only true while it stays true.
+ *
+ * These numbers used to be typed in by hand and drifted every time the registry moved:
+ * the header said 9,580 while the box below it promised "18,000+", on the same screen.
+ * Now the summary written by the build script decides, and if it is missing the caption
+ * says so plainly instead of quoting a figure nobody checked.
+ */
+const REGISTRY_FALLBACK = "thousands more in the official registry"
+
+function registryCaption(count: number | undefined): string {
+  if (count === undefined) return REGISTRY_FALLBACK
+  if (count === 0) return "registry cache empty — run scripts/build-registry-cache.mjs"
+  return `${count.toLocaleString("en-US")} servers in the official registry`
 }
 
 /**
@@ -129,6 +145,50 @@ export function McpHubPanel(props: McpHubPanelProps) {
 
   const [query, setQuery] = createSignal("")
   const [category, setCategory] = createSignal<string>("All")
+
+  /**
+   * Browser used for OAuth sign-in and for links the agent opens. Empty means the
+   * server discovers installed browsers on its own. Kept light: the value rides in
+   * one config key the server already reads, so nothing here reaches into the app.
+   */
+  const [browserPath, setBrowserPath] = createSignal("")
+  const [browserState, setBrowserState] = createSignal<"idle" | "saving" | "saved">("idle")
+  let browserFileInput: HTMLInputElement | undefined
+
+  onMount(() => {
+    props.runtime
+      .getBrowserPath()
+      .then((value) => setBrowserPath(value ?? ""))
+      .catch(() => {})
+  })
+
+  function pickBrowserFile() {
+    browserFileInput?.click()
+  }
+
+  function onBrowserFilePicked(e: Event) {
+    const input = e.target as HTMLInputElement
+    const file = input.files?.[0]
+    input.value = ""
+    const legacy = file as (File & { path?: string }) | undefined
+    const web = window as unknown as { webUtils?: { getPathForFile?: (f: File) => string } }
+    const path = (legacy?.path || (file ? web.webUtils?.getPathForFile?.(file) : "") || "").trim()
+    if (path) setBrowserPath(path)
+  }
+
+  async function saveBrowserPath() {
+    const path = browserPath().trim()
+    setBrowserState("saving")
+    try {
+      await props.runtime.setBrowserPath(path)
+      setBrowserState("saved")
+      window.setTimeout(() => {
+        if (browserState() === "saved") setBrowserState("idle")
+      }, 1600)
+    } catch {
+      setBrowserState("idle")
+    }
+  }
   /**
    * Connection state outlives this panel. The servers themselves live in the server
    * process, so navigating to another route and coming back used to wipe the local
@@ -143,10 +203,80 @@ export function McpHubPanel(props: McpHubPanelProps) {
   const [tokenFor, setTokenFor] = createSignal<AppEntry | null>(null)
   const [detailsFor, setDetailsFor] = createSignal<AppEntry | null>(null)
   const [tokenValue, setTokenValue] = createSignal("")
+  /**
+   * The client credentials a console-issued app needs, keyed by app.
+   *
+   * These live here rather than in the catalog because they belong to the person who owns
+   * the vendor account, not to the app list: one user's Slack client ID is nobody else's.
+   * Holding them for the session is enough — the server keeps the registration once a
+   * handshake completes.
+   */
+  const [clientIds, setClientIds] = createSignal<Record<string, { id: string; secret?: string }>>({})
+  /** the app whose sign-in link is being built, so the button can say so */
+  const [generating, setGenerating] = createSignal<string | null>(null)
+  /** the sign-in link produced by Generate, shown with copy and open */
+  const [consentUrl, setConsentUrl] = createSignal<string | null>(null)
   const [registryHits, setRegistryHits] = createSignal<RegistryServer[]>([])
   const [registryTerm, setRegistryTerm] = createSignal("")
   /** which registry server each app resolved to */
   const [resolved, setResolved] = createSignal<Record<string, string>>({})
+
+  /**
+   * Whether one-click sign-in is actually possible for an app, checked against the live
+   * server instead of the catalog.
+   *
+   * The catalog used to carry a hand-set `zeroSetup` flag, and a live pass over every
+   * OAuth app showed 29 of them redirect the sign-in to a different host than the
+   * endpoint, with 9 offering no dynamic client registration at all. A badge that says
+   * "No setup" for those apps is a promise the connector cannot keep, so the badge is
+   * now only shown once the discovery chain has actually answered for that endpoint.
+   */
+  const [oneClick, setOneClick] = createSignal<Record<string, boolean>>({})
+
+  /**
+   * How many servers the registry actually holds, read from the summary written next to
+   * the cache.
+   *
+   * Loaded lazily because the panel must paint before it touches the filesystem, and the
+   * count is only ever decoration. It used to be typed into this markup twice — once as
+   * 9,580 and once as "18,000+", on the same screen.
+   */
+  const [registryCount, setRegistryCount] = createSignal<number | undefined>(undefined)
+
+  onMount(() => {
+    let stopped = false
+
+    void (async () => {
+      const { registryCount: count } = await import("../catalog/registry-cache")
+      if (!stopped) setRegistryCount(count())
+    })()
+
+    onCleanup(() => {
+      stopped = true
+    })
+  })
+
+  onMount(() => {
+    let stopped = false
+    const controller = new AbortController()
+
+    void (async () => {
+      const checked: Record<string, boolean> = {}
+      // Sequential on purpose: firing 53 discovery chains at once looks like an attack
+      // and gets the whole panel rate-limited by the servers it is asking.
+      for (const app of browserApps) {
+        if (stopped || !app.url) continue
+        checked[app.id] = await supportsZeroSetup(app.url).catch(() => false)
+        if (stopped) return
+        setOneClick((prev) => ({ ...prev, ...checked }))
+      }
+    })()
+
+    onCleanup(() => {
+      stopped = true
+      controller.abort()
+    })
+  })
 
   const filtered = createMemo(() =>
     apps.filter((a) => {
@@ -357,29 +487,34 @@ export function McpHubPanel(props: McpHubPanelProps) {
     }
   }
 
-  /**
- * Detach an app.
- *
- * The runtime owns the transport, so the panel asks it to drop the server and then
- * clears the card. Leaving the local signal alone was what made a disconnected
- * server look connected until the panel was reopened.
- */
-const onDisconnect = async (app: AppEntry) => {
-    if (busy()) return
-    setBusy(app.id)
-    setBusySince(Date.now())
-    setState(app.id, { status: "disconnected" })
-    try {
-      await props.runtime.disconnect?.(app.id)
-    } catch {
-      // The card is already marked disconnected and the server is gone from the
-      // runtime's view either way; a failure here has nothing left to report.
-    } finally {
-      busyIds.delete(app.id)
-      setBusy(null)
-      setBusySince(0)
-    }
-  }
+/**
+       * Detach an app.
+       *
+       * The runtime owns the transport, so the panel asks it to drop the server and then
+       * clears the card. Leaving the local signal alone was what made a disconnected
+       * server look connected until the panel was reopened.
+       *
+       * `forgetCredentials` is what the button means. Without it the stored tokens and
+       * the client registration stay on disk and the next start quietly signs the app
+       * back in, so a user who pressed Disconnect finds the account reattached with no
+       * explanation.
+       */
+      const onDisconnect = async (app: AppEntry) => {
+        if (busy()) return
+        setBusy(app.id)
+        setBusySince(Date.now())
+        setState(app.id, { status: "disconnected" })
+        try {
+          await props.runtime.disconnect(app.id, { forgetCredentials: true })
+        } catch {
+          // The card is already marked disconnected and the server is gone from the
+          // runtime's view either way; a failure here has nothing left to report.
+        } finally {
+          busyIds.delete(app.id)
+          setBusy(null)
+          setBusySince(0)
+        }
+      }
 
   const submitToken = async () => {
     const app = tokenFor()
@@ -396,6 +531,61 @@ const onDisconnect = async (app: AppEntry) => {
       setBusy(null)
       setTokenFor(null)
       setTokenValue("")
+    }
+  }
+
+  /**
+   * Connect an app that needs a client its vendor's console issued.
+   *
+   * The client is written into the server's config as part of the connect, so the
+   * handshake has something to ask for consent with. Without it the server tries to
+   * register one itself, which the publishers behind these consoles refuse — so this
+   * field is the whole difference between them working and not.
+   */
+  const submitClientId = async () => {
+    const app = detailsFor()
+    const credentials = app ? clientIds()[app.id] : undefined
+    if (!app || !credentials?.id?.trim()) return
+    busyIds.add(app.id)
+    setBusy(app.id)
+    setBusySince(Date.now())
+    setState(app.id, { status: "connecting" })
+    try {
+      setState(
+        app.id,
+        await connectApp(props.runtime, app, {
+          clientId: credentials.id.trim(),
+          clientSecret: credentials.secret?.trim(),
+          onProgress: (s) => setState(app.id, s),
+        }),
+      )
+      if (states()[app.id]?.status === "connected") setDetailsFor(null)
+    } finally {
+      busyIds.delete(app.id)
+      setBusy(null)
+      setBusySince(0)
+    }
+  }
+
+  /**
+   * Build the sign-in link without opening it.
+   *
+   * Discovery, client registration and PKCE all happen on the server, so what comes back
+   * is a complete consent URL. Handing it over instead of opening it is the point: the
+   * account is often already signed in somewhere other than the default browser, and
+   * approving there still delivers the reply to ZYRAXON's loopback. Opening it is offered
+   * right beside the link for the other case.
+   */
+  const generateConsentUrl = async (app: AppEntry) => {
+    setGenerating(app.id)
+    setConsentUrl(null)
+    try {
+      const url = await props.runtime.startAuth(app.id)
+      setConsentUrl(url || null)
+    } catch {
+      setConsentUrl(null)
+    } finally {
+      setGenerating(null)
     }
   }
 
@@ -467,7 +657,7 @@ const onDisconnect = async (app: AppEntry) => {
         <div class="flex flex-col">
           <span class="text-[17px] font-[600] tracking-[-0.2px]">MCP Connect</span>
           <span class="text-[12px] text-[var(--text-weak,#8b95ad)]">
-            {connectedCount()} connected · {apps.length} MCP servers/apps ready · thousands more in the registry
+            {connectedCount()} connected · {apps.length} MCP servers/apps ready · {registryCaption(registryCount())}
           </span>
         </div>
         <Show when={props.onClose}>
@@ -484,6 +674,63 @@ const onDisconnect = async (app: AppEntry) => {
             onClick={() => props.onClose?.()}
           >
             Cancel
+          </button>
+        </Show>
+      </div>
+
+      {/* browser for sign-in */}
+      <div class="flex items-center gap-2 border-b border-[var(--mcp-border)] px-6 py-3">
+        <input
+          ref={browserFileInput}
+          type="file"
+          accept=".exe,.app,.bin,application/octet-stream"
+          class="hidden"
+          aria-hidden="true"
+          tabIndex={-1}
+          onChange={onBrowserFilePicked}
+        />
+        <span class="shrink-0 text-[12px] text-[var(--text-weak,#8b95ad)]">Sign-in browser</span>
+        <input
+          value={browserPath()}
+          onInput={(e) => {
+            setBrowserPath(e.currentTarget.value)
+            if (browserState() === "saved") setBrowserState("idle")
+          }}
+          placeholder="C:\Program Files\Google\Chrome\Application\chrome.exe"
+          spellcheck={false}
+          class="h-8 min-w-[240px] flex-1 rounded-md border border-[var(--mcp-border)] bg-transparent px-3 font-mono text-[12px] outline-none placeholder:text-[var(--mcp-text-weak)]"
+        />
+        <button
+          type="button"
+          onClick={pickBrowserFile}
+          class="h-8 shrink-0 rounded-md border border-[var(--mcp-border-strong)] px-3 text-[12px] font-[600] transition-colors"
+          style={{ background: fill() }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = fillHover())}
+          onMouseLeave={(e) => (e.currentTarget.style.background = fill())}
+        >
+          Browse…
+        </button>
+        <button
+          type="button"
+          onClick={saveBrowserPath}
+          disabled={browserState() === "saving"}
+          class="h-8 shrink-0 rounded-md border px-3 text-[12px] font-[600] transition-colors"
+          style={{
+            background: browserState() === "saved" ? "transparent" : fill(),
+            color: browserState() === "saved" ? "var(--accent,#4ade80)" : undefined,
+            "border-color": browserState() === "saved" ? "var(--accent,#4ade80)" : "var(--mcp-border-strong)",
+          }}
+        >
+          {browserState() === "saving" ? "Saving…" : browserState() === "saved" ? "Saved" : "Save"}
+        </button>
+        <Show when={browserPath().trim().length > 0}>
+          <button
+            type="button"
+            onClick={() => setBrowserPath("")}
+            class="h-8 shrink-0 rounded-md border border-[var(--mcp-border)] px-2 text-[12px] text-[var(--text-weak,#8b95ad)] transition-colors"
+            title="Use the browser ZYRAXON finds on its own"
+          >
+            Clear
           </button>
         </Show>
       </div>
@@ -693,9 +940,21 @@ const onDisconnect = async (app: AppEntry) => {
                     <span class="rounded-full px-2 py-0.5" style={{ background: fill() }}>
                       {app.category}
                     </span>
-                    <Show when={app.zeroSetup}>
+                    <Show when={oneClick()[app.id] === true}>
                       <span class="rounded-full bg-emerald-500/15 px-2 py-0.5 text-emerald-600 dark:text-emerald-300">
-                        No setup
+                        One click
+                      </span>
+                    </Show>
+                    <Show when={app.kind === "oauth" && oneClick()[app.id] === false}>
+                      {/* Saying this up front is the whole point. These apps hand the
+                          sign-in to another host and expect their own client id, so the
+                          card would otherwise look broken rather than explained. */}
+                      <span
+                        class="rounded-full px-2 py-0.5"
+                        style={{ background: fill() }}
+                        title="Sign-in happens on another host, so it may ask you to paste an app id"
+                      >
+                        Extra step
                       </span>
                     </Show>
                     {/* Say who actually runs the endpoint. More than half the catalog
@@ -781,7 +1040,7 @@ const onDisconnect = async (app: AppEntry) => {
           <div class="flex flex-col gap-3 rounded-xl border border-[var(--mcp-border)] p-4">
           <span class="text-[13px] font-[600]">Search the full MCP registry</span>
           <span class="text-[12px] text-[var(--mcp-text-weak)]">
-            18,000+ servers published by the community. Search, then add any of them.
+            {registryCaption(registryCount())}. Search, then add any of them.
           </span>
           <div class="flex gap-2">
             <input
@@ -818,112 +1077,6 @@ const onDisconnect = async (app: AppEntry) => {
         </div>
       </Show>
 
-      {/* details dialog: what an app can do, and what it will ask for */}
-      <Show when={detailsFor()}>
-        {(app) => (
-          <div
-            style={{
-              position: "fixed",
-              inset: "0",
-              "z-index": "2147483100",
-              display: "flex",
-              "align-items": "center",
-              "justify-content": "center",
-              padding: "1.5rem",
-              background: overlayTint(),
-              "pointer-events": "auto",
-            }}
-            onClick={(e) => e.target === e.currentTarget && setDetailsFor(null)}
-          >
-            <div
-              class="flex max-h-[70vh] w-full max-w-[480px] flex-col gap-4 overflow-y-auto rounded-xl border border-[var(--mcp-border-strong)] p-5"
-              style={{ background: raised(), "box-shadow": "0 24px 64px rgba(0,0,0,0.35)" }}
-            >
-              <div class="flex items-start gap-3">
-                <div
-                  class="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg"
-                  style={{ background: fill() }}
-                >
-                  <img src={appIcon(app()) || faviconUrl(app())} width={40} height={40} alt="" class="size-9 object-contain" />
-                </div>
-                <div class="min-w-0">
-                  <div class="text-[15px] font-[600]">{app().name}</div>
-                  <div class="text-[12px] text-[var(--mcp-text-weak)]">{app().description}</div>
-                </div>
-              </div>
-
-              <div class="flex flex-col gap-2 text-[13px]">
-                <div class="flex items-center justify-between gap-3">
-                  <span class="text-[var(--mcp-text-weak)]">How it connects</span>
-                  <span>{FLOW_HINT[flowOf(app())]}</span>
-                </div>
-                <div class="flex items-center justify-between gap-3">
-                  <span class="text-[var(--mcp-text-weak)]">Category</span>
-                  <span>{app().category}</span>
-                </div>
-                <Show when={app().url}>
-                  <div class="flex items-center justify-between gap-3">
-                    <span class="shrink-0 text-[var(--mcp-text-weak)]">Endpoint</span>
-                    <span class="truncate font-mono text-[11px]" title={app().url}>
-                      {app().url}
-                    </span>
-                  </div>
-                </Show>
-                <Show when={app().via}>
-                  <div class="flex items-center justify-between gap-3">
-                    <span class="text-[var(--mcp-text-weak)]">Hosted by</span>
-                    <span>{app().via}</span>
-                  </div>
-                </Show>
-                <Show when={app().tokenUrl}>
-                  <div class="flex items-center justify-between gap-3">
-                    <span class="text-[var(--mcp-text-weak)]">Create a token</span>
-                    <a
-                      href={app().tokenUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      class="underline"
-                      style={{ color: accent() }}
-                    >
-                      Open
-                    </a>
-                  </div>
-                </Show>
-                <div class="flex items-center justify-between gap-3">
-                  <span class="text-[var(--mcp-text-weak)]">Tools available</span>
-                  <span>{describe(stateFor(app().id))}</span>
-                </div>
-              </div>
-
-              {/* A card gives a name and a category. This says whether the entry was
-                  verified and how, so a user deciding whether to trust it with an
-                  account is not left to guess. */}
-              <div
-                class="rounded-lg p-3 text-[12px]"
-                style={{ background: fill(), color: "var(--mcp-text-weak)" }}
-              >
-                {app().kind === "oauth" &&
-                  "Connects through this app's own sign-in. The consent page opens in Chrome and the token is stored on this machine — it is never sent anywhere else."}
-                {app().kind === "none" && "No sign-in at all. The server answers with public data as soon as you press Connect."}
-                {app().kind === "token" &&
-                  "Needs an access token you create yourself. It is sent as a bearer header and stored on this machine."}
-                {app().kind === "local" && "Runs on this machine as a process. Nothing is sent to a remote server."}
-              </div>
-
-              <div class="flex justify-end">
-                <button
-                  type="button"
-                  class="rounded-md border border-[var(--mcp-border-strong)] px-4 py-1.5 text-[13px] font-[600]"
-                  style={{ background: fill() }}
-                  onClick={() => setDetailsFor(null)}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </Show>
 
       {/* token dialog */}
       <Show when={tokenFor()}>
@@ -984,6 +1137,177 @@ const onDisconnect = async (app: AppEntry) => {
                   Connect
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+      </Show>
+
+      <Show when={detailsFor()}>
+        {(app) => (
+          <div
+            style={{
+              position: "fixed",
+              inset: "0",
+              "z-index": "2147483100",
+              display: "flex",
+              "align-items": "center",
+              "justify-content": "center",
+              background: overlayTint(),
+              padding: "1.5rem",
+              "pointer-events": "auto",
+            }}
+          >
+            <div
+              class="w-full max-w-[560px] overflow-y-auto rounded-xl border border-[var(--mcp-border-strong)] p-5"
+              style={{ background: raised(), "box-shadow": "0 24px 64px rgba(0,0,0,0.35)" }}
+            >
+              <div class="mb-1 flex items-center gap-2 text-[15px] font-[600]">
+                <img src={appIcon(app(), 18)} alt="" class="h-[18px] w-[18px] rounded" />
+                {app().name}
+                <span class="text-[12px] font-[400] text-[var(--mcp-text-weak)]">{app().category}</span>
+              </div>
+              <div class="mb-4 text-[12px] text-[var(--mcp-text-weak)]">{app().description}</div>
+
+              <Show when={app().note}>
+                <div class="mb-4 rounded-md border border-[var(--mcp-border)] p-3 text-[12px]">
+                  {app().note}
+                </div>
+              </Show>
+
+              <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">Endpoint</div>
+              <div class="mb-4 select-all break-all rounded-md border border-[var(--mcp-border)] p-2 font-mono text-[11px]">
+                {app().url ?? app().command?.command ?? "runs on this machine"}
+              </div>
+
+              <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">How to connect</div>
+              <ol class="mb-4 ml-4 list-decimal space-y-1 text-[12px]">
+                <Show
+                  when={app().steps?.length}
+                  fallback={
+                    <li>
+                      {app().kind === "none"
+                        ? "Nothing to do. Press Connect and its tools are usable straight away."
+                        : app().kind === "local"
+                          ? "It ships with ZYRAXON and starts on its own. Press Connect to wake it."
+                          : "Press Connect. A sign-in page opens in your browser; approve it there and this card turns green."}
+                    </li>
+                  }
+                >
+                  {app().steps!.map((step) => (
+                    <li>{step}</li>
+                  ))}
+                </Show>
+              </ol>
+
+              <Show when={app().scope}>
+                <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">Scopes requested</div>
+                <div class="mb-4 select-all break-all rounded-md border border-[var(--mcp-border)] p-2 font-mono text-[11px]">
+                  {app().scope}
+                </div>
+              </Show>
+
+              <Show when={app().kind === "oauth" && app().consoleUrl}>
+                <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">
+                  OAuth client ID
+                </div>
+                <div class="mb-2 text-[11px] text-[var(--mcp-text-weak)]">
+                  This vendor only accepts clients it issued. Create one at{" "}
+                  <a class="underline" href={app().consoleUrl} target="_blank" rel="noopener">
+                    {app().consoleUrl}
+                  </a>
+                  , using{" "}
+                  <code class="font-mono">http://127.0.0.1:19876/oauth/callback</code> as the redirect URL, then
+                  paste it here.
+                </div>
+                <input
+                  value={clientIds()[app().id]?.id ?? ""}
+                  onInput={(e) =>
+                    setClientIds((prev) => ({
+                      ...prev,
+                      [app().id]: { ...prev[app().id], id: e.currentTarget.value },
+                    }))
+                  }
+                  placeholder="Paste client ID"
+                  class="mb-2 h-9 w-full rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
+                />
+                <input
+                  value={clientIds()[app().id]?.secret ?? ""}
+                  onInput={(e) =>
+                    setClientIds((prev) => ({
+                      ...prev,
+                      [app().id]: { id: prev[app().id]?.id ?? "", secret: e.currentTarget.value },
+                    }))
+                  }
+                  placeholder="Client secret (only if the console showed one)"
+                  class="mb-3 h-9 w-full rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
+                />
+              </Show>
+
+              <div class="flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5"
+                  onClick={() => setDetailsFor(null)}
+                >
+                  Close
+                </button>
+                <Show when={app().consoleUrl}>
+                  <button
+                    type="button"
+                    class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5"
+                    onClick={() => window.open(app().consoleUrl, "_blank", "noopener")}
+                  >
+                    Open console
+                  </button>
+                </Show>
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5 disabled:opacity-50"
+                  disabled={busy() !== null}
+                  title="Build the sign-in link so it can be opened in whichever browser holds your account"
+                  onClick={() => generateConsentUrl(app())}
+                >
+                  {generating() === app().id ? "Generating…" : "Generate sign-in link"}
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] font-[600] disabled:opacity-50"
+                  disabled={busy() !== null}
+                  style={{ background: fill() }}
+                  onClick={() => submitClientId()}
+                >
+                  Connect
+                </button>
+              </div>
+
+              <Show when={consentUrl()}>
+                {(url) => (
+                  <div class="mt-4 rounded-md border border-[var(--mcp-border)] p-3">
+                    <div class="mb-1 text-[12px] font-[600]">Sign-in link</div>
+                    <div class="mb-2 text-[11px] text-[var(--mcp-text-weak)]">
+                      Open it in the browser where you are signed in, approve the app, then come back here. ZYRAXON
+                      receives the reply automatically.
+                    </div>
+                    <div class="select-all break-all font-mono text-[11px]">{url()}</div>
+                    <div class="mt-2 flex gap-2">
+                      <button
+                        type="button"
+                        class="rounded-md border border-[var(--mcp-border)] px-2 py-1 text-[12px] hover:bg-white/5"
+                        onClick={() => navigator.clipboard?.writeText(url())}
+                      >
+                        Copy link
+                      </button>
+                      <button
+                        type="button"
+                        class="rounded-md border border-[var(--mcp-border)] px-2 py-1 text-[12px] hover:bg-white/5"
+                        onClick={() => window.open(url(), "_blank", "noopener")}
+                      >
+                        Open link
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </Show>
             </div>
           </div>
         )}

@@ -1,173 +1,179 @@
 #!/usr/bin/env node
-// Live proof that MCP Hub can actually connect to real servers and pull tools.
+// Check that every endpoint in the catalog still exists and still needs what it claims.
 //
-//   node scripts/verify-live.mjs [--token ghp_xxx]
+//   node "MCP Hub/scripts/verify-live.mjs"              every remote endpoint
+//   node "MCP Hub/scripts/verify-live.mjs" --apps 20    just the first twenty
+//   node "MCP Hub/scripts/verify-live.mjs" --json out.json
 //
-// Steps:
-//   1. handshake with public servers that need no login
-//   2. list their tools
-//   3. call a real tool and show the answer
-//   4. if a GitHub token is supplied, do the same against the GitHub MCP server
-//   5. confirm the OAuth-only servers answer with the auth challenge we expect
+// A catalog entry is a promise about a server on somebody else's domain, and domains rot.
+// A 404 in a card the user pressed is the whole feature looking broken, so this sends the
+// real MCP initialize to every remote endpoint and records what came back.
+//
+// What it asserts, and what it does not:
+//
+//   ok              the server answered, and answered the way its entry claims
+//   wants auth      it returned 401/403 or a challenge — it needs a credential
+//   open            it answered initialize with no credential at all
+//   dead            404, 410 or a non-MCP body: the entry has to go
+//
+// A 401 is never a failure here. It is the answer for 56 of the catalog's endpoints, and it
+// is the good one: it proves the host is alive and the path is real.
 
-const PUBLIC_SERVERS = [
-  { id: "deepwiki", url: "https://mcp.deepwiki.com/mcp" },
-  { id: "context7", url: "https://mcp.context7.com/mcp" },
-]
+import { allSeedApps } from "../catalog/seed.ts"
+import { writeFile } from "node:fs/promises"
+import { pathToFileURL } from "node:url"
 
-const OAUTH_SERVERS = [
-  { id: "notion", url: "https://mcp.notion.com/mcp" },
-  { id: "linear", url: "https://mcp.linear.app/sse" },
-  { id: "atlassian", url: "https://mcp.atlassian.com/v1/sse" },
-  { id: "sentry", url: "https://mcp.sentry.dev/mcp" },
-  { id: "stripe", url: "https://mcp.stripe.com" },
-  { id: "cloudflare", url: "https://mcp.cloudflare.com/mcp" },
-  { id: "figma", url: "https://mcp.figma.com/mcp" },
-]
+const TIMEOUT_MS = 10_000
+const CONCURRENCY = 6
+/** A body this short is a parked domain or an error page, not an MCP server. */
+const MIN_MCP_BODY = 20
 
-const GITHUB_MCP = "https://api.githubcopilot.com/mcp/"
-
-let pass = 0
-let fail = 0
-const ok = (m) => { pass++; console.log(`  PASS  ${m}`) }
-const bad = (m) => { fail++; console.log(`  FAIL  ${m}`) }
-const note = (m) => console.log(`  ..    ${m}`)
-
-function parseBody(text) {
-  const t = text.trim()
-  if (t.startsWith("{") || t.startsWith("[")) return JSON.parse(t)
-  const lines = t.split(/\r?\n/).filter((l) => l.startsWith("data:"))
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const p = lines[i].slice(5).trim()
-    if (p.startsWith("{")) { try { return JSON.parse(p) } catch {} }
-  }
-  throw new Error("unparseable: " + t.slice(0, 100))
-}
-
-async function rpc(url, method, params, opts = {}) {
-  const headers = {
-    "content-type": "application/json",
-    accept: "application/json, text/event-stream",
-  }
-  if (opts.token) headers.authorization = `Bearer ${opts.token}`
-  if (opts.session) headers["mcp-session-id"] = opts.session
-  const ctrl = new AbortController()
-  const timer = setTimeout(() => ctrl.abort(), opts.timeout ?? 25000)
-  try {
-    const res = await fetch(url, {
-      method: "POST", headers, signal: ctrl.signal,
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params: params ?? {} }),
-    })
-    const sid = res.headers.get("mcp-session-id")
-    const text = await res.text()
-    return { status: res.status, sid, body: text ? parseBody(text) : undefined }
-  } finally {
-    clearTimeout(timer)
-  }
-}
-
-async function handshakeAndList(server, opts = {}) {
-  const init = await rpc(server.url, "initialize", {
+const INITIALIZE = {
+  jsonrpc: "2.0",
+  id: 1,
+  method: "initialize",
+  params: {
     protocolVersion: "2025-06-18",
     capabilities: {},
     clientInfo: { name: "mcp-hub-verify", version: "1.0.0" },
-  }, opts)
-  if (init.status !== 200) {
-    bad(`${server.id}: initialize returned ${init.status}`)
-    return undefined
-  }
-  const name = init.body?.result?.serverInfo?.name ?? "unknown"
-  ok(`${server.id}: handshake ok, server = ${name}`)
-
-  const list = await rpc(server.url, "tools/list", {}, { ...opts, session: init.sid })
-  const tools = list.body?.result?.tools ?? []
-  if (tools.length === 0) {
-    bad(`${server.id}: no tools returned`)
-    return undefined
-  }
-  ok(`${server.id}: ${tools.length} tools available`)
-  for (const t of tools.slice(0, 5)) note(`${server.id}: tool -> ${t.name}`)
-  return { server, tools, session: init.sid, opts }
+  },
 }
 
-async function main() {
-  const tokenArg = process.argv.indexOf("--token")
-  const githubToken = tokenArg > -1 ? process.argv[tokenArg + 1] : undefined
-
-  console.log("MCP Hub - live connection proof")
-  console.log("===============================")
-
-  console.log("\n1. public servers (no login needed)")
-  let deepwiki
-  for (const s of PUBLIC_SERVERS) {
-    const r = await handshakeAndList(s)
-    if (s.id === "deepwiki" && r) deepwiki = r
+export function parseArgs(argv) {
+  const flag = (name) => argv.includes(name)
+  const number = (name) => {
+    const at = argv.indexOf(name)
+    return at === -1 ? undefined : Number(argv[at + 1])
   }
-
-  console.log("\n2. real tool call")
-  if (deepwiki) {
-    const tool = deepwiki.tools.find((t) => t.name.includes("read_wiki")) ?? deepwiki.tools[0]
-    try {
-      const call = await rpc(deepwiki.server.url, "tools/call",
-        { name: tool.name, arguments: { repoName: "facebook/react" } },
-        { session: deepwiki.session })
-      const content = call.body?.result?.content ?? []
-      const text = content.filter((c) => c.type === "text").map((c) => c.text).join("\n")
-      if (text && text.length > 20) {
-        ok(`called ${tool.name} on facebook/react, got ${text.length} chars back`)
-        note(`first line: ${text.split("\n").find((l) => l.trim())?.slice(0, 90)}`)
-      } else {
-        bad(`tool call returned nothing useful`)
-      }
-    } catch (e) {
-      bad(`tool call failed: ${e.message}`)
-    }
+  // Separate from `number` because it does not parse a number. `Number("out.json")` is NaN,
+  // which is falsy, so the flag looked like it had not been passed and no file was written
+  // — a silent no-op for a flag whose whole job is to write a file.
+  const string = (name) => {
+    const at = argv.indexOf(name)
+    return at === -1 ? undefined : argv[at + 1]
   }
-
-  console.log("\n3. OAuth servers ask for sign-in the standard way")
-  for (const s of OAUTH_SERVERS) {
-    try {
-      const res = await fetch(s.url, { method: "POST", headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "verify", version: "1" } } }) })
-      const wa = res.headers.get("www-authenticate") ?? ""
-      if (res.status === 401 && wa.includes("resource_metadata")) {
-        ok(`${s.id}: 401 with resource_metadata, so the browser login flow can start`)
-      } else if (res.status === 401) {
-        ok(`${s.id}: 401 (auth required)`)
-      } else if (res.status === 405 || res.status === 404) {
-        ok(`${s.id}: ${res.status} on POST (SSE-only endpoint, reached over GET)`)
-      } else {
-        note(`${s.id}: status ${res.status}`)
-      }
-    } catch (e) {
-      bad(`${s.id}: unreachable (${e.message})`)
-    }
-  }
-
-  console.log("\n4. GitHub MCP with a token")
-  if (!githubToken) {
-    note("no --token given, skipping the authenticated GitHub check")
-  } else {
-    try {
-      const init = await rpc(GITHUB_MCP, "initialize",
-        { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "mcp-hub-verify", version: "1" } },
-        { token: githubToken })
-      if (init.status === 200) {
-        ok("github: authenticated handshake succeeded")
-        const list = await rpc(GITHUB_MCP, "tools/list", {}, { token: githubToken, session: init.sid })
-        const tools = list.body?.result?.tools ?? []
-        tools.length > 0 ? ok(`github: ${tools.length} tools available to the agent`) : bad("github: no tools")
-        for (const t of tools.slice(0, 8)) note(`github: tool -> ${t.name}`)
-      } else {
-        bad(`github: handshake returned ${init.status}`)
-      }
-    } catch (e) {
-      bad(`github: ${e.message}`)
-    }
-  }
-
-  console.log(`\n${pass} passed, ${fail} failed`)
-  process.exit(fail === 0 ? 0 : 1)
+  return { help: flag("--help") || flag("-h"), apps: number("--apps"), json: string("--json") }
 }
 
-main()
+export const USAGE = `Check every remote endpoint in the catalog.
+
+  --apps <n>     only the first n apps
+  --json <path>  write the full result set to a file
+  --help         show this text
+`
+
+export async function probe(app) {
+  const started = Date.now()
+
+  try {
+    const res = await fetch(app.url, {
+      method: "POST",
+      redirect: "follow",
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+      headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
+      body: JSON.stringify(INITIALIZE),
+    })
+
+    const challenge = res.headers.get("www-authenticate") ?? ""
+    const body = await res.text()
+    const wantsAuth = res.status === 401 || res.status === 403 || challenge.length > 0
+    const dead = res.status === 404 || res.status === 410 || (body.length > 0 && body.length < MIN_MCP_BODY && !wantsAuth)
+    // A 5xx or a 429 is a live host having a bad day, not an app that needs no credential.
+    // Folding it into "open with no key" reported an outage as a working integration.
+    const unavailable = res.status >= 500 || res.status === 429
+
+    return {
+      id: app.id,
+      name: app.name,
+      url: app.url,
+      kind: app.kind,
+      status: res.status,
+      ms: Date.now() - started,
+      wantsAuth,
+      dead,
+      unavailable,
+      challengeScheme: /^(\w+)/.exec(challenge)?.[1],
+      bodySample: dead || unavailable || (!wantsAuth && !body) ? body.slice(0, 160) : undefined,
+    }
+  } catch (e) {
+    const timedOut = e.name === "AbortError"
+    return {
+      id: app.id,
+      name: app.name,
+      url: app.url,
+      kind: app.kind,
+      status: 0,
+      ms: Date.now() - started,
+      timedOut,
+      // A name that does not resolve is a different failure from a host that refuses, and
+      // conflating them hides the fact that the entry itself may have a typo.
+      dns: timedOut ? undefined : /getaddrinfo|ENOTFOUND|ECONNREFUSED|EAI_AGAIN/i.test(String(e.message ?? e)) ? String(e.message ?? e) : undefined,
+      reason: timedOut ? "timeout" : String(e.message ?? e),
+    }
+  }
+}
+
+export async function main(argv) {
+  const { help, apps, json } = parseArgs(argv)
+  if (help) {
+    console.log(USAGE)
+    return
+  }
+
+  const remotes = allSeedApps().filter((a) => a.url && a.kind !== "local")
+  const targets = apps ? remotes.slice(0, apps) : remotes
+
+  console.log("MCP catalog liveness")
+  console.log("===================")
+  console.log(`${targets.length} remote endpoints, ${CONCURRENCY} at a time\n`)
+
+  const results = []
+  let cursor = 0
+
+  await Promise.all(
+    Array.from({ length: CONCURRENCY }, async () => {
+      while (cursor < targets.length) {
+        const row = await probe(targets[cursor++])
+        results.push(row)
+        const verdict =
+          row.dead ? "dead" : row.dns ? "dns" : row.timedOut ? "timeout" : row.unavailable ? "unavailable" : row.wantsAuth ? "needs auth" : "open"
+        const flag = verdict === "open" || verdict === "needs auth" ? "" : ` <<< ${verdict}`
+        console.log(`  ${String(row.status || "ERR").padStart(3)} ${String(row.ms).padStart(5)}ms ${row.name.padEnd(24)} ${verdict}${flag}`)
+      }
+    }),
+  )
+
+  results.sort((a, b) => a.name.localeCompare(b.name))
+
+  const dead = results.filter((r) => r.dead)
+  const dns = results.filter((r) => r.dns)
+  const timedOut = results.filter((r) => r.timedOut)
+  const unavailable = results.filter((r) => r.unavailable)
+  const alive = results.length - dead.length - dns.length - timedOut.length - unavailable.length
+
+  const byStatus = results.reduce((acc, r) => ((acc[r.status] = (acc[r.status] ?? 0) + 1), acc), {})
+
+  console.log(`\nalive              ${alive}/${results.length}`)
+  console.log(`needs auth         ${results.filter((r) => r.wantsAuth).length}`)
+  console.log(`open with no key   ${results.filter((r) => !r.wantsAuth && r.status === 200).length}`)
+  console.log(`unavailable        ${unavailable.length}`)
+  console.log(`dead               ${dead.length}`)
+  console.log(`dns / refused      ${dns.length}`)
+  console.log(`timed out          ${timedOut.length}`)
+  console.log(`status codes       ${JSON.stringify(byStatus)}`)
+
+  for (const row of [...dead, ...dns, ...timedOut, ...unavailable]) {
+    console.log(`  ! ${row.name} — ${row.reason ?? row.status}`)
+  }
+
+  if (json) {
+    await writeFile(json, JSON.stringify({ verifiedAt: new Date().toISOString(), results }, null, 2), "utf8")
+    console.log(`\nwrote ${json}`)
+  }
+
+  if (dead.length + dns.length + timedOut.length > 0) process.exitCode = 1
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  await main(process.argv.slice(2))
+}

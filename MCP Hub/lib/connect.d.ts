@@ -1,6 +1,7 @@
 import type { AppEntry } from "../catalog/seed";
 import { McpClient } from "./client";
 import { resolveApp, type Resolution } from "./resolve";
+import type { McpLocalConfig, McpRemoteConfig } from "./runtime";
 export { McpClient, resolveApp };
 export type { Resolution };
 export type ConnectionState = {
@@ -22,8 +23,11 @@ export interface McpStatusEntry {
     error?: string;
 }
 /**
- * The ZYRAXON runtime exposes the MCP service through the app context.
- * The Hub receives it as a dependency so the module stays testable on its own.
+ * The ZYRAXON runtime exposes MCP through the app context.
+ *
+ * The Hub receives it as a dependency, which keeps this module testable without a
+ * running app behind it. Every member here is implemented by bindRuntime in
+ * ./runtime, so a card can rely on all of them.
  */
 export interface McpRuntime {
     /** live status of every configured server, keyed by name */
@@ -33,40 +37,92 @@ export interface McpRuntime {
     /** connect a server that the config already declares */
     connect: (name: string) => Promise<void>;
     /** declare a new server and bring it up, reporting whatever it settles on */
-    addServer: (name: string, config: Record<string, unknown>) => Promise<McpStatusEntry | undefined>;
+    addServer: (name: string, config: McpLocalConfig | McpRemoteConfig) => Promise<McpStatusEntry | undefined>;
     /**
      * Run the OAuth handshake to completion.
      *
-     * The server owns the browser: it opens the app's consent page in the real
-     * profile that already holds the session, then blocks on its own local
-     * callback. So this only settles once the user has clicked Allow.
+     * The server owns the browser: it opens the consent page in the real profile that
+     * already holds the session, then blocks on its own loopback callback. So this only
+     * settles once the user has clicked Allow.
      */
     authenticate: (name: string) => Promise<void>;
+    /**
+     * Build a server's consent URL and hand it back instead of opening it.
+     *
+     * The URL is complete — the client is registered by the time it exists — so it can be
+     * copied into whichever browser actually holds the sign-in. That is what makes the
+     * "Generate" action on the Details panel useful: a user whose account is open in
+     * Chrome while ZYRAXON defaults to Edge can approve in the right place, and the loopback
+     * still comes back here.
+     */
+    startAuth: (name: string) => Promise<string>;
+    /**
+     * Detach a server for good.
+  *
+     * This stops the live transport and marks the config entry disabled, and - with
+     * `forgetCredentials` - clears the stored tokens and any client registration. That
+     * last part is what a user means by "disconnect my GitHub": leaving credentials
+     * behind would silently sign the app back in on the next start.
+     *
+     * The config write is a deep merge, so the entry is disabled rather than deleted. A
+     * key left out of a merge survives it, and this interface has no way to express a
+     * delete; the runtime documents the same thing where it does the write.
+     */
+    disconnect: (name: string, options?: {
+        forgetCredentials?: boolean;
+    }) => Promise<void>;
+    /**
+     * The browser used for MCP sign-in, when the user picked one by hand.
+     *
+     * Empty string means nobody chose one and the server discovers installed browsers.
+     * This is the same setting the agent's mcp_connect respects, so fixing it here fixes
+     * the consent pages the model opens too.
+     */
+    getBrowserPath: () => Promise<string>;
+    /** Set (or clear, with an empty string) the browser used for MCP sign-in. */
+    setBrowserPath: (path: string) => Promise<void>;
+    /**
+     * Whether a sign-in already exists for this server.
+     *
+     * This is what separates "the server refused because nobody is signed in" from "the
+     * credential we hold was rejected", and only the first is worth opening a browser for.
+     */
+    hasTokens: (name: string) => Promise<boolean>;
 }
 /** Build the ZYRAXON config entry for an app. */
-export declare function toServerConfig(app: AppEntry, token?: string): Record<string, unknown>;
+export declare function toServerConfig(app: AppEntry, token?: string, clientId?: string, clientSecret?: string): McpLocalConfig | McpRemoteConfig | Record<string, never>;
 /**
  * Watch one server until it reaches a state worth acting on.
  *
- * A connect attempt is asynchronous: the runtime opens the transport, negotiates
- * a session, and only then reports connected, needs_auth or failed. Reading the
- * status on the very next tick sees nothing useful, which is what used to leave
- * every card on "Connecting…" forever with no sign-in ever offered.
+ * A connect is asynchronous: the runtime opens the transport, negotiates a session,
+ * and only then reports connected, needs_auth or failed. Reading the status on the
+ * next tick sees nothing useful, which is what used to leave every card on
+ * "Connecting…" forever with no sign-in ever offered.
  *
  * `until` exists because "settled" means different things at different moments.
- * Before sign-in, needs_auth is the interesting answer and waiting past it is
- * wrong. After sign-in starts it is the answer we already have, so the only
- * useful thing left to wait for is a state that is no longer needs_auth.
+ * Before sign-in, needs_auth is the interesting answer and waiting past it is wrong.
+ * After sign-in has started it is the answer already held, so the only useful thing
+ * left to wait for is a state that is no longer needs_auth.
  */
 export declare function waitForStatus(runtime: McpRuntime, name: string, timeoutMs?: number, until?: (status: McpStatusEntry["status"]) => boolean): Promise<McpStatusEntry>;
 export interface ConnectOptions {
     /** bearer token, for apps that do not speak OAuth */
     token?: string;
+    /**
+     * An OAuth client the vendor's own console issued.
+     *
+     * Around a dozen publishers refuse self-registration outright, so for those the client
+     * has to exist before a sign-in link can be built at all. Passing it here is what turns
+     * those apps from "needs a client ID" into a connect that opens the browser.
+     */
+    clientId?: string;
+    /** the secret, where the console showed one next to the ID */
+    clientSecret?: string;
     /** report intermediate states so a card can say "check your browser" */
     onProgress?: (state: ConnectionState) => void;
 }
 /**
- * Connect an app and return the state the card should render.
+ * Connect an app and return the state its card should render.
  *
  * The browser is never opened from here. The server does it, in the user's real
  * profile, which is why signing in leaves the app already logged in.

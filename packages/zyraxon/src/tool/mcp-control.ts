@@ -6,9 +6,15 @@
  * The MCP Hub panel lets a human browse the catalog and press Connect. These three
  * tools give the model the same reach from inside a session:
  *
- * - mcp_catalog  which apps exist and what each one needs before it can be used
- * - mcp_status   which servers are live right now, and the real error for the dead ones
- * - mcp_connect  bring one online, running the same OAuth handshake the UI runs
+ * - mcp_catalog    which apps exist and what each one needs before it can be used
+ * - mcp_status     which servers are live right now, and the real error for the dead ones
+ * - mcp_connect    bring one online, running the same OAuth handshake the UI runs
+ * - mcp_disconnect take one offline and forget its credentials
+ *
+ * Every auth kind is reachable from here. OAuth opens the consent page and holds until the
+ * person approves it. A token app has its key page opened in the browser too: the model
+ * brings the URL up, the person creates the key, and the model takes it and connects — no
+ * manual trip through the Hub popup required.
  *
  * Every status reported here is read from the MCP service itself rather than from any
  * UI state, so what the model is told matches what the panel shows. The catalog is the
@@ -34,7 +40,7 @@ const REMOTE_TIMEOUT_MS = 30_000
 const AUTH_MEANING = {
   oauth: "browser sign-in. The server opens the consent page itself and waits for the user to approve it.",
   none: "no sign-in at all.",
-  token: "needs an API key the user has to type. You cannot supply it and this tool will not fake it.",
+  token: "an API key. This tool opens the page where the key is created and takes the key from the user.",
   local: "runs on this machine and is declared by ZYRAXON's own config.",
 } as const satisfies Record<AppEntry["kind"], string>
 
@@ -51,7 +57,7 @@ who runs the server, and whether it is already connected.
 Auth kind:
 - oauth: browser sign-in; the server opens the consent page and waits for the user to approve it
 - none: no sign-in at all
-- token: needs an API key only the user can create and type
+- token: an API key; mcp_connect opens the page where the key is created and takes the key
 - local: runs on this machine
 
 Narrow the result with search (matches name, id, description and category) and category, so you pull
@@ -81,16 +87,18 @@ HOW EACH AUTH KIND IS HANDLED - read this before you call:
   open until the user approves the app. Tell the user to approve it in the browser that just
   opened, then carry on with the task they asked for.
 - none: connects straight away, no sign-in.
-- token: NOT possible from here and this tool will not pretend otherwise. The key must be created
-  and typed by the user, so this returns the exact steps and the URL to create the key. Do not ask
-  the user to paste a key into the chat, do not claim the app is connected, and do not report the
-  task as impossible - ask them to finish it in the MCP Hub connect popup and continue afterwards.
+- token: call once without the token. That opens the page where the key is created in the user's
+  browser and returns the steps. Ask the user for the key, then call this again on the same app
+  with token set to exactly what they gave you, and the connection is made in one step. Never
+  invent a key, never guess one, and never claim the app is connected before this returns
+  connected: true.
 - local: these are declared by ZYRAXON's own config, so this only wakes one that is declared.
 
 The server is written to ZYRAXON's config, so it stays connected after a restart.
 
 Returns the resulting status with the live tool count on success, or the server's real error on
-failure. An unknown app name comes back with close matches to retry with.`
+failure. An unknown app name comes back with close matches to retry with. Use mcp_disconnect to
+take a server offline again and forget its credentials.`
 
 // --- mcp_catalog ---
 
@@ -249,6 +257,18 @@ const ConnectParameters = Schema.Struct({
   app: Schema.String.annotate({
     description: 'App name or id from mcp_catalog, e.g. "notion", "Notion", "sentry"',
   }),
+  token: Schema.optional(Schema.String).annotate({
+    description:
+      "API key for a token app. Omit it on the first call - that opens the page where the key is created in the user's browser. Then call again with token set to exactly the key the user gave you.",
+  }),
+  clientId: Schema.optional(Schema.String).annotate({
+    description:
+      "OAuth client ID for a vendor that only issues clients from its own developer console (Slack, Figma, MongoDB, Stripe and about a dozen others). Omit it on the first call: that opens the vendor's console, lists the exact steps, and asks the user for the ID. Then call again with clientId set to exactly what they gave you.",
+  }),
+  clientSecret: Schema.optional(Schema.String).annotate({
+    description:
+      "OAuth client secret, when the vendor's console showed one next to the client ID. Most of these apps work with the ID alone.",
+  }),
 })
 
 export const McpConnectTool = Tool.define<typeof ConnectParameters, Metadata, MCP.Service | Config.Service>(
@@ -270,15 +290,37 @@ export const McpConnectTool = Tool.define<typeof ConnectParameters, Metadata, MC
 
           const existing = (yield* mcp.status())[app.id]
           if (existing?.status === "connected") return yield* report(mcp, app, existing, "Already connected.")
-          if (app.kind === "token") return needsUser(app)
+          if (app.kind === "token") return yield* tokenFlow(mcp, config, app, params.token?.trim())
           if (app.kind === "local") return yield* local(mcp, app)
 
-          const entry = serverEntry(app)
+          const clientId = params.clientId?.trim()
+          const clientSecret = params.clientSecret?.trim()
+
+          // A vendor that only issues clients from its own console needs one before any
+          // sign-in link exists, because there is no client to ask for consent with. The
+          // console is opened, the exact steps are handed over, and the second call
+          // finishes the job — the same two-call shape a key app already uses.
+          if (!clientId && !app.clientId && needsClientId(app)) return yield* needsClientIdFlow(mcp, app)
+
+          const entry = serverEntry(app, undefined, clientId ?? app.clientId, clientSecret)
           const global = yield* config.getGlobal()
           yield* config.updateGlobal({ ...global, mcp: { ...global.mcp, [app.id]: entry } })
           const added = (yield* mcp.add(app.id, entry)).status
           const first = isStatus(added) ? added : added[app.id]
-          if (first.status !== "needs_auth") return yield* report(mcp, app, first)
+
+          // A remote OAuth server answers the very first request with 401, and some
+          // transports report that as a plain failure instead of `needs_auth`. Falling
+          // out there means the browser never opens and the tool answers "undefined
+          // error", which is what made every standards-compliant server look broken. So
+          // an OAuth app with no stored token is sent to the browser even when the probe
+          // failed, and a server that is genuinely unreachable still says so:
+          // `authenticate` reports the transport error it hit. A server that already
+          // holds a token must not re-prompt — a bad token there is reported as the
+          // failure it is.
+          const signedIn = yield* mcp.hasStoredTokens(app.id)
+          if (first.status === "connected") return yield* report(mcp, app, first)
+          if (first.status === "failed" && signedIn) return yield* report(mcp, app, first)
+          if (first.status === "disabled") return yield* report(mcp, app, first)
 
           // The server owns the browser: it opens the consent page and this call blocks
           // until the user answers it, exactly as the Hub's connect button does.
@@ -307,24 +349,70 @@ function unknownApp(apps: AppEntry[], wanted: string) {
   }
 }
 
-function needsUser(app: AppEntry) {
+/**
+ * The token path, in two calls.
+ *
+ * Without a key the page that issues one is opened in the person's browser — they are
+ * already looking at it when the model asks — and the answer says exactly what to do next.
+ * With a key the server is written to config with it and connected immediately, so handing
+ * over a key ends with a working server rather than another round of instructions.
+ */
+const tokenFlow = Effect.fn("McpControl.tokenFlow")(function* (
+  mcp: MCP.Interface,
+  config: Config.Service,
+  app: AppEntry,
+  token?: string,
+) {
+  if (!token) {
+    if (app.tokenUrl) yield* mcp.openUrl(app.tokenUrl).pipe(Effect.ignore)
+    return needsToken(app)
+  }
+
+  const entry = serverEntry(app, token)
+  const global = yield* config.getGlobal()
+  yield* config.updateGlobal({ ...global, mcp: { ...global.mcp, [app.id]: entry } })
+  const added = (yield* mcp.add(app.id, entry)).status
+  const first = isStatus(added) ? added : added[app.id]
+  if (first.status === "connected") return yield* report(mcp, app, first, "Connected with the key you provided.")
+  if (first.status === "failed") return yield* report(mcp, app, first)
+
+  // Declared but not yet live: wake it and read back what actually happened.
+  const exit = yield* mcp.connect(app.id).pipe(Effect.timeout(REMOTE_TIMEOUT_MS), Effect.exit)
+  if (Exit.isFailure(exit)) {
+    if (Cause.hasInterruptsOnly(exit.cause)) return yield* Effect.interrupt
+    return yield* report(mcp, app, { status: "failed", error: squash(exit) })
+  }
+  const status = (yield* mcp.status())[app.id] ?? first
+  return yield* report(
+    mcp,
+    app,
+    status,
+    status.status === "connected" ? "Connected with the key you provided." : undefined,
+  )
+})
+
+function needsToken(app: AppEntry) {
   return {
-    title: `${app.name} needs an API key from the user`,
-    metadata: { app: app.id, connected: false, requiresUserAction: true },
+    title: `${app.name} needs an API key`,
+    metadata: { app: app.id, connected: false, requiresUserAction: true, openedKeyPage: !!app.tokenUrl },
     output: JSON.stringify(
       {
         app: app.id,
         name: app.name,
         connected: false,
         needsUserAction: true,
-        why: `${app.name} answers 401 and advertises no way to sign in, so it needs a key. You cannot type a key on the user's behalf and you must not ask them to paste one into the chat.`,
+        why: `${app.name} takes an API key rather than a browser sign-in, so the key has to come from the user.`,
+        openedInBrowser: app.tokenUrl ?? null,
         steps: [
-          `Open ${app.tokenUrl ?? "the app's developer settings"} and create a token.`,
-          app.scope ? `Grant these scopes: ${app.scope}.` : "Grant the scopes the app documents.",
-          "Open the MCP Hub connect popup in ZYRAXON, pick this app, and paste the key there.",
-          "Then continue the task - the app's tools become usable as soon as it connects.",
+          `The page where the key is created has been opened in the user's browser${app.tokenUrl ? ` (${app.tokenUrl})` : ""}.`,
+          app.scope
+            ? `Ask the user to create a key with these scopes: ${app.scope}.`
+            : "Ask the user to create a key.",
+          "Ask them to send the key to you here.",
+          "Then call mcp_connect again on this app with token set to exactly the key they gave you.",
+          "Do not claim the app is connected until that call returns connected: true.",
         ],
-        next: "Tell the user exactly this. Do not report the task as impossible.",
+        next: "Ask the user for the key now, then retry with the token parameter.",
       },
       null,
       2,
@@ -348,12 +436,86 @@ const local = Effect.fn("McpControl.local")(function* (mcp: MCP.Interface, app: 
   return yield* report(mcp, app, status)
 })
 
-function serverEntry(app: AppEntry): ConfigMCPV1.Info {
+function serverEntry(app: AppEntry, token?: string, clientId?: string, clientSecret?: string): ConfigMCPV1.Info {
   if (!app.url) throw new Error(`MCP app "${app.id}" has no endpoint in the catalog`)
   const base = { type: "remote", url: app.url, enabled: true, timeout: REMOTE_TIMEOUT_MS } as const
+  // A key rides as a plain header: the server never sees an OAuth dance, it just wants
+  // the credential on every request. Bearer is what every catalogued key app expects.
+  if (token) return { ...base, headers: { Authorization: `Bearer ${token}` } }
   if (app.kind !== "oauth") return base
-  return { ...base, oauth: app.scope ? { scope: app.scope } : {} }
+  // The catalogued endpoints matter as much as the scope. Without them the client has to
+  // discover the sign-in details itself, and the vendors that publish no discovery
+  // document — Slack, Box, MongoDB, Zoom, Figma and the rest — then failed before a
+  // browser could open. These are the endpoints each vendor states, so the handshake can
+  // be built without guessing and without a round trip that returns nothing.
+  //
+  // The client ID is what makes the handshake possible at all for a vendor that issues
+  // clients only from its own console, and when it is absent for a server that supports
+  // self-registration the server is left to register one itself.
+  return {
+    ...base,
+    oauth: {
+      ...(app.oauth ? { authorizationUrl: app.oauth.authorizationUrl, tokenUrl: app.oauth.tokenUrl } : {}),
+      ...(clientId ? { clientId } : {}),
+      ...(clientSecret ? { clientSecret } : {}),
+      ...(app.scope ? { scope: app.scope } : {}),
+    },
+  }
 }
+
+/**
+ * Whether this app can only be reached with a client the vendor itself issued.
+ *
+ * The catalogued steps are the marker: an app that has them is one whose developer
+ * console has to be visited, and everything else either self-registers or needs nothing.
+ */
+function needsClientId(app: AppEntry) {
+  return app.kind === "oauth" && !app.clientId && !!app.consoleUrl
+}
+
+/**
+ * The first half of a console-issued client: open the vendor's page and hand over the
+ * exact steps, so the model asks for one specific value instead of "a client ID".
+ *
+ * Opening the console rather than describing it is what makes this one step for the user:
+ * they are already looking at the form when the model asks, which is the same reason the
+ * token flow opens the page that issues a key.
+ */
+const needsClientIdFlow = Effect.fn("McpControl.needsClientIdFlow")(function* (mcp: MCP.Interface, app: AppEntry) {
+  if (app.consoleUrl) yield* mcp.openUrl(app.consoleUrl).pipe(Effect.ignore)
+  return {
+    title: `${app.name} needs an OAuth client ID`,
+    metadata: {
+      app: app.id,
+      connected: false,
+      requiresUserAction: true,
+      openedConsole: !!app.consoleUrl,
+    },
+    output: JSON.stringify(
+      {
+        app: app.id,
+        name: app.name,
+        connected: false,
+        needsUserAction: true,
+        why:
+          app.note ??
+          `${app.name} only accepts OAuth clients that were created in its own developer console, so a client ID has to come from the account holder. Everything else about this connection already works.`,
+        consoleOpened: app.consoleUrl ?? null,
+        redirectUri: "http://127.0.0.1:19876/oauth/callback",
+        scopes: app.scope ?? null,
+        steps: app.steps ?? [
+          `Open ${app.consoleUrl ?? "the vendor's developer console"} and create an OAuth app.`,
+          "Set its redirect URL to http://127.0.0.1:19876/oauth/callback.",
+          "Copy the client ID it shows.",
+          "Then call mcp_connect again on this app with clientId set to exactly that value.",
+        ],
+        next: "Ask the user for the client ID now, then retry with the clientId parameter.",
+      },
+      null,
+      2,
+    ),
+  }
+})
 
 // `add` answers with a single status for this server, or the whole map once the
 // caller already had one registered, so both shapes have to be read.
@@ -396,6 +558,98 @@ const report = Effect.fn("McpControl.report")(function* (
     ),
   }
 })
+
+// --- mcp_disconnect ---
+
+const DisconnectParameters = Schema.Struct({
+  app: Schema.String.annotate({
+    description: 'App name or id from mcp_catalog, e.g. "notion", "Notion", "sentry"',
+  }),
+})
+
+const DISCONNECT_DESCRIPTION = `Take an MCP server offline and forget its stored credentials.
+
+WHEN: the user asks to disconnect, revoke, or stop using an app, or a connected server is acting
+up and they want it gone. This stops the live connection, throws away its token or key, and marks
+it disabled in config so it does not come back on the next start.
+
+Forgetting the credentials is the point: reconnecting afterwards runs a fresh browser sign-in (or
+asks for a new key) rather than quietly reusing the credential this call discarded.
+
+Returns what was disconnected, or the server's real error if it did not go down.`
+
+export const McpDisconnectTool = Tool.define<typeof DisconnectParameters, Metadata, MCP.Service | Config.Service>(
+  "mcp_disconnect",
+  Effect.gen(function* () {
+    const mcp = yield* MCP.Service
+    const config = yield* Config.Service
+    return {
+      description: DISCONNECT_DESCRIPTION,
+      parameters: DisconnectParameters,
+      execute: (params) =>
+        Effect.gen(function* () {
+          const wanted = params.app.trim()
+          const app = allSeedApps().find(
+            (item) => item.id === wanted.toLowerCase() || item.name.toLowerCase() === wanted.toLowerCase(),
+          )
+          const name = app?.id ?? wanted
+          const before = (yield* mcp.status())[name]
+          if (!before) {
+            return {
+              title: `No MCP server "${wanted}"`,
+              metadata: { app: name, disconnected: false },
+              output: JSON.stringify(
+                {
+                  error: `No MCP server named "${wanted}" is configured.`,
+                  next: "Call mcp_status to see what is configured, or mcp_catalog to find the app id.",
+                },
+                null,
+                2,
+              ),
+            }
+          }
+
+          const exit = yield* mcp.disconnect(name).pipe(Effect.exit)
+          if (Exit.isFailure(exit)) {
+            if (Cause.hasInterruptsOnly(exit.cause)) return yield* Effect.interrupt
+            return {
+              title: `${name} did not disconnect`,
+              metadata: { app: name, disconnected: false, error: squash(exit) },
+              output: JSON.stringify({ app: name, disconnected: false, error: squash(exit) }, null, 2),
+            }
+          }
+
+          // Credentials go after the transport is down, so a failure here still leaves the
+          // server off, and a success means the next connect cannot reuse the old key.
+          yield* mcp.removeAuth(name)
+
+          const global = yield* config.getGlobal()
+          const declared = global.mcp?.[name]
+          yield* config.updateGlobal({
+            ...global,
+            mcp: { ...global.mcp, [name]: { ...(declared ?? {}), enabled: false } },
+          })
+
+          return {
+            title: `${app?.name ?? name} disconnected`,
+            metadata: { app: name, disconnected: true, credentialsForgotten: true },
+            output: JSON.stringify(
+              {
+                app: name,
+                name: app?.name ?? name,
+                disconnected: true,
+                credentialsForgotten: true,
+                wasStatus: before.status,
+                next: "Connecting again runs a fresh sign-in, so the user has to approve it or supply a new key.",
+              },
+              null,
+              2,
+            ),
+          }
+        }),
+    }
+  }),
+)
 
 function serverTools(tools: string[], server: string) {
   const prefix = McpCatalog.sanitize(server) + "_"

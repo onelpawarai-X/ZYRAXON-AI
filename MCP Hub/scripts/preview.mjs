@@ -1,90 +1,137 @@
 #!/usr/bin/env node
-// Standalone preview of the MCP Hub panel.
-// Serves the panel markup with the live catalog and registry cache so the UI
-// can be inspected without building the whole ZYRAXON app.
+// Open the MCP Connect panel in a real browser, against a stub MCP runtime.
+//
+//   node "MCP Hub/scripts/preview.mjs"                start the stub and open the panel
+//   node "MCP Hub/scripts/preview.mjs" --port 5179    pick a different port
+//   node "MCP Hub/scripts/preview.mjs" --no-open      just print the URL
+//
+// The panel is a Solid component that lives outside the app's own build, so a panel change
+// cannot be seen by starting ZYRAXON and waiting. This serves a page that mounts the panel
+// directly against an in-process stub runtime, which is the only way to look at it without a
+// full desktop build.
 
 import { createServer } from "node:http"
-import { readFile } from "node:fs/promises"
+import { spawn } from "node:child_process"
+import { dirname, join } from "node:path"
+import { fileURLToPath, pathToFileURL } from "node:url"
 
-const HUB = "/workspace/zyraxon-src/MCP Hub"
-const PORT = 12002
+const HERE = dirname(fileURLToPath(import.meta.url))
+const PLUGIN = pathToFileURL(join(HERE, "..", "plugin.ts")).href
 
-function parseApps(src) {
-  const apps = []
-  const re = /\{\s*id:\s*"([^"]+)"[\s\S]*?name:\s*"([^"]+)"[\s\S]*?description:\s*"([^"]+)"[\s\S]*?category:\s*"([^"]+)"[\s\S]*?kind:\s*"([^"]+)"([\s\S]*?)\}/g
-  let m
-  while ((m = re.exec(src))) {
-    const rest = m[6]
-    apps.push({
-      id: m[1], name: m[2], description: m[3], category: m[4], kind: m[5],
-      url: /url:\s*"([^"]+)"/.exec(rest)?.[1],
-      tokenUrl: /tokenUrl:\s*"([^"]+)"/.exec(rest)?.[1],
-      color: /color:\s*"([^"]+)"/.exec(rest)?.[1] ?? "#334155",
-      zeroSetup: /zeroSetup:\s*true/.test(rest),
-    })
+export function parseArgs(argv) {
+  const flag = (name) => argv.includes(name)
+  const value = (name) => {
+    const at = argv.indexOf(name)
+    return at === -1 ? undefined : Number(argv[at + 1])
   }
-  return apps
+  return { help: flag("--help") || flag("-h"), noOpen: flag("--no-open"), port: value("--port") ?? 5183 }
 }
 
-function page(apps, cache) {
-  const cards = apps.map((a) => `
-    <div class="card">
-      <div class="head">
-        <div class="logo" style="background:${a.color}">${a.name[0]}</div>
-        <div class="meta"><div class="name">${a.name}</div><div class="desc">${a.description}</div></div>
-      </div>
-      <div class="tags">
-        <span class="tag">${a.category}</span>
-        ${a.zeroSetup ? '<span class="tag ok">No setup</span>' : ""}
-        ${a.kind === "local" ? '<span class="tag local">Local</span>' : ""}
-      </div>
-      <div class="foot">
-        <span class="hint">${a.kind === "oauth" ? "Sign in with the browser" : a.kind === "token" ? "Needs an access token" : "Runs on this machine"}</span>
-        <button>Connect</button>
-      </div>
-    </div>`).join("")
+export const USAGE = `Preview the MCP Connect panel.
 
-  return `<!doctype html><html><head><meta charset="utf-8"><title>MCP Connect</title>
+  --port <n>   port to listen on (default 5183)
+  --no-open    print the URL instead of opening a browser
+  --help       show this text
+`
+
+/**
+ * A runtime that answers like the real one, so the panel has something honest to draw.
+ *
+ * Deliberately mixed: one app waiting for sign-in, two connected with a tool count, one
+ * failed, and everything else absent. A stub where everything is connected hides exactly
+ * the states that break.
+ */
+export const STUB_RUNTIME_SOURCE = `(() => {
+  const statuses = {
+    higgsfield: { status: "needs_auth" },
+    "google-drive": { status: "connected", tools: ["search", "read", "create"] },
+    github: { status: "connected", tools: ["create_issue", "list_prs", "get_file"] },
+    "duckduckgo": { status: "connected", tools: ["search"] },
+    slack: { status: "failed", error: "the server refused the connection" },
+  }
+  return {
+    statuses: async () => ({ ...statuses }),
+    toolNames: async () => Object.entries(statuses).flatMap(([name, s]) => (s.tools ?? []).map((t) => name + "__" + t)),
+    connect: async (name) => { statuses[name] = { status: "connected", tools: ["stub"] } },
+    addServer: async (name) => { statuses[name] = { status: "connected", tools: ["stub"] }; return statuses[name] },
+    authenticate: async () => {},
+    disconnect: async (name) => { delete statuses[name] },
+  }
+})()`
+
+/**
+ * The page that mounts the panel.
+ *
+ * The stub is inlined as source text because the inline module runs in the browser and
+ * cannot import anything from node. The panel is mounted through `jsx` rather than by
+ * calling it as a plain function: calling a Solid component directly runs its body outside
+ * a reactive owner, so the signals it creates are never disposed and the panel renders once
+ * and then stops responding.
+ */
+export function page() {
+  return `<!doctype html>
+<html lang="en" data-color-scheme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCP Connect — preview</title>
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#070b18;color:#e6ebf5;font-family:system-ui,-apple-system,sans-serif}
-.wrap{max-width:1180px;margin:0 auto;padding:28px 24px 60px}
-h1{font-size:20px;margin:0 0 4px}
-.sub{color:#8b95ad;font-size:13px;margin-bottom:20px}
-.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px}
-.stat{background:rgba(255,255,255,.04);border:1px solid #1e2740;border-radius:10px;padding:10px 14px}
-.stat b{display:block;font-size:18px}
-.stat span{color:#8b95ad;font-size:11px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
-.card{background:rgba(255,255,255,.02);border:1px solid #1e2740;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
-.head{display:flex;gap:12px;align-items:flex-start}
-.logo{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;flex:0 0 auto}
-.name{font-weight:600;font-size:14px}
-.desc{color:#8b95ad;font-size:12px}
-.tags{display:flex;gap:6px;flex-wrap:wrap}
-.tag{font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.06);color:#b9c3d6}
-.tag.ok{background:rgba(16,185,129,.15);color:#6ee7b7}
-.tag.local{background:rgba(14,165,233,.15);color:#7dd3fc}
-.foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:8px}
-.hint{color:#8b95ad;font-size:12px}
-button{background:rgba(255,255,255,.1);border:0;color:#e6ebf5;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer}
-button:hover{background:rgba(255,255,255,.16)}
-</style></head><body><div class="wrap">
-<h1>MCP Connect</h1>
-<div class="sub">Every app below signs in once, then its tools go straight to the agent.</div>
-<div class="stats">
-  <div class="stat"><b>${apps.length}</b><span>MCP servers/apps</span></div>
-  <div class="stat"><b>${apps.filter((a) => a.zeroSetup).length}</b><span>need nothing from you</span></div>
-  <div class="stat"><b>${cache.count.toLocaleString()}</b><span>servers in the registry cache</span></div>
-  <div class="stat"><b>${cache.servers.filter((s) => s.remote).length.toLocaleString()}</b><span>hosted, ready to connect</span></div>
-</div>
-<div class="grid">${cards}</div>
-</div></body></html>`
+  html, body { margin: 0; height: 100%; background: #09090b; font-family: system-ui, sans-serif; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="module">
+import { render, jsx } from "https://esm.sh/solid-js@1.9.3/web"
+import { createMcpHub } from "${PLUGIN}"
+
+const stubRuntime = ${STUB_RUNTIME_SOURCE}
+const hub = createMcpHub(stubRuntime)
+
+render(() => jsx(hub.Panel, { runtime: stubRuntime, resolve: hub.resolve }), document.getElementById("root"))
+</script>
+</body>
+</html>`
 }
 
-createServer(async (req, res) => {
-  const src = await readFile(`${HUB}/catalog/seed.ts`, "utf8")
-  const cache = JSON.parse(await readFile(`${HUB}/catalog/registry-cache.json`, "utf8"))
-  res.writeHead(200, { "content-type": "text/html; charset=utf-8" })
-  res.end(page(parseApps(src), cache))
-}).listen(PORT, "0.0.0.0", () => console.log(`MCP Hub preview on ${PORT}`))
+export function openBrowser(url) {
+  const opener =
+    process.platform === "darwin" ? "open" : process.platform === "win32" ? "cmd" : "xdg-open"
+  const args = process.platform === "win32" ? ["/c", "start", "", url] : [url]
+  spawn(opener, args, { detached: true, stdio: "ignore", shell: process.platform === "win32" }).unref()
+}
+
+export async function main(argv) {
+  const { help, noOpen, port } = parseArgs(argv)
+  if (help) {
+    console.log(USAGE)
+    return
+  }
+
+  const html = page()
+  const server = createServer((req, res) => {
+    if (req.url === "/favicon.ico") {
+      res.writeHead(204).end()
+      return
+    }
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8" })
+    res.end(html)
+  })
+
+  await new Promise((done) => server.listen(port, done))
+  const url = `http://localhost:${port}`
+
+  console.log("MCP Connect preview")
+  console.log("===================")
+  console.log(`panel:  ${url}`)
+  console.log(`plugin: ${PLUGIN}`)
+  console.log("\nStop with Ctrl+C.")
+
+  if (!noOpen) openBrowser(url)
+
+  await new Promise(() => {})
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  await main(process.argv.slice(2))
+}

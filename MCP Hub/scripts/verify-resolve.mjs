@@ -1,138 +1,138 @@
 #!/usr/bin/env node
-// Prove that every app in the catalog resolves to a real, connectable MCP
-// server, so no app is left half-done.
+// Check that apps the catalog cannot reach can still be resolved through the registry.
 //
-//   node scripts/verify-resolve.mjs
+//   node "MCP Hub/scripts/verify-resolve.mjs"               every catalog app
+//   node "MCP Hub/scripts/verify-resolve.mjs" --terms slack,notion,postgres
+//   node "MCP Hub/scripts/verify-resolve.mjs" --only-unresolved
 //
-// For each app:
-//   1. if the catalog knows a first-party endpoint, confirm it answers
-//   2. otherwise search the official registry and pick the best hosted server
-//   3. confirm the chosen endpoint is actually reachable
+// The catalog carries a first-party endpoint for the apps people actually use. The rest of
+// the registry is where everything else comes from, and a resolver that hands back a
+// plausible-looking URL nobody can connect to is worse than one that admits it found
+// nothing: the user presses Connect and waits.
 //
-// An app that resolves to nothing is reported as a failure, because an app the
-// panel cannot connect is not finished.
+// So each resolution is checked the only way that means anything — the URL is asked for a
+// real MCP initialize. A resolver result that does not answer is reported as unresolvable
+// even though it was technically found.
 
-const { readFile } = await import("node:fs/promises")
-const { dirname, join } = await import("node:path")
-const { fileURLToPath } = await import("node:url")
-const HUB = join(dirname(fileURLToPath(import.meta.url)), "..")
+import { allSeedApps } from "../catalog/seed.ts"
+import { resolveApp } from "../lib/resolve.ts"
+import { searchRegistry } from "../lib/registry.ts"
+import { pathToFileURL } from "node:url"
 
-let pass = 0
-let fail = 0
-const ok = (m) => { pass++; console.log(`  PASS  ${m}`) }
-const bad = (m) => { fail++; console.log(`  FAIL  ${m}`) }
-const note = (m) => console.log(`        ${m}`)
+const TIMEOUT_MS = 10_000
 
-/** pull the catalog entries straight out of the TypeScript source */
-function parseApps(src) {
-  const apps = []
-  const re = /\{\s*id:\s*"([^"]+)"[\s\S]*?name:\s*"([^"]+)"[\s\S]*?description:\s*"([^"]+)"[\s\S]*?category:\s*"([^"]+)"[\s\S]*?kind:\s*"([^"]+)"([\s\S]*?)\}/g
-  let m
-  while ((m = re.exec(src))) {
-    const rest = m[6]
-    apps.push({
-      id: m[1], name: m[2], description: m[3], category: m[4], kind: m[5],
-      url: /url:\s*"([^"]+)"/.exec(rest)?.[1],
-      tokenUrl: /tokenUrl:\s*"([^"]+)"/.exec(rest)?.[1],
-    })
+export function parseArgs(argv) {
+  const flag = (name) => argv.includes(name)
+  const list = (name) => {
+    const i = argv.indexOf(name)
+    return i === -1 ? undefined : argv[i + 1].split(",").map((s) => s.trim()).filter(Boolean)
   }
-  return apps
+  return { help: flag("--help") || flag("-h"), terms: list("--terms"), onlyUnresolved: flag("--only-unresolved") }
 }
 
-async function reachable(url, method = "GET") {
+export const USAGE = `Resolve catalog apps through the official registry.
+
+  --terms <a,b>    search for these words instead of using the catalog
+  --only-unresolved  skip apps that already have a first-party endpoint
+  --help           show this text
+`
+
+/** Does this URL answer a real MCP initialize? */
+export async function answers(url) {
   try {
-    const ctrl = new AbortController()
-    const t = setTimeout(() => ctrl.abort(), 12000)
-    const res = await fetch(url, { method, signal: ctrl.signal, redirect: "manual" })
-    clearTimeout(t)
-    return res.status
-  } catch {
-    return 0
-  }
-}
-
-function score(server, term) {
-  const name = server.name.toLowerCase()
-  const title = (server.title ?? "").toLowerCase()
-  const desc = (server.description ?? "").toLowerCase()
-  let s = 0
-  if (!server.remote) s -= 40
-  if (name.includes(term)) s += 20
-  if (title.includes(term)) s += 14
-  if (desc.includes(term)) s += 6
-  for (const w of ["official", "mcp", "server", "api"]) if (name.includes(w)) s += 2
-  for (const w of ["demo", "test", "sample", "example", "deprecated"]) if (name.includes(w) || desc.includes(w)) s -= 8
-  s -= Math.min(name.length / 8, 6)
-  return s
-}
-
-async function search(term) {
-  const url = `https://registry.modelcontextprotocol.io/v0/servers?limit=30&search=${encodeURIComponent(term)}`
-  const res = await fetch(url, { headers: { accept: "application/json" } })
-  if (!res.ok) throw new Error(`registry ${res.status}`)
-  const data = await res.json()
-  return (data.servers ?? [])
-    .map((e) => {
-      const s = e.server ?? e
-      const remotes = Array.isArray(s.remotes) ? s.remotes.filter((r) => r?.url).map((r) => r.url) : []
-      return { name: s.name, title: s.title, description: s.description, remote: remotes.length > 0, remotes }
+    const res = await fetch(url, {
+      method: "POST",
+      redirect: "follow",
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+      headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "initialize",
+        params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "mcp-hub-verify", version: "1.0.0" } },
+      }),
     })
-    .filter((s) => s.name)
+
+    // 401 and 403 are the good answer: the host is live and wants a credential.
+    return { answered: res.status < 500, status: res.status, challenged: res.status === 401 || res.status === 403 }
+  } catch (e) {
+    return { answered: false, status: 0, error: e.name === "AbortError" ? "timeout" : String(e.message ?? e) }
+  }
 }
 
-async function main() {
-  console.log("MCP Hub - app resolution proof")
-  console.log("==============================")
-  console.log("Every app in the catalog must resolve to a real server, otherwise the")
-  console.log("panel would show a card that cannot connect.\n")
-
-  const src = await readFile(join(HUB, "catalog", "seed.ts"), "utf8")
-  const apps = parseApps(src)
-  console.log(`catalog: ${apps.length} apps\n`)
-
-  for (const app of apps) {
-    if (app.kind === "local") {
-      ok(`${app.id}: local server shipped with ZYRAXON`)
-      continue
-    }
-
-    // first-party endpoint known
-    if (app.url) {
-      const code = await reachable(app.url, "POST")
-      if (code === 0) bad(`${app.id}: first-party endpoint unreachable`)
-      else ok(`${app.id}: first-party endpoint answers (${code})`)
-      continue
-    }
-
-    // resolve through the registry
-    try {
-      const term = app.id.includes("-") ? app.id.split("-")[0] : app.id
-      const hits = await search(term)
-      if (hits.length === 0) {
-        bad(`${app.id}: no server in the registry for "${term}"`)
-        continue
-      }
-      const ranked = hits.map((s) => ({ s, v: score(s, term) })).sort((a, b) => b.v - a.v).map((x) => x.s)
-      const hosted = ranked.filter((s) => s.remote)
-      const best = hosted[0] ?? ranked[0]
-      if (!best.remote) {
-        bad(`${app.id}: best match "${best.name}" is not hosted`)
-        note(`candidates: ${ranked.slice(0, 3).map((s) => s.name).join(", ")}`)
-        continue
-      }
-      const code = await reachable(best.remotes[0], "POST")
-      if (code === 0) {
-        bad(`${app.id}: resolved to ${best.name} but it did not answer`)
-      } else {
-        ok(`${app.id}: resolved to ${best.name} (${hits.length} candidates, endpoint answers ${code})`)
-      }
-    } catch (e) {
-      bad(`${app.id}: registry search failed (${e.message})`)
-    }
+export async function main(argv) {
+  const { help, terms, onlyUnresolved } = parseArgs(argv)
+  if (help) {
+    console.log(USAGE)
+    return
   }
 
-  console.log(`\n${pass} passed, ${fail} failed`)
-  process.exit(fail === 0 ? 0 : 1)
+  console.log("MCP registry resolution")
+  console.log("=======================")
+
+  if (terms) {
+    for (const term of terms) {
+      const hits = await searchRegistry(term, 5)
+      console.log(`\n"${term}" -> ${hits.length} hits`)
+      for (const hit of hits) {
+        const remote = hit.remotes?.[0]?.url
+        const verdict = remote ? await answers(remote) : { answered: false, status: 0 }
+        console.log(`  ${hit.name}${hit.version ? ` ${hit.version}` : ""}`)
+        console.log(`    ${remote ?? "(no remote endpoint)"}`)
+        console.log(`    ${verdict.answered ? `answers ${verdict.status}${verdict.challenged ? " (wants a credential)" : ""}` : `DEAD — ${verdict.error ?? verdict.status}`}`)
+      }
+    }
+    return
+  }
+
+  const targets = allSeedApps().filter((a) => a.kind !== "local").filter((a) => !onlyUnresolved || !a.url)
+  if (onlyUnresolved && targets.length === 0) {
+    console.log("Every remote app already has a first-party endpoint.")
+    return
+  }
+
+  console.log(`${targets.length} apps\n`)
+
+  let resolvedAndLive = 0
+  let catalogDirect = 0
+  let foundButDead = 0
+  let notFound = 0
+
+  for (const app of targets) {
+    // An app with its own endpoint skips the registry entirely, which is the point of
+    // having one: no search, no third party, no guess.
+    if (app.url) {
+      catalogDirect++
+      continue
+    }
+
+    const resolution = await resolveApp(app)
+    if (!resolution.url) {
+      notFound++
+      console.log(`  MISS ${app.name.padEnd(22)} ${resolution.reason ?? "nothing in the registry"}`)
+      continue
+    }
+
+    const verdict = await answers(resolution.url)
+    if (!verdict.answered) {
+      foundButDead++
+      console.log(`  DEAD ${app.name.padEnd(22)} ${resolution.url} — ${verdict.error ?? verdict.status}`)
+      continue
+    }
+
+    resolvedAndLive++
+    console.log(
+      `  ok   ${app.name.padEnd(22)} ${resolution.server?.name ?? resolution.url}` +
+        `${resolution.server?.name ? ` -> ${resolution.url}` : ""} (${verdict.status})`,
+    )
+  }
+
+  console.log(`\nalready first-party  ${catalogDirect}`)
+  console.log(`resolved and live    ${resolvedAndLive}`)
+  console.log(`found but dead       ${foundButDead}`)
+  console.log(`nothing found        ${notFound}`)
 }
 
-main()
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  await main(process.argv.slice(2))
+}

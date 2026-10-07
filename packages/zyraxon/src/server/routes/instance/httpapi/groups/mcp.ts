@@ -23,6 +23,9 @@ export const AuthStartResponse = Schema.Struct({
 export const AuthCallbackPayload = Schema.Struct({
   code: Schema.String,
 })
+export const HasTokensResponse = Schema.Struct({
+  hasTokens: Schema.Boolean,
+})
 export const AuthRemoveResponse = Schema.Struct({
   success: Schema.Literal(true),
 })
@@ -36,6 +39,7 @@ export const McpPaths = {
   auth: "/mcp/:name/auth",
   authCallback: "/mcp/:name/auth/callback",
   authAuthenticate: "/mcp/:name/auth/authenticate",
+  authHasTokens: "/mcp/:name/auth/has-tokens",
   connect: "/mcp/:name/connect",
   disconnect: "/mcp/:name/disconnect",
 } as const
@@ -76,6 +80,19 @@ export const McpApi = HttpApi.make("mcp")
             identifier: "mcp.auth.start",
             summary: "Start MCP OAuth",
             description: "Start OAuth authentication flow for a Model Context Protocol (MCP) server.",
+          }),
+        ),
+        HttpApiEndpoint.get("authHasTokens", McpPaths.authHasTokens, {
+          params: { name: Schema.String },
+          query: WorkspaceRoutingQuery,
+          success: described(HasTokensResponse, "Stored MCP credentials"),
+          error: McpServerNotFoundError,
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "mcp.auth.hasTokens",
+            summary: "Check stored MCP credentials",
+            description:
+              "Report whether a stored sign-in exists for a Model Context Protocol (MCP) server, so a client can tell an unsigned server from a rejected credential.",
           }),
         ),
         HttpApiEndpoint.post("authCallback", McpPaths.authCallback, {

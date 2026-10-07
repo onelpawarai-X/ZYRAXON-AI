@@ -1,5 +1,23 @@
    /*    Copyright (c) 2026 onelpawarai. All rights reserved. */
 
+/*
+ * Above modal dialogs and popovers, which are both 50.
+ *
+ * Every dropdown here was also 50, which put it at exactly the same level as the dialog it
+ * was opened from. Same level means painting order decides, and the dialog's own content won:
+ * a menu opened inside a dialog — which is most of them, since the model picker, the server
+ * picker and the session menu all live in one — rendered *underneath* the dialog's
+ * background and read as a panel trapped inside the chat box rather than a menu floating
+ * above it. Raising it, rather than lowering the dialogs, keeps every existing dialog
+ * stacking order intact.
+ *
+ * 60 is the tier menu-v2 and select-v2 already use for exactly this reason.
+ */
+[data-popper-positioner]:has([data-component="dropdown-menu-content"]),
+[data-popper-positioner]:has([data-component="dropdown-menu-sub-content"]) {
+  z-index: 100;
+}
+
 [data-component="dropdown-menu-content"],
 [data-component="dropdown-menu-sub-content"] {
   min-width: 8rem;
@@ -10,7 +28,9 @@
   background-color: var(--surface-raised-stronger-non-alpha);
   padding: 4px;
   box-shadow: var(--shadow-md);
-  z-index: 50;
+  /* Set here as well as on the positioner: Kobalte renders the content inside the
+     positioner, and a child cannot escape a stacking context its own parent establishes. */
+  z-index: 100;
   transform-origin: var(--kb-menu-content-transform-origin);
 
   &:focus,

@@ -39,11 +39,12 @@ import { SiteCreateTool } from "./site_create"
 import { SitePublishTool } from "./site_publish"
 import { SiteUnpublishTool } from "./site_unpublish"
 import { MediaFetchTool } from "./media_fetch"
+import { MediaGenerateTool } from "./media_generate"
 import { SvgGenerateTool } from "./svg_generate"
 import { SiteDomainTool } from "./site_domain"
 import { SitePreviewTool } from "./site_preview"
 import { GithubConnectTool } from "./github_connect"
-import { McpCatalogTool, McpStatusTool, McpConnectTool } from "./mcp-control"
+import { McpCatalogTool, McpStatusTool, McpConnectTool, McpDisconnectTool } from "./mcp-control"
 import { ModeSwitchTool } from "./mode-switch"
 import {
   SessionListTool,
@@ -166,13 +167,15 @@ const layer = Layer.effect(
     const sitePublishToolDef = yield* SitePublishTool
     const siteUnpublishToolDef = yield* SiteUnpublishTool
     const mediaFetchToolDef = yield* MediaFetchTool
+    const mediaGenerateToolDef = yield* MediaGenerateTool
     const svgGenerateToolDef = yield* SvgGenerateTool
     const siteDomainToolDef = yield* SiteDomainTool
     const sitePreviewToolDef = yield* SitePreviewTool
     const githubConnectToolDef = yield* GithubConnectTool
-const mcpCatalogToolDef = yield* McpCatalogTool
-const mcpStatusToolDef = yield* McpStatusTool
-const mcpConnectToolDef = yield* McpConnectTool
+    const mcpCatalogToolDef = yield* McpCatalogTool
+    const mcpStatusToolDef = yield* McpStatusTool
+    const mcpConnectToolDef = yield* McpConnectTool
+    const mcpDisconnectToolDef = yield* McpDisconnectTool
     const modeSwitchToolDef = yield* ModeSwitchTool
     const sessionListToolDef = yield* SessionListTool
     const sessionOpenToolDef = yield* SessionOpenTool
@@ -422,13 +425,15 @@ const mcpConnectToolDef = yield* McpConnectTool
           site_publish: Tool.init(sitePublishToolDef),
           site_unpublish: Tool.init(siteUnpublishToolDef),
           media_fetch: Tool.init(mediaFetchToolDef),
+          media_generate: Tool.init(mediaGenerateToolDef),
           svg_generate: Tool.init(svgGenerateToolDef),
           site_domain: Tool.init(siteDomainToolDef),
           site_preview: Tool.init(sitePreviewToolDef),
           github_connect: Tool.init(githubConnectToolDef),
-  mcp_catalog: Tool.init(mcpCatalogToolDef),
-  mcp_status: Tool.init(mcpStatusToolDef),
-  mcp_connect: Tool.init(mcpConnectToolDef),
+          mcp_catalog: Tool.init(mcpCatalogToolDef),
+          mcp_status: Tool.init(mcpStatusToolDef),
+          mcp_connect: Tool.init(mcpConnectToolDef),
+          mcp_disconnect: Tool.init(mcpDisconnectToolDef),
           x_mode_switch: Tool.init(modeSwitchToolDef),
           x_session_list: Tool.init(sessionListToolDef),
           x_session_open: Tool.init(sessionOpenToolDef),
@@ -486,6 +491,7 @@ const mcpConnectToolDef = yield* McpConnectTool
             tool.site_publish,
             tool.site_unpublish,
             tool.media_fetch,
+            tool.media_generate,
             tool.svg_generate,
             tool.site_domain,
             tool.site_preview,

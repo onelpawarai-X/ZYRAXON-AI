@@ -481,7 +481,7 @@ export const SettingsGeneral: Component = () => {
           description={
             <>
               {language.t("settings.general.row.theme.description")}{" "}
-              <Link href="https://zyraxon.ai/docs/themes/">{language.t("common.learnMore")}</Link>
+              <Link href="https://zyraxonai.lovable.app/docs/themes/">{language.t("common.learnMore")}</Link>
             </>
           }
         >

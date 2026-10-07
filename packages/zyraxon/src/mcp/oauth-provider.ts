@@ -26,6 +26,9 @@ export interface McpOAuthCallbacks {
 }
 
 export class McpOAuthProvider implements OAuthClientProvider {
+  /** The state minted for this handshake, reused so repeated reads agree. */
+  private mintedState?: string
+
   constructor(
     protected mcpName: string,
     protected serverUrl: string,
@@ -96,9 +99,22 @@ export class McpOAuthProvider implements OAuthClientProvider {
   }
 
   async tokens(): Promise<OAuthTokens | undefined> {
-    // Use getForUrl to validate tokens are for the current server URL
+    // getForUrl validates the credentials belong to the server we are talking to, so a
+    // token issued for a different endpoint cannot be replayed against this one.
     const entry = await Effect.runPromise(this.auth.getForUrl(this.mcpName, this.serverUrl))
     if (!entry?.tokens) return undefined
+
+    /**
+     * An entry with no usable access token is treated as no tokens at all.
+     *
+     * Returning `{ access_token: undefined }` sent `Bearer undefined` on every request and
+     * the server answered 401 each time, with nothing in the message to say why. Worse, the
+     * entry existed, so the flow believed it was signed in and stopped trying to get a real
+     * one. Reporting "no tokens" makes it start over, which is what actually fixes it.
+     */
+    if (typeof entry.tokens.accessToken !== "string" || entry.tokens.accessToken.trim() === "") {
+      return undefined
+    }
 
     return {
       access_token: entry.tokens.accessToken,
@@ -152,15 +168,24 @@ export class McpOAuthProvider implements OAuthClientProvider {
       return entry.oauthState
     }
 
-    // Generate a new state if none exists — the SDK calls state() as a
-    // generator, not just a reader, so we need to produce a value even when
-    // startAuth() hasn't pre-saved one (e.g. during automatic auth on first
-    // connect).
-    const newState = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+    /**
+     * Generate a state if none exists, and hand back the same one for the rest of this
+     * handshake.
+     *
+     * The SDK uses `state()` as a generator as well as a reader, so it can be called more
+     * than once: once to build the authorization URL, and again to check the value that
+     * comes back on the callback. Minting a fresh value on each call meant the second read
+     * compared the redirect against a state the server had never been given, so the check
+     * either failed on a perfectly good sign-in or, on a server that skipped it, let a
+     * callback through that belonged to a different request. Memoised here so one handshake
+     * always carries one state.
+     */
+    this.mintedState ??= Array.from(crypto.getRandomValues(new Uint8Array(32)))
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("")
-    await Effect.runPromise(this.auth.updateOAuthState(this.mcpName, newState))
-    return newState
+
+    await Effect.runPromise(this.auth.updateOAuthState(this.mcpName, this.mintedState))
+    return this.mintedState
   }
 
   async invalidateCredentials(type: "all" | "client" | "tokens"): Promise<void> {
@@ -212,16 +237,26 @@ export class McpOAuthPendingProvider extends McpOAuthProvider {
   }
 
   async commit(): Promise<void> {
-    if (!this.pendingTokens) return
+    /**
+     * Only commit when there is a usable access token.
+     *
+     * A token response with no `access_token` in it still parses, so committing it wrote an
+     * entry that claimed to be signed in and had nothing to sign in with. Every later
+     * request went out as `Bearer undefined`. Writing nothing leaves the flow free to try
+     * again, which is the only honest outcome.
+     */
+    const accessToken = this.pendingTokens?.access_token
+    if (typeof accessToken !== "string" || accessToken.trim() === "") return
+
     await Effect.runPromise(
       this.auth.set(
         this.mcpName,
         {
           tokens: {
-            accessToken: this.pendingTokens.access_token,
-            refreshToken: this.pendingTokens.refresh_token,
-            expiresAt: this.pendingTokens.expires_in ? Date.now() / 1000 + this.pendingTokens.expires_in : undefined,
-            scope: this.pendingTokens.scope,
+            accessToken,
+            refreshToken: this.pendingTokens!.refresh_token,
+            expiresAt: this.pendingTokens!.expires_in ? Date.now() / 1000 + this.pendingTokens!.expires_in : undefined,
+            scope: this.pendingTokens!.scope,
           },
           clientInfo:
             this.pendingClientInfo && !this.config.clientId

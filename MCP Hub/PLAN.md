@@ -1,78 +1,89 @@
-# MCP Hub — design notes
+# MCP Connect — what it does and what it refuses to do
 
-All changes live in this folder. Nothing outside it is modified.
+## The goal
 
-## What already exists in the project
+One button on the home page that connects an account to the agent. Press it, allow the app
+in your own browser, and its tools are callable in the session. No config file to hand-edit,
+no JSON to paste, no host and port.
 
-| Piece | File | What it does |
-|---|---|---|
-| MCP client engine | `packages/zyraxon/src/mcp/index.ts` (1,098 lines) | stdio, HTTP and SSE transports, tool list, tool call |
-| OAuth | `mcp/oauth-provider.ts` | RFC 7591 dynamic client registration, PKCE |
-| OAuth callback server | `mcp/oauth-callback.ts` | `http://127.0.0.1:19876/mcp/oauth/callback` |
-| Token store | `mcp/auth.ts` | `~/.local/share/zyraxon/mcp-auth.json` |
-| Tool conversion | `mcp/catalog.ts` | MCP tool becomes an agent tool |
-| Config schema | `packages/core/src/v1/config/mcp.ts` | local (command) and remote (url + oauth) |
-| Existing MCP UI | `packages/app/src/components/dialog-select-mcp.tsx` | enable and disable servers |
-| Built-in tools | `mcp/*-tools.ts` | 18 categories, 136 tools |
+## The rules it follows
 
-So the Hub does not rebuild any of this. It adds the catalog, the panel and the
-wiring.
+**The order things are offered in is the order of what they ask of you.** Browser sign-in
+first, because that is the case that works for most people with one click. Then apps that
+want a pasted token. Then apps that need nothing at all. Mixing them in one list was the
+original mistake: a card that opens Chrome, a card that wants a string of text and a card
+that just works all looked identical, so nothing explained why one succeeded and the next
+did not.
 
-## The question this was built to answer
+**No endpoint is written down from memory.** Every URL in the catalog has been sent a real
+MCP `initialize`. A 404 gets the entry removed rather than left for somebody to press.
 
-When a user clicks an app, does the browser open that app's own consent page,
-and after Allow does the tool reach the agent?
+**A 200 to `initialize` is not proof of anything.** Plenty of servers answer it
+unauthenticated and then refuse every tool call. Token-classified entries are probed with a
+deliberately invalid bearer token so the answer means something. For the same reason the
+live token probe for Copilot was taught to treat a 4xx as rejection rather than as success,
+which it had been doing.
 
-Yes. The flow is:
+**Discovery follows the MCP order and stops at the first answer.** No invented client ids,
+no guessed endpoints. If a server advertises nothing, its own recorded endpoints are the
+last resort and nothing else is tried.
 
-1. Read the protected resource metadata to find the authorization server.
-2. Read the authorization server metadata.
-3. Register a client dynamically — no client id or secret from the user.
-4. Open the authorize URL with PKCE. This is the app's own consent page.
-5. The user presses Allow.
-6. The code returns to the local callback on port 19876.
-7. The token is stored and the server's tools are converted into agent tools.
+**The card never promises one click unless the server proved it.** Dynamic client
+registration is checked live. Nine apps do not offer it, and those cards say so.
 
-Steps 1 to 4 and 6 to 7 were verified live; step 5 is the only part a human does.
+**Progress is reported honestly.** The first stretch — resolving, finding endpoints, opening
+the consent page — is real work that finishes, and it is worth 70%. After that the wait
+belongs to the person reading the consent page, so the bar creeps toward 95% and stops
+rather than continuing to promise a percentage of a total nobody knows.
 
-## Why some apps cannot use that flow
+## What it will not do
 
-An app can only offer one-click sign-in if it runs an authorization server that
-supports dynamic client registration. GitHub does not, so it needs a token once.
-Facebook, Google and Meta publish no hosted MCP server at all, so those apps are
-reached through community servers from the registry or through the provider's
-own API with a token.
+- It will not invent a client id to get past a server that wants one. Nine apps need you to
+  supply it themselves.
+- It will not fall back to a different server when the one you chose fails. A silent
+  substitution is worse than an error you can see.
+- It will not keep credentials after you press Disconnect. `forgetCredentials` is part of
+  what that button does; without it the next start signs the app back in.
+- It will not bundle the registry into the app. 2.6 MB of JSON to render one number is not
+  a trade worth making.
+- It will not edit a config by parsing and rewriting it. `zyraxon.jsonc` is full of
+  comments and the user's formatting; it comes back the way it went in.
 
-Verified live:
+## Where the risks actually are
 
-| Server | Dynamic registration |
-|---|---|
-| Notion | yes |
-| Linear | yes |
-| Atlassian | yes |
-| Sentry | yes |
-| Stripe | yes |
-| Cloudflare | yes |
-| Figma | yes |
-| ElevenLabs | yes |
-| GitHub | no |
+**The config write is a deep merge, so nothing can be deleted.** A key left out of a merge
+survives it. Disconnect therefore marks the entry disabled rather than removing it, and
+that is what `enabled: false` means here. If you ever want true deletion, it needs an API
+that can express it, not a cleverer patch.
 
-## Scale
+**The MCP servers live in the server process, not the panel.** A card's state is whatever
+the server reports, read back on a poll. Closing the panel must not make a connected app
+look disconnected, so the panel keeps a module-level cache and never invents a state the
+server did not report.
 
-- **83 total MCP servers/apps in the curated inventory**
-- 4 built-in local MCP servers
-- 79 remote app MCP connections
-- 9,580 servers in the local cache, 8,517 hosted
-- 18,000+ in the live registry, and growing
+**The browser is opened by the server, in the real profile.** That is the whole point: you
+are already signed in to Notion, so Noticon recognises you. It also means the panel cannot
+know when you are finished — it waits for the server's own loopback callback.
 
-The registry walk was stopped after 595 pages at 18,098 unique servers, so the
-true figure is higher.
+**Discovery is duplicated.** `lib/registry.ts` and
+`packages/zyraxon/src/mcp/oauth-discovery.ts` implement the same chain, one for the UI and
+one for the server. They must be changed together, or the panel will promise a connection
+the connector then cannot make.
 
-## Design rules
+## What was measured
 
-1. Everything in this folder. The host change is one button and one function.
-2. No new dependencies. The MCP client in `lib/client.ts` uses only `fetch`.
-3. The Hub never reaches into the app. The host passes its MCP service in
-   through `lib/runtime.ts`.
-4. Adding an app is one entry in `catalog/seed.ts`.
-5. Every claim has a script that proves it.
+- 103 of 103 remote endpoints answer `initialize`. None dead, none timing out.
+- 53 of 53 browser apps resolve through the discovery chain.
+- 44 offer dynamic client registration; 9 do not.
+- 29 sign in on a different host than the endpoint. All https.
+- Slowest discovery: MongoDB, 7.5s across the whole chain.
+- 9,580 servers in the registry snapshot, last fetched 2026-10-02.
+
+## Still open
+
+- No authenticated round trip has been run. Sign-in was exercised up to the point where the
+  server asks for a token, which needs a real account for each vendor.
+- macOS and Linux have not been run. The Chrome discovery and loopback paths are written
+  for them but unverified.
+- Two entries in the registry snapshot carry a mangled character from an earlier fetch.
+  Harmless in a search box, worth cleaning on the next full refresh.

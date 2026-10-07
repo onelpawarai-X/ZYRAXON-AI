@@ -109,6 +109,32 @@ export class NotFoundError extends Schema.TaggedErrorClass<NotFoundError>()("MCP
   name: Schema.String,
 }) {}
 
+/**
+ * The HTTP status a transport failure carries, or undefined when it carries none.
+ *
+ * The MCP SDK does not preserve the response, so the status has to be read out of what
+ * it threw: `code` on the fetch-style errors it rethrows, `statusCode` on the ones it
+ * wraps, and otherwise the trailing `HTTP error: 401` in its message. Vendors write
+ * three different phrasings of the same refusal and this has to survive all of them,
+ * because a 401 that gets read as a plain failure is a server the user can never sign
+ * in to.
+ */
+function httpStatus(error: Error): number | undefined {
+  const candidate = error as Error & { code?: unknown; statusCode?: unknown; status?: unknown }
+  for (const value of [candidate.code, candidate.statusCode, candidate.status]) {
+    const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN
+    if (Number.isInteger(parsed) && parsed >= 100 && parsed <= 599) return parsed
+  }
+  // Vendors and transports phrase the same refusal as `HTTP error: 401`,
+  // `status code 401` and `SSE error: 403 Forbidden`, and the SDK rethrows all three as
+  // plain `Error`s with the response discarded. The status is the only thing that still
+  // separates "sign in" from "unreachable", so it is read from wherever it survives.
+  // A 3-digit run that is not a plausible HTTP status is ignored, which keeps ports and
+  // version numbers in a message from being mistaken for one.
+  const match = error.message.match(/(?:\bHTTP|\bstatus(?:\s*code)?|\berror)\D{0,24}?(\d{3})\b/i)
+  return match && Number(match[1]) >= 100 && Number(match[1]) <= 599 ? Number(match[1]) : undefined
+}
+
 type MCPClient = Client
 
 function createClient(directory: string) {
@@ -148,51 +174,204 @@ export type Status = Schema.Schema.Type<typeof Status>
 /**
  * Does this server accept the credentials we just presented?
  *
- * Several hosted servers complete `initialize` and `tools/list` without looking at
- * a token at all, then refuse the first real call. A stateless server has no session
- * to fall back on, so it answers a bare `tools/list` with the credentials and
- * nothing else — and an invalid token comes back as 401 with a perfectly good-looking
- * tools array in the body. Reading the status code rather than the body is what turned
- * a bad token into "connected" and then into a server that failed on first use.
+ * Servers that need a token treat `initialize` as worthless: Google's answers 200
+ * without looking at the credential at all, so the first thing that can actually
+ * fail is a real request. The sequence below is the SDK's own — `initialize`,
+ * `notifications/initialized`, then `tools/list` on the same session — and when the
+ * list is not enough it goes one step further and makes the cheapest read-only tool
+ * call it can name, because two servers in the catalogue prove a bad key only there:
  *
- * This is what makes a token app honest about a bad token at the moment it is entered,
- * instead of at the moment the agent first tries to call something.
+ *   - Gmail answers `tools/list` with 401, which is the easy case.
+ *   - The JoJ proxy (YouTube, Telegram, LinkedIn, X) answers `tools/list` with 200
+ *     for any key at all, then returns 200 from the tool call *with a message in the
+ *     body* saying the call needs a key. Judged on status alone this reported a
+ *     wrong key as working and moved the failure to the agent's first request.
+ *
+ * So both signals count: a 401/403 anywhere, or a body that says the credential was
+ * not accepted. A server that cannot be asked at all proves nothing, and is left
+ * alone rather than being reported as a bad key.
  */
 async function credentialsAccepted(
   url: URL,
   headers: Record<string, string> | undefined,
 ): Promise<{ accepted: boolean; detail?: string }> {
-  try {
-    const response = await withTimeout(
+  const rejected = {
+    accepted: false,
+    detail:
+      "The server rejected this token. It is either expired, copied with extra spaces, or was issued for a different account.",
+  }
+  /** The shapes these servers use to say "that key is not valid", in 200 bodies. */
+  const REFUSALS =
+    /requires?\s+(?:a\s+)?(?:joj\s*)?api\s*key|missing\s+required\s+auth|invalid\s+api\s*key|unauthorized|authentication\s+(?:is\s+)?required|invalid\s+authentication\s+credentials|api[\s_-]?key\s+(?:is\s+)?(?:missing|required|invalid)|no\s+api\s*key/i
+  /** GitHub rejects a malformed or wrong token with 400, not 401, and says so in the body. */
+  const MALFORMED = /authorization\s+header\s+is\s+badly\s+formatted|bad\s+authorization|invalid\s+authorization|malformed\s+authorization/i
+  /** A tool name the server does not have. Says nothing about the token either way. */
+  const UNKNOWN_TOOL = /unknown\s+tool|tool\s+not\s+found|no\s+such\s+tool|method\s+not\s+found|-32601/i
+
+  /**
+ * Whether a status means "the server refused the credential".
+ *
+ * Only the codes that actually talk about the credential count. Every 4xx used to count,
+ * which told a user their key was "expired, copied with extra spaces, or issued for a
+ * different account" when the real answer was that the endpoint had moved (404), that the
+ * method was not allowed (405), or that they had been rate limited (429). 429 in
+ * particular arrives whenever somebody clicks connect twice, and it is the one status the
+ * user can do nothing about but wait.
+ *
+ * Anything else is inconclusive, and inconclusive must not be dressed up as a verdict.
+ */
+const CREDENTIAL_STATUSES = new Set([400, 401, 403])
+
+const refused = (status: number, body: string) => CREDENTIAL_STATUSES.has(status) || MALFORMED.test(body)
+
+  const post = (body: unknown, session?: string) =>
+    withTimeout(
       fetch(url, {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          accept: "application/json",
+          accept: "application/json, text/event-stream",
+          ...(session ? { "mcp-session-id": session } : {}),
           ...(headers ?? {}),
         },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }),
+        body: JSON.stringify(body),
       }),
-      10_000,
+      8_000,
     )
-    if (response.status === 401 || response.status === 403) {
-      return {
-        accepted: false,
-        detail:
-          "The server rejected this token. It is either expired, copied with extra spaces, or was issued for a different account.",
-      }
+
+  // Not truncated. The tool list of a real server runs to tens of kilobytes, and
+  // cutting it off meant the tool name was never seen, so the call went out under a
+  // name the server did not recognise and its answer said nothing about the token.
+  const bodyText = async (response: Response) =>
+    response
+      .text()
+      .catch(() => "")
+
+  /** Is this a JSON-RPC error rather than a result? */
+  const rpcError = (text: string) => {
+    if (!text) return false
+    if (/"error"\s*:/.test(text) && !/"result"\s*:/.test(text)) return true
+    if (/"code"\s*:\s*(?:-?32\d\d|-?4\d\d)\b/.test(text)) return true
+    return false
+  }
+
+  let session: string | undefined
+  try {
+    const initialized = await post({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: {
+        protocolVersion: "2025-06-18",
+        capabilities: {},
+        clientInfo: { name: "zyraxon", version: "1" },
+      },
+    })
+    if (refused(initialized.status, await bodyText(initialized))) return rejected
+    session = initialized.headers.get("mcp-session-id") ?? undefined
+
+    // Awaited, not fired and forgotten. `initialize` has to be followed by
+    // `notifications/initialized` before the session will serve anything else, and a
+    // server that enforces that answers a `tools/list` that overtakes the notification
+    // with "server not initialized" — which this function then read as a bad credential.
+    // The notification expects no reply, so waiting on it costs only the write.
+    await post({ jsonrpc: "2.0", method: "notifications/initialized" }, session).catch(() => {})
+
+    const listed = await post({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} }, session)
+    const listedBody = await bodyText(listed)
+    if (refused(listed.status, listedBody)) return rejected
+    if (rpcError(listedBody) && !/"tools"\s*:/.test(listedBody)) return rejected
+
+    // Pick a tool that is safe to call and needs no arguments of consequence, then
+    // actually call it. This is the only request that reliably exercises the
+    // credential on a stateless server, so its verdict is awaited, not assumed.
+    for (const tool of pickReadOnlyTools(listedBody).slice(0, 3)) {
+      const called = await post(
+        { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: tool, arguments: {} } },
+        session,
+      )
+      const calledBody = await bodyText(called)
+      if (refused(called.status, calledBody)) return rejected
+      if (REFUSALS.test(calledBody)) return rejected
+      // The server did not recognise the name, so it never tested anything. Move to
+      // the next candidate instead of reading that silence as a working key.
+      if (UNKNOWN_TOOL.test(calledBody)) continue
+      return { accepted: true }
     }
+
+    // Nothing conclusive to go on: either no tools were offered, or every name we
+    // tried was refused for some other reason. Not evidence of a bad token.
     return { accepted: true }
-  } catch (error) {
+  } catch {
     // A server that cannot be asked at all is not evidence of a bad token. Reporting
     // one here would turn a transient network problem into "your key is wrong".
-    return { accepted: true, detail: undefined }
+    return { accepted: true }
+  } finally {
+    if (session) {
+      // Nothing is done with the throwaway session, so close it instead of leaving
+      // the server to hold it until it times out.
+      fetch(url, { method: "DELETE", headers: { "mcp-session-id": session, ...(headers ?? {}) } }).catch(
+        () => {},
+      )
+    }
   }
+}
+
+/**
+ * The least intrusive tools a server offers, best first, from its own tools/list.
+ *
+ * Read-only, and nothing that writes — create, send, post, delete, update — is ever
+ * returned, because this runs against the user's real account during a connect.
+ *
+ * The last `...names` that used to be appended here is the reason a connect could destroy
+ * something. It was there so the caller would always have another name to try, but it also
+ * put every excluded name back on the list: a server offering nothing but `create_issue`
+ * and `delete_repo` produced two safe names, zero results, and then handed the probe the
+ * write tools it had just been written to refuse. A connect that deletes a repository is
+ * not a failed connect. Excluded names stay excluded; when there is nothing safe to call,
+ * there is nothing to call and the caller says so.
+ */
+function pickReadOnlyTools(toolsListBody: string): string[] {
+  let names: string[] = []
+  try {
+    const doc = JSON.parse(toolsListBody) as { result?: { tools?: { name?: string }[] } }
+    names = (doc.result?.tools ?? [])
+      .map((t) => t.name)
+      .filter((n): n is string => typeof n === "string")
+  } catch {
+    // Streamable HTTP servers answer in SSE frames rather than bare JSON.
+    names = [...toolsListBody.matchAll(/"name"\s*:\s*"([A-Za-z0-9_.-]{2,64})"/g)]
+      .map((m) => m[1])
+      .filter(
+        (n) =>
+          !/^(tools|jsonrpc|result|content|text|type|error|code|message|data|id|description|inputSchema|outputSchema|annotations|title|properties)$/.test(
+            n,
+          ),
+      )
+  }
+
+  const EXCLUDED =
+    /create|write|send|post|put|update|delete|remove|destroy|patch|insert|add|set|upload|download|execute|run|deploy|pay|buy|order|invite|share|merge|close|open|start|stop|cancel|approve|reject|import|export|move|copy|rename/i
+  const PREFERRED = /^(get|list|search|read|fetch|find|query|describe|status|whoami|me|info|about|help|ping|check|view|show|lookup)/i
+
+  const safe = names.filter((n) => !EXCLUDED.test(n))
+  return [...new Set([...safe.filter((n) => PREFERRED.test(n)), ...safe])]
 }
 
 // Cache transports for OAuth servers to allow finishing auth
 type TransportWithAuth = StreamableHTTPClientTransport | SSEClientTransport
 const pendingOAuthTransports = new Map<string, { transport: TransportWithAuth; provider?: McpOAuthPendingProvider }>()
+
+/**
+ * Who, if anyone, is driving the consent page for a server right now.
+ *
+ * `connect` builds a provider of its own, and the SDK asks it to redirect whenever the
+ * server turns out to want consent. With nothing registered here that request went
+ * nowhere, so a connect that needed a fresh token produced no browser and no error. A
+ * live `authenticate` registers itself for the duration of the handshake, which is what
+ * turns that redirect into a page the user can actually approve.
+ */
+const liveConsent = new Map<string, (url: string) => Effect.Effect<void>>()
 
 /**
  * Everything the code-for-token exchange needs, captured while the consent URL was
@@ -368,6 +547,13 @@ export interface Interface {
   readonly supportsOAuth: (mcpName: string) => Effect.Effect<boolean, NotFoundError>
   readonly hasStoredTokens: (mcpName: string) => Effect.Effect<boolean>
   readonly getAuthStatus: (mcpName: string) => Effect.Effect<AuthStatus>
+  /**
+   * Open a URL in the person's browser.
+   *
+   * Shared by the consent flow and by the agent's own MCP tools, so both go through the
+   * same browser discovery — including a path the user set by hand in the MCP page.
+   */
+  readonly openUrl: (url: string) => Effect.Effect<void, Error>
 }
 
 export class Service extends Context.Service<Service, Interface>()("@zyraxon/MCP") {}
@@ -447,7 +633,30 @@ const layer = Layer.effect(
             redirectUri: oauthConfig?.redirectUri,
           },
           {
-            onRedirect: async () => {},
+            // The SDK asks the provider to redirect when it meets a server that wants
+            // consent. That request was being dropped on the floor, so a reconnect that
+            // needed a fresh token sat there instead of showing the sign-in page. The
+            // browser belongs to whoever is driving the connect, so the live handshake
+            // takes over; outside one there is nobody to hand it to and the page is not
+            // opened behind the user's back.
+            onRedirect: async (url: URL) => {
+              const open = liveConsent.get(key)
+              if (!open) return
+              // A plain async callback has no generator to yield into, so the page is
+              // opened the same way the handshake opens it: run the effect on the already
+              // available runtime and report a failure rather than rejecting into the SDK.
+              await Effect.runPromise(
+                Effect.logInfo("oauth redirect during connect", { server: key, url: url.toString() }).pipe(
+                  Effect.andThen(open(url.toString())),
+                  Effect.catchCause((cause) =>
+                    Effect.logWarning("oauth redirect could not open a page", {
+                      server: key,
+                      reason: Cause.pretty(cause),
+                    }).pipe(Effect.ignore),
+                  ),
+                ),
+              )
+            },
           },
           auth,
         )
@@ -486,8 +695,23 @@ const layer = Layer.effect(
           Effect.map((client) => ({ client, transportName: name })),
           Effect.catch((error) => {
             const lastError = error instanceof Error ? error : new Error(String(error))
+            // A 401 or 403 from the server always means "sign in", whatever shape the
+            // transport happened to throw it in. Canva answers 401 with the SDK's
+            // generic `Streamable HTTP error: 401` — no `UnauthorizedError`, and no
+            // "OAuth" in the message — which read as `failed`, so the connect call
+            // stopped there and never reached `authenticate()`. That left every
+            // standards-compliant remote server (the ones that answer 401 with a
+            // `WWW-Authenticate` challenge) unable to open a browser at all, while the
+            // handful of vendors that name OAuth in their error kept working.
+            //
+            // So the status codes are what decide this, and the message is only a
+            // fallback for servers that name OAuth without saying 401.
+            const status = httpStatus(lastError)
             const isAuthError =
-              error instanceof UnauthorizedError || (authProvider && lastError.message.includes("OAuth"))
+              status === 401 ||
+              status === 403 ||
+              error instanceof UnauthorizedError ||
+              (authProvider && lastError.message.includes("OAuth"))
 
             if (isAuthError) {
               if (lastError.message.includes("registration") || lastError.message.includes("client_id")) {
@@ -641,7 +865,17 @@ const layer = Layer.effect(
 
         if (!mcpClient) {
           if (status.status !== "connected" && status.status !== "disabled") {
-            yield* Effect.logWarning("server unavailable", { key, type: mcp.type, status: status.status })
+            // The endpoint, the transport that was tried, and the exact status are what
+            // turn "server unavailable" into an answer. Without the url a log line cannot
+            // be matched to a card in the panel, and without the reason a 401 that means
+            // "sign in" is indistinguishable from a host that is simply down.
+            yield* Effect.logWarning("server unavailable", {
+              key,
+              type: mcp.type,
+              status: status.status,
+              url: mcp.type === "remote" ? mcp.url : undefined,
+              reason: status.status === "failed" ? status.error : undefined,
+            })
           }
           return { status } satisfies CreateResult
         }
@@ -1173,12 +1407,26 @@ const discovered =
       )
 
       if (!discovered.endpoints) {
+        yield* Effect.logWarning("oauth discovery found no endpoints", {
+          server: mcpName,
+          url: mcpConfig.url,
+          reason: discovered.error,
+        })
         return {
           authorizationUrl: "",
           oauthState,
           error: discovered.error,
         } satisfies AuthResult & { error?: string }
       }
+
+      yield* Effect.logDebug("oauth discovery", {
+        server: mcpName,
+        url: mcpConfig.url,
+        authorizationEndpoint: discovered.endpoints.authorizationEndpoint,
+        tokenEndpoint: discovered.endpoints.tokenEndpoint,
+        registrationEndpoint: discovered.endpoints.registrationEndpoint,
+        source: discovered.endpoints.source,
+      })
 
       // A configured client ID wins. Otherwise register dynamically, which is what
       // makes the whole flow a single browser press for most apps.
@@ -1206,6 +1454,11 @@ const discovered =
           ),
         )
         if (!registered.registered) {
+          yield* Effect.logWarning("client registration refused", {
+            server: mcpName,
+            registrationEndpoint: discovered.endpoints.registrationEndpoint,
+            reason: registered.error,
+          })
           return {
             authorizationUrl: "",
             oauthState,
@@ -1214,6 +1467,7 @@ const discovered =
               "This server does not offer dynamic client registration, so a client ID and secret must be configured for it.",
           } satisfies AuthResult & { error?: string }
         }
+        yield* Effect.logDebug("client registered", { server: mcpName, clientId: registered.registered.client_id })
         clientId = registered.registered.client_id
         clientSecret = registered.registered.client_secret ?? oauthConfig?.clientSecret
       }
@@ -1242,6 +1496,27 @@ const discovered =
       authorizationUrl.searchParams.set("code_challenge_method", "S256")
       if (oauthConfig?.scope) authorizationUrl.searchParams.set("scope", oauthConfig.scope)
 
+      const consentUrl = authorizationUrl.toString()
+
+      // Hand the consent page over the moment it exists.
+      //
+      // This was the missing link in every OAuth connect. `startAuth` takes an
+      // `onAuthorization` callback and the provider takes an `onRedirect`, and both were
+      // wired to nothing: the provider's was an empty `async () => {}` and the callback
+      // was simply never invoked. So no browser ever opened, `authenticate` sat waiting on
+      // a loopback callback that could not be sent because nobody was ever sent to approve
+      // it, and the connect died on its timeout as `Unknown error: undefined` — for all
+      // sixty-odd apps, not for one vendor. Nothing here is app-specific; the sign-in page
+      // was built correctly and then never shown to anybody.
+      //
+      // Both routes now open the browser: the direct hand-off for the page just built, and
+      // the provider's redirect for the case where a later refresh is what needs consent.
+      const openConsent = Effect.fn("MCP.openConsent")(function* (url: string) {
+        yield* Effect.logInfo("oauth consent url ready", { server: mcpName, url })
+        onAuthorization?.(url, oauthState)
+      })
+      yield* openConsent(consentUrl)
+
       // A provider that only has to hold the tokens for the pending transport: the
       // consent URL is already built, so nothing here needs to discover anything.
       const authProvider = new McpOAuthPendingProvider(
@@ -1253,7 +1528,24 @@ const discovered =
           scope: oauthConfig?.scope,
           redirectUri: effectiveRedirectUri,
         },
-        { onRedirect: async () => {} },
+        {
+          // Plain async callback, so the page is opened by running the effect rather than
+          // by yielding: a redirect arriving here means this handshake still wants
+          // consent, and the browser belongs to whoever is driving it.
+          onRedirect: async (url: URL) => {
+            await Effect.runPromise(
+              Effect.logInfo("oauth redirect during handshake", { server: mcpName, url: url.toString() }).pipe(
+                Effect.andThen(openConsent(url.toString())),
+                Effect.catchCause((cause) =>
+                  Effect.logWarning("oauth redirect could not open a page", {
+                    server: mcpName,
+                    reason: Cause.pretty(cause),
+                  }).pipe(Effect.ignore),
+                ),
+              ),
+            )
+          },
+        },
         auth,
       )
 
@@ -1312,14 +1604,31 @@ const discovered =
       const openConsentPage = (authorizationUrl: string, oauthState: string) => {
         callback ??= McpOAuthCallback.waitForCallback(oauthState, mcpName)
         onAuthorization?.(authorizationUrl)
-        // McpBrowser is an already-resolved Layer.succeed, so this effect needs no
+        // McpBrowser is an already-resolved Layer.succeed, so these effects need no
         // surrounding runtime and can be launched straight from the redirect callback
-        // that fires while the failed handshake is still unwinding.
-        Effect.runPromise(
-          browser
-            .open(authorizationUrl)
-            .pipe(Effect.catch(() => events.publish(BrowserOpenFailed, { mcpName, url: authorizationUrl }).pipe(Effect.ignore))),
-        ).catch(() => {})
+        // that fires while the failed handshake is still unwinding. Logging is what
+        // makes a consent page that never appears answerable: the line before this
+        // proves the URL was built, and the lines here say whether the browser took it.
+        const open = (url: string) =>
+          Effect.logInfo("opening consent page", { server: mcpName, url }).pipe(
+            Effect.andThen(browser.open(url)),
+            Effect.tap(() => Effect.logInfo("consent page opened", { server: mcpName })),
+            Effect.catch((error) =>
+              Effect.logError("consent page did not open", {
+                server: mcpName,
+                url,
+                reason: error instanceof Error ? error.message : String(error),
+              }).pipe(
+                Effect.andThen(events.publish(BrowserOpenFailed, { mcpName, url }).pipe(Effect.ignore)),
+                Effect.as(error),
+              ),
+            ),
+          )
+        // Registered before the launch so the SDK's own redirect lands on the same page
+        // rather than being dropped, which is what left a reconnect waiting for a browser
+        // that was never asked for.
+        liveConsent.set(mcpName, (url: string) => open(url).pipe(Effect.ignore))
+        Effect.runPromise(open(authorizationUrl)).catch(() => {})
       }
       const result = yield* startAuth(mcpName, openConsentPage)
       if (!result.authorizationUrl) {
@@ -1358,15 +1667,25 @@ const discovered =
       // The consent page already opened from the redirect callback, and the callback
       // waiter was registered alongside it. Re-registering here would orphan the first
       // promise, and opening again would show the user two consent tabs.
-      const code = yield* Effect.promise(() => callback ?? McpOAuthCallback.waitForCallback(result.oauthState, mcpName))
+      //
+      // The handshake owns the registration for its whole length: the SDK can ask for a
+      // redirect at any point while it is still unwinding, and clearing it before the
+      // waiter resolves is what used to leave a reconnect with no way to show consent.
+      // `ensuring` releases it on every exit, including a timeout or an interruption, so
+      // a dead attempt never becomes the next connect's owner of the browser.
+      return yield* Effect.gen(function* () {
+        const code = yield* Effect.promise(
+          () => callback ?? McpOAuthCallback.waitForCallback(result.oauthState, mcpName),
+        )
 
-      const storedState = yield* auth.getOAuthState(mcpName)
-      if (storedState !== result.oauthState) {
+        const storedState = yield* auth.getOAuthState(mcpName)
+        if (storedState !== result.oauthState) {
+          yield* auth.clearOAuthState(mcpName)
+          throw new Error("OAuth state mismatch - potential CSRF attack")
+        }
         yield* auth.clearOAuthState(mcpName)
-        throw new Error("OAuth state mismatch - potential CSRF attack")
-      }
-      yield* auth.clearOAuthState(mcpName)
-      return yield* finishAuth(mcpName, code)
+        return yield* finishAuth(mcpName, code)
+      }).pipe(Effect.ensuring(Effect.sync(() => liveConsent.delete(mcpName))))
     })
 
     const finishAuth = Effect.fn("MCP.finishAuth")(function* (mcpName: string, authorizationCode: string) {
@@ -1433,6 +1752,7 @@ const discovered =
       yield* auth.remove(mcpName)
       McpOAuthCallback.cancelPending(mcpName)
       pendingOAuthTransports.delete(mcpName)
+      liveConsent.delete(mcpName)
     })
 
     const supportsOAuth = Effect.fn("MCP.supportsOAuth")(function* (mcpName: string) {
@@ -1457,6 +1777,10 @@ const discovered =
       return "authenticated"
     })
 
+    const openUrl = Effect.fn("MCP.openUrl")(function* (url: string) {
+      yield* browser.open(url)
+    })
+
     return Service.of({
       status,
       clients,
@@ -1477,6 +1801,7 @@ const discovered =
       supportsOAuth,
       hasStoredTokens,
       getAuthStatus,
+      openUrl,
     })
   }),
 )

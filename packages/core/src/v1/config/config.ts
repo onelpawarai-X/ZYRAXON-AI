@@ -41,7 +41,7 @@ export const Info = Schema.Struct({
     description: "Server configuration for zyraxon serve and web commands",
   }),
   command: Schema.optional(Schema.Record(Schema.String, ConfigCommandV1.Info)).annotate({
-    description: "Command configuration, see https://zyraxon.ai/docs/commands",
+    description: "Command configuration, see https://zyraxonai.lovable.app/docs/commands",
   }),
   skills: Schema.optional(ConfigSkillsV1.Info).annotate({ description: "Additional skill folder paths" }),
   references: Schema.optional(ConfigReference.Info).annotate({
@@ -108,13 +108,17 @@ export const Info = Schema.Struct({
       }),
       [Schema.Record(Schema.String, ConfigAgentV1.Info)],
     ),
-  ).annotate({ description: "Agent configuration, see https://zyraxon.ai/docs/agents" }),
+  ).annotate({ description: "Agent configuration, see https://zyraxonai.lovable.app/docs/agents" }),
   provider: Schema.optional(Schema.Record(Schema.String, ConfigProviderV1.Info)).annotate({
     description: "Custom provider configurations and model overrides",
   }),
   mcp: Schema.optional(
     Schema.Record(Schema.String, Schema.Union([ConfigMCPV1.Info, Schema.Struct({ enabled: Schema.Boolean })])),
   ).annotate({ description: "MCP (Model Context Protocol) server configurations" }),
+  mcp_browser: Schema.optional(Schema.String).annotate({
+    description:
+      "Full path to the browser used for MCP sign-in and for links the agent opens, e.g. C:/Program Files/Google/Chrome/Application/chrome.exe. When unset, installed browsers are discovered automatically.",
+  }),
   formatter: Schema.optional(ConfigFormatterV1.Info).annotate({
     description:
       "Enable or configure formatters. Omit or set to false to disable, true to enable built-ins, or an object to enable built-ins with overrides.",

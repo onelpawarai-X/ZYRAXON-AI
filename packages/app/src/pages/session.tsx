@@ -1868,10 +1868,26 @@ export default function Page() {
     return followupMutation.variables?.id
   })
 
-  const queueEnabled = createMemo(() => {
+  /**
+ * Whether a prompt typed while the session is working should be held rather than sent.
+ *
+ * Held in both modes, which is the fix for the behaviour this used to have. The gate was
+ * `settings.general.followup() === "queue"`, and the default is "steer", so in the default
+ * configuration a prompt typed during a run was submitted straight into the busy session:
+ * the working turn was abandoned mid-flight, the model restarted its thinking from
+ * scratch, and whatever the earlier turn had produced looked thrown away. People read that
+ * as the agent ignoring them, and they were right — it had thrown the work away.
+ *
+ * A turn that is doing something must be allowed to finish doing it. The prompt is taken
+ * out of the composer, shown in the follow-up dock, and delivered at a safe point, which
+ * is the same path the queue mode already used and the one the session runner expects.
+ * Nothing here decides *when* the runner may interrupt itself; that stays with the
+ * server, which owns the turn.
+ */
+const queueEnabled = createMemo(() => {
     const id = params.id
     if (!id) return false
-    return settings.general.followup() === "queue" && busy(id) && !composer.blocked() && !isChildSession()
+    return busy(id) && !composer.blocked() && !isChildSession()
   })
 
   const followupText = (item: FollowupDraft) => {

@@ -877,7 +877,7 @@ function ProviderConnection(props: {
               <div>
                 {language.t("provider.connect.zyraxonZen.visit.prefix")}
                 <Link
-                  href="https://zyraxon.ai/zen"
+                  href="https://zyraxonai.lovable.app/zen"
                   class="text-v2-text-text-base focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-v2-border-border-focus"
                 >
                   {language.t("provider.connect.zyraxonZen.visit.link")}
@@ -925,7 +925,7 @@ function ProviderConnection(props: {
               <div class="text-14-regular text-text-base">{language.t("provider.connect.zyraxonZen.line2")}</div>
               <div class="text-14-regular text-text-base">
                 {language.t("provider.connect.zyraxonZen.visit.prefix")}
-                <Link href="https://zyraxon.ai/zen" tabIndex={-1}>
+                <Link href="https://zyraxonai.lovable.app/zen" tabIndex={-1}>
                   {language.t("provider.connect.zyraxonZen.visit.link")}
                 </Link>
                 {language.t("provider.connect.zyraxonZen.visit.suffix")}

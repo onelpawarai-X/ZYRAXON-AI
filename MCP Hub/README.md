@@ -1,162 +1,113 @@
 # MCP Hub
 
-A connect panel for ZYRAXON. One button on the home page, a list of apps, and
-clicking an app signs you in and hands its tools to the agent.
+One place to connect an account, and hand its tools to the agent.
 
-Everything lives in this folder. No existing source file is changed — see
-`HOST-INTEGRATION.md`.
+The home page gets an **MCP Connect** button. It lists every connectable app in the order of
+what it asks of you — apps that sign in through a browser first, then apps that want an API
+key, then apps that need nothing at all. Clicking one opens that app's own consent page in
+your real browser profile, and once you allow it the tools are live in the session.
 
-## How many apps can be connected
+## Install
 
-| Layer | Count |
-|---|---|
-| Curated catalog (hand-picked, ready) | **83** |
-| Official MCP registry (local cache) | **9,580** |
-| Official MCP registry (live, beyond the cache) | **18,000+** and growing |
+```
+node "MCP Hub/install.mjs"
+```
 
-**Total MCP servers and apps in the curated ZYRAXON inventory: 106.** This is the
-single user-facing total: 4 built-in local servers plus 102 remote MCP app
-connections.
+Then restart ZYRAXON. To undo it:
 
-Every curated entry was verified by hand rather than assumed. Each one was
-probed with a real handshake — `initialize`, then `tools/list`, and where a
-read-only tool existed, an actual `tools/call`:
+```
+node "MCP Hub/install.mjs" --uninstall
+```
 
-| Result | Count | Meaning |
+The installer edits your `~/.config/zyraxon/zyraxon.jsonc` as text, so your comments and
+your formatting survive. Nothing in the repository is touched, and the config already
+supports plugins, which is what this route is for.
+
+## What is in the catalog
+
+108 apps, checked against their real servers rather than against a list somebody typed:
+
+| Kind | Apps | What it means |
 |---|---|---|
-| Completes sign-in through the vendor's own OAuth | 54 | marked `oauth` |
-| Connects and returns data with no sign-in | 46 | marked `none` |
-| Needs a key the user creates themselves | 6 | marked `token` |
+| Browser sign-in | 53 | Opens that app's consent page. Token stored on this machine. |
+| Needs a token | 18 | You paste a token you created yourself. |
+| Open | 32 | No sign-in. Public data, live immediately. |
+| Runs locally | 5 | A process on this machine. Nothing leaves the box. |
 
-An entry is only listed as working if it was observed working. Two apps were
-removed rather than left in place: Replit and Zapier both have no reachable MCP
-endpoint today.
+103 of the 108 are remote endpoints. All 103 answer a real MCP `initialize` today.
 
-8,517 of the cached registry servers are **hosted**, meaning they connect over a
-URL with nothing to install.
+## How a connection works
 
-## Apps that need nothing from you
+For a browser app the panel does not guess anything about OAuth. It runs the chain in the
+order MCP defines, and stops at the first thing that answers:
 
-Verified live against each server's `WWW-Authenticate` header and its
-`/.well-known/oauth-authorization-server` document:
+1. an anonymous `initialize`, and read `WWW-Authenticate` off the answer
+2. the protected-resource metadata that header points at
+3. `authorization_servers` from that document
+4. the issuer's own metadata, for the authorization and token endpoints
+5. the entry's own recorded endpoints, if the server advertises nothing
 
-| App | Client ID or secret needed |
-|---|---|
-| Notion | No |
-| Linear | No |
-| Atlassian (Jira) | No |
-| Sentry | No |
-| Stripe | No |
-| Cloudflare | No |
-| Figma | No |
-| ElevenLabs | No |
-| GitHub | Yes, once |
-| ElevenLabs | No |
-| Upwork | No |
-| PayPal | No |
-| Square | No |
+Then, if the server offers dynamic client registration, the client registers itself with
+PKCE and the whole thing is one click. If it does not, the app says so on the card before
+you press anything, rather than failing after you have waited.
 
-These run an authorization server that supports dynamic client
-registration (RFC 7591), so the Hub registers itself. The user presses Connect,
-the browser opens that app's own consent page, the user presses Allow, and the
-token comes back to a local callback on port 19876.
+Discovery is live, not cached: 53 of 53 browser apps resolve. The slowest measured was
+MongoDB at 7.5s across the whole chain.
 
-## Apps that need a token once
+## Honest limits
 
-An app can only offer the one-click flow if it runs an authorization server with
-dynamic registration. Where it does not, a token is required. The token is
-pasted once and then goes straight to the agent.
+- **9 apps have no dynamic client registration** — GitHub, ElevenLabs, Nango, Box, MongoDB,
+  Zoom, Render, Slack and HubSpot. They sign in on another host and may ask you to paste an
+  app id. Their cards say "Extra step" for this reason, from the live check rather than a
+  hand-set flag.
+- **29 apps sign in on a different host** than the endpoint they serve. All of them over
+  https; none over plain http.
+- **Context7 answers `initialize` with HTTP 200 while still sending a `WWW-Authenticate`
+  challenge.** It needs a credential, and the panel treats it that way.
 
-| App | Where to create the token |
-|---|---|
-| GitHub | github.com/settings/tokens |
-| Supabase | supabase.com/dashboard/account/tokens |
-| Neon | console.neon.tech/app/settings/api-keys |
-| Vercel | vercel.com/account/tokens |
-| Netlify | app.netlify.com/user/applications |
-| YouTube Data | console.cloud.google.com/apis/credentials |
-| Gmail | console.cloud.google.com/apis/credentials |
-| Slack | api.slack.com/apps |
-| Discord | discord.com/developers/applications |
-| Telegram | core.telegram.org/bots |
-| WhatsApp Business | developers.facebook.com/apps |
-| Meta Ads | developers.facebook.com/apps |
-| LinkedIn | linkedin.com/developers/apps |
-| X (Twitter) | developer.x.com/en/portal/dashboard |
-| Reddit | reddit.com/prefs/apps |
-
-## Social and communication apps in the registry
-
-Counted from the local cache. None of these have an official hosted MCP server —
-Facebook, Google and Meta do not publish one — so they are reached through
-community servers in the registry or through the provider's own API.
-
-| App | Servers | Hosted |
-|---|---|---|
-| YouTube | 26 | 23 |
-| LinkedIn | 17 | 13 |
-| Reddit | 13 | 12 |
-| WhatsApp | 11 | 10 |
-| Instagram | 10 | 9 |
-| Gmail | 7 | 5 |
-| X (Twitter) | 7 | 7 |
-| Meta Ads | 5 | 4 |
-| Telegram | 5 | 5 |
-| Slack | 4 | 2 |
-| Discord | 4 | 3 |
-
-## MCP inventory
-
-**Total MCP servers/apps in the curated ZYRAXON MCP inventory: 83.** This is the single user-facing total: 4 built-in local MCP servers plus 79 remote MCP app connections.
-
-## Local servers
-
-The catalog holds **100 verified MCP applications**, of which **4 are bundled
-servers** that ship with ZYRAXON and run on this machine with no setup. They
-appear in the panel next to the remote apps.
-
-| Server | What it does |
-|---|---|
-| Jarvis Browser | Headless browser control |
-| Nuphus Desktop | Desktop control |
-| Touchpoint | Screen touch and input |
-| Desktop Commander | Files, processes and shell |
-
-## Folder layout
+## Layout
 
 ```
-MCP Hub/
-  plugin.ts                 host entry point — the only file ZYRAXON imports
-  catalog/
-    seed.ts                 83 curated apps
-    registry-cache.json     9,580 servers from the official registry
-  lib/
-    client.ts               dependency-free MCP client (Streamable HTTP)
-    registry.ts             live registry client, zero-setup detection
-    connect.ts              connect flow, tool handoff, state
-    runtime.ts              binds the panel to ZYRAXON's own MCP service
-  ui/
-    mcp-hub-panel.tsx       the panel and the app cards
-  scripts/
-    smoke.mjs               catalog and endpoint checks
-    verify-live.mjs         live connection and tool-call proof
-    verify-oauth.mjs        live browser login flow proof
-    verify-injection.mjs    runtime tool injection proof
-    build-registry-cache.mjs  registry cache builder
-    preview.mjs             standalone UI preview server
-  install.mjs               writes the plugin entry into the user's config
-  PLAN.md                   design notes
-  HOST-INTEGRATION.md       how the host wires it up
+install.mjs              register the plugin in the user's config
+plugin.ts                the only file the host needs to know about
+catalog/seed.ts          the 108 apps
+catalog/registry-summary.json  how big the registry was at the last fetch
+lib/connect.ts           the connection state machine and its timing budget
+lib/client.ts            a dependency-free Streamable HTTP MCP client
+lib/registry.ts          registry access and the OAuth discovery chain
+lib/resolve.ts           catalog entry to a real, connectable server
+lib/runtime.ts           binds the Hub to the host's MCP client
+ui/mcp-hub-panel.tsx     the panel
+scripts/                 verification and preview tools
 ```
 
-## Commands
+`lib/registry.ts` duplicates the discovery order that lives in
+`packages/zyraxon/src/mcp/oauth-discovery.ts`. The server-side version is Effect-based and
+this one is plain fetch, because this runs in the UI. **Change them together.**
 
-```bash
-node "MCP Hub/install.mjs"                    # register the plugin
-node "MCP Hub/scripts/smoke.mjs"              # catalog and endpoints
-node "MCP Hub/scripts/verify-live.mjs"        # live connect and tool calls
-node "MCP Hub/scripts/verify-oauth.mjs"       # live login flow
-node "MCP Hub/scripts/verify-injection.mjs"   # runtime tool injection
-node "MCP Hub/scripts/build-registry-cache.mjs" 250
-node "MCP Hub/scripts/preview.mjs"            # UI preview on port 12002
+## Checking it yourself
+
 ```
+node "MCP Hub/scripts/verify-injection.mjs"   # is the Hub actually wired into the app
+node "MCP Hub/scripts/verify-live.mjs"        # does every endpoint still answer
+node "MCP Hub/scripts/verify-oauth.mjs"       # can every browser app find its sign-in page
+node "MCP Hub/scripts/verify-resolve.mjs"     # can catalog apps be resolved
+node "MCP Hub/scripts/smoke.mjs"              # end to end against real servers
+node "MCP Hub/scripts/preview.mjs"            # the panel, in a browser, without a build
+node "MCP Hub/scripts/build-registry-cache.mjs" --dry-run   # refresh the registry numbers
+```
+
+`verify-live`, `verify-oauth` and `smoke` talk to real servers on somebody else's
+infrastructure. They send a plain `initialize` and read the answer. Keep the concurrency
+low; there is no reason to look like a load test.
+
+## Two things that will bite you
+
+**Do not trust the registry's search.** `?search=` on the registry API times out at any page
+size, while `?limit=` on its own answers in about a second. Search here runs against the
+local snapshot instead, which is instant, works offline, and covers all 9,580 servers
+instead of the first page. If you ever see search hang, this is why.
+
+**Do not import `registry-cache.json`.** It is 2.6 MB and the panel must never bundle it.
+The count the UI shows comes from `registry-summary.json`, a few hundred bytes, written by
+the same script.

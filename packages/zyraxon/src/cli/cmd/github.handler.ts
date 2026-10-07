@@ -208,7 +208,7 @@ export const githubInstall = Effect.fn("Cli.github.install")(function* () {
             "",
             "    3. Go to a GitHub issue and comment `/oc summarize` to see the agent in action",
             "",
-            "   Learn more about the GitHub agent - https://zyraxon.ai/docs/github/#usage-examples",
+            "   Learn more about the GitHub agent - https://zyraxonai.lovable.app/docs/github/#usage-examples",
           ].join("\n"),
         )
       }
@@ -328,7 +328,7 @@ export const githubInstall = Effect.fn("Cli.github.install")(function* () {
         s.stop("Installed GitHub app")
 
         async function getInstallation() {
-          return await fetch(`https://api.zyraxon.ai/get_github_app_installation?owner=${app.owner}&repo=${app.repo}`)
+          return await fetch(`https://api.zyraxonai.lovable.app/get_github_app_installation?owner=${app.owner}&repo=${app.repo}`)
             .then((res) => res.json())
             .then((data) => data.installation)
         }
