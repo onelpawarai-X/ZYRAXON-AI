@@ -271,7 +271,7 @@ const layer = Layer.effect(
           Stream.mkString,
           Effect.orDie,
           Effect.timeout(30_000),
-          Effect.catchAll((cause) =>
+          Effect.catchCause((cause) =>
             Effect.gen(function* () {
               yield* Effect.logWarning("title LLM call failed, using fallback", { error: Cause.squash(cause) })
               return deriveFallbackTitle(rawUserText)
@@ -1520,7 +1520,7 @@ const layer = Layer.effect(
               if (lastUserText && assistantText) {
                 yield* Effect.promise(() =>
                   autoStoreConversation(lastUserText, assistantText, lastUser.agent, `${lastUser.model.providerID}/${lastUser.model.modelID}`, undefined, sessionID),
-                ).pipe(Effect.catchAll(() => Effect.void))
+                ).pipe(Effect.catchCause(() => Effect.void))
               }
               // Surface any content-filter finish (e.g. Anthropic stop_reason:
               // refusal) as an error. These turns may have produced no visible

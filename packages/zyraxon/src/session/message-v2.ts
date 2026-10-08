@@ -34,7 +34,7 @@ import { messageCache } from "./cache"
 import { ProviderError } from "@/provider/error"
 import { iife } from "@/util/iife"
 import { errorMessage } from "@/util/error"
-import { isMedia } from "@/util/media"
+import { isMedia, mediaCarrierAccepts } from "@/util/media"
 import type { SystemError } from "bun"
 import type { Provider } from "@/provider/provider"
 import { Effect, Schema } from "effect"
@@ -148,6 +148,10 @@ export const toModelMessagesEffect = Effect.fnUntraced(function* (
   // Only apply this workaround if the model actually supports that media input -
   // otherwise unsupportedParts() will turn it into a user-visible error.
   const supportsMediaInToolResult = (attachment: { mime: string }) => {
+    // An SDK that cannot encode the type would throw while building the request,
+    // so the media is extracted into a user message instead, where
+    // unsupportedParts() can downgrade it to a note when the model cannot read it.
+    if (!mediaCarrierAccepts(model.api.npm, attachment.mime)) return false
     if (model.api.npm === "@ai-sdk/anthropic") return true
     if (model.api.npm === "@ai-sdk/openai") return true
     if (model.api.npm === "@ai-sdk/amazon-bedrock/mantle") return true

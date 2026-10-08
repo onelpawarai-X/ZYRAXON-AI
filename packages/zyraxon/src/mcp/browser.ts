@@ -212,9 +212,9 @@ const layer = Layer.effect(
         // while the app is running, and the next sign-in must pick it up without a restart.
         const preferred = (yield* config.get()).mcp_browser?.trim()
 
-        const direct = yield* openInBrowser(url, preferred).pipe(Effect.either)
-        if (direct._tag === "Right" && direct.right) return
-        if (direct._tag === "Left") failures.push(`could not launch an installed browser (${direct.left.message})`)
+        const direct = yield* openInBrowser(url, preferred).pipe(Effect.result)
+        if (direct._tag === "Success" && direct.success) return
+        if (direct._tag === "Failure") failures.push(`could not launch an installed browser (${direct.failure.message})`)
 
         const subprocess = yield* Effect.tryPromise({
           try: () => open(url),

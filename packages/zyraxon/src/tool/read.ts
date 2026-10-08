@@ -305,11 +305,12 @@ export const ReadTool = Tool.define<
       const mime = sniffAttachmentMime(sample, FSUtil.mimeType(filepath))
       const isImage = SUPPORTED_IMAGE_MIMES.has(mime)
 
-      // Audio and video are handed straight to the model. Every current provider
-      // advertises `audio` and `video` in its input list, so refusing them here
-      // sent the agent off to install FFmpeg and rebuild a pipeline for something
-      // the model reads natively. If the selected model cannot take the type, the
-      // provider says so itself, which beats "Cannot read binary file".
+      // Audio and video are handed straight to the model when it can take them.
+      // The sniff above decides the type from the content, so a `.ts` source file
+      // reads as text instead of inheriting the `video/mp2t` its extension
+      // claims. If the selected model cannot take a real media file,
+      // unsupportedParts() downgrades it to a note before the request goes out —
+      // an unsupported part would otherwise fail the whole stream.
       if (isImage || isPdfAttachment(mime) || isMedia(mime)) {
         const bytes = yield* fs.readFile(filepath)
         const msg = isPdfAttachment(mime)

@@ -109,14 +109,14 @@ function callProvider(
 ) {
   if (provider === "parallel") {
     return Effect.gen(function* () {
-      const result = yield* Effect.either(callParallel(http, params, ctx))
-      if (result._tag === "Left") {
+      const result = yield* Effect.result(callParallel(http, params, ctx))
+      if (result._tag === "Failure") {
         return yield* callExa(http, params)
       }
-      if (!result.right) {
+      if (!result.success) {
         return yield* callExa(http, params)
       }
-      return result.right
+      return result.success
     })
   }
 
