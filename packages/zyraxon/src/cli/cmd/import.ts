@@ -14,6 +14,7 @@ import { EOL } from "os"
 import path from "path"
 import { FSUtil } from "@zyraxon-ai/core/fs-util"
 import { Effect, Schema } from "effect"
+import { Filesystem } from "@/util/filesystem"
 import type { InstanceContext } from "@/project/instance-context"
 
 const decodeMessageInfo = Schema.decodeUnknownSync(SessionV1.Info)
@@ -93,13 +94,12 @@ export const ImportCommand = effectCmd({
       demandOption: true,
     }),
   handler: Effect.fn("Cli.import")(function* (args) {
-    const ctx = yield* InstanceRef.pipe(
-      Effect.catchAll(() => Effect.gen(function* () {
-        const root = Filesystem.resolve(process.env.PWD ?? process.cwd())
-        const store = yield* InstanceStore.Service
-        return yield* store.load({ directory: root })
-      }))
-    )
+    const provided = yield* InstanceRef
+    const store = yield* InstanceStore.Service
+    const ctx = provided ?? (yield* Effect.gen(function* () {
+      const root = Filesystem.resolve(process.env.PWD ?? process.cwd())
+      return yield* store.load({ directory: root })
+    }))
     return yield* runImport(args.file, ctx)
   }),
 })

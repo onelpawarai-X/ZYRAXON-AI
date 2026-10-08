@@ -104,7 +104,7 @@ export namespace RipgrepBinary {
               "bin",
               `rg${process.platform === "win32" ? ".exe" : ""}`,
             )
-            if (yield* fs.isFile(bundledPath).pipe(Effect.catchAll(() => Effect.succeed(false)))) {
+            if (yield* fs.isFile(bundledPath).pipe(Effect.catchCause(() => Effect.succeed(false)))) {
               yield* fs.ensureDir(Global.Path.bin).pipe(Effect.orDie)
               yield* fs.copyFile(bundledPath, target)
               if (process.platform !== "win32") yield* fs.chmod(target, 0o755)

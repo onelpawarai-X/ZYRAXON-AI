@@ -6,6 +6,7 @@ import type { JSONSchema7 } from "@ai-sdk/provider"
 import type * as Provider from "./provider"
 import type * as ModelsDev from "@opencode-ai/core/models-dev"
 import { iife } from "@/util/iife"
+import { mediaCarrierAccepts } from "@/util/media"
 
 type Modality = NonNullable<ModelsDev.Model["modalities"]>["input"][number]
 
@@ -433,7 +434,7 @@ function unsupportedParts(msgs: ModelMessage[], model: Provider.Model): ModelMes
       const filename = part.type === "file" ? part.filename : undefined
       const modality = mimeToModality(mime)
       if (!modality) return part
-      if (model.capabilities.input[modality]) return part
+      if (model.capabilities.input[modality] && mediaCarrierAccepts(model.api.npm, mime)) return part
 
       const name = filename ? `"${filename}"` : modality
       return {

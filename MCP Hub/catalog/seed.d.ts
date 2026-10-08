@@ -103,22 +103,29 @@ export declare function appIcon(app: AppEntry, size?: number): string;
 /**
  * Browser sign-in. One click, then Allow in the browser.
  *
- * Every one of these answered 401 with an RFC 9728 challenge naming its own
- * metadata document, and that document carried a `registration_endpoint`, so the
- * client registers itself and the whole exchange completes without the user being
- * asked for anything.
+ * Every one of these produced an RFC 9728 challenge naming its own metadata
+ * document — at the handshake, or at the first tool call for the servers that let
+ * an anonymous client in and only refuse once it asks for data. Where that document
+ * carried a `registration_endpoint` the client registers itself and the exchange
+ * completes with nothing typed in. Where it did not, the vendor issues clients from
+ * its own console, and those entries carry the console URL and the exact steps.
  */
 export declare const browserApps: AppEntry[];
 /**
  * A pasted key. Press Connect, paste one token, done.
  *
- * These answered 401 with no discovery document, so the vendor issues a key and the
- * only honest way in is to ask for it. Google's endpoints, which do publish a
- * sign-in document, live in browserApps.
+ * Two ways to land here, and both were measured rather than assumed. Some servers
+ * answer 401 with no discovery document at all, so the vendor issues a key and that
+ * is the only honest way in. Others welcome an anonymous handshake and list their
+ * tools without one, then answer every call with a refusal that names the header
+ * the key travels in — which is why the probe asks for a call and not only for the
+ * tool list. Google's endpoints, which do publish a sign-in document, live in
+ * browserApps.
  */
 export declare const keyApps: AppEntry[];
 /**
- * Nothing to sign in to. These answered 200 on the very first request.
+ * Nothing to sign in to. These answered 200 to initialize, listed their tools, and
+ * answered a read-only call with no credential at all.
  *
  * Press Connect and it is connected. No browser, no key, no waiting.
  */
@@ -149,3 +156,16 @@ export declare function catalogSections(): {
     apps: AppEntry[];
 }[];
 export declare const categories: (apps?: AppEntry[]) => string[];
+/**
+ * Documentation links, keyed by app id.
+ *
+ * These are not written from memory either: each one is the
+ * `resource_documentation` field the server publishes in its own RFC 9728 resource
+ * metadata, read straight off the wire. Thirty-one of the 103 remote servers publish
+ * one. The rest publish none, so they have no entry here and the Details panel shows
+ * the endpoint instead — a guessed documentation link would be worse than none.
+ *
+ * Two servers (supabase, runway) answered with their own endpoint as documentation and
+ * were left out for the same reason.
+ */
+export declare const docsByApp: Record<string, string>;

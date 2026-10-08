@@ -65,14 +65,13 @@ const AgentCreateCommand = effectCmd({
     const { InstanceStore } = yield* Effect.promise(() => import("@/project/instance-store"))
     const { Agent } = yield* Effect.promise(() => import("../../agent/agent"))
     const { Provider } = yield* Effect.promise(() => import("@/provider/provider"))
-    const ctx = yield* InstanceRef.pipe(
-      Effect.catchAll(() => Effect.gen(function* () {
-        const root = Filesystem.resolve(process.env.PWD ?? process.cwd())
-        const directory = args.path ? path.resolve(root, args.path) : root
-        const store = yield* InstanceStore.Service
-        return yield* store.load({ directory })
-      }))
-    )
+    const provided = yield* InstanceRef
+    const store = yield* InstanceStore.Service
+    const ctx = provided ?? (yield* Effect.gen(function* () {
+      const root = Filesystem.resolve(process.env.PWD ?? process.cwd())
+      const directory = args.path ? path.resolve(root, args.path) : root
+      return yield* store.load({ directory })
+    }))
     const agentSvc = yield* Agent.Service
     const runLocalEffect = <A, E>(effect: Effect.Effect<A, E>) =>
       Effect.runPromise(effect.pipe(Effect.provideService(InstanceRef, ctx)))

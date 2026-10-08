@@ -4,7 +4,8 @@
 
 import { For, Show, createEffect, createMemo, createSignal, onCleanup, onMount } from "solid-js"
 import type { AppEntry } from "../catalog/seed"
-import { allSeedApps, appIcon, browserApps, categories } from "../catalog/seed"
+import { allSeedApps, appIcon, browserApps, categories, docsByApp } from "../catalog/seed"
+import { LANGUAGES, REDIRECT, catalogText, detectLanguage, guideFor, line } from "../catalog/guide"
 import { connectApp, describe, type ConnectionState, type McpRuntime } from "../lib/connect"
 import type { Resolution } from "../lib/resolve"
 import { searchRegistry, supportsZeroSetup, type RegistryServer } from "../lib/registry"
@@ -22,6 +23,27 @@ const authLabel: Record<string, string> = {
   oauth: "Sign in with the browser",
   token: "Needs an access token",
   local: "Runs on this machine",
+}
+
+/**
+ * Which language the guide is read in, remembered between openings.
+ *
+ * The guide is the document that takes the place of the vendor's own
+ * documentation, so it is offered in the reader's language rather than only in
+ * the panel's. The first choice comes from the browser; after that the saved
+ * one wins, so a Bengali reader does not have to pick বাংলা again every time
+ * a card is opened.
+ */
+const GUIDE_LANG_KEY = "zyraxon.mcp.guide.lang"
+
+function readGuideLang(): string {
+  try {
+    const saved = localStorage.getItem(GUIDE_LANG_KEY)
+    if (saved && LANGUAGES.some((lang) => lang.code === saved)) return saved
+  } catch {
+    // no storage in this context — fall through to the browser's own answer
+  }
+  return detectLanguage()
 }
 
 /**
@@ -242,6 +264,24 @@ export function McpHubPanel(props: McpHubPanelProps) {
    * 9,580 and once as "18,000+", on the same screen.
    */
   const [registryCount, setRegistryCount] = createSignal<number | undefined>(undefined)
+
+  /**
+   * The language a Details card reads its guide in.
+   *
+   * Chosen once and remembered, so the guide a person starts in is the guide
+   * they keep. The translations are already in the bundle, so changing it is
+   * instant — there is no request to wait for and nothing to get wrong offline.
+   */
+  const [guideLang, setGuideLang] = createSignal(readGuideLang())
+
+  const changeGuideLang = (code: string) => {
+    setGuideLang(code)
+    try {
+      localStorage.setItem(GUIDE_LANG_KEY, code)
+    } catch {
+      // no storage here — the choice still applies to this opening
+    }
+  }
 
   onMount(() => {
     let stopped = false
@@ -1168,39 +1208,81 @@ export function McpHubPanel(props: McpHubPanelProps) {
               </div>
               <div class="mb-4 text-[12px] text-[var(--mcp-text-weak)]">{app().description}</div>
 
+              <div class="mb-1 flex items-center justify-between gap-2">
+                <div class="text-[12px] font-[600] text-[var(--mcp-text-weak)]">{line(guideLang(), "title")}</div>
+                <label class="flex items-center gap-1.5 text-[11px] text-[var(--mcp-text-weak)]">
+                  {line(guideLang(), "language")}
+                  <select
+                    class="rounded-md border border-[var(--mcp-border)] bg-transparent px-1.5 py-0.5 text-[11px] outline-none"
+                    value={guideLang()}
+                    onChange={(event) => changeGuideLang(event.currentTarget.value)}
+                  >
+                    <For each={LANGUAGES}>
+                      {(lang) => (
+                        <option value={lang.code}>
+                          {lang.native} ({lang.english})
+                        </option>
+                      )}
+                    </For>
+                  </select>
+                </label>
+              </div>
+              <ul class="mb-4 ml-4 list-disc space-y-1 text-[12px]">
+                <For each={guideFor(app(), guideLang())}>
+                  {(guideLine) => <li>{guideLine}</li>}
+                </For>
+              </ul>
+
+              <Show when={docsByApp[app().id]}>
+                <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">{line(guideLang(), "docs")}</div>
+                <a
+                  class="mb-4 block break-all text-[12px] underline"
+                  href={docsByApp[app().id]}
+                  target="_blank"
+                  rel="noopener"
+                >
+                  {docsByApp[app().id]}
+                </a>
+              </Show>
+
               <Show when={app().note}>
+                <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">
+                  {line(guideLang(), "goodToKnow")}
+                </div>
                 <div class="mb-4 rounded-md border border-[var(--mcp-border)] p-3 text-[12px]">
-                  {app().note}
+                  {catalogText(app().note ?? "", guideLang())}
                 </div>
               </Show>
 
-              <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">Endpoint</div>
+              <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">{line(guideLang(), "endpoint")}</div>
               <div class="mb-4 select-all break-all rounded-md border border-[var(--mcp-border)] p-2 font-mono text-[11px]">
-                {app().url ?? app().command?.command ?? "runs on this machine"}
+                {app().url ?? app().command?.command ?? line(guideLang(), "endpointLocal")}
               </div>
 
-              <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">How to connect</div>
+              <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">{line(guideLang(), "howto")}</div>
               <ol class="mb-4 ml-4 list-decimal space-y-1 text-[12px]">
                 <Show
                   when={app().steps?.length}
                   fallback={
                     <li>
                       {app().kind === "none"
-                        ? "Nothing to do. Press Connect and its tools are usable straight away."
+                        ? line(guideLang(), "howNone")
                         : app().kind === "local"
-                          ? "It ships with ZYRAXON and starts on its own. Press Connect to wake it."
-                          : "Press Connect. A sign-in page opens in your browser; approve it there and this card turns green."}
+                          ? line(guideLang(), "howLocal")
+                          : app().kind === "token"
+                            ? line(guideLang(), "howToken")
+                            : line(guideLang(), "howOAuth")}
                     </li>
                   }
                 >
                   {app().steps!.map((step) => (
-                    <li>{step}</li>
+                    <li>{catalogText(step, guideLang())}</li>
                   ))}
                 </Show>
               </ol>
 
               <Show when={app().scope}>
-                <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">Scopes requested</div>
+                <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">{line(guideLang(), "scopes")}</div>
                 <div class="mb-4 select-all break-all rounded-md border border-[var(--mcp-border)] p-2 font-mono text-[11px]">
                   {app().scope}
                 </div>
@@ -1208,16 +1290,26 @@ export function McpHubPanel(props: McpHubPanelProps) {
 
               <Show when={app().kind === "oauth" && app().consoleUrl}>
                 <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">
-                  OAuth client ID
+                  {line(guideLang(), "oauthClient")}
                 </div>
                 <div class="mb-2 text-[11px] text-[var(--mcp-text-weak)]">
-                  This vendor only accepts clients it issued. Create one at{" "}
-                  <a class="underline" href={app().consoleUrl} target="_blank" rel="noopener">
-                    {app().consoleUrl}
-                  </a>
-                  , using{" "}
-                  <code class="font-mono">http://127.0.0.1:19876/oauth/callback</code> as the redirect URL, then
-                  paste it here.
+                  <For
+                    each={line(guideLang(), "oauthHelp", {
+                      console: app().consoleUrl ?? "",
+                      redirect: REDIRECT,
+                    }).split(app().consoleUrl ?? "\u0000")}
+                  >
+                    {(part, index) => (
+                      <>
+                        <Show when={index() > 0 && app().consoleUrl}>
+                          <a class="underline" href={app().consoleUrl} target="_blank" rel="noopener">
+                            {app().consoleUrl}
+                          </a>
+                        </Show>
+                        {part}
+                      </>
+                    )}
+                  </For>
                 </div>
                 <input
                   value={clientIds()[app().id]?.id ?? ""}
@@ -1227,7 +1319,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
                       [app().id]: { ...prev[app().id], id: e.currentTarget.value },
                     }))
                   }
-                  placeholder="Paste client ID"
+                  placeholder={line(guideLang(), "pasteClientId")}
                   class="mb-2 h-9 w-full rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
                 />
                 <input
@@ -1238,7 +1330,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
                       [app().id]: { id: prev[app().id]?.id ?? "", secret: e.currentTarget.value },
                     }))
                   }
-                  placeholder="Client secret (only if the console showed one)"
+                  placeholder={line(guideLang(), "pasteSecret")}
                   class="mb-3 h-9 w-full rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
                 />
               </Show>
@@ -1249,7 +1341,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
                   class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5"
                   onClick={() => setDetailsFor(null)}
                 >
-                  Close
+                  {line(guideLang(), "close")}
                 </button>
                 <Show when={app().consoleUrl}>
                   <button
@@ -1257,7 +1349,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
                     class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5"
                     onClick={() => window.open(app().consoleUrl, "_blank", "noopener")}
                   >
-                    Open console
+                    {line(guideLang(), "openConsole")}
                   </button>
                 </Show>
                 <button
@@ -1267,7 +1359,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
                   title="Build the sign-in link so it can be opened in whichever browser holds your account"
                   onClick={() => generateConsentUrl(app())}
                 >
-                  {generating() === app().id ? "Generating…" : "Generate sign-in link"}
+                  {generating() === app().id ? line(guideLang(), "generating") : line(guideLang(), "generateLink")}
                 </button>
                 <button
                   type="button"

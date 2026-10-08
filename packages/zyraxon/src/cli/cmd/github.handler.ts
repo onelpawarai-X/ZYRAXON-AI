@@ -157,13 +157,12 @@ type RepoEvent = (typeof REPO_EVENTS)[number]
 
 export const githubInstall = Effect.fn("Cli.github.install")(function* () {
   const { InstanceStore } = yield* Effect.promise(() => import("@/project/instance-store"))
-  const ctx = yield* InstanceRef.pipe(
-    Effect.catchAll(() => Effect.gen(function* () {
-      const root = Filesystem.resolve(process.env.PWD ?? process.cwd())
-      const store = yield* InstanceStore.Service
-      return yield* store.load({ directory: root })
-    }))
-  )
+  const provided = yield* InstanceRef
+  const store = yield* InstanceStore.Service
+  const ctx = provided ?? (yield* Effect.gen(function* () {
+    const root = Filesystem.resolve(process.env.PWD ?? process.cwd())
+    return yield* store.load({ directory: root })
+  }))
   const modelsDev = yield* ModelsDev.Service
   const gitSvc = yield* Git.Service
   yield* Effect.promise(async () => {
@@ -383,13 +382,12 @@ jobs:
 
 export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: string; token?: string }) {
   const { InstanceStore } = yield* Effect.promise(() => import("@/project/instance-store"))
-  const ctx = yield* InstanceRef.pipe(
-    Effect.catchAll(() => Effect.gen(function* () {
-      const root = Filesystem.resolve(process.env.PWD ?? process.cwd())
-      const store = yield* InstanceStore.Service
-      return yield* store.load({ directory: root })
-    }))
-  )
+  const provided = yield* InstanceRef
+  const store = yield* InstanceStore.Service
+  const ctx = provided ?? (yield* Effect.gen(function* () {
+    const root = Filesystem.resolve(process.env.PWD ?? process.cwd())
+    return yield* store.load({ directory: root })
+  }))
   const gitSvc = yield* Git.Service
   const sessionSvc = yield* Session.Service
   const sessionShare = yield* SessionShare.Service

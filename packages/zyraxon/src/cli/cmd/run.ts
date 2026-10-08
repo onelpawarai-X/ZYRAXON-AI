@@ -273,7 +273,7 @@ export const RunCommand = effectCmd({
 
     // Get InstanceRef from context, or load it manually if not provided
     const localInstance = yield* InstanceRef.pipe(
-      Effect.catchAll(() => Effect.gen(function* () {
+      Effect.catchCause(() => Effect.gen(function* () {
         const root = Filesystem.resolve(process.env.PWD ?? process.cwd())
         const directory = args.dir && !args.attach ? path.resolve(root, args.dir) : root
         const store = yield* InstanceStore.Service

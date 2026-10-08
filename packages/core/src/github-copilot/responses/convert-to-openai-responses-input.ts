@@ -4,7 +4,6 @@ import {
   type LanguageModelV3Prompt,
   type LanguageModelV3ToolCallPart,
   type SharedV3Warning,
-  UnsupportedFunctionalityError,
 } from "@ai-sdk/provider"
 import { convertToBase64, parseProviderOptions } from "@ai-sdk/provider-utils"
 import { z } from "zod/v4"
@@ -107,9 +106,17 @@ export async function convertToOpenAIResponsesInput({
                         }),
                   }
                 } else {
-                  throw new UnsupportedFunctionalityError({
-                    functionality: `file part media type ${part.mediaType}`,
+                  // An unreadable media type must not take the request down with it:
+                  // the model gets a placeholder instead of the file.
+                  const label = part.filename ?? `part-${index}`
+                  warnings.push({
+                    type: "other",
+                    message: `file part media type ${part.mediaType} is not supported; sent a placeholder for ${label}`,
                   })
+                  return {
+                    type: "input_text",
+                    text: `[Attachment ${label}: ${part.mediaType} cannot be sent to this model.]`,
+                  }
                 }
               }
             }

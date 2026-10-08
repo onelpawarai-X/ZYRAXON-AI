@@ -25,9 +25,9 @@ const parsePayload = (payload: string) =>
   Effect.gen(function* () {
     const trimmed = payload.trim()
     if (!trimmed.startsWith("{")) return undefined
-    const result = yield* Effect.either(decode(trimmed))
-    if (result._tag === "Left") return undefined
-    return result.right.result.content.find((item) => item.text)?.text
+    const result = yield* Effect.result(decode(trimmed))
+    if (result._tag === "Failure") return undefined
+    return result.success.result.content.find((item) => item.text)?.text
   })
 
 export const parseResponse = Effect.fn("McpWebSearch.parseResponse")(function* (body: string) {
