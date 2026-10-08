@@ -2,22 +2,27 @@
 //
 // Every entry in this file was verified against the live network before being
 // written down. The verification was not a registry lookup and not a search:
-// each endpoint was sent a real JSON-RPC `initialize`, and the answer was read.
+// each endpoint was sent a real JSON-RPC `initialize`, then a `tools/list`, then
+// one read-only `tools/call`, and all three answers were read.
 //
-//   1. A server that answers with JSON-RPC is an MCP server. 200 means it is open,
-//      401 means it wants credentials and wants us to discover them.
+//   1. A server that answers with JSON-RPC is an MCP server. 200 means it is
+//      reachable; 401 means it wants credentials and wants us to discover them.
 //   2. A server that answers 401 is asked where its OAuth metadata lives. The
 //      `WWW-Authenticate` header names the exact document, and that document says
 //      whether dynamic client registration exists and which endpoints to use.
-//   3. A server that answers 404, or answers with an HTML page, is not an MCP
+//   3. A 200 is not proof of open access. Several servers let an anonymous client
+//      in, list every tool, and only refuse once one is called — so the call is
+//      what decides, and a refusal there is read exactly like a 401.
+//   4. A server that answers 404, or answers with an HTML page, is not an MCP
 //      server and is not in this file.
 //
 // `kind` is therefore a record of what the wire actually said:
-//   oauth - 401, and an authorization server with client registration. Press
-//           Connect, allow in the browser, done.
-//   token - 401, and no way to sign the user in without a secret. Press Connect,
-//           paste a key, done.
-//   none  - 200 on the first request. Nothing is asked.
+//   oauth - a sign-in document, and either client registration or the console
+//           where the vendor issues one. Press Connect, allow, done.
+//   token - no way in without a secret: the handshake or the call demands a key.
+//           Press Connect, paste it, done.
+//   none  - initialize, tools/list and a read-only call all answered with no
+//           credential at all. Nothing is asked.
 //   local - runs on this machine.
 //
 // Nothing here is written from memory. If a vendor moves an endpoint, the probe
@@ -136,10 +141,12 @@ export function appIcon(app: AppEntry, size = 20): string {
 /**
  * Browser sign-in. One click, then Allow in the browser.
  *
- * Every one of these answered 401 with an RFC 9728 challenge naming its own
- * metadata document, and that document carried a `registration_endpoint`, so the
- * client registers itself and the whole exchange completes without the user being
- * asked for anything.
+ * Every one of these produced an RFC 9728 challenge naming its own metadata
+ * document — at the handshake, or at the first tool call for the servers that let
+ * an anonymous client in and only refuse once it asks for data. Where that document
+ * carried a `registration_endpoint` the client registers itself and the exchange
+ * completes with nothing typed in. Where it did not, the vendor issues clients from
+ * its own console, and those entries carry the console URL and the exact steps.
  */
 export const browserApps: AppEntry[] = [
   // AI media. First because it is the one a creative agent reaches for most, and
@@ -230,14 +237,11 @@ export const browserApps: AppEntry[] = [
     ], oauth: { authorizationUrl: "https://api.nango.dev/oauth/authorize", tokenUrl: "https://api.nango.dev/oauth/token" }, zeroSetup: true },
 
   // Media and AI
-  { id: "elevenlabs", iconDomain: "elevenlabs.io", name: "ElevenLabs", description: "Voice, audio, music, images and video", category: "AI & Media", kind: "oauth", url: "https://elevenlabs.io/mcp", color: "#111111", consoleUrl: "https://elevenlabs.io/app/settings/api-keys", steps: [
+  { id: "elevenlabs", iconDomain: "elevenlabs.io", name: "ElevenLabs", description: "Voice, audio, music, images and video", category: "AI & Media", kind: "oauth", url: "https://api.elevenlabs.io/v1/mcp", color: "#111111", consoleUrl: "https://elevenlabs.io/app/settings/api-keys", steps: [
       "Open https://elevenlabs.io/app/settings/api-keys.",
       "Your ElevenLabs API key works as the OAuth client secret; copy it.",
       "Paste it into the Secret field here and press Connect.",
     ], oauth: { authorizationUrl: "https://elevenlabs.io/app/oauth/authorize", tokenUrl: "https://api.us.elevenlabs.io/v1/oauth/token" } },
-  // fal refuses both registration and the consent page, so it is reached with a key
-  // from its own dashboard rather than a browser sign-in.
-  { id: "fal", icon: "fal", iconDomain: "fal.ai", name: "Fal.ai", description: "Fast video and image inference", category: "Media", kind: "token", url: "https://mcp.fal.ai/mcp", tokenUrl: "https://fal.ai/dashboard/keys", color: "#0B0B0F" },
   { id: "replicate", icon: "replicate", iconDomain: "replicate.com", name: "Replicate", description: "Run video and image models", category: "Media", kind: "oauth", url: "https://mcp.replicate.com/mcp", color: "#111111", consoleUrl: "https://replicate.com/account/api-tokens", steps: [
       "Open https://replicate.com/account/api-tokens and sign in.",
       "Copy an existing token, or press Create token to make one.",
@@ -245,9 +249,6 @@ export const browserApps: AppEntry[] = [
     ], oauth: { authorizationUrl: "https://replicate.com/oauth/authorize", tokenUrl: "https://api.replicate.com/oauth/token" }, zeroSetup: true },
   { id: "heygen", iconDomain: "heygen.com", name: "HeyGen", description: "AI avatar and talking-head video", category: "Media", kind: "oauth", url: "https://mcp.heygen.com/mcp", color: "#7B3FE4", zeroSetup: true },
   { id: "runway", iconDomain: "runwayml.com", name: "Runway", description: "AI video generation and editing", category: "Media", kind: "oauth", url: "https://mcp.runwayml.com/mcp", color: "#00C2FF" },
-  // Midjourney refuses the consent page itself (403) with no challenge of its own, so
-  // its MCP is reached through its own dashboard session rather than a generic sign-in.
-  { id: "midjourney", iconDomain: "midjourney.com", name: "Midjourney", description: "AI image generation", category: "Media", kind: "token", url: "https://mcp.midjourney.com/mcp", tokenUrl: "https://www.midjourney.com/settings/profile", color: "#1F2937" },
 
   // Storage and hosting
   { id: "box", icon: "box", iconDomain: "box.com", name: "Box", description: "Files and folders", category: "Storage", kind: "oauth", url: "https://mcp.box.com/mcp", color: "#0061D5", consoleUrl: "https://app.box.com/developers/console", steps: [
@@ -265,10 +266,6 @@ export const browserApps: AppEntry[] = [
       "Copy the key into the Client ID field here. Render uses one value for both roles.",
       "Press Connect.",
     ], oauth: { authorizationUrl: "https://api.render.com/v1/oauth/authorize", tokenUrl: "https://api.render.com/v1/oauth/token" }, zeroSetup: true },
-  // Lovable rejects the consent page for any client that registered itself (400), so it
-  // is connected with a key from its own dashboard instead of a browser sign-in.
-  { id: "lovable", iconDomain: "lovable.dev", name: "Lovable", description: "Build and ship web apps fast", category: "Hosting", kind: "token", url: "https://mcp.lovable.dev/mcp", tokenUrl: "https://lovable.dev/settings/api-keys", color: "#EC4899", steps: ["Open https://lovable.dev/settings/api-keys and sign in.", "Create or copy an API key.", "Paste it here and press Connect. ZYRAXON sends it on every request."] },
-  
   // Communication and support
   { id: "slack", icon: "slack", iconDomain: "slack.com", name: "Slack", description: "Channels, messages and files", category: "Communication", kind: "oauth", url: "https://mcp.slack.com/mcp", scope: "channels:read channels:write channels:manage bookmarks:read bookmarks:write chats:read chats:write dnd:read dnd:write emoji:read files:read files:write groups:read groups:write im:history im:read im:write mpim:history mpim:read mpim:write reactions:read reactions:write search:read search:write team:read user:read user:write userprofile:read users:read users:write", color: "#4A154B", consoleUrl: "https://api.slack.com/apps", steps: [
       "Open https://api.slack.com/apps and press Create New App → From scratch.",
@@ -297,10 +294,6 @@ export const browserApps: AppEntry[] = [
     ], oauth: { authorizationUrl: "https://mcp.hubspot.com/oauth/authorize/user", tokenUrl: "https://mcp.hubspot.com/oauth/v3/token" } },
 
   // Social and marketing
-  // Reddit's own server, not the third-party proxy this used to name. The proxy answers
-  // 401 with no authorization details at all, so no sign-in was ever possible against it;
-  // reddit.com serves the same tools without a credential.
-  { id: "reddit", icon: "reddit", iconDomain: "reddit.com", name: "Reddit", description: "Subreddits, posts and comments", category: "Social", kind: "none", url: "https://www.reddit.com/mcp", color: "#FF4500" },
   { id: "instagram", icon: "instagram", iconDomain: "instagram.com", name: "Instagram", description: "Profiles, posts and media", category: "Marketing", kind: "oauth", url: "https://mcp.aisa.one/instagram/mcp", color: "#E4405F", via: "aisa" },
   { id: "whatsapp", icon: "whatsapp", iconDomain: "whatsapp.com", name: "WhatsApp Business", description: "Send and receive messages", category: "Communication", kind: "oauth", url: "https://api.izap.ai/mcp", color: "#25D366", via: "izap", zeroSetup: true },
   { id: "gmail", icon: "gmail", iconDomain: "gmail.com", name: "Gmail", description: "Read, search and send mail", category: "Communication", kind: "oauth", url: "https://gmailmcp.googleapis.com/mcp/v1", tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#EA4335", via: "google" },
@@ -310,21 +303,44 @@ export const browserApps: AppEntry[] = [
   { id: "google-slides", icon: "slides", iconDomain: "slides.google.com", name: "Google Slides", description: "Presentations and slide pages", category: "Productivity", kind: "oauth", url: "https://slidesmcp.googleapis.com/mcp/v1", tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#F4B400", via: "google" },
   { id: "google-calendar", icon: "calendar", iconDomain: "calendar.google.com", name: "Google Calendar", description: "Events, calendars and free time", category: "Productivity", kind: "oauth", url: "https://calendarmcp.googleapis.com/mcp/v1", tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#4285F4", via: "google" },
   { id: "google-chat", icon: "chat", iconDomain: "chat.google.com", name: "Google Chat", description: "Messages and conversations", category: "Communication", kind: "oauth", url: "https://chatmcp.googleapis.com/mcp/v1", tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#00897B", via: "google" },
-  { id: "pdf", icon: "adobepdf", iconDomain: "adobe.com", name: "PDF", description: "Read and extract from PDFs", category: "Documents", kind: "oauth", url: "https://api.pdf.ai/mcp", tokenUrl: "https://developer.adobe.com/console", color: "#E3262F", consoleUrl: "https://www.pdf.ai/", steps: [
-      "Sign in at https://www.pdf.ai/.",
-      "Open the account or API settings and copy the API key it shows.",
-      "Paste it into the Client ID field here and press Connect.",
-    ], oauth: { authorizationUrl: "https://auth.pdf.ai/oauth/authorize", tokenUrl: "https://auth.pdf.ai/oauth/token" }, via: "ifillpdf" },
+  { id: "pdf", iconDomain: "ifillpdf.com", name: "PDF", description: "Read and extract from PDFs", category: "Documents", kind: "oauth", url: "https://ifillpdf.com/api/mcp", color: "#E3262F", note: "Served by iFillPDF, not Adobe. Its sign-in document points at a hosted identity provider and registers clients itself, so nothing has to be filled in.", via: "ifillpdf", zeroSetup: true },
   { id: "planetscale", iconDomain: "planetscale.com", name: "PlanetScale", description: "Serverless MySQL branches", category: "Database", kind: "oauth", url: "https://mcp.pscale.dev/mcp/planetscale", tokenUrl: "https://planetscale.com/portal", color: "#000000" },
   { id: "captions", iconDomain: "captions.ai", name: "Captions", description: "Edit video with AI assistance", category: "Media", kind: "oauth", url: "https://mcp.captions.ai/mcp", tokenUrl: "https://www.captions.ai", color: "#111111" },
+
+  // A server can refuse every tool call while still answering initialize and
+  // tools/list, which is how these spent one release listed as open. Each was
+  // re-asked: the call came back 401, the challenge named a resource document, and
+  // that document named an authorization server with a registration endpoint.
+  // Sign-in therefore needs nothing typed in — only a press of Connect.
+  { id: "digitalocean", iconDomain: "digitalocean.com", name: "DigitalOcean", description: "Droplets, apps and databases", category: "Hosting", kind: "oauth", url: "https://mcp.digitalocean.com/mcp", color: "#0080FF", zeroSetup: true },
+  { id: "apify", icon: "apify", iconDomain: "apify.com", name: "Apify", description: "Scrapers and actors", category: "Developer", kind: "oauth", url: "https://mcp.apify.com/", color: "#FF8200", note: "Apify also accepts a personal API token in the Authorization header, but its sign-in document registers clients for us, so the browser route is the shorter one.", via: "apify", zeroSetup: true },
+
+  // usefulapi fronts five products behind one authorization server each. The host
+  // answers initialize and tools/list without credentials and only refuses at the
+  // call, with a pointer to its own metadata under …/oauth-protected-resource/mcp —
+  // the path, not the host root, which 404s. All five publish registration_endpoint.
+  { id: "mailchimp", iconDomain: "mailchimp.com", name: "Mailchimp", description: "Campaigns and audiences", category: "Marketing", kind: "oauth", url: "https://mailchimp.usefulapi.io/mcp", scope: "read write", color: "#FFE01B", via: "usefulapi", zeroSetup: true },
+  { id: "clickup", iconDomain: "clickup.com", name: "ClickUp", description: "Tasks, docs and goals", category: "Productivity", kind: "oauth", url: "https://clickup.usefulapi.io/mcp", scope: "read write", color: "#7B68EE", via: "usefulapi", zeroSetup: true },
+  { id: "zendesk", iconDomain: "zendesk.com", name: "Zendesk", description: "Tickets and customers", category: "Sales", kind: "oauth", url: "https://zendesk.usefulapi.io/mcp", scope: "read write", color: "#03363D", via: "usefulapi", zeroSetup: true },
+  { id: "freshdesk", iconDomain: "freshdesk.com", name: "Freshdesk", description: "Support tickets", category: "Sales", kind: "oauth", url: "https://freshdesk.usefulapi.io/mcp", scope: "read write", color: "#20C997", via: "usefulapi", zeroSetup: true },
+  { id: "sendgrid", iconDomain: "sendgrid.com", name: "SendGrid", description: "Send email", category: "Communication", kind: "oauth", url: "https://sendgrid.usefulapi.io/mcp", scope: "read write", color: "#1A82E2", via: "usefulapi", zeroSetup: true },
+
+  // hasdata takes OAuth or an x-api-key. It publishes registration_endpoint, so the
+  // key is never the only way in and never the first one offered.
+  { id: "facebook", icon: "facebook", iconDomain: "facebook.com", name: "Facebook Pages", description: "Pages, posts and insights", category: "Social", kind: "oauth", url: "https://mcp.hasdata.com/api/mcp?apis=facebook", scope: "mcp:tools offline_access", color: "#0866FF", via: "hasdata", zeroSetup: true },
+  { id: "shopify", icon: "shopify", iconDomain: "shopify.com", name: "Shopify", description: "Products, orders and customers", category: "Commerce", kind: "oauth", url: "https://mcp.hasdata.com/api/mcp?apis=shopify", scope: "mcp:tools offline_access", color: "#7AB55C", via: "hasdata", zeroSetup: true },
 ]
 
 /**
  * A pasted key. Press Connect, paste one token, done.
  *
- * These answered 401 with no discovery document, so the vendor issues a key and the
- * only honest way in is to ask for it. Google's endpoints, which do publish a
- * sign-in document, live in browserApps.
+ * Two ways to land here, and both were measured rather than assumed. Some servers
+ * answer 401 with no discovery document at all, so the vendor issues a key and that
+ * is the only honest way in. Others welcome an anonymous handshake and list their
+ * tools without one, then answer every call with a refusal that names the header
+ * the key travels in — which is why the probe asks for a call and not only for the
+ * tool list. Google's endpoints, which do publish a sign-in document, live in
+ * browserApps.
  */
 export const keyApps: AppEntry[] = [
   { id: "youtube", icon: "youtube", iconDomain: "youtube.com", name: "YouTube", description: "Search, transcripts and video data", category: "Media", kind: "token", url: "https://mcp.jojapi.com/youtube", tokenUrl: "https://jojapi.com/workspace/api-keys", color: "#FF0000", via: "jojapi" },
@@ -333,28 +349,47 @@ export const keyApps: AppEntry[] = [
   { id: "google-search", iconDomain: "google.com", name: "Google Search", description: "Web results and snippets", category: "Search", kind: "token", url: "https://mcp.jojapi.com/google-search", tokenUrl: "https://jojapi.com/workspace/api-keys", color: "#4285F4", via: "jojapi" },
   { id: "linkedin", icon: "linkedin", iconDomain: "linkedin.com", name: "LinkedIn", description: "Profiles, posts and pages", category: "Social", kind: "token", url: "https://mcp.jojapi.com/linkedin", tokenUrl: "https://jojapi.com/workspace/api-keys", color: "#0A66C2", via: "jojapi" },
   { id: "duckduckgo", iconDomain: "duckduckgo.com", name: "DuckDuckGo", description: "Web search and instant answers", category: "Search", kind: "token", url: "https://mcp.jojapi.com/duckduckgo", tokenUrl: "https://jojapi.com/workspace/api-keys", color: "#DE5833", via: "jojapi" },
-  { id: "apify", icon: "apify", iconDomain: "apify.com", name: "Apify", description: "Scrapers and actors", category: "Developer", kind: "token", url: "https://mcp.apify.com/", tokenUrl: "https://console.apify.com/account/integrations", color: "#FF8200", via: "apify" },
-  { id: "browserbase", icon: "browserbase", iconDomain: "browserbase.com", name: "Browserbase", description: "Headless browser sessions", category: "Developer", kind: "token", url: "https://mcp.browserbase.com/mcp", tokenUrl: "https://browserbase.com/console", color: "#111827" },
+  { id: "serpapi", iconDomain: "serpapi.com", name: "SerpApi", description: "Structured search results", category: "Search", kind: "token", url: "https://mcp.serpapi.com/mcp", tokenUrl: "https://serpapi.com/manage-api-key", color: "#1E40AF" },
+  // fal refuses both registration and the consent page, so it is reached with a key
+  // from its own dashboard rather than a browser sign-in.
+  { id: "fal", icon: "fal", iconDomain: "fal.ai", name: "Fal.ai", description: "Fast video and image inference", category: "Media", kind: "token", url: "https://mcp.fal.ai/mcp", tokenUrl: "https://fal.ai/dashboard/keys", color: "#0B0B0F" },
+  // Midjourney refuses the consent page itself (403) with no challenge of its own, so
+  // its MCP is reached through its own dashboard session rather than a generic sign-in.
+  { id: "midjourney", iconDomain: "midjourney.com", name: "Midjourney", description: "AI image generation", category: "Media", kind: "token", url: "https://mcp.midjourney.com/mcp", tokenUrl: "https://www.midjourney.com/settings/profile", color: "#1F2937" },
+  // Lovable rejects the consent page for any client that registered itself (400), so it
+  // is connected with a key from its own dashboard instead of a browser sign-in.
+  { id: "lovable", iconDomain: "lovable.dev", name: "Lovable", description: "Build and ship web apps fast", category: "Hosting", kind: "token", url: "https://mcp.lovable.dev/mcp", tokenUrl: "https://lovable.dev/settings/api-keys", color: "#EC4899", steps: ["Open https://lovable.dev/settings/api-keys and sign in.", "Create or copy an API key.", "Paste it here and press Connect. ZYRAXON sends it on every request."] },
+  // These two list their tools to anyone and answer initialize without a credential,
+  // but every call comes back "This call needs an API key. Add header Authorization:
+  // Bearer YOUR_API_KEY". The key is free and issued on the page named below.
+  { id: "wikipedia", iconDomain: "wikipedia.org", name: "Wikipedia", description: "Articles, summaries and links", category: "Knowledge", kind: "token", url: "https://wikipedia.api.trendsapi.ai/mcp", tokenUrl: "https://trendsapi.ai/#get-key", color: "#636466", steps: [
+      "Open https://trendsapi.ai/#get-key and take the free key — no card is collected.",
+      "Paste the key into the field here and press Connect.",
+      "ZYRAXON sends it as Authorization: Bearer on every request.",
+    ], via: "trendsapi" },
+  { id: "crypto", iconDomain: "coingecko.com", name: "Crypto", description: "Coins, prices and market data", category: "Finance", kind: "token", url: "https://crypto.api.trendsapi.ai/mcp", tokenUrl: "https://trendsapi.ai/#get-key", color: "#F7931A", steps: [
+      "Open https://trendsapi.ai/#get-key and take the free key — no card is collected.",
+      "Paste the key into the field here and press Connect.",
+      "ZYRAXON sends it as Authorization: Bearer on every request.",
+    ], via: "trendsapi" },
 ]
 
 /**
- * Nothing to sign in to. These answered 200 on the very first request.
+ * Nothing to sign in to. These answered 200 to initialize, listed their tools, and
+ * answered a read-only call with no credential at all.
  *
  * Press Connect and it is connected. No browser, no key, no waiting.
  */
 export const openApps: AppEntry[] = [
   // Search and reading
-    { id: "digitalocean", iconDomain: "digitalocean.com", name: "DigitalOcean", description: "Droplets, apps and databases", category: "Hosting", kind: "none", url: "https://mcp.digitalocean.com/mcp", color: "#0080FF" },
   { id: "exa", iconDomain: "exa.ai", name: "Exa", description: "Neural web search and page content", category: "Search", kind: "none", url: "https://mcp.exa.ai/mcp", color: "#1A1A1A" },
   { id: "tavily", iconDomain: "tavily.com", name: "Tavily", description: "Search tuned for agents", category: "Search", kind: "none", url: "https://gateway.pipeworx.io/tavily/mcp", color: "#FF4B4B", via: "pipeworx" },
   { id: "serper", iconDomain: "serper.dev", name: "Serper", description: "Google search results", category: "Search", kind: "none", url: "https://gateway.pipeworx.io/serper/mcp", color: "#3B82F6", via: "pipeworx" },
-  { id: "serpapi", iconDomain: "serpapi.com", name: "SerpApi", description: "Structured search results", category: "Search", kind: "token", url: "https://mcp.serpapi.com/mcp", color: "#1E40AF" },
   { id: "jina", iconDomain: "jina.ai", name: "Jina Reader", description: "Turn any page into clean text", category: "Developer", kind: "none", url: "https://gateway.pipeworx.io/jina-reader/mcp", color: "#E11D48", via: "pipeworx" },
   { id: "firecrawl", iconDomain: "firecrawl.dev", name: "Firecrawl", description: "Scrape and crawl web pages", category: "Developer", kind: "none", url: "https://gateway.pipeworx.io/firecrawl/mcp", color: "#FA5A03", via: "pipeworx" },
 
   // Knowledge
   { id: "wolfram", iconDomain: "wolframalpha.com", name: "Wolfram Alpha", description: "Computation, data and facts", category: "Knowledge", kind: "none", url: "https://gateway.pipeworx.io/wolfram-alpha/mcp", color: "#DD1100", via: "pipeworx" },
-  { id: "wikipedia", iconDomain: "wikipedia.org", name: "Wikipedia", description: "Articles, summaries and links", category: "Knowledge", kind: "none", url: "https://wikipedia.api.trendsapi.ai/mcp", color: "#636466", via: "trendsapi" },
   { id: "arxiv", iconDomain: "arxiv.org", name: "arXiv", description: "Research papers and abstracts", category: "Knowledge", kind: "none", url: "https://gateway.pipeworx.io/arxiv/mcp", color: "#B31B1B", via: "pipeworx" },
   { id: "pubmed", iconDomain: "pubmed.ncbi.nlm.nih.gov", name: "PubMed", description: "Biomedical literature search", category: "Knowledge", kind: "none", url: "https://mcp.olyport.com/pubmed/mcp", color: "#1B6CA8", via: "olyport" },
 
@@ -365,7 +400,6 @@ export const openApps: AppEntry[] = [
   { id: "openstreetmap", iconDomain: "openstreetmap.org", name: "OpenStreetMap", description: "Maps, geocoding and places", category: "Maps", kind: "none", url: "https://openstreetmap.caseyjhand.com/mcp", color: "#7EBC6F" },
   { id: "open-meteo", iconDomain: "open-meteo.com", name: "Open-Meteo", description: "Weather and forecasts", category: "Weather", kind: "none", url: "https://gateway.pipeworx.io/open-meteo/mcp", color: "#0F766E", via: "pipeworx" },
   { id: "polygon", iconDomain: "polygon.io", name: "Polygon", description: "Stocks, options and market data", category: "Finance", kind: "none", url: "https://gateway.pipeworx.io/polygon-io/mcp", color: "#0B0E11", via: "pipeworx" },
-  { id: "crypto", iconDomain: "coingecko.com", name: "Crypto", description: "Coins, prices and market data", category: "Finance", kind: "none", url: "https://crypto.api.trendsapi.ai/mcp", color: "#F7931A", via: "trendsapi" },
   { id: "coinbase", icon: "coinbase", iconDomain: "coinbase.com", name: "Coinbase", description: "Crypto balances and prices", category: "Finance", kind: "none", url: "https://gateway.pipeworx.io/coinbase-exchange/mcp", color: "#0052FF", via: "pipeworx" },
 
   // Media
@@ -373,6 +407,10 @@ export const openApps: AppEntry[] = [
   { id: "pexels", iconDomain: "pexels.com", name: "Pexels", description: "Photos and videos", category: "Media", kind: "none", url: "https://gateway.pipeworx.io/pexels/mcp", color: "#05CC47", via: "pipeworx" },
 
   // Social
+  // Reddit runs no MCP of its own: reddit.com/mcp answers 404 and every host that
+  // claims to proxy it returned HTML. The Pipeworx gateway was the only one of nine
+  // candidates that answered initialize with JSON-RPC, and it needs nothing.
+  { id: "reddit", icon: "reddit", iconDomain: "reddit.com", name: "Reddit", description: "Subreddits, posts and comments", category: "Social", kind: "none", url: "https://gateway.pipeworx.io/reddit/mcp", color: "#FF4500", via: "pipeworx" },
   { id: "mastodon", icon: "mastodon", iconDomain: "joinmastodon.org", name: "Mastodon", description: "Posts, timelines and search", category: "Social", kind: "none", url: "https://gateway.pipeworx.io/mastodon/mcp", color: "#6364FF", via: "pipeworx" },
   { id: "bluesky", icon: "bluesky", iconDomain: "bsky.app", name: "Bluesky", description: "Feeds, profiles and search", category: "Social", kind: "none", url: "https://gateway.pipeworx.io/bluesky/mcp", color: "#0085FF", via: "pipeworx" },
 
@@ -381,16 +419,12 @@ export const openApps: AppEntry[] = [
   { id: "intercom-via", iconDomain: "intercom.com", name: "Intercom via Pipeworx", description: "Conversations and customers", category: "Sales", kind: "none", url: "https://gateway.pipeworx.io/intercom/mcp", color: "#1F8DED", via: "pipeworx" },
   { id: "asana-via", icon: "asana", iconDomain: "asana.com", name: "Asana via Pipeworx", description: "Tasks, projects and timelines", category: "Productivity", kind: "none", url: "https://gateway.pipeworx.io/asana/mcp", color: "#F06A6A", via: "pipeworx" },
   { id: "onedrive", icon: "onedrive", iconDomain: "onedrive.com", name: "OneDrive", description: "Files and folders", category: "Storage", kind: "none", url: "https://gateway.pipeworx.io/onedrive/mcp", color: "#0078D4", via: "pipeworx" },
-  { id: "clickup", iconDomain: "clickup.com", name: "ClickUp", description: "Tasks, docs and goals", category: "Productivity", kind: "none", url: "https://clickup.usefulapi.io/mcp", color: "#7B68EE", via: "usefulapi" },
-  { id: "zendesk", iconDomain: "zendesk.com", name: "Zendesk", description: "Tickets and customers", category: "Sales", kind: "none", url: "https://zendesk.usefulapi.io/mcp", color: "#03363D", via: "usefulapi" },
-  { id: "freshdesk", iconDomain: "freshdesk.com", name: "Freshdesk", description: "Support tickets", category: "Sales", kind: "none", url: "https://freshdesk.usefulapi.io/mcp", color: "#20C997", via: "usefulapi" },
-  { id: "mailchimp", iconDomain: "mailchimp.com", name: "Mailchimp", description: "Campaigns and audiences", category: "Marketing", kind: "none", url: "https://mailchimp.usefulapi.io/mcp", color: "#FFE01B", via: "usefulapi" },
-  { id: "sendgrid", iconDomain: "sendgrid.com", name: "SendGrid", description: "Send email", category: "Communication", kind: "none", url: "https://sendgrid.usefulapi.io/mcp", color: "#1A82E2", via: "usefulapi" },
   { id: "brightdata", iconDomain: "brightdata.com", name: "Bright Data", description: "Web data and proxy scraping", category: "Developer", kind: "none", url: "https://gateway.pipeworx.io/brightdata/mcp", color: "#0050FF", via: "pipeworx" },
   { id: "twilio", icon: "twilio", iconDomain: "twilio.com", name: "Twilio", description: "SMS, voice and messaging", category: "Communication", kind: "none", url: "https://gateway.pipeworx.io/twilio/mcp", color: "#F22F46", via: "pipeworx" },
   { id: "context7", iconDomain: "context7.com", name: "Context7", description: "Live library documentation", category: "Developer", kind: "none", url: "https://mcp.context7.com/mcp", color: "#F59E0B", zeroSetup: true },
-  { id: "shopify", icon: "shopify", iconDomain: "shopify.com", name: "Shopify", description: "Products, orders and customers", category: "Commerce", kind: "none", url: "https://mcp.hasdata.com/api/mcp?apis=shopify", color: "#7AB55C", via: "hasdata", zeroSetup: true },
-  { id: "facebook", icon: "facebook", iconDomain: "facebook.com", name: "Facebook Pages", description: "Pages, posts and insights", category: "Social", kind: "none", url: "https://mcp.hasdata.com/api/mcp?apis=facebook", color: "#0866FF", via: "hasdata", zeroSetup: true },
+  // Its own challenge asks for a bearer token, but tools/list and tools/call both
+  // answer without one — probed, not assumed.
+  { id: "browserbase", icon: "browserbase", iconDomain: "browserbase.com", name: "Browserbase", description: "Headless browser sessions", category: "Developer", kind: "none", url: "https://mcp.browserbase.com/mcp", color: "#111827" },
 ]
 
 /**
@@ -462,3 +496,49 @@ export function catalogSections(): { tier: AuthTier; title: string; hint: string
 
 export const categories = (apps: AppEntry[] = allSeedApps()): string[] =>
   Array.from(new Set(apps.map((a) => a.category))).sort()
+
+/**
+ * Documentation links, keyed by app id.
+ *
+ * These are not written from memory either: each one is the
+ * `resource_documentation` field the server publishes in its own RFC 9728 resource
+ * metadata, read straight off the wire. Thirty-one of the 103 remote servers publish
+ * one. The rest publish none, so they have no entry here and the Details panel shows
+ * the endpoint instead — a guessed documentation link would be worse than none.
+ *
+ * Two servers (supabase, runway) answered with their own endpoint as documentation and
+ * were left out for the same reason.
+ */
+export const docsByApp: Record<string, string> = {
+  figma: "https://developers.figma.com/docs/figma-mcp-server/",
+  vercel: "https://vercel.com/docs/mcp/vercel-mcp",
+  neon: "https://neon.com/docs/ai/neon-mcp-server",
+  asana: "https://developers.asana.com/docs/using-asanas-mcp-server",
+  typesense: "https://typesense.org/docs/guide/typesense-cloud/mcp-server.html",
+  slack: "https://api.slack.com",
+  hubspot: "https://developers.hubspot.com/mcp",
+  box: "https://developer.box.com/guides/box-mcp/remote/",
+  lovable: "https://docs.lovable.dev/integrations/lovable-mcp-server",
+  shopify: "https://docs.hasdata.com",
+  facebook: "https://docs.hasdata.com",
+  arxiv: "https://pipeworx.io/install",
+  "asana-via": "https://pipeworx.io/install",
+  brightdata: "https://pipeworx.io/install",
+  bluesky: "https://pipeworx.io/install",
+  coinbase: "https://pipeworx.io/install",
+  firecrawl: "https://pipeworx.io/install",
+  "hubspot-via": "https://pipeworx.io/install",
+  "intercom-via": "https://pipeworx.io/install",
+  jina: "https://pipeworx.io/install",
+  mastodon: "https://pipeworx.io/install",
+  onedrive: "https://pipeworx.io/install",
+  "open-meteo": "https://pipeworx.io/install",
+  pexels: "https://pipeworx.io/install",
+  polygon: "https://pipeworx.io/install",
+  reddit: "https://pipeworx.io/install",
+  serper: "https://pipeworx.io/install",
+  tavily: "https://pipeworx.io/install",
+  twilio: "https://pipeworx.io/install",
+  unsplash: "https://pipeworx.io/install",
+  wolfram: "https://pipeworx.io/install",
+}
