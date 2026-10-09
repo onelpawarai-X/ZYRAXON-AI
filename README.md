@@ -85,7 +85,7 @@ python -m swebench.harness.run_evaluation \
 | 🛠️ | **Build with me** — pick an open issue and ship it | [`Issues`](https://github.com/onelpawarai-X/ZYRAXON-AI/issues) |
 | 🚀 | **Improve the project** — make the agent smarter, faster, more reliable | [`Discussions`](https://github.com/onelpawarai-X/ZYRAXON-AI/discussions) |
 | 📣 | **Spread the word** — share ZYRAXON AI with your network | [`Website`](https://zyraxonai.lovable.app) |
-| 🎥 | **Make videos** — demos and tutorials, uploaded and tagged | [`YouTube`](https://youtube.com/@zyraxon-aix) |
+| 🎥 | **Make videos** — demos and tutorials, uploaded and tagged | [`YouTube`](https://www.youtube.com/@ZYRAXONAI) |
 | ♻️ | **Keep going** — a little every day; momentum compounds | ⭐ [Star the project](https://github.com/onelpawarai-X/ZYRAXON-AI) |
 
 <div align="center">
@@ -93,7 +93,7 @@ python -m swebench.harness.run_evaluation \
 <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/blob/main/CONTRIBUTING.md"><img alt="Contribute" src="https://img.shields.io/badge/Contribute-Start%20Here-38BDF8?style=for-the-badge&logo=github&logoColor=FFFFFF"/></a>
 <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/issues"><img alt="Open issues" src="https://img.shields.io/badge/Open%20Issues-Pick%20One-8B5CF6?style=for-the-badge&logo=githubissues&logoColor=FFFFFF"/></a>
 <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/discussions"><img alt="Discussions" src="https://img.shields.io/badge/Discussions-Join%20In-A78BFA?style=for-the-badge&logo=github&logoColor=FFFFFF"/></a>
-<a href="https://youtube.com/@zyraxon-aix"><img alt="YouTube" src="https://img.shields.io/badge/YouTube-Upload%20%26%20Share-FF0000?style=for-the-badge&logo=youtube&logoColor=FFFFFF"/></a>
+<a href="https://www.youtube.com/@ZYRAXONAI"><img alt="YouTube" src="https://img.shields.io/badge/YouTube-Upload%20%26%20Share-FF0000?style=for-the-badge&logo=youtube&logoColor=FFFFFF"/></a>
 
 <br/><br/>
 
