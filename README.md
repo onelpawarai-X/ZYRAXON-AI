@@ -2,6 +2,122 @@
   Copyright (c) 2026 onelpawarai. All rights reserved.
   SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 -->
+<!-- ========================================================= -->
+<!--   ZYRAXON AI — BENCHMARK EVIDENCE + COMMUNITY  (top)      -->
+<!-- ========================================================= -->
+
+<div align="center">
+
+<h1 style="font-family: Orbitron; letter-spacing: 4px; color: #00D4FF;">ZYRAXON AI</h1>
+
+<a href="https://zyraxonai.lovable.app/swebench-verified"><img alt="SWE-bench Verified" src="https://img.shields.io/badge/SWE--bench%20Verified-425%2F500%20%C2%B7%2085.0%25-38BDF8?style=for-the-badge&labelColor=0B1220"/></a>
+<a href="https://zyraxonai.lovable.app/swebench-lite"><img alt="SWE-bench Lite" src="https://img.shields.io/badge/SWE--bench%20Lite-290%2F300%20%C2%B7%2096.7%25-22D3EE?style=for-the-badge&labelColor=0B1220"/></a>
+<a href="https://github.com/onelpawarai-X/SWE-bench-ZYRAXON-AI"><img alt="Verified artifacts" src="https://img.shields.io/badge/Verified%20Artifacts-Open%20%26%20Reproducible-8B5CF6?style=for-the-badge&labelColor=0B1220"/></a>
+<a href="https://github.com/onelpawarai-X/SWE-bench-Lite-ZYRAXON-AI"><img alt="Lite artifacts" src="https://img.shields.io/badge/Lite%20Artifacts-Open%20%26%20Reproducible-A78BFA?style=for-the-badge&labelColor=0B1220"/></a>
+
+<br/><br/>
+
+<b>Real, reproducible coding-agent performance — and it ships with the product.</b>
+
+</div>
+
+---
+
+## 🔗 Benchmark evidence — connected, not claimed
+
+ZYRAXON AI is measured on both SWE-bench boards under the **official SWE-bench Docker
+grader**. Every number links straight to its own public evidence repository, so you go
+from the product to the exact predictions, logs, and reasoning traces in one click.
+
+| Board | Result | Evidence repository | Technical report | Status |
+|---|---|---|---|---|
+| **SWE-bench Verified** | **425 / 500 · 85.0%** | [`SWE-bench-ZYRAXON-AI`](https://github.com/onelpawarai-X/SWE-bench-ZYRAXON-AI) | [PDF](https://zyraxonai.lovable.app/swebench/zyraxon-swebench-verified.pdf) | [submitted](https://github.com/SWE-bench/experiments) |
+| **SWE-bench Lite** | **290 / 300 · 96.7%** | [`SWE-bench-Lite-ZYRAXON-AI`](https://github.com/onelpawarai-X/SWE-bench-Lite-ZYRAXON-AI) | [PDF](https://zyraxonai.lovable.app/swebench/zyraxon-swebench-lite.pdf) | [PR #502](https://github.com/SWE-bench/experiments/pull/502) |
+
+<details>
+<summary><b>How the two runs connect</b></summary>
+
+<br/>
+
+Both runs use the **same ZYRAXON-AI agent** and the **same official grader**. They
+differ only in the dataset and the retry budget:
+
+- **Verified** (500 instances) is a single-attempt run (`attempts: 1`).
+- **Lite** (300 instances) is a **Best@2** run (`attempts: "2+"`): 105 of 300 instances
+  used a second attempt after a stall, and a **distinct selection module** — which never
+  sees benchmark test results — chooses the submitted patch. This is disclosed openly in
+  the Lite entry's `metadata.yaml` and README.
+
+Neither run uses `FAIL_TO_PASS`, `PASS_TO_PASS`, `hints`, or any web browsing. Every
+verdict is re-derivable from the published raw test output with **zero mismatches**.
+
+Re-grade either run yourself:
+
+```bash
+pip install swebench==3.0.12
+python -m swebench.harness.run_evaluation \
+  --dataset_name princeton-nlp/SWE-bench_Verified \
+  --predictions_path all_preds.jsonl \
+  --max_workers 4 --run_id zyraxon_verified_check
+```
+
+</details>
+
+<br/>
+
+---
+
+## 🤝 Work with ZYRAXON AI — and stay part of it
+
+<div align="center">
+
+<b>ZYRAXON AI is a movement, not a solo project. If you work with me, you are in — for good.</b>
+
+</div>
+
+<br/>
+
+**This is the standing, everyday invitation:**
+
+| | Do this | Where |
+|---|---|---|
+| 🧩 | **Contribute** — PRs, bug fixes, features, tests, docs | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
+| 🛠️ | **Build with me** — pick an open issue and ship it | [`Issues`](https://github.com/onelpawarai-X/ZYRAXON-AI/issues) |
+| 🚀 | **Improve the project** — make the agent smarter, faster, more reliable | [`Discussions`](https://github.com/onelpawarai-X/ZYRAXON-AI/discussions) |
+| 📣 | **Spread the word** — share ZYRAXON AI with your network | [`Website`](https://zyraxonai.lovable.app) |
+| 🎥 | **Make videos** — demos and tutorials, uploaded and tagged | [`YouTube`](https://youtube.com/@zyraxon-aix) |
+| ♻️ | **Keep going** — a little every day; momentum compounds | ⭐ [Star the project](https://github.com/onelpawarai-X/ZYRAXON-AI) |
+
+<div align="center">
+
+<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/blob/main/CONTRIBUTING.md"><img alt="Contribute" src="https://img.shields.io/badge/Contribute-Start%20Here-38BDF8?style=for-the-badge&logo=github&logoColor=FFFFFF"/></a>
+<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/issues"><img alt="Open issues" src="https://img.shields.io/badge/Open%20Issues-Pick%20One-8B5CF6?style=for-the-badge&logo=githubissues&logoColor=FFFFFF"/></a>
+<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/discussions"><img alt="Discussions" src="https://img.shields.io/badge/Discussions-Join%20In-A78BFA?style=for-the-badge&logo=github&logoColor=FFFFFF"/></a>
+<a href="https://youtube.com/@zyraxon-aix"><img alt="YouTube" src="https://img.shields.io/badge/YouTube-Upload%20%26%20Share-FF0000?style=for-the-badge&logo=youtube&logoColor=FFFFFF"/></a>
+
+<br/><br/>
+
+<i>Work with me · Contribute · Improve · Promote · Upload videos — every day.</i>
+
+</div>
+
+<hr/>
+
+
+<!-- UNLOCK GROUP BANNER -->
+<div align="center">
+
+### 🔓 Access Code Membership
+
+Need a **secret access code** to unlock ZYRAXON **PRO / MAX / ULTRA** modes?
+
+👉 **Join our membership group first:** [**ZYRAXON GROUP X**](https://zyraxon-group-x.lovable.app/)
+
+Members receive the latest unlock codes from the community. Codes are **only** shared inside the group — secure, verified, and never posted publicly.
+
+</div>
+
+<hr/>
 
 <div align="center">
 
