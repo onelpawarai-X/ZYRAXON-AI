@@ -12,6 +12,7 @@ import {
 import { ConstrainDragXAxis } from "@/utils/solid-dnd"
 import { IconButton } from "@zyraxon-ai/ui/icon-button"
 import { Tooltip, TooltipKeybind } from "@zyraxon-ai/ui/tooltip"
+import { SidebarStatus } from "@/components/sidebar/sidebar-status"
 import { type LocalProject } from "@/context/layout"
 import { EditorModeToggle } from "./editor-mode-toggle"
 
@@ -128,6 +129,9 @@ export const SidebarContent = (props: {
             <EditorModeToggle directory={props.editorDirectory} />
           </div>
           <div class="min-h-0 min-w-0 flex-1 overflow-hidden">{props.renderPanel()}</div>
+          <div class="shrink-0" data-component="sidebar-status-slot">
+            <SidebarStatus mobile={props.mobile} />
+          </div>
         </div>
       </div>
     </div>
