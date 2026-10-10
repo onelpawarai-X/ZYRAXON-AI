@@ -75,6 +75,7 @@ import { NewHome, LegacyHome } from "@/pages/home"
 import StreamPage from "@/pages/stream"
 import { initStreamListeners } from "@/hooks/stream-state"
 import { EcosystemRoute, EcosystemAuthCallback, EcosystemItemRoute } from "@/pages/ecosystem"
+import { SettingsRoute } from "@/pages/settings"
 
 const NewSession = lazy(() => import("@/pages/new-session"))
 
@@ -657,6 +658,8 @@ function Routes(props: { serverScoped?: JSX.Element }) {
         <Route path="/server/:serverKey/session/:id" component={TargetSessionRoute} />
       </Show>
       <Route path="/new-session" component={DraftRoute} />
+      <Route path="/settings" component={SettingsRoute} />
+      <Route path="/settings/:section" component={SettingsRoute} />
       <Route path="/stream" component={StreamPage} />
       <Route path="/ecosystem" component={EcosystemRoute} />
       <Route path="/ecosystem/item/:id" component={EcosystemItemRoute} />

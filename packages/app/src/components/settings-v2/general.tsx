@@ -1,13 +1,11 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-﻿import { Component, Show, createMemo, createResource, onMount } from "solid-js"
+﻿import { Component, Show, createMemo, createResource } from "solid-js"
 import { useParams } from "@solidjs/router"
 import { createMediaQuery } from "@solid-primitives/media"
 import { ButtonV2 } from "@zyraxon-ai/ui/v2/button-v2"
 import { SelectV2 } from "@zyraxon-ai/ui/v2/select-v2"
 import { Switch } from "@zyraxon-ai/ui/v2/switch-v2"
-import { TextInputV2 } from "@zyraxon-ai/ui/v2/text-input-v2"
-import { useTheme, type ColorScheme } from "@zyraxon-ai/ui/theme/context"
 import { useDialog } from "@zyraxon-ai/ui/context/dialog"
 import { useLanguage } from "@/context/language"
 import { useLayout } from "@/context/layout"
@@ -16,35 +14,20 @@ import { usePlatform } from "@/context/platform"
 import { useServerSync } from "@/context/server-sync"
 import { useServerSDK } from "@/context/server-sdk"
 import { useUpdaterAction } from "../updater-action"
-import {
-  monoDefault,
-  monoFontFamily,
-  monoInput,
-  sansDefault,
-  sansFontFamily,
-  sansInput,
-  terminalDefault,
-  terminalFontFamily,
-  terminalInput,
-  useSettings,
-} from "@/context/settings"
+import { useSettings } from "@/context/settings"
 import { decode64 } from "@/utils/base64"
 import { playSoundById, SOUND_OPTIONS } from "@/utils/sound"
-import { Link } from "../link"
 import { SettingsListV2 } from "./parts/list"
 import { SettingsRowV2 } from "./parts/row"
 import { LayoutRetirementNotice, LayoutTransitionToggle } from "./interface-transition"
+import { SettingsAppearanceV2 } from "./appearance"
+import { SettingsNotificationsV2 } from "./notifications"
 import "./settings-v2.css"
 
 let demoSoundState = {
   cleanup: undefined as (() => void) | undefined,
   timeout: undefined as NodeJS.Timeout | undefined,
   run: 0,
-}
-
-type ThemeOption = {
-  id: string
-  name: string
 }
 
 type ShellOption = {
@@ -103,7 +86,6 @@ const playDemoSound = (id: string | undefined) => {
 export const SettingsGeneralV2: Component<{
   sessionID?: string
 }> = (props) => {
-  const theme = useTheme()
   const language = useLanguage()
   const layout = useLayout()
   const permission = usePermission()
@@ -159,8 +141,6 @@ export const SettingsGeneralV2: Component<{
 
   const desktop = createMemo(() => platform.platform === "desktop")
 
-  const themeOptions = createMemo<ThemeOption[]>(() => theme.ids().map((id) => ({ id, name: theme.name(id) })))
-
   const [shells] = createResource(
     () =>
       serverSdk()
@@ -175,10 +155,6 @@ export const SettingsGeneralV2: Component<{
     () => Promise.resolve(platform.getPinchZoomEnabled?.() ?? false).catch(() => false),
     { initialValue: false },
   )
-
-  onMount(() => {
-    void theme.loadThemes()
-  })
 
   const autoOption = { id: "auto", value: "", label: language.t("settings.general.row.shell.autoDefault") }
   const currentShell = createMemo(() => serverSync().data.config.shell ?? "")
@@ -221,12 +197,6 @@ export const SettingsGeneralV2: Component<{
     void update.catch(() => setPinchZoom(!checked))
   }
 
-  const colorSchemeOptions = createMemo((): { value: ColorScheme; label: string }[] => [
-    { value: "system", label: language.t("theme.scheme.system") },
-    { value: "light", label: language.t("theme.scheme.light") },
-    { value: "dark", label: language.t("theme.scheme.dark") },
-  ])
-
   const languageOptions = createMemo(() =>
     language.locales.map((locale) => ({
       value: locale,
@@ -236,9 +206,6 @@ export const SettingsGeneralV2: Component<{
 
   const noneSound = { id: "none", label: "sound.option.none" } as const
   const soundOptions = [noneSound, ...SOUND_OPTIONS]
-  const mono = () => monoInput(settings.appearance.font())
-  const sans = () => sansInput(settings.appearance.uiFont())
-  const terminal = () => terminalInput(settings.appearance.terminalFont())
 
   const soundSelectProps = (
     enabled: () => boolean,
@@ -466,168 +433,6 @@ export const SettingsGeneralV2: Component<{
     </div>
   )
 
-  const AppearanceSection = () => (
-    <div class="settings-v2-section">
-      <h3 class="settings-v2-section-title">{language.t("settings.general.section.appearance")}</h3>
-
-      <SettingsListV2>
-        <SettingsRowV2
-          title={language.t("settings.general.row.colorScheme.title")}
-          description={language.t("settings.general.row.colorScheme.description")}
-        >
-          <SelectV2
-            appearance="inline"
-            data-action="settings-color-scheme"
-            options={colorSchemeOptions()}
-            current={colorSchemeOptions().find((o) => o.value === theme.colorScheme())}
-            placement="bottom-end"
-            gutter={6}
-            value={(o) => o.value}
-            label={(o) => o.label}
-            onSelect={(option) => option && theme.setColorScheme(option.value)}
-          />
-        </SettingsRowV2>
-
-        <SettingsRowV2
-          title={language.t("settings.general.row.theme.title")}
-          description={
-            <>
-              {language.t("settings.general.row.theme.description")}{" "}
-              <Link class="settings-v2-link" href="https://zyraxonai.lovable.app/docs/themes/">
-                {language.t("common.learnMore")}
-              </Link>
-            </>
-          }
-        >
-          <SelectV2
-            appearance="inline"
-            data-action="settings-theme"
-            options={themeOptions()}
-            current={themeOptions().find((o) => o.id === theme.themeId())}
-            placement="bottom-end"
-            gutter={6}
-            value={(o) => o.id}
-            label={(o) => o.name}
-            onSelect={(option) => {
-              if (!option) return
-              theme.setTheme(option.id)
-            }}
-          />
-        </SettingsRowV2>
-
-        <SettingsRowV2
-          title={language.t("settings.general.row.uiFont.title")}
-          description={language.t("settings.general.row.uiFont.description")}
-        >
-          <div class="w-full sm:w-[220px]">
-            <TextInputV2
-              data-action="settings-ui-font"
-              type="text"
-              appearance="base"
-              value={sans()}
-              onInput={(event) => settings.appearance.setUIFont(event.currentTarget.value)}
-              placeholder={sansDefault}
-              spellcheck={false}
-              autocorrect="off"
-              autocomplete="off"
-              autocapitalize="off"
-              aria-label={language.t("settings.general.row.uiFont.title")}
-              style={{ "font-family": sansFontFamily(settings.appearance.uiFont()) }}
-            />
-          </div>
-        </SettingsRowV2>
-
-        <SettingsRowV2
-          title={language.t("settings.general.row.font.title")}
-          description={language.t("settings.general.row.font.description")}
-        >
-          <div class="w-full sm:w-[220px]">
-            <TextInputV2
-              data-action="settings-code-font"
-              type="text"
-              appearance="base"
-              value={mono()}
-              onInput={(event) => settings.appearance.setFont(event.currentTarget.value)}
-              placeholder={monoDefault}
-              spellcheck={false}
-              autocorrect="off"
-              autocomplete="off"
-              autocapitalize="off"
-              aria-label={language.t("settings.general.row.font.title")}
-              style={{ "font-family": monoFontFamily(settings.appearance.font()) }}
-            />
-          </div>
-        </SettingsRowV2>
-
-        <SettingsRowV2
-          title={language.t("settings.general.row.terminalFont.title")}
-          description={language.t("settings.general.row.terminalFont.description")}
-        >
-          <div class="w-full sm:w-[220px]">
-            <TextInputV2
-              data-action="settings-terminal-font"
-              type="text"
-              appearance="base"
-              value={terminal()}
-              onInput={(event) => settings.appearance.setTerminalFont(event.currentTarget.value)}
-              placeholder={terminalDefault}
-              spellcheck={false}
-              autocorrect="off"
-              autocomplete="off"
-              autocapitalize="off"
-              aria-label={language.t("settings.general.row.terminalFont.title")}
-              style={{ "font-family": terminalFontFamily(settings.appearance.terminalFont()) }}
-            />
-          </div>
-        </SettingsRowV2>
-      </SettingsListV2>
-    </div>
-  )
-
-  const NotificationsSection = () => (
-    <div class="settings-v2-section">
-      <h3 class="settings-v2-section-title">{language.t("settings.general.section.notifications")}</h3>
-
-      <SettingsListV2>
-        <SettingsRowV2
-          title={language.t("settings.general.notifications.agent.title")}
-          description={language.t("settings.general.notifications.agent.description")}
-        >
-          <div data-action="settings-notifications-agent">
-            <Switch
-              checked={settings.notifications.agent()}
-              onChange={(checked) => settings.notifications.setAgent(checked)}
-            />
-          </div>
-        </SettingsRowV2>
-
-        <SettingsRowV2
-          title={language.t("settings.general.notifications.permissions.title")}
-          description={language.t("settings.general.notifications.permissions.description")}
-        >
-          <div data-action="settings-notifications-permissions">
-            <Switch
-              checked={settings.notifications.permissions()}
-              onChange={(checked) => settings.notifications.setPermissions(checked)}
-            />
-          </div>
-        </SettingsRowV2>
-
-        <SettingsRowV2
-          title={language.t("settings.general.notifications.errors.title")}
-          description={language.t("settings.general.notifications.errors.description")}
-        >
-          <div data-action="settings-notifications-errors">
-            <Switch
-              checked={settings.notifications.errors()}
-              onChange={(checked) => settings.notifications.setErrors(checked)}
-            />
-          </div>
-        </SettingsRowV2>
-      </SettingsListV2>
-    </div>
-  )
-
   const SoundsSection = () => (
     <div class="settings-v2-section">
       <h3 class="settings-v2-section-title">{language.t("settings.general.section.sounds")}</h3>
@@ -685,170 +490,6 @@ export const SettingsGeneralV2: Component<{
             placement="bottom-end"
             gutter={6}
           />
-        </SettingsRowV2>
-      </SettingsListV2>
-    </div>
-  )
-
-  const VoiceSection = () => (
-    <div class="settings-v2-section">
-      <h3 class="settings-v2-section-title">Voice & TTS</h3>
-
-      <SettingsListV2>
-        <SettingsRowV2
-          title="Real-time voice with the model"
-          description="Talk directly to the selected model — it listens and answers in the same breath. Turning this on stops the separate TTS voice, because hearing both at once overlaps them."
-        >
-          <div data-action="settings-voice-realtime">
-            <Switch
-              checked={settings.general.voiceRealtime()}
-              onChange={(checked) => settings.general.setVoiceRealtime(checked)}
-            />
-          </div>
-        </SettingsRowV2>
-
-        <SettingsRowV2
-          title="Auto-speak responses"
-          description="AI responses are spoken aloud by the built-in voice"
-        >
-          <div data-action="settings-voice-auto-speak">
-            <Switch
-              checked={settings.general.voiceAutoSpeak()}
-              disabled={settings.general.voiceRealtime()}
-              onChange={(checked) => {
-                // The switch is unavailable while the model is talking live, so this only
-                // ever runs with realtime off — where it is meaningful.
-                if (settings.general.voiceRealtime()) return
-                settings.general.setVoiceAutoSpeak(checked)
-                try { ;(window as any).api?.voiceTTSEnabled?.(checked) } catch {}
-              }}
-            />
-          </div>
-        </SettingsRowV2>
-
-        <SettingsRowV2
-          title="Voice gender"
-          description="Select male or female voice for TTS output"
-        >
-          <div data-action="settings-voice-gender" class="flex gap-2">
-            <ButtonV2
-              size="normal"
-              variant={settings.general.voiceGender() === "male" ? "contrast" : "neutral"}
-              onClick={() => {
-                settings.general.setVoiceGender("male")
-                try { ;(window as any).api?.voiceSetGender?.("male") } catch {}
-              }}
-            >
-              Male
-            </ButtonV2>
-            <ButtonV2
-              size="normal"
-              variant={settings.general.voiceGender() === "female" ? "contrast" : "neutral"}
-              onClick={() => {
-                settings.general.setVoiceGender("female")
-                try { ;(window as any).api?.voiceSetGender?.("female") } catch {}
-              }}
-            >
-              Female
-            </ButtonV2>
-          </div>
-        </SettingsRowV2>
-
-        <SettingsRowV2
-          title="Voice language"
-          description="Language for speech recognition and TTS"
-        >
-          {(() => {
-            const ALL_LANGS = [
-              { id: "auto", value: "auto", label: "Auto-detect" },
-              { id: "bn", value: "bn-BD", label: "Bengali" },
-              { id: "hi", value: "hi-IN", label: "Hindi" },
-              { id: "en-us", value: "en-US", label: "English (US)" },
-              { id: "en-gb", value: "en-GB", label: "English (UK)" },
-              { id: "en-in", value: "en-IN", label: "English (India)" },
-              { id: "ar", value: "ar-SA", label: "Arabic" },
-              { id: "es", value: "es-ES", label: "Spanish" },
-              { id: "fr", value: "fr-FR", label: "French" },
-              { id: "de", value: "de-DE", label: "German" },
-              { id: "pt", value: "pt-BR", label: "Portuguese" },
-              { id: "ru", value: "ru-RU", label: "Russian" },
-              { id: "ja", value: "ja-JP", label: "Japanese" },
-              { id: "ko", value: "ko-KR", label: "Korean" },
-              { id: "zh-cn", value: "zh-CN", label: "Chinese (Simplified)" },
-              { id: "zh-tw", value: "zh-TW", label: "Chinese (Traditional)" },
-              { id: "vi", value: "vi-VN", label: "Vietnamese" },
-              { id: "it", value: "it-IT", label: "Italian" },
-              { id: "th", value: "th-TH", label: "Thai" },
-              { id: "tr", value: "tr-TR", label: "Turkish" },
-              { id: "pl", value: "pl-PL", label: "Polish" },
-              { id: "nl", value: "nl-NL", label: "Dutch" },
-              { id: "uk", value: "uk-UA", label: "Ukrainian" },
-              { id: "sv", value: "sv-SE", label: "Swedish" },
-              { id: "da", value: "da-DK", label: "Danish" },
-              { id: "fi", value: "fi-FI", label: "Finnish" },
-              { id: "no", value: "nb-NO", label: "Norwegian" },
-              { id: "cs", value: "cs-CZ", label: "Czech" },
-              { id: "ro", value: "ro-RO", label: "Romanian" },
-              { id: "el", value: "el-GR", label: "Greek" },
-              { id: "he", value: "he-IL", label: "Hebrew" },
-              { id: "hu", value: "hu-HU", label: "Hungarian" },
-              { id: "id", value: "id-ID", label: "Indonesian" },
-              { id: "ms", value: "ms-MY", label: "Malay" },
-              { id: "ta", value: "ta-IN", label: "Tamil" },
-              { id: "te", value: "te-IN", label: "Telugu" },
-              { id: "ur", value: "ur-PK", label: "Urdu" },
-              { id: "fa", value: "fa-IR", label: "Persian" },
-              { id: "mr", value: "mr-IN", label: "Marathi" },
-              { id: "gu", value: "gu-IN", label: "Gujarati" },
-              { id: "kn", value: "kn-IN", label: "Kannada" },
-              { id: "ml", value: "ml-IN", label: "Malayalam" },
-              { id: "sw", value: "sw-KE", label: "Swahili" },
-              { id: "af", value: "af-ZA", label: "Afrikaans" },
-            ]
-            const current = ALL_LANGS.find((o) => o.value === settings.general.voiceLanguage()) || ALL_LANGS[0]
-            return (
-              <SelectV2
-                appearance="inline"
-                data-action="settings-voice-language"
-                options={ALL_LANGS}
-                current={current}
-                value={(o) => o.value}
-                label={(o) => o.label}
-                onSelect={(option) => {
-                  if (!option) return
-                  settings.general.setVoiceLanguage(option.value)
-                  try { ;(window as any).api?.voiceSetLanguage?.(option.value) } catch {}
-                }}
-                placement="bottom-end"
-                gutter={6}
-              />
-            )
-          })()}
-        </SettingsRowV2>
-
-        <SettingsRowV2
-          title="Test TTS"
-          description="Play a test sentence to verify text-to-speech is working"
-        >
-          <ButtonV2
-            size="normal"
-            variant="neutral"
-            onClick={() => {
-              try {
-                const lang = settings.general.voiceLanguage()?.split("-")[0] || "en"
-                const testText = lang === "bn"
-                  ? "à¦†à¦®à¦¿ ZYRAXON AIà¥¤ à¦†à¦®à¦¿ à¦†à¦ªà¦¨à¦¾à¦° à¦¸à¦¾à¦¥à§‡ à¦•à¦¥à¦¾ à¦¬à¦²à¦¤à§‡ à¦ªà¦¾à¦°à¦¿à¥¤"
-                  : lang === "hi"
-                  ? "à¤®à¥ˆà¤‚ ZYRAXON AI à¤¹à¥‚à¤à¥¤ à¤®à¥ˆà¤‚ à¤†à¤ªà¤¸à¥‡ à¤¬à¤¾à¤¤ à¤•à¤° à¤¸à¤•à¤¤à¤¾ à¤¹à¥‚à¤à¥¤"
-                  : "Hello! I am ZYRAXON AI. I can speak to you."
-                ;(window as any).api?.voiceTTSSpeak?.(testText)
-              } catch (e) {
-                console.error("[TTS-TEST] Failed:", e)
-              }
-            }}
-          >
-            Test Voice
-          </ButtonV2>
         </SettingsRowV2>
       </SettingsListV2>
     </div>
@@ -920,13 +561,11 @@ export const SettingsGeneralV2: Component<{
 
         <GeneralSection />
 
-        <AppearanceSection />
+        <SettingsAppearanceV2 />
 
-        <NotificationsSection />
+        <SettingsNotificationsV2 />
 
         <SoundsSection />
-
-        <VoiceSection />
 
         <Show when={desktop()}>
           <UpdatesSection />

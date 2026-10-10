@@ -17,6 +17,7 @@ import { useTerminal } from "@/context/terminal"
 import { showToast } from "@/utils/toast"
 import { findLast } from "@zyraxon-ai/core/util/array"
 import { createSessionTabs } from "@/pages/session/helpers"
+import { SIDEBAR_STATUS_KEYBIND, toggleSidebarStatus } from "@/components/sidebar/sidebar-status"
 import { extractPromptFromParts } from "@/utils/prompt"
 import { UserMessage } from "@zyraxon-ai/sdk/v2"
 import { useSessionLayout } from "@/pages/session/session-layout"
@@ -516,6 +517,12 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
       title: language.t("command.review.toggle"),
       keybind: "mod+shift+r",
       onSelect: () => view().reviewPanel.toggle(),
+    }),
+    viewCommand({
+      id: "status.toggle",
+      title: language.t("command.status.toggle"),
+      keybind: SIDEBAR_STATUS_KEYBIND,
+      onSelect: () => toggleSidebarStatus(),
     }),
     viewCommand({
       id: "preview.toggle",
