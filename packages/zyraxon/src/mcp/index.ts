@@ -1391,13 +1391,19 @@ const discovered =
         endpoints: {
           authorizationEndpoint: oauthConfig.authorizationUrl,
           tokenEndpoint: oauthConfig.tokenUrl,
+          source: "configured" as const,
         } as McpOAuthDiscovery.DiscoveryEndpoints,
         error: undefined as string | undefined,
       })
-    : yield* Effect.tryPromise({
-        try: () => McpOAuthDiscovery.discoverOAuthEndpoints(mcpConfig.url),
-        catch: (error) => error,
-      }).pipe(
+    : // Both discovery and registration are Effects, so they are run as Effects.
+      // Wrapping one in Effect.tryPromise returned the Effect itself as a value —
+      // every downstream read then worked on a function object instead of endpoints,
+      // which is where "Unknown error: undefined" came from.
+      yield* McpOAuthDiscovery.discoverOAuthEndpoints(mcpConfig.url).pipe(
+        Effect.map((endpoints) => ({
+          endpoints,
+          error: undefined as string | undefined,
+        })),
         Effect.catch((error) =>
           Effect.succeed({
             endpoints: undefined as McpOAuthDiscovery.DiscoveryEndpoints | undefined,
@@ -1433,19 +1439,19 @@ const discovered =
       let clientId = oauthConfig?.clientId
       let clientSecret = oauthConfig?.clientSecret
       if (!clientId && discovered.endpoints.registrationEndpoint) {
-        const registered = yield* Effect.tryPromise({
-          try: () =>
-            McpOAuthDiscovery.registerClient(discovered.endpoints!, {
-              client_name: "ZYRAXON",
-              client_uri: "https://zyraxonai.lovable.app",
-              redirect_uris: [redirectUri],
-              grant_types: ["authorization_code", "refresh_token"],
-              response_types: ["code"],
-              token_endpoint_auth_method: oauthConfig?.clientSecret ? "client_secret_post" : "none",
-              ...(oauthConfig?.scope ? { scope: oauthConfig.scope } : {}),
-            }),
-          catch: (error) => error,
+        const registered = yield* McpOAuthDiscovery.registerClient(discovered.endpoints, {
+          client_name: "ZYRAXON",
+          client_uri: "https://zyraxonai.lovable.app",
+          redirect_uris: [redirectUri],
+          grant_types: ["authorization_code", "refresh_token"],
+          response_types: ["code"],
+          token_endpoint_auth_method: oauthConfig?.clientSecret ? "client_secret_post" : "none",
+          ...(oauthConfig?.scope ? { scope: oauthConfig.scope } : {}),
         }).pipe(
+          Effect.map((reg) => ({
+            registered: reg,
+            error: undefined as string | undefined,
+          })),
           Effect.catch((error) =>
             Effect.succeed({
               registered: undefined as { client_id: string; client_secret?: string } | undefined,
@@ -1513,7 +1519,14 @@ const discovered =
       // the provider's redirect for the case where a later refresh is what needs consent.
       const openConsent = Effect.fn("MCP.openConsent")(function* (url: string) {
         yield* Effect.logInfo("oauth consent url ready", { server: mcpName, url })
-        onAuthorization?.(url, oauthState)
+        if (onAuthorization) {
+          onAuthorization(url, oauthState)
+        } else {
+          // No callback is driving this handshake, so the page opens itself. A missed
+          // callback used to leave the consent URL built and never shown — the browser
+          // never appeared and the connect sat waiting on a page nobody could approve.
+          yield* browser.open(url)
+        }
       })
       yield* openConsent(consentUrl)
 

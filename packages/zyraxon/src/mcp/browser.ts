@@ -2,11 +2,65 @@
 
 import { LayerNode } from "@zyraxon-ai/core/effect/layer-node"
 import { Context, Effect, Layer } from "effect"
+import { exec } from "child_process"
+import { promisify } from "util"
+import * as os from "os"
 import { spawn } from "node:child_process"
 import { existsSync } from "node:fs"
 import open from "open"
 import { join } from "node:path"
 import { Config } from "@/config/config"
+
+const execAsync = promisify(exec);
+
+/**
+ * Open a URL in whatever browser this machine actually has — no fixed path,
+ * no Effect v4 APIs that no longer exist. Windows, macOS and Linux each fall
+ * through their own chain, and only a total failure reports `false`.
+ */
+export async function openBrowser(targetUrl: string): Promise<boolean> {
+  const platform = os.platform();
+  const url = targetUrl.trim();
+
+  try {
+    if (platform === 'darwin') {
+      // macOS: প্রথমে Google Chrome, না পেলে সিস্টেম ডিফল্ট
+      try {
+        await execAsync(`open -a "Google Chrome" "${url}"`);
+        return true;
+      } catch {
+        await execAsync(`open "${url}"`);
+        return true;
+      }
+    } else if (platform === 'win32') {
+      // Windows: সরাসরি স্টার্ট বা ক্রোম ব্রাউজার এক্সিকিউট
+      try {
+        await execAsync(`start chrome "${url}"`);
+        return true;
+      } catch {
+        await execAsync(`start "" "${url}"`);
+        return true;
+      }
+    } else {
+      // Linux: google-chrome -> chromium -> xdg-open
+      try {
+        await execAsync(`google-chrome "${url}"`);
+        return true;
+      } catch {
+        try {
+          await execAsync(`chromium "${url}"`);
+          return true;
+        } catch {
+          await execAsync(`xdg-open "${url}"`);
+          return true;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Failed to open browser dynamically:', error);
+    return false;
+  }
+}
 
 export interface Interface {
   readonly open: (url: string) => Effect.Effect<void, Error>
@@ -197,6 +251,40 @@ const layer = Layer.effect(
 
     return Service.of({
       open: Effect.fn("McpBrowser.open")(function* (url: string) {
+        /**
+         * Inside Electron the sidecar is a utility process, not a desktop session.
+         *
+         * A sign-in page handed to a shell command from here either opens nothing or
+         * opens a window the app never learns about, and the desktop's own
+         * `open-external` handler — which uses the OS handler and comes to the front —
+         * never runs. The message below is what that handler is listening for, so it
+         * is tried before any local launch. Falling through on a thrown postMessage
+         * keeps the rest of this function working when ZYRAXON runs as a plain CLI.
+         */
+        const parentPort = (process as unknown as { parentPort?: { postMessage: (msg: unknown) => void } })
+          .parentPort
+        if (parentPort && typeof parentPort.postMessage === "function") {
+          try {
+            parentPort.postMessage({ type: "open-external", url })
+            return
+          } catch {
+            // The desktop process is gone or refused the message; fall through to the
+            // local launchers rather than reporting a failure that may not be real.
+          }
+        }
+
+        /**
+         * The dynamic opener next: it knows no paths, so it cannot be defeated by an
+         * install in an unexpected place, and it answers for Windows, macOS and Linux
+         * alike. Everything below stays as the fallback for the case where every shell
+         * attempt fails, so a browser still opens through discovery or the OS handler.
+         */
+        const dynamic = yield* Effect.tryPromise({
+          try: () => openBrowser(url),
+          catch: (error) => (error instanceof Error ? error : new Error(String(error))),
+        })
+        if (dynamic) return
+
         /**
          * Try the signed-in profile first, then the system handler.
          *
