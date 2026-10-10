@@ -81,6 +81,7 @@ export class AgentReliabilityKernel {
     const retrySafe = tool.isRetrySafe?.(input) ?? false;
     const attemptLimit = retrySafe ? this.maxAttempts : 1;
     let lastError = "Tool execution did not complete";
+    let attemptsMade = 0;
 
     for (let attempt = 1; attempt <= attemptLimit; attempt += 1) {
       const elapsedMs = Date.now() - startedAt;
@@ -101,6 +102,7 @@ export class AgentReliabilityKernel {
       }
 
       this.toolCalls += 1;
+      attemptsMade = attempt;
       emit({ type: "attempt", runId, tool: tool.name, attempt });
       try {
         const output = await tool.execute(input, {
@@ -128,6 +130,6 @@ export class AgentReliabilityKernel {
       }
     }
 
-    return { ok: false, error: lastError, runId, attempts: Math.min(attemptLimit, this.toolCalls), elapsedMs: Date.now() - startedAt };
+    return { ok: false, error: lastError, runId, attempts: attemptsMade, elapsedMs: Date.now() - startedAt };
   }
 }
