@@ -8,7 +8,7 @@ import { IconButton } from "@zyraxon-ai/ui/icon-button"
 import { Keybind } from "@zyraxon-ai/ui/keybind"
 import { Spinner } from "@zyraxon-ai/ui/spinner"
 import { showToast } from "@/utils/toast"
-import { Tooltip, TooltipKeybind } from "@zyraxon-ai/ui/tooltip"
+import { TooltipKeybind } from "@zyraxon-ai/ui/tooltip"
 import { getFilename } from "@zyraxon-ai/core/util/path"
 import { createEffect, createMemo, createSignal, For, onMount, Show } from "solid-js"
 import { createStore } from "solid-js/store"
@@ -30,12 +30,9 @@ import { messageAgentColor } from "@/utils/agent"
 import { decode64 } from "@/utils/base64"
 import { fileManagerApp } from "@/utils/file-manager"
 import { Persist, persisted } from "@/utils/persist"
-import { StatusPopover, StatusPopoverV2 } from "../status-popover"
 import { IconButtonV2 } from "@zyraxon-ai/ui/v2/icon-button-v2"
 import { Icon as IconV2 } from "@zyraxon-ai/ui/v2/icon"
-import { KeybindV2 } from "@zyraxon-ai/ui/v2/keybind-v2"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
-import { reviewTooltipKeybind } from "../command-tooltip-keybind"
 import { useTitlebarRightMount } from "../titlebar"
 import { getPreviewActive } from "@/pages/session/preview-state"
 
@@ -170,7 +167,6 @@ export function SessionHeader() {
   const os = createMemo(() => detectOS(platform))
   const isV2 = settings.general.newLayoutDesigns
   const search = settings.visibility.search
-  const status = settings.visibility.status
   const isDesktop = createMediaQuery("(min-width: 768px)")
 
   const [exists, setExists] = createStore<Partial<Record<OpenApp, boolean>>>({
@@ -242,17 +238,11 @@ export function SessionHeader() {
     messageAgentColor(params.id ? sync().data.message[params.id] : undefined, sync().data.agent),
   )
   const v2ActionsState = createMemo<SessionHeaderV2ActionsState>(() => ({
-    statusVisible: status(),
-    statusLabel: language.t("status.popover.trigger"),
-    reviewLabel: language.t("command.review.toggle"),
-    reviewKeybind: reviewTooltipKeybind(command),
-    reviewVisible: isDesktop(),
-    reviewOpened: view().reviewPanel.opened(),
-    onReviewToggle: () => view().reviewPanel.toggle(),
     previewLabel: language.t("command.preview.toggle"),
     previewVisible: isDesktop(),
     previewOpened: getPreviewActive()(),
     onPreviewToggle: () => view().previewPanel.toggle(),
+    onOpenSubscription: openSettings,
   }))
 
   const selectApp = (app: OpenApp) => {
@@ -451,11 +441,6 @@ export function SessionHeader() {
                     </div>
                   </Show>
                   <div class="flex items-center gap-1">
-                    <Show when={status()}>
-                      <Tooltip placement="bottom" value={language.t("status.popover.trigger")}>
-                        <StatusPopover />
-                      </Tooltip>
-                    </Show>
                     <TooltipKeybind
                       title={language.t("command.terminal.toggle")}
                       keybind={command.keybind("terminal.toggle")}
@@ -473,22 +458,6 @@ export function SessionHeader() {
                     </TooltipKeybind>
 
                     <div class="hidden md:flex items-center gap-1 shrink-0">
-                      <TooltipKeybind
-                        title={language.t("command.review.toggle")}
-                        keybind={command.keybind("review.toggle")}
-                      >
-                        <Button
-                          variant="ghost"
-                          class="group/review-toggle titlebar-icon w-8 h-6 p-0 box-border"
-                          onClick={() => view().reviewPanel.toggle()}
-                          aria-label={language.t("command.review.toggle")}
-                          aria-expanded={view().reviewPanel.opened()}
-                          aria-controls="review-panel"
-                        >
-                          <Icon size="small" name={view().reviewPanel.opened() ? "review-active" : "review"} />
-                        </Button>
-                      </TooltipKeybind>
-
                       <TooltipKeybind
                         title="ZYRAXON Ecosystem"
                         keybind={[]}
@@ -544,55 +513,17 @@ export function SessionHeader() {
 }
 
 type SessionHeaderV2ActionsState = {
-  statusVisible: boolean
-  statusLabel: string
-  reviewLabel: string
-  reviewKeybind: string[]
-  reviewVisible: boolean
-  reviewOpened: boolean
-  onReviewToggle: () => void
   previewLabel: string
   previewVisible: boolean
   previewOpened: boolean
   onPreviewToggle: () => void
+  onOpenSubscription: () => void
 }
 function SessionHeaderV2Actions(props: { state: SessionHeaderV2ActionsState }) {
   const language = useLanguage()
 
   return (
     <div class="flex items-center gap-2">
-      <Show when={props.state.statusVisible}>
-        <Tooltip placement="bottom" value={props.state.statusLabel}>
-          <StatusPopoverV2 />
-        </Tooltip>
-      </Show>
-      <Show when={props.state.reviewVisible}>
-        <TooltipV2
-          class="shrink-0"
-          placement="bottom"
-          value={
-            <>
-              {props.state.reviewLabel}
-              <Show when={props.state.reviewKeybind.length > 0}>
-                <KeybindV2 keys={props.state.reviewKeybind} variant="neutral" />
-              </Show>
-            </>
-          }
-        >
-          <IconButtonV2
-            type="button"
-            variant="ghost-muted"
-            size="large"
-            class="!w-9 shrink-0"
-            state={props.state.reviewOpened ? "pressed" : undefined}
-            onClick={props.state.onReviewToggle}
-            aria-label={props.state.reviewLabel}
-            aria-expanded={props.state.reviewOpened}
-            aria-controls="review-panel"
-            icon={<IconV2 name="sidebar-right" />}
-          />
-        </TooltipV2>
-      </Show>
       <Show when={props.state.previewVisible}>
         <TooltipV2
           class="shrink-0"
@@ -623,7 +554,7 @@ function SessionHeaderV2Actions(props: { state: SessionHeaderV2ActionsState }) {
           variant="ghost-muted"
           size="large"
           class="!w-9 shrink-0"
-          onClick={() => openSettings()}
+          onClick={props.state.onOpenSubscription}
           aria-label="Subscription Plans"
           icon={<IconV2 name="globe" />}
         />
