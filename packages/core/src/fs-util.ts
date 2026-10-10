@@ -223,8 +223,28 @@ export namespace FSUtil {
   export const node = makeGlobalNode({ service: Service, layer: layer, deps: [filesystem] })
 
   // Pure helpers that don't need Effect (path manipulation, sync operations)
+
+  /**
+   * MIME type detection with TypeScript override.
+   * Resolves .ts, .tsx, .mts, .cts to text/typescript and text/tsx to prevent video/mp2t errors.
+   *
+   * mime-db maps the bare `.ts` extension to `video/mp2t` — a transport stream —
+   * so a TypeScript file was handed to the chat as audio/video and the whole
+   * conversion crashed with it. Every source extension is decided here before
+   * the lookup ever runs, and the media type that started the crash is demoted
+   * to plain text on the way out.
+   */
   export function mimeType(p: string): string {
-    return lookup(p) || "application/octet-stream"
+    const ext = p.split(".").pop()?.toLowerCase()
+    if (ext === "ts" || ext === "mts" || ext === "cts") return "text/typescript"
+    if (ext === "tsx") return "text/tsx"
+    if (ext === "js" || ext === "mjs" || ext === "cjs") return "text/javascript"
+    if (ext === "jsx") return "text/jsx"
+    if (ext === "json") return "application/json"
+    if (ext === "md") return "text/markdown"
+    const detected = lookup(p)
+    if (detected === "video/mp2t") return "text/plain"
+    return detected || "application/octet-stream"
   }
 
   export function normalizePath(p: string): string {

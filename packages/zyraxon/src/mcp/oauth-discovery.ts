@@ -15,7 +15,7 @@
  *     looking at the body calls a working server dead. The body is ignored entirely.
  *
  *   - The header usually names one URL in `resource_metadata`, and that URL usually
- *     carries only `authorization_servers` — a list of issuer names, not endpoints.
+ *     carries only `authorization_servers` Ã¢â‚¬â€ a list of issuer names, not endpoints.
  *     Notion's is the plain case: the document is one line long and names one issuer.
  *     Reading it means asking the issuer, not the server, and skipping that hop is why
  *     Notion looked unsupportable.
@@ -81,7 +81,7 @@ export class DiscoveryError extends Schema.TaggedErrorClass<DiscoveryError>()("D
  * Generous for a metadata GET, which is a small document from a CDN, and short enough
  * that four dead candidates cost less than the connect timeout they are competing with.
  */
-const HOP_TIMEOUT_MS = 10_000
+const HOP_TIMEOUT_MS = 4_000
 
 /**
  * The whole discovery's worth of time.
@@ -91,7 +91,7 @@ const HOP_TIMEOUT_MS = 10_000
  * and the user is left watching a card that will never settle. Every endpoint in the
  * catalog resolves inside this; the slowest measured was MongoDB at 7.5s.
  */
-const DISCOVERY_BUDGET_MS = 45_000
+const DISCOVERY_BUDGET_MS = 15_000
 
 /** Everything the walk needs to carry between steps. */
 interface Walk {
@@ -106,8 +106,8 @@ interface Walk {
 /**
  * One request, bounded, and missing treated as a normal answer.
  *
- * Most of what discovery tries does not exist — a vendor publishes one layout out of
- * six — so a miss is the ordinary case and must not abort the chain. Nothing here
+ * Most of what discovery tries does not exist Ã¢â‚¬â€ a vendor publishes one layout out of
+ * six Ã¢â‚¬â€ so a miss is the ordinary case and must not abort the chain. Nothing here
  * throws for a host that is simply not there.
  */
 const hop = Effect.fn("discovery.hop")(function* (url: string, init: RequestInit) {
@@ -121,7 +121,7 @@ const hop = Effect.fn("discovery.hop")(function* (url: string, init: RequestInit
  * A JSON document, or undefined.
  *
  * The content-type check is load-bearing. Several vendors answer a metadata request
- * with an HTML error page and a 200 — parsing that produced an object with no endpoints
+ * with an HTML error page and a 200 Ã¢â‚¬â€ parsing that produced an object with no endpoints
  * on it, and the failure then surfaced much later as something that looked like an
  * authentication problem rather than a mistyped URL.
  */
@@ -201,7 +201,7 @@ function issuersOf(doc: Record<string, unknown>): string[] {
 /**
  * Pull the endpoints out of a metadata document, if it names them.
  *
- * A protected-resource document names none — only issuers — so this returns undefined
+ * A protected-resource document names none Ã¢â‚¬â€ only issuers Ã¢â‚¬â€ so this returns undefined
  * for one of those, which is the normal case rather than a failure.
  */
 function readEndpoints(doc: Record<string, unknown>): Omit<DiscoveryEndpoints, "source"> | undefined {
@@ -223,7 +223,7 @@ function readEndpoints(doc: Record<string, unknown>): Omit<DiscoveryEndpoints, "
  * Parse `key="value", key2="value2"` out of a WWW-Authenticate header.
  *
  * Values may be quoted and contain commas, so the quote delimits the field and not the
- * comma — `error_description="No access token was provided"` would otherwise be cut in
+ * comma Ã¢â‚¬â€ `error_description="No access token was provided"` would otherwise be cut in
  * half and its second half read as a key.
  */
 export function parseChallenge(header: string): Record<string, string> {
@@ -295,7 +295,7 @@ const challenge = Effect.fn("discovery.challenge")(function* (serverUrl: string)
  *
  * `seen` is what stops this being an infinite walk. An issuer A whose metadata names
  * issuer B whose metadata names A is unusual but legal, and the previous version only
- * guarded against an issuer naming *itself* — so that pair walked forever and the
+ * guarded against an issuer naming *itself* Ã¢â‚¬â€ so that pair walked forever and the
  * connect button hung rather than failing.
  *
  * `source` is threaded in rather than hardcoded, because a previous version labelled
@@ -359,7 +359,7 @@ const walkForEndpoints = Effect.fn("discovery.endpoints.walk")(function* (
   const asked = yield* challenge(serverUrl).pipe(Effect.orElseSucceed(() => undefined))
 
   // 1. The header stated an authorization endpoint outright, as Figma does. Its issuer is
-  //    still worth asking, because that is where the token endpoint lives — but the
+  //    still worth asking, because that is where the token endpoint lives Ã¢â‚¬â€ but the
   //    endpoint the server named itself wins, since it is the server's own statement
   //    about its own user-facing URL.
   const stated = asked?.fields["authorization_uri"] ?? asked?.fields["authorization_url"]
@@ -369,7 +369,7 @@ const walkForEndpoints = Effect.fn("discovery.endpoints.walk")(function* (
   }
 
   // 2. The header named a protected-resource document. It usually carries only
-  //    `authorization_servers`, so each named issuer is asked in turn — this hop is what
+  //    `authorization_servers`, so each named issuer is asked in turn Ã¢â‚¬â€ this hop is what
   //    Notion, and every other server shaped like it, depends on.
   const fromHeader = asked?.resource
   if (fromHeader) {
@@ -424,7 +424,7 @@ const walkForEndpoints = Effect.fn("discovery.endpoints.walk")(function* (
  * Find the OAuth endpoints for a remote MCP server, within a fixed budget.
  *
  * The inner walk stops trying candidates once the budget is spent, and this is the
- * backstop for the case where a single request overruns it — a slow body on a metadata
+ * backstop for the case where a single request overruns it Ã¢â‚¬â€ a slow body on a metadata
  * GET cannot be interrupted from inside, only refused afterwards.
  */
 export const discoverOAuthEndpoints = Effect.fn("discovery.endpoints")(function* (
@@ -450,7 +450,7 @@ export const discoverOAuthEndpoints = Effect.fn("discovery.endpoints")(function*
  * Higgsfield was checked end to end here: its registration endpoint answered 201 and
  * returned a usable client ID with no secret, which is what makes it a one-click app.
  * ElevenLabs, Slack, HubSpot and Zoom publish no registration endpoint at all, and for
- * those this is the honest failure — a client ID has to exist already, and inventing
+ * those this is the honest failure Ã¢â‚¬â€ a client ID has to exist already, and inventing
  * one is not an option, so the message says so instead of trying.
  */
 export const registerClient = Effect.fn("discovery.register")(function* (
