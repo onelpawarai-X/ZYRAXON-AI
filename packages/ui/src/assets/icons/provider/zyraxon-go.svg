@@ -1,9 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="16" height="16">
-  <rect width="16" height="16" fill="white"/>
-  <g transform="translate(100,100)" stroke="black" stroke-width="28" stroke-linecap="square" fill="none">
-    <line x1="-45" y1="-45" x2="-30" y2="-30"/>
-    <line x1="30" y1="30" x2="45" y2="45"/>
-    <line x1="-45" y1="45" x2="-30" y2="30"/>
-    <line x1="30" y1="-30" x2="45" y2="-45"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="ZYRAXON Go">
+  <defs>
+    <linearGradient id="zyg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#38E08A"/>
+      <stop offset="1" stop-color="#0E9F6E"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#0B0B0F"/>
+  <g transform="translate(256 236)">
+    <path d="M-132-118 L-58-118 L-8-30 L42-118 L116-118 L42 -2 L116 116 L42 116 L-8 28 L-58 116 L-132 116 L-42 0 Z" fill="url(#zyg)"/>
   </g>
+  <g fill="url(#zyg)">
+    <rect x="96" y="392" width="320" height="18" rx="9"/>
+  </g>
+  <circle cx="256" cy="401" r="5" fill="#38E08A"/>
 </svg>

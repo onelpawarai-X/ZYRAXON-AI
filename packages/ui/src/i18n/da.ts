@@ -1,5 +1,13 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
+import { dict as en } from "./en"
+
+type Keys = keyof typeof en
+
+/**
+ * Every string is this locale's own wording. A key with no translation stays
+ * out of the file rather than falling back to English.
+ */
 export const dict = {
   "ui.sessionReview.title": "Sessionsændringer",
   "ui.sessionReview.title.git": "Git-ændringer",
@@ -12,7 +20,6 @@ export const dict = {
   "ui.sessionReview.selection.lines": "linjer {{start}}-{{end}}",
   "ui.sessionReview.expandAll": "Udvid alle",
   "ui.sessionReview.collapseAll": "Skjul alle",
-
   "ui.sessionReview.change.added": "Tilføjet",
   "ui.sessionReview.change.removed": "Fjernet",
   "ui.sessionReview.change.modified": "Ændret",
@@ -62,7 +69,6 @@ export const dict = {
   "ui.sessionTurn.diffs.showAll": "Vis alle",
   "ui.sessionTurn.diffs.showLess": "Vis færre",
   "ui.sessionTurn.diffs.more": "+{{count}} mere",
-
   "ui.sessionTurn.retry.retrying": "prøver igen",
   "ui.sessionTurn.retry.inSeconds": "om {{seconds}}s",
   "ui.sessionTurn.retry.attempt": "forsøg #{{attempt}}",
@@ -70,16 +76,12 @@ export const dict = {
   "ui.sessionTurn.retry.geminiHot": "gemini er meget overbelastet lige nu",
   "ui.sessionTurn.error.freeUsageExceeded": "Gratis forbrug overskredet",
   "ui.sessionTurn.error.addCredits": "Tilføj kreditter",
-
   "dialog.usageExceeded.freeTier.title": "Gratis grænse nået",
-  "dialog.usageExceeded.freeTier.description":
-    "Abonnér på ZYRAXON Go for pålidelig adgang til de bedste open source-modeller, fra $5/måned.",
+  "dialog.usageExceeded.freeTier.description": "Abonnér på ZYRAXON Go for pålidelig adgang til de bedste open source-modeller, fra $5/måned.",
   "dialog.usageExceeded.freeTier.actionLabel": "Abonnér",
   "dialog.usageExceeded.accountRateLimit.title": "Go-grænse nået",
-  "dialog.usageExceeded.accountRateLimit.description":
-    "Forbrugsgrænse nået. For at fortsætte med at bruge denne model nu, aktivér forbrug fra din tilgængelige saldo",
+  "dialog.usageExceeded.accountRateLimit.description": "Forbrugsgrænse nået. For at fortsætte med at bruge denne model nu, aktivér forbrug fra din tilgængelige saldo",
   "dialog.usageExceeded.accountRateLimit.actionLabel": "Åbn indstillinger",
-
   "ui.sessionTurn.status.delegating": "Delegerer arbejde",
   "ui.sessionTurn.status.planning": "Planlægger næste trin",
   "ui.sessionTurn.status.gatheringContext": "Udforsker",
@@ -92,7 +94,6 @@ export const dict = {
   "ui.sessionTurn.status.thinkingWithTopic": "Tænker - {{topic}}",
   "ui.sessionTurn.status.gatheringThoughts": "Samler tanker",
   "ui.sessionTurn.status.consideringNextSteps": "Overvejer næste skridt",
-
   "ui.messagePart.questions.dismissed": "Spørgsmål afvist",
   "ui.messagePart.compaction": "Session komprimeret",
   "ui.messagePart.context.read.one": "{{count}} læsning",
@@ -106,22 +107,17 @@ export const dict = {
   "ui.messagePart.title.write": "Skriv",
   "ui.messagePart.option.typeOwnAnswer": "Skriv dit eget svar",
   "ui.messagePart.review.title": "Gennemgå dine svar",
-
   "ui.list.loading": "Indlæser",
   "ui.list.empty": "Ingen resultater",
   "ui.list.clearFilter": "Ryd filter",
   "ui.list.emptyWithFilter.prefix": "Ingen resultater for",
   "ui.list.emptyWithFilter.suffix": "",
-
   "ui.messageNav.newMessage": "Ny besked",
-
   "ui.textField.copyToClipboard": "Kopier til udklipsholder",
   "ui.textField.copyLink": "Kopier link",
   "ui.textField.copied": "Kopieret",
-
   "ui.imagePreview.alt": "Billedforhåndsvisning",
   "ui.scrollView.ariaLabel": "rulbart indhold",
-
   "ui.tool.read": "Læs",
   "ui.tool.loaded": "Indlæst",
   "ui.tool.list": "Liste",
@@ -136,12 +132,10 @@ export const dict = {
   "ui.tool.questions": "Spørgsmål",
   "ui.tool.agent": "{{type}} Agent",
   "ui.tool.agent.default": "Agent",
-
   "ui.common.file.one": "fil",
   "ui.common.file.other": "filer",
   "ui.common.question.one": "spørgsmål",
   "ui.common.question.other": "spørgsmål",
-
   "ui.common.add": "Tilføj",
   "ui.common.back": "Tilbage",
   "ui.common.cancel": "Annuller",
@@ -151,11 +145,9 @@ export const dict = {
   "ui.common.next": "Næste",
   "ui.common.submit": "Indsend",
   "ui.common.showMore": "Vis mere",
-
   "ui.permission.deny": "Afvis",
   "ui.permission.allowAlways": "Tillad altid",
   "ui.permission.allowOnce": "Tillad én gang",
-
   "ui.message.expand": "Udvid besked",
   "ui.message.collapse": "Skjul besked",
   "ui.message.copy": "Kopier",
@@ -167,19 +159,16 @@ export const dict = {
   "ui.message.interrupted": "Afbrudt",
   "ui.message.queued": "I kø",
   "ui.message.attachment.alt": "vedhæftning",
-
   "ui.patch.action.deleted": "Slettet",
   "ui.patch.action.created": "Oprettet",
   "ui.patch.action.moved": "Flyttet",
   "ui.patch.action.patched": "Patchet",
-
   "ui.question.subtitle.answered": "{{count}} besvaret",
   "ui.question.answer.none": "(intet svar)",
   "ui.question.review.notAnswered": "(ikke besvaret)",
   "ui.question.multiHint": "Vælg alle der gælder",
   "ui.question.singleHint": "Vælg ét svar",
   "ui.question.custom.placeholder": "Skriv dit svar...",
-
   "ui.fileSearch.placeholder": "Find",
   "ui.fileSearch.previousMatch": "Forrige match",
   "ui.fileSearch.nextMatch": "Næste match",
@@ -191,4 +180,9 @@ export const dict = {
   "ui.toolErrorCard.copyError": "Kopier fejl",
   "ui.message.duration.seconds": "{{count}}s",
   "ui.message.duration.minutesSeconds": "{{minutes}}m {{seconds}}s",
-}
+  "ui.tool.read.video": "Analyzing video",
+  "ui.tool.read.audio": "Analyzing audio",
+  "ui.tool.read.media": "Analyzing media",
+} satisfies Partial<Record<Keys, string>>
+
+export type DictUI = keyof typeof dict

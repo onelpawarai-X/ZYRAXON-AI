@@ -2,7 +2,7 @@
 
 import { EOL } from "os"
 import { Effect } from "effect"
-import { ModelsDev } from "@zyraxon-ai/core/models-dev"
+import { ProviderCatalog } from "@zyraxon-ai/core/provider-catalog"
 import { effectCmd, fail } from "../effect-cmd"
 import { UI } from "../ui"
 import { ProviderV2 } from "@zyraxon-ai/core/provider"
@@ -22,13 +22,13 @@ export const ModelsCommand = effectCmd({
         type: "boolean",
       })
       .option("refresh", {
-        describe: "refresh the models cache from models.dev",
+        describe: "refresh the model cache from the ZYRAXON provider catalogue",
         type: "boolean",
       }),
   handler: Effect.fn("Cli.models")(function* (args) {
     const { Provider } = yield* Effect.promise(() => import("@/provider/provider"))
     if (args.refresh) {
-      yield* ModelsDev.Service.use((s) => s.refresh(true))
+      yield* ProviderCatalog.Service.use((s) => s.refresh(true))
       UI.println(UI.Style.TEXT_SUCCESS_BOLD + "Models cache refreshed" + UI.Style.TEXT_NORMAL)
     }
 

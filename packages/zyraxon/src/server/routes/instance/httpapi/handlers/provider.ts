@@ -2,7 +2,7 @@
 
 import { ProviderAuth } from "@/provider/auth"
 import { Config } from "@/config/config"
-import { ModelsDev } from "@zyraxon-ai/core/models-dev"
+import { ProviderCatalog } from "@zyraxon-ai/core/provider-catalog"
 import { Provider } from "@/provider/provider"
 import { Auth } from "@/auth"
 
@@ -42,7 +42,7 @@ export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider"
 
     const list = Effect.fn("ProviderHttpApi.list")(function* () {
       const config = yield* cfg.get()
-      const all = yield* ModelsDev.Service.use((s) => s.get())
+      const all = yield* ProviderCatalog.Service.use((s) => s.get())
       const disabled = new Set(config.disabled_providers ?? [])
       const enabled = config.enabled_providers ? new Set(config.enabled_providers) : undefined
       const filtered: Record<string, (typeof all)[string]> = {}
@@ -52,7 +52,7 @@ export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider"
       const connected = yield* provider.list()
       const credentials = yield* Auth.Service.use((s) => s.all()).pipe(Effect.orDie)
       const providers = Object.assign(
-        mapValues(filtered, (item) => Provider.fromModelsDevProvider(item)),
+        mapValues(filtered, (item) => Provider.fromCatalogProvider(item)),
         connected,
       )
       return {

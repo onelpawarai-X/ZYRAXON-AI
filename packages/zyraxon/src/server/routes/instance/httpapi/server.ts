@@ -57,7 +57,7 @@ import { AppNodeBuilderV1 } from "@/effect/app-node-builder-v1"
 import { LayerNode } from "@zyraxon-ai/core/effect/layer-node"
 import { httpClient } from "@zyraxon-ai/core/effect/app-node-platform"
 import { EventV2 } from "@zyraxon-ai/core/event"
-import { ModelsDev } from "@zyraxon-ai/core/models-dev"
+import { ProviderCatalog } from "@zyraxon-ai/core/provider-catalog"
 import { Npm } from "@zyraxon-ai/core/npm"
 import { PermissionSaved } from "@zyraxon-ai/core/permission/saved"
 import { ProjectV2 } from "@zyraxon-ai/core/project"
@@ -225,7 +225,7 @@ const app = LayerNode.group([
   Storage.node,
   Snapshot.node,
   Plugin.node,
-  ModelsDev.node,
+  ProviderCatalog.node,
   Provider.node,
   ProviderAuth.node,
   Agent.node,
@@ -310,7 +310,7 @@ export function createRoutes(
     Layer.provide(AppNodeBuilderV1.build(app)),
     // Must stay last: layers provided later in this pipe build beneath earlier ones,
     // so Observability must come after every service graph. Otherwise eagerly forked
-    // fibers (e.g. the ModelsDev background refresh) capture Effect's default stdout
+    // fibers (e.g. the ProviderCatalog background refresh) capture Effect's default stdout
     // logger and corrupt the TUI (#34730).
     Layer.provideMerge(Observability.layer),
   )

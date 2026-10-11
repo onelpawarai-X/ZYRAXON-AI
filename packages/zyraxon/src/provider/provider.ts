@@ -12,7 +12,7 @@ import { Hash } from "@opencode-ai/core/util/hash"
 import { Plugin } from "../plugin"
 import { serviceUse } from "@opencode-ai/core/effect/service-use"
 import { type LanguageModelV3 } from "@ai-sdk/provider"
-import { ModelsDev } from "@opencode-ai/core/models-dev"
+import { ProviderCatalog } from "@zyraxon-ai/core/provider-catalog"
 import { Auth } from "../auth"
 import { Env } from "../env"
 import { InstallationVersion, freeTierUserAgent } from "@opencode-ai/core/installation/version"
@@ -1225,7 +1225,7 @@ export class Service extends Context.Service<Service, Interface>()("@opencode/Pr
 
 export const use = serviceUse(Service)
 
-function cost(c: ModelsDev.Model["cost"]): Model["cost"] {
+function cost(c: ProviderCatalog.Model["cost"]): Model["cost"] {
   const result: Model["cost"] = {
     input: c?.input ?? 0,
     output: c?.output ?? 0,
@@ -1269,7 +1269,7 @@ function cloudflareGatewayNpm(providerID: string, modelID: string) {
   return undefined
 }
 
-function fromModelsDevModel(provider: ModelsDev.Provider, model: ModelsDev.Model): Model {
+function fromCatalogModel(provider: ProviderCatalog.Provider, model: ProviderCatalog.Model): Model {
   const base: Model = {
     id: ModelV2.ID.make(model.id),
     providerID: ProviderV2.ID.make(provider.id),
@@ -1326,13 +1326,13 @@ function fromModelsDevModel(provider: ModelsDev.Provider, model: ModelsDev.Model
   }
 }
 
-export function fromModelsDevProvider(provider: ModelsDev.Provider): Info {
+export function fromCatalogProvider(provider: ProviderCatalog.Provider): Info {
   const models: Record<string, Model> = {}
   for (const [key, model] of Object.entries(provider.models)) {
-    models[key] = fromModelsDevModel(provider, model)
+    models[key] = fromCatalogModel(provider, model)
     for (const [mode, opts] of Object.entries(model.experimental?.modes ?? {})) {
       const id = `${model.id}-${mode}`
-      const base = fromModelsDevModel(provider, model)
+      const base = fromCatalogModel(provider, model)
       models[id] = {
         ...base,
         id: ModelV2.ID.make(id),
@@ -1401,15 +1401,15 @@ const layer = Layer.effect(
     const auth = yield* Auth.Service
     const env = yield* Env.Service
     const plugin = yield* Plugin.Service
-    const modelsDevSvc = yield* ModelsDev.Service
+    const providerCatalog = yield* ProviderCatalog.Service
     const runtimeFlags = yield* RuntimeFlags.Service
 
     const state = yield* InstanceState.make<State>(() =>
       Effect.gen(function* () {
         const bridge = yield* EffectBridge.make()
         const cfg = yield* config.get()
-        const modelsDev = yield* modelsDevSvc.get()
-        const catalog = mapValues(modelsDev, fromModelsDevProvider)
+const entries = yield* providerCatalog.get()
+  const catalog = mapValues(entries, fromCatalogProvider)
         const database = mapValues(catalog, toPublicInfo)
 
         const providers: Record<ProviderV2.ID, Info> = {} as Record<ProviderV2.ID, Info>
@@ -1504,10 +1504,10 @@ const layer = Layer.effect(
               model.provider?.npm ??
               provider.npm ??
               existingModel?.api.npm ??
-              // Config-defined gateway models bypass fromModelsDevModel, so resolve the
+              // Config-defined gateway models bypass fromCatalogModel, so resolve the
               // native passthrough npm here before falling back to the catalog default.
               cloudflareGatewayNpm(providerID, apiID) ??
-              modelsDev[providerID]?.npm ??
+              entries[providerID]?.npm ??
               "@ai-sdk/openai-compatible"
             const name = iife(() => {
               if (model.name) return model.name
@@ -1519,7 +1519,7 @@ const layer = Layer.effect(
               api: {
                 id: apiID,
                 npm: apiNpm,
-                url: model.provider?.api ?? provider?.api ?? existingModel?.api.url ?? modelsDev[providerID]?.api ?? "",
+                url: model.provider?.api ?? provider?.api ?? existingModel?.api.url ?? entries[providerID]?.api ?? "",
               },
               status: model.status ?? existingModel?.status ?? "active",
               name,
@@ -2073,7 +2073,7 @@ export function parseModel(model: string) {
 export const node = LayerNode.make({
   service: Service,
   layer: layer,
-  deps: [FSUtil.node, Config.node, Auth.node, Env.node, Plugin.node, ModelsDev.node, RuntimeFlags.node],
+  deps: [FSUtil.node, Config.node, Auth.node, Env.node, Plugin.node, ProviderCatalog.node, RuntimeFlags.node],
 })
 
 export * as Provider from "./provider"

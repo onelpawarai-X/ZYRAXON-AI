@@ -1,5 +1,13 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
+import { dict as en } from "./en"
+
+type Keys = keyof typeof en
+
+/**
+ * Every string is this locale's own wording. A key with no translation stays
+ * out of the file rather than falling back to English.
+ */
 export const dict = {
   "ui.sessionReview.title": "Modifications de la session",
   "ui.sessionReview.title.git": "Modifications Git",
@@ -22,7 +30,7 @@ export const dict = {
   "ui.sessionReview.largeDiff.renderAnyway": "Afficher quand même",
   "ui.sessionReviewV2.expandMode": "Développer ou réduire le diff",
   "ui.sessionReviewV2.filterFiles": "Filtrer les fichiers",
-  "ui.sessionReviewV2.toggleSidebar": "Afficher ou masquer l'arborescence des fichiers",
+  "ui.sessionReviewV2.toggleSidebar": 'Afficher ou masquer l\'arborescence des fichiers',
   "ui.sessionReviewV2.showAllLines": "Afficher toutes les lignes",
   "ui.sessionReviewV2.hideNonDiffLines": "Masquer les lignes hors diff",
   "ui.sessionReviewV2.unifiedDiff": "Diff unifié",
@@ -34,7 +42,7 @@ export const dict = {
   "ui.sessionReviewV2.empty.noGit.description": "Suivre, examiner et annuler les modifications dans ce projet",
   "ui.sessionReviewV2.empty.noGit.action": "Créer un dépôt Git",
   "ui.sessionReviewV2.empty.noGit.actionLoading": "Création du dépôt Git...",
-  "ui.sessionReviewV2.empty.changes.title": "Aucune modification de fichier pour l'instant",
+  "ui.sessionReviewV2.empty.changes.title": 'Aucune modification de fichier pour l\'instant',
   "ui.sessionReviewV2.empty.changes.description": "Les modifications du projet apparaîtront ici",
   "ui.fileMedia.kind.image": "image",
   "ui.fileMedia.kind.audio": "audio",
@@ -43,9 +51,8 @@ export const dict = {
   "ui.fileMedia.state.error": "Erreur avec le fichier {{kind}}",
   "ui.fileMedia.state.unavailable": "Fichier {{kind}} indisponible",
   "ui.fileMedia.binary.title": "Fichier binaire",
-  "ui.fileMedia.binary.description.path": "Impossible d'afficher {{path}} car il s'agit d'un fichier binaire.",
-  "ui.fileMedia.binary.description.default": "Impossible d'afficher ce fichier car il s'agit d'un fichier binaire.",
-
+  "ui.fileMedia.binary.description.path": 'Impossible d\'afficher {{path}} car il s\'agit d\'un fichier binaire.',
+  "ui.fileMedia.binary.description.default": 'Impossible d\'afficher ce fichier car il s\'agit d\'un fichier binaire.',
   "ui.lineComment.label.prefix": "Commenter sur ",
   "ui.lineComment.label.suffix": "",
   "ui.lineComment.editorLabel.prefix": "Commentaire sur ",
@@ -53,7 +60,6 @@ export const dict = {
   "ui.lineComment.placeholder": "Ajouter un commentaire",
   "ui.lineComment.submit": "Commenter",
   "ui.lineComment.cancel": "Annuler",
-
   "ui.sessionTurn.steps.show": "Afficher les étapes",
   "ui.sessionTurn.steps.hide": "Masquer les étapes",
   "ui.sessionTurn.summary.response": "Réponse",
@@ -63,24 +69,19 @@ export const dict = {
   "ui.sessionTurn.diffs.showAll": "Tout afficher",
   "ui.sessionTurn.diffs.showLess": "Afficher moins",
   "ui.sessionTurn.diffs.more": "+{{count}} de plus",
-
   "ui.sessionTurn.retry.retrying": "nouvelle tentative",
   "ui.sessionTurn.retry.inSeconds": "dans {{seconds}}s",
   "ui.sessionTurn.retry.attempt": "tentative n°{{attempt}}",
   "ui.sessionTurn.retry.attemptLine": "{{line}} - tentative n°{{attempt}}",
   "ui.sessionTurn.retry.geminiHot": "gemini est en surchauffe",
-  "ui.sessionTurn.error.freeUsageExceeded": "Limite d'utilisation gratuite dépassée",
+  "ui.sessionTurn.error.freeUsageExceeded": 'Limite d\'utilisation gratuite dépassée',
   "ui.sessionTurn.error.addCredits": "Ajouter des crédits",
-
   "dialog.usageExceeded.freeTier.title": "Limite gratuite atteinte",
-  "dialog.usageExceeded.freeTier.description":
-    "Abonnez-vous à ZYRAXON Go pour un accès fiable aux meilleurs modèles open source, à partir de $5/mois.",
-  "dialog.usageExceeded.freeTier.actionLabel": "S'abonner",
+  "dialog.usageExceeded.freeTier.description": "Abonnez-vous à ZYRAXON Go pour un accès fiable aux meilleurs modèles open source, à partir de $5/mois.",
+  "dialog.usageExceeded.freeTier.actionLabel": 'S\'abonner',
   "dialog.usageExceeded.accountRateLimit.title": "Limite Go atteinte",
-  "dialog.usageExceeded.accountRateLimit.description":
-    "Limite d'utilisation atteinte. Pour continuer à utiliser ce modèle maintenant, activez l'utilisation depuis votre solde disponible",
+  "dialog.usageExceeded.accountRateLimit.description": 'Limite d\'utilisation atteinte. Pour continuer à utiliser ce modèle maintenant, activez l\'utilisation depuis votre solde disponible',
   "dialog.usageExceeded.accountRateLimit.actionLabel": "Ouvrir les paramètres",
-
   "ui.sessionTurn.status.delegating": "Délégation du travail",
   "ui.sessionTurn.status.planning": "Planification des prochaines étapes",
   "ui.sessionTurn.status.gatheringContext": "Exploration",
@@ -93,7 +94,6 @@ export const dict = {
   "ui.sessionTurn.status.thinkingWithTopic": "Réflexion - {{topic}}",
   "ui.sessionTurn.status.gatheringThoughts": "Rassemblement des idées",
   "ui.sessionTurn.status.consideringNextSteps": "Examen des prochaines étapes",
-
   "ui.messagePart.questions.dismissed": "Questions ignorées",
   "ui.messagePart.compaction": "Session compactée",
   "ui.messagePart.context.read.one": "{{count}} lecture",
@@ -107,22 +107,17 @@ export const dict = {
   "ui.messagePart.title.write": "Écrire",
   "ui.messagePart.option.typeOwnAnswer": "Tapez votre propre réponse",
   "ui.messagePart.review.title": "Passez en revue vos réponses",
-
   "ui.list.loading": "Chargement",
   "ui.list.empty": "Aucun résultat",
   "ui.list.clearFilter": "Effacer le filtre",
   "ui.list.emptyWithFilter.prefix": "Aucun résultat pour",
   "ui.list.emptyWithFilter.suffix": "",
-
   "ui.messageNav.newMessage": "Nouveau message",
-
   "ui.textField.copyToClipboard": "Copier dans le presse-papiers",
   "ui.textField.copyLink": "Copier le lien",
   "ui.textField.copied": "Copié",
-
-  "ui.imagePreview.alt": "Aperçu de l'image",
+  "ui.imagePreview.alt": 'Aperçu de l\'image',
   "ui.scrollView.ariaLabel": "contenu défilable",
-
   "ui.tool.read": "Lire",
   "ui.tool.loaded": "Chargé",
   "ui.tool.list": "Lister",
@@ -137,12 +132,10 @@ export const dict = {
   "ui.tool.questions": "Questions",
   "ui.tool.agent": "Agent {{type}}",
   "ui.tool.agent.default": "Agent",
-
   "ui.common.file.one": "fichier",
   "ui.common.file.other": "fichiers",
   "ui.common.question.one": "question",
   "ui.common.question.other": "questions",
-
   "ui.common.add": "Ajouter",
   "ui.common.back": "Retour",
   "ui.common.cancel": "Annuler",
@@ -152,11 +145,9 @@ export const dict = {
   "ui.common.next": "Suivant",
   "ui.common.submit": "Soumettre",
   "ui.common.showMore": "Afficher plus",
-
   "ui.permission.deny": "Refuser",
   "ui.permission.allowAlways": "Toujours autoriser",
   "ui.permission.allowOnce": "Autoriser une fois",
-
   "ui.message.expand": "Développer le message",
   "ui.message.collapse": "Réduire le message",
   "ui.message.copy": "Copier",
@@ -168,19 +159,16 @@ export const dict = {
   "ui.message.interrupted": "Interrompu",
   "ui.message.queued": "En file",
   "ui.message.attachment.alt": "pièce jointe",
-
   "ui.patch.action.deleted": "Supprimé",
   "ui.patch.action.created": "Créé",
   "ui.patch.action.moved": "Déplacé",
   "ui.patch.action.patched": "Corrigé",
-
   "ui.question.subtitle.answered": "{{count}} répondu(s)",
   "ui.question.answer.none": "(pas de réponse)",
   "ui.question.review.notAnswered": "(non répondu)",
-  "ui.question.multiHint": "Sélectionnez tout ce qui s'applique",
+  "ui.question.multiHint": 'Sélectionnez tout ce qui s\'applique',
   "ui.question.singleHint": "Sélectionnez une réponse",
   "ui.question.custom.placeholder": "Tapez votre réponse...",
-
   "ui.fileSearch.placeholder": "Rechercher",
   "ui.fileSearch.previousMatch": "Précédent",
   "ui.fileSearch.nextMatch": "Suivant",
@@ -189,7 +177,12 @@ export const dict = {
   "ui.tool.skill": "Compétence",
   "ui.basicTool.called": "Appelé `{{tool}}`",
   "ui.toolErrorCard.failed": "Échoué",
-  "ui.toolErrorCard.copyError": "Copier l'erreur",
+  "ui.toolErrorCard.copyError": 'Copier l\'erreur',
   "ui.message.duration.seconds": "{{count}}s",
   "ui.message.duration.minutesSeconds": "{{minutes}}m {{seconds}}s",
-}
+  "ui.tool.read.video": "Analyse vidéo",
+  "ui.tool.read.audio": 'Analyse de l\'audio',
+  "ui.tool.read.media": "Analyse des médias",
+} satisfies Partial<Record<Keys, string>>
+
+export type DictUI = keyof typeof dict

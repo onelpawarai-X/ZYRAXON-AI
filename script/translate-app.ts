@@ -5,53 +5,26 @@
 import path from "path"
 import { parseArgs } from "util"
 import { pathToFileURL } from "url"
+import { LANGUAGES } from "../packages/app/src/i18n/languages"
 
-const locales = [
-  "ar",
-  "br",
-  "bs",
-  "da",
-  "de",
-  "es",
-  "fr",
-  "ja",
-  "ko",
-  "no",
-  "pl",
-  "ru",
-  "uk",
-  "th",
-  "tr",
-  "zh",
-  "zht",
-] as const
-type Locale = (typeof locales)[number]
+/**
+ * Every language ZYRAXON can render in, taken from the same registry the app
+ * itself reads. Hard-coding a locale list here meant a language added to the app
+ * was silently never translated, so the two are now the same list.
+ */
+const locales = LANGUAGES.map((entry) => entry.code) as Locale[]
+type Locale = string
 
-const languages = {
-  ar: "Arabic",
-  br: "Brazilian Portuguese",
-  bs: "Bosnian",
-  da: "Danish",
-  de: "German",
-  es: "Spanish",
-  fr: "French",
-  ja: "Japanese",
-  ko: "Korean",
-  no: "Norwegian Bokmal",
-  pl: "Polish",
-  ru: "Russian",
-  uk: "Ukrainian",
-  th: "Thai",
-  tr: "Turkish",
-  zh: "Simplified Chinese",
-  zht: "Traditional Chinese",
-} as const satisfies Record<Locale, string>
+export const languages = Object.fromEntries(
+  LANGUAGES.map((entry) => [entry.code, entry.english]),
+) as Record<Locale, string>
 
-type Dictionary = Record<string, string>
-type Drift = ReturnType<typeof findDrift>
-type Domain = { name: string; source: string; target: string; drift: Drift }
+export type Dictionary = Record<string, string>
+export type Drift = ReturnType<typeof findDrift>
+export type Domain = { name: string; source: string; target: string; drift: Drift }
 
-const desktopLocales = new Set<Locale>(locales.filter((locale) => locale !== "th" && locale !== "tr"))
+/** Locales the desktop shell also ships a dictionary for. */
+const desktopLocales = new Set<Locale>(locales)
 const root = path.resolve(import.meta.dir, "..")
 
 export function parseTranslationArgs(args: string[]) {

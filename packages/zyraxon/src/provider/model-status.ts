@@ -2,7 +2,7 @@
 
 import { Schema } from "effect"
 
-export { CatalogModelStatus } from "@opencode-ai/core/models-dev"
+export { CatalogModelStatus } from "@zyraxon-ai/core/provider-catalog"
 
 export const ModelStatus = Schema.Literals(["alpha", "beta", "deprecated", "active"])
 export type ModelStatus = typeof ModelStatus.Type

@@ -3,7 +3,7 @@
 import path from "path"
 import { Context, Duration, Effect, Layer, Option, Schedule, Schema } from "effect"
 import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/unstable/http"
-import { ModelsDev } from "@zyraxon-ai/schema/models-dev"
+import { ProviderCatalog } from "@zyraxon-ai/schema/provider-catalog"
 import { Global } from "./global"
 import { Flag } from "./flag/flag"
 import { Flock } from "./util/flock"
@@ -133,7 +133,7 @@ export const Provider = Schema.Struct({
 
 export type Provider = Schema.Schema.Type<typeof Provider>
 
-export const Event = ModelsDev.Event
+export const Event = ProviderCatalog.Event
 
 declare const ZYRAXON_MODELS_DEV: Record<string, Provider> | undefined
 
@@ -142,7 +142,7 @@ export interface Interface {
   readonly refresh: (force?: boolean) => Effect.Effect<void>
 }
 
-export class Service extends Context.Service<Service, Interface>()("@zyraxon/ModelsDev") {}
+export class Service extends Context.Service<Service, Interface>()("@zyraxon/ProviderCatalog") {}
 
 const layer = Layer.effect(
   Service,
@@ -159,13 +159,21 @@ const layer = Layer.effect(
       ),
     )
 
-    const source = Flag.ZYRAXON_MODELS_URL || "https://models.opencode.ai"
+    /**
+ * The catalog source. ZYRAXON reads model definitions from its own provider
+ * service rather than any third-party list. Point `ZYRAXON_MODELS_URL` at a
+ * different source and that one is cached under its own hash, so switching back
+ * and forth never serves the wrong catalogue.
+ */
+const CATALOG_URL = "https://zyraxonal-provider.lovable.app"
+
+    const source = Flag.ZYRAXON_MODELS_URL || CATALOG_URL
     const filepath = path.join(
       Global.Path.cache,
-      source === "https://models.opencode.ai" ? "models.json" : `models-${Hash.fast(source)}.json`,
+      source === CATALOG_URL ? "models.json" : `models-${Hash.fast(source)}.json`,
     )
     const ttl = Duration.minutes(5)
-    const lockKey = `models-dev:${filepath}`
+    const lockKey = `provider-catalog:${filepath}`
 
     const fresh = Effect.fnUntraced(function* () {
       const stat = yield* fs.stat(filepath).pipe(Effect.catch(() => Effect.succeed(undefined)))
@@ -174,7 +182,7 @@ const layer = Layer.effect(
       return Date.now() - mtime < Duration.toMillis(ttl)
     })
 
-    const fetchApi = Effect.fn("ModelsDev.fetchApi")(function* () {
+    const fetchApi = Effect.fn("ProviderCatalog.fetchApi")(function* () {
       return yield* HttpClientRequest.get(`${source}/api.json`).pipe(
         HttpClientRequest.setHeader("User-Agent", USER_AGENT),
         http.execute,
@@ -201,7 +209,7 @@ const layer = Layer.effect(
       typeof ZYRAXON_MODELS_DEV === "undefined" ? undefined : ZYRAXON_MODELS_DEV,
     )
 
-    const fetchAndWrite = Effect.fn("ModelsDev.fetchAndWrite")(function* () {
+    const fetchAndWrite = Effect.fn("ProviderCatalog.fetchAndWrite")(function* () {
       const text = yield* fetchApi()
       const tempfile = `${filepath}.${process.pid}.${Date.now()}.tmp`
       yield* fs.writeWithDirs(tempfile, text).pipe(
@@ -230,13 +238,13 @@ const layer = Layer.effect(
       // in the background, writes the cache file, and invalidates the memoized
       // placeholder so a later get() re-populates from disk without the network.
       return {}
-    }).pipe(Effect.withSpan("ModelsDev.populate"), Effect.orDie)
+    }).pipe(Effect.withSpan("ProviderCatalog.populate"), Effect.orDie)
 
     const [cachedGet, invalidate] = yield* Effect.cachedInvalidateWithTTL(populate, Duration.infinity)
 
     const get = (): Effect.Effect<Record<string, Provider>> => cachedGet
 
-    const refresh = Effect.fn("ModelsDev.refresh")(function* (force = false) {
+    const refresh = Effect.fn("ProviderCatalog.refresh")(function* (force = false) {
       if (!force && (yield* fresh())) return
       yield* Effect.scoped(
         Effect.gen(function* () {
@@ -249,7 +257,7 @@ const layer = Layer.effect(
           yield* events.publish(Event.Refreshed, {})
         }),
       ).pipe(
-        Effect.tapCause((cause) => Effect.logError("Failed to fetch models.dev", { cause: cause })),
+        Effect.tapCause((cause) => Effect.logError("Failed to refresh the provider catalogue", { cause: cause })),
         Effect.ignore,
       )
     })
@@ -265,4 +273,4 @@ const layer = Layer.effect(
 
 export const node = makeGlobalNode({ service: Service, layer: layer, deps: [FSUtil.node, EventV2.node, httpClient] })
 
-export * as ModelsDev from "./models-dev"
+export * as ProviderCatalog from "./provider-catalog"

@@ -19,7 +19,7 @@ import type {
   PullRequestEvent,
 } from "@octokit/webhooks-types"
 import { UI } from "../ui"
-import { ModelsDev } from "@zyraxon-ai/core/models-dev"
+import { ProviderCatalog } from "@zyraxon-ai/core/provider-catalog"
 import { InstanceRef } from "@/effect/instance-ref"
 import { InstanceStore } from "@/project/instance-store"
 import { SessionShare } from "@/share/session"
@@ -163,7 +163,6 @@ export const githubInstall = Effect.fn("Cli.github.install")(function* () {
     const root = Filesystem.resolve(process.env.PWD ?? process.cwd())
     return yield* store.load({ directory: root })
   }))
-  const modelsDev = yield* ModelsDev.Service
   const gitSvc = yield* Git.Service
   yield* Effect.promise(async () => {
     {
@@ -172,7 +171,7 @@ export const githubInstall = Effect.fn("Cli.github.install")(function* () {
       const app = await getAppInfo()
       await installGitHubApp()
 
-      const providers = await Effect.runPromise(modelsDev.get()).then((p) => {
+      const providers = await Effect.runPromise(ProviderCatalog.Service.use((service) => service.get())).then((p) => {
         // TODO: add guide for copilot, for now just hide it
         delete p["github-copilot"]
         return p

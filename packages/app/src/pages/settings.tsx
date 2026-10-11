@@ -15,6 +15,12 @@ import { SettingsAboutV2 } from "@/components/settings-v2/about"
 import { SettingsAppearanceV2 } from "@/components/settings-v2/appearance"
 import { SettingsMcpV2, SettingsPluginsV2 } from "@/components/settings-v2/extensions"
 import { SettingsNotificationsV2 } from "@/components/settings-v2/notifications"
+import { SettingsLanguageV2 } from "@/components/settings-v2/language"
+import { SettingsAgentsV2 } from "@/components/settings-v2/agents"
+import { SettingsExtensionsV2 } from "@/components/settings-v2/extensions-v2"
+import { SettingsStorageV2 } from "@/components/settings-v2/storage"
+import { SettingsSecurityV2 } from "@/components/settings-v2/security"
+import { SettingsAdvancedV2 } from "@/components/settings-v2/advanced"
 import { useLanguage } from "@/context/language"
 import { useLayout } from "@/context/layout"
 import { usePlatform } from "@/context/platform"
@@ -23,14 +29,18 @@ import "@/components/settings-v2/settings-v2.css"
 
 const SECTION_VALUES = [
   "general",
+  "language",
   "appearance",
   "notifications",
   "shortcuts",
+  "agents",
   "servers",
   "providers",
   "models",
-  "mcp",
-  "plugins",
+  "extensions",
+  "storage",
+  "security",
+  "advanced",
   "subscription",
   "about",
 ] as const
@@ -61,9 +71,11 @@ export const SettingsRoute: Component = () => {
       title: language.t("settings.section.desktop"),
       items: [
         { value: "general", label: language.t("settings.tab.general"), icon: "sliders" },
+        { value: "language", label: language.t("settings.tab.language"), icon: "languages" },
         { value: "appearance", label: language.t("settings.tab.appearance"), icon: "eye" },
         { value: "notifications", label: language.t("settings.tab.notifications"), icon: "bubble-5" },
         { value: "shortcuts", label: language.t("settings.tab.shortcuts"), icon: "keyboard" },
+        { value: "agents", label: language.t("settings.tab.agents"), icon: "comment" },
       ],
     },
     {
@@ -72,14 +84,21 @@ export const SettingsRoute: Component = () => {
         { value: "servers", label: language.t("settings.tab.servers"), icon: "server" },
         { value: "providers", label: language.t("settings.tab.providers"), icon: "providers" },
         { value: "models", label: language.t("settings.tab.models"), icon: "models" },
-        { value: "mcp", label: language.t("settings.tab.mcp"), icon: "mcp" },
-        { value: "plugins", label: language.t("settings.tab.plugins"), icon: "puzzle" },
+        { value: "extensions", label: language.t("settings.tab.extensions"), icon: "puzzle" },
+      ],
+    },
+    {
+      title: language.t("settings.section.system"),
+      items: [
+        { value: "storage", label: language.t("settings.tab.storage"), icon: "folder" },
+        { value: "security", label: language.t("settings.tab.security"), icon: "shield" },
+        { value: "advanced", label: language.t("settings.tab.advanced"), icon: "settings-gear" },
       ],
     },
     {
       title: language.t("settings.section.app"),
       items: [
-        { value: "subscription", label: language.t("settings.tab.subscription"), icon: "settings-gear" },
+        { value: "subscription", label: language.t("settings.tab.subscription"), icon: "star" },
         { value: "about", label: language.t("settings.tab.about"), icon: "help" },
       ],
     },
@@ -145,6 +164,9 @@ export const SettingsRoute: Component = () => {
         <TabsV2.Content value="general" class="settings-v2-panel">
           <SettingsGeneralV2 sessionID={search.session} />
         </TabsV2.Content>
+        <TabsV2.Content value="language" class="settings-v2-panel">
+          <SettingsLanguageV2 />
+        </TabsV2.Content>
         <TabsV2.Content value="appearance" class="settings-v2-panel">
           <SettingsAppearanceV2 />
         </TabsV2.Content>
@@ -153,6 +175,9 @@ export const SettingsRoute: Component = () => {
         </TabsV2.Content>
         <TabsV2.Content value="shortcuts" class="settings-v2-panel">
           <SettingsKeybinds v2 />
+        </TabsV2.Content>
+        <TabsV2.Content value="agents" class="settings-v2-panel">
+          <SettingsAgentsV2 />
         </TabsV2.Content>
         <TabsV2.Content value="servers" class="settings-v2-panel">
           <SettingsServersV2 />
@@ -163,11 +188,17 @@ export const SettingsRoute: Component = () => {
         <TabsV2.Content value="models" class="settings-v2-panel">
           <SettingsModelsV2 />
         </TabsV2.Content>
-        <TabsV2.Content value="mcp" class="settings-v2-panel">
-          <SettingsMcpV2 />
+        <TabsV2.Content value="extensions" class="settings-v2-panel">
+          <SettingsExtensionsV2 />
         </TabsV2.Content>
-        <TabsV2.Content value="plugins" class="settings-v2-panel">
-          <SettingsPluginsV2 />
+        <TabsV2.Content value="storage" class="settings-v2-panel">
+          <SettingsStorageV2 />
+        </TabsV2.Content>
+        <TabsV2.Content value="security" class="settings-v2-panel">
+          <SettingsSecurityV2 />
+        </TabsV2.Content>
+        <TabsV2.Content value="advanced" class="settings-v2-panel">
+          <SettingsAdvancedV2 />
         </TabsV2.Content>
         <TabsV2.Content value="subscription" class="settings-v2-panel">
           <SettingsSubscription />

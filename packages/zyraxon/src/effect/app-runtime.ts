@@ -14,7 +14,7 @@ import { Ripgrep } from "@zyraxon-ai/core/ripgrep"
 import { Storage } from "@/storage/storage"
 import { Snapshot } from "@/snapshot"
 import { Plugin } from "@/plugin"
-import { ModelsDev } from "@zyraxon-ai/core/models-dev"
+import { ProviderCatalog } from "@zyraxon-ai/core/provider-catalog"
 import { Provider } from "@/provider/provider"
 import { ProviderAuth } from "@/provider/auth"
 import { Agent } from "@/agent/agent"
@@ -69,7 +69,7 @@ export const AppLayer = AppNodeBuilderV1.build(
     Storage.node,
     Snapshot.node,
     Plugin.node,
-    ModelsDev.node,
+    ProviderCatalog.node,
     Provider.node,
     ProviderAuth.node,
     Agent.node,

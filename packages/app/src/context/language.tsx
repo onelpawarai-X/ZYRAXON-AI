@@ -7,105 +7,51 @@ import { createSimpleContext } from "@zyraxon-ai/ui/context"
 import { Persist, persisted } from "@/utils/persist"
 import { dict as en } from "@/i18n/en"
 import { dict as uiEn } from "@zyraxon-ai/ui/i18n/en"
+import { CODES, LANGUAGES, direction, findLanguage, nativeName } from "@/i18n/languages"
+import { CORE_MANIFEST } from "@/i18n/core/manifest"
 
-export type Locale =
-  | "en"
-  | "zh"
-  | "zht"
-  | "ko"
-  | "de"
-  | "es"
-  | "fr"
-  | "da"
-  | "ja"
-  | "pl"
-  | "ru"
-  | "uk"
-  | "ar"
-  | "no"
-  | "br"
-  | "th"
-  | "bs"
-  | "tr"
+/** Any BCP-47 tag listed in the language registry. */
+export type Locale = string
 
 type RawDictionary = typeof en & typeof uiEn
 type Dictionary = i18n.Flatten<RawDictionary>
 type Source = { dict: Record<string, string> }
 
+const DEFAULT_LOCALE: Locale = "en"
+
 function cookie(locale: Locale) {
   return `oc_locale=${encodeURIComponent(locale)}; Path=/; Max-Age=31536000; SameSite=Lax`
 }
 
-const LOCALES: readonly Locale[] = [
-  "en",
-  "zh",
-  "zht",
-  "ko",
-  "de",
-  "es",
-  "fr",
-  "da",
-  "ja",
-  "pl",
-  "ru",
-  "uk",
-  "bs",
-  "ar",
-  "no",
-  "br",
-  "th",
-  "tr",
-]
+const ENGLISH = i18n.flatten({ ...en, ...uiEn }) as Dictionary
+const dicts = new Map<Locale, Dictionary>([[DEFAULT_LOCALE, ENGLISH]])
 
-const INTL: Record<Locale, string> = {
-  en: "en",
-  zh: "zh-Hans",
-  zht: "zh-Hant",
-  ko: "ko",
-  de: "de",
-  es: "es",
-  fr: "fr",
-  da: "da",
-  ja: "ja",
-  pl: "pl",
-  ru: "ru",
-  uk: "uk",
-  ar: "ar",
-  no: "nb-NO",
-  br: "pt-BR",
-  th: "th",
-  bs: "bs",
-  tr: "tr",
-}
-
-const LABEL_KEY: Record<Locale, keyof Dictionary> = {
-  en: "language.en",
-  zh: "language.zh",
-  zht: "language.zht",
-  ko: "language.ko",
-  de: "language.de",
-  es: "language.es",
-  fr: "language.fr",
-  da: "language.da",
-  ja: "language.ja",
-  pl: "language.pl",
-  ru: "language.ru",
-  uk: "language.uk",
-  ar: "language.ar",
-  no: "language.no",
-  br: "language.br",
-  th: "language.th",
-  bs: "language.bs",
-  tr: "language.tr",
-}
-
-const base = i18n.flatten({ ...en, ...uiEn })
-const dicts = new Map<Locale, Dictionary>([["en", base]])
-
+/**
+ * A locale dictionary is only ever its own words. English is the source the
+ * translations are made from, never something a missing key quietly falls back
+ * to, so an untranslated string stays visible as empty rather than reading as
+ * an English interface.
+ */
 const merge = (app: Promise<Source>, ui: Promise<Source>) =>
-  Promise.all([app, ui]).then(([a, b]) => ({ ...base, ...i18n.flatten({ ...a.dict, ...b.dict }) }) as Dictionary)
+  Promise.all([app, ui]).then(([a, b]) => i18n.flatten({ ...a.dict, ...b.dict }) as Dictionary)
 
-const loaders: Record<Exclude<Locale, "en">, () => Promise<Dictionary>> = {
+/**
+ * Languages with a hand-maintained full dictionary. Everything else falls back
+ * to the generated core vocabulary so a missing key degrades to English rather
+ * than rendering blank.
+ */
+/**
+ * Codes this app used before the registry existed. `br` meant Brazilian
+ * Portuguese internally, but ISO 639-1 assigns it to Breton, so anyone who
+ * already saved it is moved to the tag they actually meant.
+ */
+const LEGACY: Record<string, Locale> = {
+  br: "pt-BR",
+  no: "nb",
+}
+
+const fullDicts: Partial<Record<Locale, () => Promise<Dictionary>>> = {
+  bn: () => merge(import("@/i18n/bn"), import("@zyraxon-ai/ui/i18n/bn")),
   zh: () => merge(import("@/i18n/zh"), import("@zyraxon-ai/ui/i18n/zh")),
   zht: () => merge(import("@/i18n/zht"), import("@zyraxon-ai/ui/i18n/zht")),
   ko: () => merge(import("@/i18n/ko"), import("@zyraxon-ai/ui/i18n/ko")),
@@ -118,68 +64,113 @@ const loaders: Record<Exclude<Locale, "en">, () => Promise<Dictionary>> = {
   ru: () => merge(import("@/i18n/ru"), import("@zyraxon-ai/ui/i18n/ru")),
   uk: () => merge(import("@/i18n/uk"), import("@zyraxon-ai/ui/i18n/uk")),
   ar: () => merge(import("@/i18n/ar"), import("@zyraxon-ai/ui/i18n/ar")),
-  no: () => merge(import("@/i18n/no"), import("@zyraxon-ai/ui/i18n/no")),
-  br: () => merge(import("@/i18n/br"), import("@zyraxon-ai/ui/i18n/br")),
+  nb: () => merge(import("@/i18n/no"), import("@zyraxon-ai/ui/i18n/no")),
+  "pt-BR": () => merge(import("@/i18n/br"), import("@zyraxon-ai/ui/i18n/br")),
   th: () => merge(import("@/i18n/th"), import("@zyraxon-ai/ui/i18n/th")),
   bs: () => merge(import("@/i18n/bs"), import("@zyraxon-ai/ui/i18n/bs")),
   tr: () => merge(import("@/i18n/tr"), import("@zyraxon-ai/ui/i18n/tr")),
 }
 
+/** Core vocabulary chunks, one module per pack so a locale pulls only what it needs. */
+const CORE = CORE_MANIFEST
+
+const SOURCE_KEYS = Object.keys(ENGLISH).length
+
+function ratio(locale: Locale) {
+  const current = dicts.get(locale)
+  if (!current) return 0
+  const defined = Object.keys(current).length
+  return SOURCE_KEYS === 0 ? 0 : Math.min(1, defined / SOURCE_KEYS)
+}
+
 function loadDict(locale: Locale) {
   const hit = dicts.get(locale)
   if (hit) return Promise.resolve(hit)
-  if (locale === "en") return Promise.resolve(base)
-  const load = loaders[locale]
-  return load().then((next: Dictionary) => {
-    dicts.set(locale, next)
-    return next
-  })
+  if (locale === DEFAULT_LOCALE) return Promise.resolve(ENGLISH)
+
+  const full = fullDicts[locale]
+  if (full) {
+    return full().then((next) => {
+      dicts.set(locale, next)
+      return next
+    })
+  }
+
+  const core = CORE[locale]
+  if (core) {
+    return core().then((pack) => {
+      const next = i18n.flatten(pack) as Dictionary
+      dicts.set(locale, next)
+      return next
+    })
+  }
+
+  const empty = {} as Dictionary
+  dicts.set(locale, empty)
+  return Promise.resolve(empty)
+}
+
+/**
+ * How much of the English source a locale actually defines, measured against the
+ * real key count rather than assumed from the file being registered. A partial
+ * dictionary registered as full would show a complete badge over a half-empty
+ * interface, so the badge has to be earned.
+ */
+export function localeCoverage(locale: Locale) {
+  if (locale === DEFAULT_LOCALE) return 1
+  if (locale in dicts) return ratio(locale)
+  if (locale in fullDicts) return 0.25
+  return locale in CORE ? 0.25 : 0
 }
 
 export function loadLocaleDict(locale: Locale) {
   return loadDict(locale).then(() => undefined)
 }
 
-const localeMatchers: Array<{ locale: Locale; match: (language: string) => boolean }> = [
-  { locale: "en", match: (language) => language.startsWith("en") },
-  { locale: "zht", match: (language) => language.startsWith("zh") && language.includes("hant") },
-  { locale: "zh", match: (language) => language.startsWith("zh") },
-  { locale: "ko", match: (language) => language.startsWith("ko") },
-  { locale: "de", match: (language) => language.startsWith("de") },
-  { locale: "es", match: (language) => language.startsWith("es") },
-  { locale: "fr", match: (language) => language.startsWith("fr") },
-  { locale: "da", match: (language) => language.startsWith("da") },
-  { locale: "ja", match: (language) => language.startsWith("ja") },
-  { locale: "pl", match: (language) => language.startsWith("pl") },
-  { locale: "ru", match: (language) => language.startsWith("ru") },
-  { locale: "uk", match: (language) => language.startsWith("uk") },
-  { locale: "ar", match: (language) => language.startsWith("ar") },
-  {
-    locale: "no",
-    match: (language) => language.startsWith("no") || language.startsWith("nb") || language.startsWith("nn"),
-  },
-  { locale: "br", match: (language) => language.startsWith("pt") },
-  { locale: "th", match: (language) => language.startsWith("th") },
-  { locale: "bs", match: (language) => language.startsWith("bs") },
-  { locale: "tr", match: (language) => language.startsWith("tr") },
-]
+const byLanguage = new Map<string, Locale[]>()
+for (const entry of LANGUAGES) {
+  const language = entry.code.split("-")[0]!.toLowerCase()
+  const list = byLanguage.get(language) ?? []
+  list.push(entry.code)
+  byLanguage.set(language, list)
+}
+
+function matchLanguage(value: string): Locale | undefined {
+  const normalized = value.toLowerCase().replace("_", "-")
+
+  const exact = findLanguage(normalized)
+  if (exact) return exact.code
+
+  const generic = byLanguage.get(normalized.split("-")[0]!)
+  if (!generic) return undefined
+
+  if (normalized.includes("-")) {
+    const partial = generic.find((code) => normalized.startsWith(code.toLowerCase()))
+    if (partial) return partial
+  }
+
+  // Prefer the unregionalised entry so pt-BR does not silently win over pt.
+  const base = generic.find((code) => !code.includes("-"))
+  return base ?? generic[0]
+}
 
 function detectLocale(): Locale {
-  if (typeof navigator !== "object") return "en"
+  if (typeof navigator !== "object") return DEFAULT_LOCALE
 
   const languages = navigator.languages?.length ? navigator.languages : [navigator.language]
   for (const language of languages) {
     if (!language) continue
-    const normalized = language.toLowerCase()
-    const match = localeMatchers.find((entry) => entry.match(normalized))
-    if (match) return match.locale
+    const match = matchLanguage(language)
+    if (match) return match
   }
 
-  return "en"
+  return DEFAULT_LOCALE
 }
 
 export function normalizeLocale(value: string): Locale {
-  return LOCALES.includes(value as Locale) ? (value as Locale) : "en"
+  const legacy = LEGACY[value]
+  if (legacy) return legacy
+  return CODES.includes(value) ? value : (matchLanguage(value) ?? DEFAULT_LOCALE)
 }
 
 function readStoredLocale() {
@@ -196,7 +187,7 @@ function readStoredLocale() {
 }
 
 const warm = readStoredLocale() ?? detectLocale()
-if (warm !== "en") void loadDict(warm)
+if (warm !== DEFAULT_LOCALE) void loadDict(warm)
 
 export const { use: useLanguage, provider: LanguageProvider } = createSimpleContext({
   name: "Language",
@@ -211,30 +202,52 @@ export const { use: useLanguage, provider: LanguageProvider } = createSimpleCont
     )
 
     const locale = createMemo<Locale>(() => normalizeLocale(store.locale))
-    const intl = createMemo(() => INTL[locale()])
+    const dir = createMemo(() => direction(locale()))
+    const intl = createMemo(() => findLanguage(locale())?.code ?? DEFAULT_LOCALE)
 
     const [dict] = createResource(locale, loadDict, {
-      initialValue: dicts.get(initial) ?? base,
+      initialValue: dicts.get(initial) ?? ({} as Dictionary),
     })
 
-    const t = i18n.translator(() => dict() ?? base, i18n.resolveTemplate) as (
-      key: keyof Dictionary,
-      params?: Record<string, string | number | boolean>,
-    ) => string
+/**
+ * Look a key up without ever handing back undefined.
+ *
+ * A missing translation is not allowed to become `undefined`: every screen in
+ * the app treats the result as a string, and code like `.split()` or `.trim()`
+ * runs on it directly. Returning undefined turned an untranslated label into a
+ * crash that took the whole renderer down with it — a blank Settings panel or an
+ * untranslated status bar is a nuisance, a blank Settings panel that cannot be
+ * opened at all is a bug. An empty string renders as empty and stays navigable,
+ * and the key name is written to the console so the gap is still findable.
+ */
+const translate = i18n.translator(() => dict() ?? ({} as Dictionary), i18n.resolveTemplate) as (
+  key: keyof Dictionary,
+  params?: Record<string, string | number | boolean>,
+) => string | undefined
 
-    const label = (value: Locale) => t(LABEL_KEY[value])
+const t = ((key: keyof Dictionary, params?: Record<string, string | number | boolean>) => {
+  const value = translate(key, params)
+  if (typeof value === "string") return value
+  if (typeof process !== "undefined" && process.env?.ZYRAXON_DEBUG_I18N) console.warn(`[i18n] missing ${String(key)}`)
+  return ""
+}) as (key: keyof Dictionary, params?: Record<string, string | number | boolean>) => string
+
+    const label = (value: Locale) => nativeName(value)
 
     createEffect(() => {
       if (typeof document !== "object") return
       document.documentElement.lang = locale()
+      document.documentElement.dir = dir()
       document.cookie = cookie(locale())
     })
 
     return {
       ready,
       locale,
+      dir,
       intl,
-      locales: LOCALES,
+      locales: CODES,
+      languages: LANGUAGES,
       label,
       t,
       setLocale(next: Locale) {

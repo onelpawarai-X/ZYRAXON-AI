@@ -112,6 +112,12 @@ import type {
   ProjectCopiesRemoveOutput,
   ProjectCopiesRefreshInput,
   ProjectCopiesRefreshOutput,
+  ServerStorageUsageInput,
+  ServerStorageUsageOutput,
+  ServerStorageCompactInput,
+  ServerStorageCompactOutput,
+  ServerStoragePurgeInput,
+  ServerStoragePurgeOutput,
 } from "./types"
 import { ClientError } from "./client-error"
 
@@ -983,6 +989,45 @@ export function make(options: ClientOptions) {
             successStatus: 204,
             declaredStatuses: [400, 401],
             empty: true,
+          },
+          requestOptions,
+        ),
+    },
+    "server.storage": {
+      usage: (input?: ServerStorageUsageInput, requestOptions?: RequestOptions) =>
+        request<ServerStorageUsageOutput>(
+          {
+            method: "GET",
+            path: `/api/storage`,
+            query: { location: input?.["location"] },
+            successStatus: 200,
+            declaredStatuses: [401, 400],
+            empty: false,
+          },
+          requestOptions,
+        ),
+      compact: (input?: ServerStorageCompactInput, requestOptions?: RequestOptions) =>
+        request<ServerStorageCompactOutput>(
+          {
+            method: "POST",
+            path: `/api/storage/compact`,
+            query: { location: input?.["location"] },
+            successStatus: 200,
+            declaredStatuses: [401, 400],
+            empty: false,
+          },
+          requestOptions,
+        ),
+      purge: (input?: ServerStoragePurgeInput, requestOptions?: RequestOptions) =>
+        request<ServerStoragePurgeOutput>(
+          {
+            method: "POST",
+            path: `/api/storage/purge`,
+            query: { location: input?.["location"] },
+            body: { sessionIDs: input?.["sessionIDs"], olderThan: input?.["olderThan"] },
+            successStatus: 200,
+            declaredStatuses: [400, 401],
+            empty: false,
           },
           requestOptions,
         ),

@@ -4,6 +4,10 @@ import { dict as en } from "./en"
 
 type Keys = keyof typeof en
 
+/**
+ * Every string is this locale's own wording. A key with no translation stays
+ * out of the file rather than falling back to English.
+ */
 export const dict = {
   "ui.sessionReview.title": "Oturum değişiklikleri",
   "ui.sessionReview.title.git": "Git değişiklikleri",
@@ -16,7 +20,6 @@ export const dict = {
   "ui.sessionReview.selection.lines": "satırlar {{start}}-{{end}}",
   "ui.sessionReview.expandAll": "Tümünü genişlet",
   "ui.sessionReview.collapseAll": "Tümünü daralt",
-
   "ui.sessionReview.change.added": "Eklendi",
   "ui.sessionReview.change.removed": "Kaldırıldı",
   "ui.sessionReview.change.modified": "Değiştirildi",
@@ -41,7 +44,6 @@ export const dict = {
   "ui.sessionReviewV2.empty.noGit.actionLoading": "Git deposu oluşturuluyor...",
   "ui.sessionReviewV2.empty.changes.title": "Henüz dosya değişikliği yok",
   "ui.sessionReviewV2.empty.changes.description": "Proje değişiklikleri burada görünecek",
-
   "ui.fileMedia.kind.image": "görsel",
   "ui.fileMedia.kind.audio": "ses",
   "ui.fileMedia.state.removed": "{{kind}} dosyası kaldırıldı.",
@@ -51,7 +53,6 @@ export const dict = {
   "ui.fileMedia.binary.title": "İkili dosya",
   "ui.fileMedia.binary.description.path": "{{path}} ikili dosyadır.",
   "ui.fileMedia.binary.description.default": "İkili içerik",
-
   "ui.lineComment.label.prefix": "Yorum: ",
   "ui.lineComment.label.suffix": "",
   "ui.lineComment.editorLabel.prefix": "Yorum yapılıyor: ",
@@ -59,7 +60,6 @@ export const dict = {
   "ui.lineComment.placeholder": "Yorum ekle",
   "ui.lineComment.submit": "Yorum yap",
   "ui.lineComment.cancel": "İptal",
-
   "ui.sessionTurn.steps.show": "Adımları göster",
   "ui.sessionTurn.steps.hide": "Adımları gizle",
   "ui.sessionTurn.summary.response": "Yanıt",
@@ -69,7 +69,6 @@ export const dict = {
   "ui.sessionTurn.diffs.showAll": "Tümünü göster",
   "ui.sessionTurn.diffs.showLess": "Daha az göster",
   "ui.sessionTurn.diffs.more": "+{{count}} dosya daha",
-
   "ui.sessionTurn.retry.retrying": "yeniden deneniyor",
   "ui.sessionTurn.retry.inSeconds": "{{seconds}}sn içinde",
   "ui.sessionTurn.retry.attempt": "deneme #{{attempt}}",
@@ -77,16 +76,12 @@ export const dict = {
   "ui.sessionTurn.retry.geminiHot": "gemini şu anda aşırı yoğun",
   "ui.sessionTurn.error.freeUsageExceeded": "Ücretsiz kullanım aşıldı",
   "ui.sessionTurn.error.addCredits": "Kredi ekle",
-
   "dialog.usageExceeded.freeTier.title": "Ücretsiz sınıra ulaşıldı",
-  "dialog.usageExceeded.freeTier.description":
-    "En iyi açık kaynak modellere güvenilir erişim için ZYRAXON Go'ya abone olun. Aylık $5'tan başlar.",
+  "dialog.usageExceeded.freeTier.description": 'En iyi açık kaynak modellere güvenilir erişim için ZYRAXON Go\'ya abone olun. Aylık $5\'tan başlar.',
   "dialog.usageExceeded.freeTier.actionLabel": "Abone ol",
   "dialog.usageExceeded.accountRateLimit.title": "Go sınırına ulaşıldı",
-  "dialog.usageExceeded.accountRateLimit.description":
-    "Kullanım sınırına ulaşıldı. Bu modeli şimdi kullanmaya devam etmek için mevcut bakiyenizden kullanımı etkinleştirin",
+  "dialog.usageExceeded.accountRateLimit.description": "Kullanım sınırına ulaşıldı. Bu modeli şimdi kullanmaya devam etmek için mevcut bakiyenizden kullanımı etkinleştirin",
   "dialog.usageExceeded.accountRateLimit.actionLabel": "Ayarları aç",
-
   "ui.sessionTurn.status.delegating": "Görev devrediliyor",
   "ui.sessionTurn.status.planning": "Sonraki adımlar planlanıyor",
   "ui.sessionTurn.status.gatheringContext": "Keşfediliyor",
@@ -99,7 +94,6 @@ export const dict = {
   "ui.sessionTurn.status.thinkingWithTopic": "Düşünüyor - {{topic}}",
   "ui.sessionTurn.status.gatheringThoughts": "Düşünceler toplanıyor",
   "ui.sessionTurn.status.consideringNextSteps": "Sonraki adımlar değerlendiriliyor",
-
   "ui.messagePart.questions.dismissed": "Sorular reddedildi",
   "ui.messagePart.compaction": "Oturum sıkıştırıldı",
   "ui.messagePart.context.read.one": "{{count}} okuma",
@@ -113,22 +107,17 @@ export const dict = {
   "ui.messagePart.title.write": "Yaz",
   "ui.messagePart.option.typeOwnAnswer": "Kendi cevabınızı yazın",
   "ui.messagePart.review.title": "Cevapları inceleyin",
-
   "ui.list.loading": "Yükleniyor",
   "ui.list.empty": "Sonuç bulunamadı",
   "ui.list.clearFilter": "Filtreyi temizle",
   "ui.list.emptyWithFilter.prefix": "Sonuç bulunamadı:",
   "ui.list.emptyWithFilter.suffix": "",
-
   "ui.messageNav.newMessage": "Yeni mesaj",
-
   "ui.textField.copyToClipboard": "Panoya kopyala",
   "ui.textField.copyLink": "Bağlantı kopyala",
   "ui.textField.copied": "Kopyalandı",
-
   "ui.imagePreview.alt": "Görsel önizleme",
   "ui.scrollView.ariaLabel": "kaydırılabilir içerik",
-
   "ui.tool.read": "Oku",
   "ui.tool.loaded": "Yüklendi",
   "ui.tool.list": "Listele",
@@ -143,12 +132,10 @@ export const dict = {
   "ui.tool.questions": "Sorular",
   "ui.tool.agent": "{{type}} Ajan",
   "ui.tool.agent.default": "Ajan",
-
   "ui.common.file.one": "dosya",
   "ui.common.file.other": "dosya",
   "ui.common.question.one": "soru",
   "ui.common.question.other": "soru",
-
   "ui.common.add": "Ekle",
   "ui.common.back": "Geri",
   "ui.common.cancel": "İptal",
@@ -158,11 +145,9 @@ export const dict = {
   "ui.common.next": "İleri",
   "ui.common.submit": "Gönder",
   "ui.common.showMore": "Daha fazla göster",
-
   "ui.permission.deny": "Reddet",
   "ui.permission.allowAlways": "Her zaman izin ver",
   "ui.permission.allowOnce": "Bir kez izin ver",
-
   "ui.message.expand": "Mesajı genişlet",
   "ui.message.collapse": "Mesajı daralt",
   "ui.message.copy": "Kopyala",
@@ -174,19 +159,16 @@ export const dict = {
   "ui.message.interrupted": "Kesildi",
   "ui.message.queued": "Sırada",
   "ui.message.attachment.alt": "ek",
-
   "ui.patch.action.deleted": "Silindi",
   "ui.patch.action.created": "Oluşturuldu",
   "ui.patch.action.moved": "Taşındı",
   "ui.patch.action.patched": "Yamalandı",
-
   "ui.question.subtitle.answered": "{{count}} cevaplandı",
   "ui.question.answer.none": "(cevap yok)",
   "ui.question.review.notAnswered": "(cevaplanmadı)",
   "ui.question.multiHint": "Geçerli tüm cevapları seçin",
   "ui.question.singleHint": "Bir cevap seçin",
   "ui.question.custom.placeholder": "Cevabınızı yazın...",
-
   "ui.fileSearch.placeholder": "Bul",
   "ui.fileSearch.previousMatch": "Önceki",
   "ui.fileSearch.nextMatch": "Sonraki",
@@ -198,4 +180,9 @@ export const dict = {
   "ui.toolErrorCard.copyError": "Hatayı kopyala",
   "ui.message.duration.seconds": "{{count}}sn",
   "ui.message.duration.minutesSeconds": "{{minutes}}dk {{seconds}}sn",
+  "ui.tool.read.video": "Analyzing video",
+  "ui.tool.read.audio": "Analyzing audio",
+  "ui.tool.read.media": "Analyzing media",
 } satisfies Partial<Record<Keys, string>>
+
+export type DictUI = keyof typeof dict

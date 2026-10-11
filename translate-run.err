@@ -1,0 +1,34 @@
+2026-10-11 18:36:45 WARNING: Language en package default expects mwt, which has been added
+2026-10-11 18:39:40 WARNING: Language en package default expects mwt, which has been added
+2026-10-11 18:54:57 WARNING: Language en package default expects mwt, which has been added
+2026-10-11 18:57:47 WARNING: Language en package default expects mwt, which has been added
+2026-10-11 18:58:22 WARNING: Language en package default expects mwt, which has been added
+2026-10-11 18:58:50 WARNING: Language en package default expects mwt, which has been added
+2026-10-11 19:04:15 WARNING: Language en package default expects mwt, which has been added
+Traceback (most recent call last):
+  File "C:\Users\MMP\Downloads\ZYRAXON-AI-main\script\translate-locales.py", line 156, in load_module_dict
+    return json.loads(re.sub(r"([{,]\s*)([A-Za-z0-9_]+)\s*:", r'\1"\2":', body))
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\json\__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Python314\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\json\decoder.py", line 361, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ~~~~~~~~~~~~~~^^^^^^^^
+json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 1209 column 3 (char 69579)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MMP\Downloads\ZYRAXON-AI-main\script\translate-locales.py", line 338, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\MMP\Downloads\ZYRAXON-AI-main\script\translate-locales.py", line 259, in main
+    current = load_module_dict(target_path) if target_path.exists() else {}
+              ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\MMP\Downloads\ZYRAXON-AI-main\script\translate-locales.py", line 158, in load_module_dict
+    raise ValueError(f"could not parse {path}: {error}") from error
+ValueError: could not parse C:\Users\MMP\Downloads\ZYRAXON-AI-main\packages\app\src\i18n\bn.ts: Expecting property name enclosed in double quotes: line 1209 column 3 (char 69579)

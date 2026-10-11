@@ -6,7 +6,7 @@ import { cmd } from "./cmd"
 import { CliError, effectCmd, fail } from "../effect-cmd"
 import { UI } from "../ui"
 import * as Prompt from "../effect/prompt"
-import { ModelsDev } from "@zyraxon-ai/core/models-dev"
+import { ProviderCatalog } from "@zyraxon-ai/core/provider-catalog"
 
 import { map, pipe, sortBy, values } from "remeda"
 import path from "path"
@@ -254,16 +254,16 @@ export const ProvidersListCommand = effectCmd({
   // Lists global credentials + provider env vars; no project instance needed.
   instance: false,
   handler: Effect.fn("Cli.providers.list")(function* (_args) {
-    const authSvc = yield* Auth.Service
-    const modelsDev = yield* ModelsDev.Service
+const authSvc = yield* Auth.Service
+      const providerCatalog = yield* ProviderCatalog.Service
 
-    UI.empty()
-    const authPath = path.join(Global.Path.data, "auth.json")
+      UI.empty()
+      const authPath = path.join(Global.Path.data, "auth.json")
     const homedir = os.homedir()
     const displayPath = authPath.startsWith(homedir) ? authPath.replace(homedir, "~") : authPath
     yield* Prompt.intro(`Credentials ${UI.Style.TEXT_DIM}${displayPath}`)
     const results = Object.entries(yield* Effect.orDie(authSvc.all()))
-    const database = yield* modelsDev.get()
+    const database = yield* providerCatalog.get()
 
     for (const [providerID, result] of results) {
       const name = database[providerID]?.name || providerID
@@ -353,17 +353,17 @@ export const ProvidersLoginCommand = effectCmd({
       return
     }
 
-    const cfgSvc = yield* Config.Service
+    const providerCatalog = yield* ProviderCatalog.Service
+const cfgSvc = yield* Config.Service
     const pluginSvc = yield* Plugin.Service
-    const modelsDev = yield* ModelsDev.Service
-    yield* Effect.ignore(modelsDev.refresh(true))
+    yield* Effect.ignore(providerCatalog.refresh(true))
 
     const config = yield* cfgSvc.get()
 
     const disabled = new Set(config.disabled_providers ?? [])
     const enabled = config.enabled_providers ? new Set(config.enabled_providers) : undefined
 
-    const allProviders = yield* modelsDev.get()
+    const allProviders = yield* providerCatalog.get()
     const providers: Record<string, (typeof allProviders)[string]> = {}
     for (const [key, value] of Object.entries(allProviders)) {
       if ((enabled ? enabled.has(key) : true) && !disabled.has(key)) providers[key] = value
@@ -501,17 +501,17 @@ export const ProvidersLogoutCommand = effectCmd({
   // Removes a global auth credential; no project instance needed.
   instance: false,
   handler: Effect.fn("Cli.providers.logout")(function* (args) {
-    const authSvc = yield* Auth.Service
-    const modelsDev = yield* ModelsDev.Service
+const authSvc = yield* Auth.Service
+      const providerCatalog = yield* ProviderCatalog.Service
 
-    UI.empty()
-    const credentials: Array<[string, Auth.Info]> = Object.entries(yield* Effect.orDie(authSvc.all()))
+      UI.empty()
+      const credentials: Array<[string, Auth.Info]> = Object.entries(yield* Effect.orDie(authSvc.all()))
     yield* Prompt.intro("Remove credential")
     if (credentials.length === 0) {
       yield* Prompt.log.error("No credentials found")
       return
     }
-    const database = yield* modelsDev.get()
+    const database = yield* providerCatalog.get()
     const options = credentials.map(([key, value]) => ({
       label: (database[key]?.name || key) + UI.Style.TEXT_DIM + " (" + value.type + ")",
       value: key,

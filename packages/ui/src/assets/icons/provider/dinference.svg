@@ -1,9 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="16" height="16">
-  <rect width="16" height="16" fill="white"/>
-  <g transform="translate(100,100)" stroke="black" stroke-width="28" stroke-linecap="square" fill="none">
-    <line x1="-45" y1="-45" x2="-30" y2="-30"/>
-    <line x1="30" y1="30" x2="45" y2="45"/>
-    <line x1="-45" y1="45" x2="-30" y2="30"/>
-    <line x1="30" y1="-30" x2="45" y2="-45"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-terminal h-5 w-5 text-primary"><path d="m4 17 6-6-6-6M12 19h8"/></svg>

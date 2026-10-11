@@ -1,0 +1,186 @@
+/* ZYRAXON service sections: MCP, LSP, Plugins, Servers.
+   Each one is a card with its own accent so stacked together they stay readable. */
+
+.zy-services {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zy-service {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.06));
+  border-radius: 12px;
+  background: var(--surface-raised-base, rgb(255 255 255 / 0.02));
+  overflow: hidden;
+  transition: border-color 140ms ease;
+}
+
+.zy-service:hover {
+  border-color: var(--border-strong-base, rgb(255 255 255 / 0.11));
+}
+
+.zy-service-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+}
+
+.zy-service-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 7px;
+  background: rgb(255 255 255 / 0.06);
+  color: var(--text-weak, rgb(255 255 255 / 0.55));
+}
+
+.zy-service[data-tone="positive"] .zy-service-icon {
+  background: rgb(34 197 94 / 0.14);
+  color: rgb(74 222 128);
+}
+
+.zy-service[data-tone="warning"] .zy-service-icon {
+  background: rgb(250 204 21 / 0.14);
+  color: rgb(250 204 21);
+}
+
+.zy-service-title {
+  font-size: 12.5px;
+  font-weight: 550;
+  color: var(--text-strong, inherit);
+}
+
+.zy-service-count {
+  margin-left: auto;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  background: rgb(255 255 255 / 0.06);
+  color: var(--text-weak, rgb(255 255 255 / 0.55));
+}
+
+/* An action sits at the far edge of the header, after the count has taken the
+   free space, so a section with a button still lines its title up with one that
+   has none. */
+.zy-service-action {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.zy-service-count + .zy-service-action {
+  margin-left: 0;
+}
+
+.zy-service-body {
+  max-height: 220px;
+  overflow-y: auto;
+  border-top: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.05));
+  padding: 4px 6px 6px;
+}
+
+.zy-service-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.zy-service-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 7px;
+  padding: 5px 8px;
+  font-size: 12px;
+  transition: background-color 110ms ease;
+}
+
+.zy-service-item:hover {
+  background: rgb(255 255 255 / 0.04);
+}
+
+.zy-service-dot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--border-weak-base, rgb(255 255 255 / 0.25));
+}
+
+.zy-service-dot[data-status="connected"] {
+  background: rgb(74 222 128);
+  box-shadow: 0 0 0 3px rgb(74 222 128 / 0.14);
+}
+
+.zy-service-dot[data-status="failed"],
+.zy-service-dot[data-status="error"] {
+  background: rgb(248 113 113);
+  box-shadow: 0 0 0 3px rgb(248 113 113 / 0.14);
+}
+
+.zy-service-dot[data-status="disabled"] {
+  background: rgb(255 255 255 / 0.2);
+}
+
+.zy-service-dot[data-status="needs_auth"],
+.zy-service-dot[data-status="needs_client_registration"] {
+  background: rgb(250 204 21);
+  box-shadow: 0 0 0 3px rgb(250 204 21 / 0.14);
+}
+
+.zy-service-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zy-service-detail {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--text-weak, rgb(255 255 255 / 0.4));
+}
+
+.zy-service-empty {
+  margin: 0;
+  padding: 14px 10px;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--text-weak, rgb(255 255 255 / 0.4));
+}
+
+.zy-service-foot {
+  border-top: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.05));
+  padding: 7px 12px 8px;
+  font-size: 11px;
+  color: var(--text-weak, rgb(255 255 255 / 0.45));
+}
+
+.zy-service-foot a,
+.zy-service-foot button {
+  color: inherit;
+  text-decoration: none;
+}
+
+.zy-service-foot a:hover,
+.zy-service-foot button:hover {
+  color: var(--text-strong, inherit);
+  text-decoration: underline;
+}
+
+.zy-service-path {
+  display: block;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  word-break: break-all;
+}

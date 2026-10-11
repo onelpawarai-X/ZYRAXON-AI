@@ -20,8 +20,12 @@ import { useSettings } from "@/context/settings"
 import { useMcpToggle } from "@/context/mcp"
 
 const pluginEmptyMessage = (value: string, file: string): JSXElement => {
-  const parts = value.split(file)
-  if (parts.length === 1) return value
+  // An untranslated label arrives as an empty string rather than undefined, but
+  // guard anyway: this runs while the popover mounts, and a throw here takes the
+  // whole renderer down instead of just leaving one row blank.
+  const text = value ?? ""
+  const parts = text.split(file)
+  if (parts.length === 1) return text
   return (
     <>
       {parts[0]}

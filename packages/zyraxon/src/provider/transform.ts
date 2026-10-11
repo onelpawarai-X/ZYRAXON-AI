@@ -4,11 +4,11 @@ import type { ModelMessage, ToolResultPart } from "ai"
 import { mergeDeep, unique } from "remeda"
 import type { JSONSchema7 } from "@ai-sdk/provider"
 import type * as Provider from "./provider"
-import type * as ModelsDev from "@opencode-ai/core/models-dev"
+import type * as ProviderCatalog from "@zyraxon-ai/core/provider-catalog"
 import { iife } from "@/util/iife"
 import { mediaCarrierAccepts } from "@/util/media"
 
-type Modality = NonNullable<ModelsDev.Model["modalities"]>["input"][number]
+type Modality = NonNullable<ProviderCatalog.Model["modalities"]>["input"][number]
 
 function mimeToModality(mime: string): Modality | undefined {
   if (mime.startsWith("image/")) return "image"
@@ -1717,7 +1717,7 @@ export function schema(model: Provider.Model, schema: JSONSchema7): JSONSchema7 
   return schema
 }
 
-export function reasoningVariants(model: ModelsDev.Model, target: Provider.Model): Provider.Model["variants"] {
+export function reasoningVariants(model: ProviderCatalog.Model, target: Provider.Model): Provider.Model["variants"] {
   const options = model.reasoning_options
   if (options === undefined) return
   if (options.length === 0) return {}
