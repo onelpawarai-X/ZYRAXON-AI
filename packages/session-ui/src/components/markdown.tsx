@@ -77,9 +77,13 @@ function fallback(markdown: string) {
  * exactly as it is for a settled block, so a pending block can never widen what
  * the renderer allows through — only how soon it looks right.
  */
-function pendingHtml(markdown: string) {
+type MarkedInstance = ReturnType<typeof useMarked>
+
+function pendingHtml(marked: MarkedInstance, markdown: string) {
+  const parsed = marked.parse(markdown)
+  if (typeof parsed !== "string") return fallback(markdown)
   try {
-    return sanitizeMarkdown(marked.parse(markdown))
+    return sanitizeMarkdown(parsed)
   } catch {
     return fallback(markdown)
   }
@@ -691,7 +695,7 @@ export function Markdown(
     const container = root()
     const result = html.latest ?? html()
     const projected = projection()
-    const content = local.text ? pendingBlocks(result, projected, local.cacheKey, owner) : []
+    const content = local.text ? pendingBlocks(marked, result, projected, local.cacheKey, owner) : []
     if (!container) return
     if (isServer) return
     if (content.length === 0) {
@@ -752,6 +756,7 @@ export function Markdown(
 }
 
 function pendingBlocks(
+  marked: MarkedInstance,
   result: RenderResult | undefined,
   projection: Projection | undefined,
   cacheKey: string | undefined,
@@ -793,7 +798,7 @@ function pendingBlocks(
         // Reuse the rendered prefix when there is one, and otherwise render the
         // block properly instead of escaping it. Escaping is only correct for a
         // block that genuinely has no parse yet.
-        html: prefix ? current.html : pendingHtml(block.src),
+        html: prefix ? current.html : pendingHtml(marked, block.src),
       }
     }
     return {
