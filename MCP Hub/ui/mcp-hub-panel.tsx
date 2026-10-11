@@ -169,48 +169,15 @@ export function McpHubPanel(props: McpHubPanelProps) {
   const [category, setCategory] = createSignal<string>("All")
 
   /**
-   * Browser used for OAuth sign-in and for links the agent opens. Empty means the
-   * server discovers installed browsers on its own. Kept light: the value rides in
-   * one config key the server already reads, so nothing here reaches into the app.
+   * The vendors whose consoles refuse a client they did not issue themselves.
+   *
+   * These need the person to create a client and paste its ID, so only they get
+   * the Client ID box. Every other server registers a client on its own and goes
+   * straight to Connect — asking the rest for an ID they will never need is what
+   * made the box look like a required step it was not.
    */
-  const [browserPath, setBrowserPath] = createSignal("")
-  const [browserState, setBrowserState] = createSignal<"idle" | "saving" | "saved">("idle")
-  let browserFileInput: HTMLInputElement | undefined
+  const MANUAL_OAUTH_IDS = new Set(["slack", "zoom", "hubspot", "box", "mongodb", "nango"])
 
-  onMount(() => {
-    props.runtime
-      .getBrowserPath()
-      .then((value) => setBrowserPath(value ?? ""))
-      .catch(() => {})
-  })
-
-  function pickBrowserFile() {
-    browserFileInput?.click()
-  }
-
-  function onBrowserFilePicked(e: Event) {
-    const input = e.target as HTMLInputElement
-    const file = input.files?.[0]
-    input.value = ""
-    const legacy = file as (File & { path?: string }) | undefined
-    const web = window as unknown as { webUtils?: { getPathForFile?: (f: File) => string } }
-    const path = (legacy?.path || (file ? web.webUtils?.getPathForFile?.(file) : "") || "").trim()
-    if (path) setBrowserPath(path)
-  }
-
-  async function saveBrowserPath() {
-    const path = browserPath().trim()
-    setBrowserState("saving")
-    try {
-      await props.runtime.setBrowserPath(path)
-      setBrowserState("saved")
-      window.setTimeout(() => {
-        if (browserState() === "saved") setBrowserState("idle")
-      }, 1600)
-    } catch {
-      setBrowserState("idle")
-    }
-  }
   /**
    * Connection state outlives this panel. The servers themselves live in the server
    * process, so navigating to another route and coming back used to wipe the local
@@ -714,63 +681,6 @@ export function McpHubPanel(props: McpHubPanelProps) {
             onClick={() => props.onClose?.()}
           >
             Cancel
-          </button>
-        </Show>
-      </div>
-
-      {/* browser for sign-in */}
-      <div class="flex items-center gap-2 border-b border-[var(--mcp-border)] px-6 py-3">
-        <input
-          ref={browserFileInput}
-          type="file"
-          accept=".exe,.app,.bin,application/octet-stream"
-          class="hidden"
-          aria-hidden="true"
-          tabIndex={-1}
-          onChange={onBrowserFilePicked}
-        />
-        <span class="shrink-0 text-[12px] text-[var(--text-weak,#8b95ad)]">Sign-in browser</span>
-        <input
-          value={browserPath()}
-          onInput={(e) => {
-            setBrowserPath(e.currentTarget.value)
-            if (browserState() === "saved") setBrowserState("idle")
-          }}
-          placeholder="C:\Program Files\Google\Chrome\Application\chrome.exe"
-          spellcheck={false}
-          class="h-8 min-w-[240px] flex-1 rounded-md border border-[var(--mcp-border)] bg-transparent px-3 font-mono text-[12px] outline-none placeholder:text-[var(--mcp-text-weak)]"
-        />
-        <button
-          type="button"
-          onClick={pickBrowserFile}
-          class="h-8 shrink-0 rounded-md border border-[var(--mcp-border-strong)] px-3 text-[12px] font-[600] transition-colors"
-          style={{ background: fill() }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = fillHover())}
-          onMouseLeave={(e) => (e.currentTarget.style.background = fill())}
-        >
-          Browse…
-        </button>
-        <button
-          type="button"
-          onClick={saveBrowserPath}
-          disabled={browserState() === "saving"}
-          class="h-8 shrink-0 rounded-md border px-3 text-[12px] font-[600] transition-colors"
-          style={{
-            background: browserState() === "saved" ? "transparent" : fill(),
-            color: browserState() === "saved" ? "var(--accent,#4ade80)" : undefined,
-            "border-color": browserState() === "saved" ? "var(--accent,#4ade80)" : "var(--mcp-border-strong)",
-          }}
-        >
-          {browserState() === "saving" ? "Saving…" : browserState() === "saved" ? "Saved" : "Save"}
-        </button>
-        <Show when={browserPath().trim().length > 0}>
-          <button
-            type="button"
-            onClick={() => setBrowserPath("")}
-            class="h-8 shrink-0 rounded-md border border-[var(--mcp-border)] px-2 text-[12px] text-[var(--text-weak,#8b95ad)] transition-colors"
-            title="Use the browser ZYRAXON finds on its own"
-          >
-            Clear
           </button>
         </Show>
       </div>
@@ -1288,7 +1198,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
                 </div>
               </Show>
 
-              <Show when={app().kind === "oauth" && app().consoleUrl}>
+              <Show when={app().kind === "oauth" && app().consoleUrl && MANUAL_OAUTH_IDS.has(app().id)}>
                 <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">
                   {line(guideLang(), "oauthClient")}
                 </div>
@@ -1366,7 +1276,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
                   class="rounded-md px-3 py-1.5 text-[13px] font-[600] disabled:opacity-50"
                   disabled={busy() !== null}
                   style={{ background: fill() }}
-                  onClick={() => submitClientId()}
+                  onClick={() => (MANUAL_OAUTH_IDS.has(app().id) ? submitClientId() : onConnect(app()))}
                 >
                   Connect
                 </button>

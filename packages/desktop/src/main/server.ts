@@ -2,7 +2,7 @@
 
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
-import { app, utilityProcess } from "electron"
+import { app, shell, utilityProcess } from "electron"
 import type { Details } from "electron"
 import { getLogger } from "./logging"
 import { getUserShell, loadShellEnv } from "./shell-env"
@@ -14,6 +14,7 @@ export type HealthCheck = { wait: Promise<void> }
 type SidecarMessage =
   | { type: "ready" }
   | { type: "stopped" }
+  | { type: "open-external"; url: string }
   | { type: "error"; error: { message: string; stack?: string } }
 
 export type SidecarListener = { stop: () => Promise<void> }
@@ -124,6 +125,18 @@ export async function spawnLocalServer(
         fail(timeoutError)
       }, SIDECAR_START_STALL_TIMEOUT)
     }
+
+    // Permanent: this listener must outlive the ready handshake, whose own listener
+    // is torn down in cleanup(). The sidecar asks to open the sign-in page long after
+    // the server is ready, so a handler removed together with the handshake is exactly
+    // why no browser ever opened from a sidecar request.
+    const onRuntimeMessage = (message: SidecarMessage) => {
+      if (message.type !== "open-external" || !message.url) return
+      shell.openExternal(message.url).catch((error) => {
+        getLogger().error(`[Server] Failed to open external URL ${message.url}: ${error}`)
+      })
+    }
+    child.on("message", onRuntimeMessage)
 
     const onMessage = (message: SidecarMessage) => {
       console.log("[Server] Received message from sidecar:", message.type)
