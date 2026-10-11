@@ -441,7 +441,7 @@ export const dict = {
   "wsl.onboarding.openTerminal": "Terminal opmaachen",
   "wsl.onboarding.path": "Patt: {{path}}",
   "wsl.onboarding.notFound": "net fonnt",
-  "wsl.onboarding.version":": "Versioun: {{version}}",
+  "wsl.onboarding.version": "Versioun: {{version}}",
   "wsl.onboarding.unknown": "onbekannt",
   "wsl.onboarding.desktopVersion": "Desktop {{version}}",
   "wsl.onboarding.versionMismatch": "Déi installéiert Versioun passt net zur Versioun vum Desktop-App.",
@@ -604,7 +604,7 @@ export const dict = {
   "error.chain.mcpFailed": 'MCP-Server "{{name}}" feelgeschloen. Note: de ZYRAXON ënnerstützt nach keng MCP-Authentifizierung.',
   "error.chain.providerAuthFailed": "Uebbeler-Authentifizéierung feelgeschloen ({{provider}}): {{message}}",
   "error.chain.providerInitFailed":
-    'Konnt de Uebbeler "{{provider}}" net initialiséieren. Nockt d''Zougangsdonnéeë an d''Konfiguratioun.',
+    "Konnt de Uebbeler \"{{provider}}\" net initialiséieren. Nockt d'Zougangsdonnéeë an d'Konfiguratioun.",
   "error.chain.configJsonInvalid": "Déi Konfigurationsdatei op {{path}} ass keng gülteg JSON(C)",
   "error.chain.configJsonInvalidWithMessage":
     "Déi Konfigurationsdatei op {{path}} ass keng gülteg JSON(C): {{message}}",

@@ -97,7 +97,7 @@ export const dict = {
   "ui.sessionTurn.status.gatheredContext": "Granskað",
   "ui.sessionTurn.status.searchingCodebase": "Leitar í kø til kóða",
   "ui.sessionTurn.status.searchingWeb": "Leitar á netinum",
-  "ui.sessionTurn.status.makingEdits":": "Ger royringar",
+  "ui.sessionTurn.status.makingEdits": "Ger royringar",
   "ui.sessionTurn.status.runningCommands": "Koyrir boð",
   "ui.sessionTurn.status.thinking": "Hugsar",
   "ui.sessionTurn.status.thinkingWithTopic": "Hugsar - {{topic}}",
