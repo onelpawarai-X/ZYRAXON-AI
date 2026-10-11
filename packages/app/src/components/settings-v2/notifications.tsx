@@ -5,6 +5,7 @@ import { ButtonV2 } from "@zyraxon-ai/ui/v2/button-v2"
 import { SelectV2 } from "@zyraxon-ai/ui/v2/select-v2"
 import { Switch } from "@zyraxon-ai/ui/v2/switch-v2"
 import { useLanguage } from "@/context/language"
+import { LANGUAGES } from "@/i18n/languages"
 import { useSettings } from "@/context/settings"
 import { SettingsListV2 } from "./parts/list"
 import { SettingsRowV2 } from "./parts/row"
@@ -64,59 +65,22 @@ function VoiceSection() {
   const settings = useSettings()
 
   const languages = [
-    { id: "auto", value: "auto", label: "Auto-detect" },
-    { id: "bn", value: "bn-BD", label: "Bengali" },
-    { id: "hi", value: "hi-IN", label: "Hindi" },
-    { id: "en-us", value: "en-US", label: "English (US)" },
-    { id: "en-gb", value: "en-GB", label: "English (UK)" },
-    { id: "en-in", value: "en-IN", label: "English (India)" },
-    { id: "ar", value: "ar-SA", label: "Arabic" },
-    { id: "es", value: "es-ES", label: "Spanish" },
-    { id: "fr", value: "fr-FR", label: "French" },
-    { id: "de", value: "de-DE", label: "German" },
-    { id: "pt", value: "pt-BR", label: "Portuguese" },
-    { id: "ru", value: "ru-RU", label: "Russian" },
-    { id: "ja", value: "ja-JP", label: "Japanese" },
-    { id: "ko", value: "ko-KR", label: "Korean" },
-    { id: "zh-cn", value: "zh-CN", label: "Chinese (Simplified)" },
-    { id: "zh-tw", value: "zh-TW", label: "Chinese (Traditional)" },
-    { id: "vi", value: "vi-VN", label: "Vietnamese" },
-    { id: "it", value: "it-IT", label: "Italian" },
-    { id: "th", value: "th-TH", label: "Thai" },
-    { id: "tr", value: "tr-TR", label: "Turkish" },
-    { id: "pl", value: "pl-PL", label: "Polish" },
-    { id: "nl", value: "nl-NL", label: "Dutch" },
-    { id: "uk", value: "uk-UA", label: "Ukrainian" },
-    { id: "sv", value: "sv-SE", label: "Swedish" },
-    { id: "da", value: "da-DK", label: "Danish" },
-    { id: "fi", value: "fi-FI", label: "Finnish" },
-    { id: "no", value: "nb-NO", label: "Norwegian" },
-    { id: "cs", value: "cs-CZ", label: "Czech" },
-    { id: "ro", value: "ro-RO", label: "Romanian" },
-    { id: "el", value: "el-GR", label: "Greek" },
-    { id: "he", value: "he-IL", label: "Hebrew" },
-    { id: "hu", value: "hu-HU", label: "Hungarian" },
-    { id: "id", value: "id-ID", label: "Indonesian" },
-    { id: "ms", value: "ms-MY", label: "Malay" },
-    { id: "ta", value: "ta-IN", label: "Tamil" },
-    { id: "te", value: "te-IN", label: "Telugu" },
-    { id: "ur", value: "ur-PK", label: "Urdu" },
-    { id: "fa", value: "fa-IR", label: "Persian" },
-    { id: "mr", value: "mr-IN", label: "Marathi" },
-    { id: "gu", value: "gu-IN", label: "Gujarati" },
-    { id: "kn", value: "kn-IN", label: "Kannada" },
-    { id: "ml", value: "ml-IN", label: "Malayalam" },
-    { id: "af", value: "af-ZA", label: "Afrikaans" },
+    { id: "auto", value: "auto", label: language.t("settings.voice.language.auto") },
+    ...LANGUAGES.map((entry) => ({
+      id: entry.code,
+      value: entry.code === "zht" ? "zh-TW" : entry.code,
+      label: `${entry.native} — ${entry.english}`,
+    })),
   ]
 
   return (
     <div class="settings-v2-section">
-      <h3 class="settings-v2-section-title">Voice &amp; TTS</h3>
+      <h3 class="settings-v2-section-title">{language.t("settings.voice.section")}</h3>
 
       <SettingsListV2>
         <SettingsRowV2
-          title="Real-time voice with the model"
-          description="Talk directly to the selected model — it listens and answers in the same breath. Turning this on stops the separate TTS voice, because hearing both at once overlaps them."
+          title={language.t("settings.voice.realtime.title")}
+          description={language.t("settings.voice.realtime.description")}
         >
           <div data-action="settings-voice-realtime">
             <Switch
@@ -127,8 +91,8 @@ function VoiceSection() {
         </SettingsRowV2>
 
         <SettingsRowV2
-          title="Auto-speak responses"
-          description="AI responses are spoken aloud by the built-in voice"
+          title={language.t("settings.voice.autoSpeak.title")}
+          description={language.t("settings.voice.autoSpeak.description")}
         >
           <div data-action="settings-voice-auto-speak">
             <Switch
@@ -147,7 +111,10 @@ function VoiceSection() {
           </div>
         </SettingsRowV2>
 
-        <SettingsRowV2 title="Voice gender" description="Select male or female voice for TTS output">
+        <SettingsRowV2
+          title={language.t("settings.voice.gender.title")}
+          description={language.t("settings.voice.gender.description")}
+        >
           <div data-action="settings-voice-gender" class="flex gap-2">
             <ButtonV2
               size="normal"
@@ -159,7 +126,7 @@ function VoiceSection() {
                 } catch {}
               }}
             >
-              Male
+              {language.t("settings.voice.gender.male")}
             </ButtonV2>
             <ButtonV2
               size="normal"
@@ -171,14 +138,14 @@ function VoiceSection() {
                 } catch {}
               }}
             >
-              Female
+              {language.t("settings.voice.gender.female")}
             </ButtonV2>
           </div>
         </SettingsRowV2>
 
         <SettingsRowV2
-          title="Voice language"
-          description="Language for speech recognition and TTS"
+          title={language.t("settings.voice.language.title")}
+          description={language.t("settings.voice.language.description")}
         >
           <SelectV2
             appearance="inline"
@@ -200,8 +167,8 @@ function VoiceSection() {
         </SettingsRowV2>
 
         <SettingsRowV2
-          title="Test TTS"
-          description="Play a test sentence to verify text-to-speech is working"
+          title={language.t("settings.voice.test.title")}
+          description={language.t("settings.voice.test.description")}
         >
           <ButtonV2
             size="normal"
@@ -209,19 +176,15 @@ function VoiceSection() {
             onClick={() => {
               try {
                 const lang = settings.general.voiceLanguage()?.split("-")[0] || "en"
-                const testText =
-                  lang === "bn"
-                    ? "হ্যালো! আমি ZYRAXON AI। আমি আপনার সাথে কথা বলতে পারি।"
-                    : lang === "hi"
-                      ? "नमस्ते! मैं ZYRAXON AI हूँ। मैं आपसे बात कर सकता हूँ।"
-                      : "Hello! I am ZYRAXON AI. I can speak to you."
+                const testText = language.t("settings.voice.test.sentence")
+                void lang
                 ;(window as any).api?.voiceTTSSpeak?.(testText)
               } catch (e) {
                 console.error("[TTS-TEST] Failed:", e)
               }
             }}
           >
-            Test Voice
+            {language.t("settings.voice.test.button")}
           </ButtonV2>
         </SettingsRowV2>
       </SettingsListV2>

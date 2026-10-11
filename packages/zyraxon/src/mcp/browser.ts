@@ -22,42 +22,56 @@ export async function openBrowser(targetUrl: string): Promise<boolean> {
   const platform = os.platform();
   const url = targetUrl.trim();
 
+  // `start` is a cmd.exe built-in, so it only exists inside a shell. Handing it to
+  // child_process.exec looked for a program literally named `start`, which is not
+  // on disk, so the call rejected and no sign-in window ever appeared. Windows now
+  // goes through cmd.exe, and every platform falls back to the OS default handler
+  // so a machine without Chrome still opens something.
+  const viaCmd = (command: string) =>
+    new Promise<void>((resolve, reject) => {
+      const child = spawn("cmd.exe", ["/c", command], { windowsHide: true });
+      child.on("error", reject);
+      // `start` detaches the browser and returns immediately, so a short grace
+      // period is what separates "opened" from "failed to find a shell".
+      setTimeout(resolve, 350);
+    });
+
   try {
     if (platform === 'darwin') {
-      // macOS: প্রথমে Google Chrome, না পেলে সিস্টেম ডিফল্ট
       try {
-        await execAsync(`open -a "Google Chrome" "${url}"`);
-        return true;
-      } catch {
         await execAsync(`open "${url}"`);
         return true;
-      }
-    } else if (platform === 'win32') {
-      // Windows: সরাসরি স্টার্ট বা ক্রোম ব্রাউজার এক্সিকিউট
-      try {
-        await execAsync(`start chrome "${url}"`);
-        return true;
       } catch {
-        await execAsync(`start "" "${url}"`);
+        await execAsync(`open -a "Google Chrome" "${url}"`);
         return true;
       }
-    } else {
-      // Linux: google-chrome -> chromium -> xdg-open
+    }
+
+    if (platform === 'win32') {
       try {
-        await execAsync(`google-chrome "${url}"`);
+        await viaCmd(`start "" "${url}"`);
         return true;
       } catch {
-        try {
-          await execAsync(`chromium "${url}"`);
-          return true;
-        } catch {
-          await execAsync(`xdg-open "${url}"`);
-          return true;
-        }
+        await execAsync(`cmd /c start "" "${url}"`);
+        return true;
+      }
+    }
+
+    // Linux: google-chrome -> chromium -> xdg-open
+    try {
+      await execAsync(`google-chrome "${url}"`);
+      return true;
+    } catch {
+      try {
+        await execAsync(`chromium "${url}"`);
+        return true;
+      } catch {
+        await execAsync(`xdg-open "${url}"`);
+        return true;
       }
     }
   } catch (error) {
-    console.error('Failed to open browser dynamically:', error);
+    console.error('Failed to open browser:', error);
     return false;
   }
 }

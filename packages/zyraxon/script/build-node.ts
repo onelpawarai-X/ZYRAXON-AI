@@ -21,17 +21,18 @@ const pendingVersion = Script.version
 const installVersion = pendingVersion.startsWith("0.0.0-") ? releaseVersion : pendingVersion
 const installChannel = pendingVersion.startsWith("0.0.0-") ? "latest" : Script.channel
 
-// Fetch models.dev snapshot for provider catalog
-const modelsUrl = process.env.ZYRAXON_MODELS_URL || "https://models.dev"
+// Embed the ZYRAXON provider catalogue so a fresh install can list providers
+// before it has ever reached the network.
+const modelsUrl = process.env.ZYRAXON_MODELS_URL || "https://zyraxonal-provider.lovable.app"
 let modelsData = "({})"
 try {
   const resp = await fetch(`${modelsUrl}/api.json`)
   if (resp.ok) {
     modelsData = await resp.text()
-    console.log(`Loaded models.dev snapshot from ${modelsUrl}`)
+    console.log(`Loaded provider catalogue snapshot from ${modelsUrl}`)
   }
 } catch (e) {
-  console.warn(`Failed to fetch models.dev, using empty snapshot:`, e)
+  console.warn(`Failed to fetch the provider catalogue, using an empty snapshot:`, e)
 }
 
 const plugin = createSolidTransformPlugin()

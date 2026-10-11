@@ -559,7 +559,9 @@ export function describe(state: ConnectionState): string {
     case "connecting":
       return "Connecting…"
     case "failed":
-      return state.error
+      // A failure with no message still has to say something. Showing the bare
+      // word "undefined" left the user with no idea what went wrong.
+      return state.error?.trim() || "The server refused the connection"
     default:
       return "Not connected"
   }

@@ -1,11 +1,19 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-export const dict: Record<string, string> = {
+import { dict as en } from "./en"
+
+type Keys = keyof typeof en
+
+/**
+ * Every string is this locale's own wording. A key with no translation stays
+ * out of the file rather than falling back to English.
+ */
+export const dict = {
   "ui.sessionReview.title": "Зміни сесії",
   "ui.sessionReview.title.git": "Зміни Git",
   "ui.sessionReview.title.branch": "Зміни гілки",
   "ui.sessionReview.title.lastTurn": "Зміни останнього кроку",
-  "ui.sessionReview.diffStyle.unified": "Об'єднаний",
+  "ui.sessionReview.diffStyle.unified": 'Об\'єднаний',
   "ui.sessionReview.diffStyle.split": "Розділений",
   "ui.sessionReview.expandAll": "Розгорнути все",
   "ui.sessionReview.collapseAll": "Згорнути все",
@@ -22,7 +30,7 @@ export const dict: Record<string, string> = {
   "ui.sessionReviewV2.toggleSidebar": "Перемкнути дерево файлів",
   "ui.sessionReviewV2.showAllLines": "Показати всі рядки",
   "ui.sessionReviewV2.hideNonDiffLines": "Приховати рядки поза diff",
-  "ui.sessionReviewV2.unifiedDiff": "Об'єднаний diff",
+  "ui.sessionReviewV2.unifiedDiff": 'Об\'єднаний diff',
   "ui.sessionReviewV2.splitDiff": "Розділений diff",
   "ui.sessionReviewV2.previousFile": "Попередній файл",
   "ui.sessionReviewV2.nextFile": "Наступний файл",
@@ -32,12 +40,10 @@ export const dict: Record<string, string> = {
   "ui.sessionReviewV2.empty.noGit.action": "Створити Git-репозиторій",
   "ui.sessionReviewV2.empty.noGit.actionLoading": "Створення Git-репозиторію...",
   "ui.sessionReviewV2.empty.changes.title": "Змін у файлах ще немає",
-  "ui.sessionReviewV2.empty.changes.description": "Зміни проєкту з'являться тут",
-
+  "ui.sessionReviewV2.empty.changes.description": 'Зміни проєкту з\'являться тут',
   "ui.sessionReview.openFile": "Відкрити файл",
   "ui.sessionReview.selection.line": "рядок {{line}}",
   "ui.sessionReview.selection.lines": "рядки {{start}}-{{end}}",
-
   "ui.fileMedia.kind.image": "зображення",
   "ui.fileMedia.kind.audio": "аудіо",
   "ui.fileMedia.state.removed": "{{kind}} видалено",
@@ -47,7 +53,6 @@ export const dict: Record<string, string> = {
   "ui.fileMedia.binary.title": "Бінарний файл",
   "ui.fileMedia.binary.description.path": "Неможливо відобразити {{path}}, оскільки це бінарний файл.",
   "ui.fileMedia.binary.description.default": "Неможливо відобразити цей файл, оскільки він бінарний.",
-
   "ui.lineComment.label.prefix": "Коментар до ",
   "ui.lineComment.label.suffix": "",
   "ui.lineComment.editorLabel.prefix": "Коментування: ",
@@ -55,7 +60,6 @@ export const dict: Record<string, string> = {
   "ui.lineComment.placeholder": "Додати коментар",
   "ui.lineComment.submit": "Коментувати",
   "ui.lineComment.cancel": "Скасувати",
-
   "ui.sessionTurn.steps.show": "Показати кроки",
   "ui.sessionTurn.steps.hide": "Приховати кроки",
   "ui.sessionTurn.summary.response": "Відповідь",
@@ -65,7 +69,6 @@ export const dict: Record<string, string> = {
   "ui.sessionTurn.diffs.showAll": "Показати всі",
   "ui.sessionTurn.diffs.showLess": "Показати менше",
   "ui.sessionTurn.diffs.more": "+ ще {{count}}",
-
   "ui.sessionTurn.retry.retrying": "повтор",
   "ui.sessionTurn.retry.inSeconds": "за {{seconds}}с",
   "ui.sessionTurn.retry.attempt": "спроба №{{attempt}}",
@@ -73,16 +76,12 @@ export const dict: Record<string, string> = {
   "ui.sessionTurn.retry.geminiHot": "gemini зараз перевантажений",
   "ui.sessionTurn.error.freeUsageExceeded": "Перевищено ліміт безкоштовного використання",
   "ui.sessionTurn.error.addCredits": "Додати кредити",
-
   "dialog.usageExceeded.freeTier.title": "Безкоштовний ліміт вичерпано",
-  "dialog.usageExceeded.freeTier.description":
-    "Підпишіться на ZYRAXON Go для надійного доступу до найкращих моделей із відкритим кодом від $5 на місяць.",
+  "dialog.usageExceeded.freeTier.description": "Підпишіться на ZYRAXON Go для надійного доступу до найкращих моделей із відкритим кодом від $5 на місяць.",
   "dialog.usageExceeded.freeTier.actionLabel": "Підписатися",
   "dialog.usageExceeded.accountRateLimit.title": "Ліміт Go вичерпано",
-  "dialog.usageExceeded.accountRateLimit.description":
-    "Ліміт використання вичерпано. Щоб і надалі користуватися цією моделлю, увімкніть оплату з доступного балансу",
+  "dialog.usageExceeded.accountRateLimit.description": "Ліміт використання вичерпано. Щоб і надалі користуватися цією моделлю, увімкніть оплату з доступного балансу",
   "dialog.usageExceeded.accountRateLimit.actionLabel": "Відкрити налаштування",
-
   "ui.sessionTurn.status.delegating": "Делегування роботи",
   "ui.sessionTurn.status.planning": "Планування наступних кроків",
   "ui.sessionTurn.status.gatheringContext": "Дослідження",
@@ -95,7 +94,6 @@ export const dict: Record<string, string> = {
   "ui.sessionTurn.status.thinkingWithTopic": "Міркування — {{topic}}",
   "ui.sessionTurn.status.gatheringThoughts": "Збирання думок",
   "ui.sessionTurn.status.consideringNextSteps": "Розгляд наступних кроків",
-
   "ui.messagePart.diagnostic.error": "Помилка",
   "ui.messagePart.title.edit": "Редагувати",
   "ui.messagePart.title.write": "Написати",
@@ -109,27 +107,21 @@ export const dict: Record<string, string> = {
   "ui.messagePart.context.search.other": "{{count}} пошуків",
   "ui.messagePart.context.list.one": "{{count}} список",
   "ui.messagePart.context.list.other": "{{count}} списків",
-
   "ui.list.loading": "Завантаження",
   "ui.list.empty": "Немає результатів",
   "ui.list.clearFilter": "Очистити фільтр",
   "ui.list.emptyWithFilter.prefix": "Немає результатів для",
   "ui.list.emptyWithFilter.suffix": "",
-
   "ui.fileSearch.placeholder": "Знайти",
   "ui.fileSearch.previousMatch": "Попередній збіг",
   "ui.fileSearch.nextMatch": "Наступний збіг",
   "ui.fileSearch.close": "Закрити пошук",
-
   "ui.messageNav.newMessage": "Нове повідомлення",
-
   "ui.textField.copyToClipboard": "Копіювати в буфер обміну",
   "ui.textField.copyLink": "Копіювати посилання",
   "ui.textField.copied": "Скопійовано",
-
   "ui.imagePreview.alt": "Попередній перегляд зображення",
   "ui.scrollView.ariaLabel": "контент для прокручування",
-
   "ui.tool.read": "Читання",
   "ui.tool.loaded": "Завантажено",
   "ui.tool.list": "Список",
@@ -146,16 +138,13 @@ export const dict: Record<string, string> = {
   "ui.tool.agent": "Агент {{type}}",
   "ui.tool.agent.default": "Агент",
   "ui.tool.skill": "Навичка",
-
   "ui.basicTool.called": "Викликано `{{tool}}`",
   "ui.toolErrorCard.failed": "Помилка",
   "ui.toolErrorCard.copyError": "Копіювати помилку",
-
   "ui.common.file.one": "файл",
   "ui.common.file.other": "файлів",
   "ui.common.question.one": "питання",
   "ui.common.question.other": "питань",
-
   "ui.common.add": "Додати",
   "ui.common.back": "Назад",
   "ui.common.cancel": "Скасувати",
@@ -165,11 +154,9 @@ export const dict: Record<string, string> = {
   "ui.common.next": "Далі",
   "ui.common.submit": "Надіслати",
   "ui.common.showMore": "Показати більше",
-
   "ui.permission.deny": "Заборонити",
   "ui.permission.allowAlways": "Дозволяти завжди",
   "ui.permission.allowOnce": "Дозволити один раз",
-
   "ui.message.expand": "Розгорнути повідомлення",
   "ui.message.collapse": "Згорнути повідомлення",
   "ui.message.copy": "Копіювати",
@@ -183,16 +170,19 @@ export const dict: Record<string, string> = {
   "ui.message.interrupted": "Перервано",
   "ui.message.queued": "У черзі",
   "ui.message.attachment.alt": "вкладення",
-
   "ui.patch.action.deleted": "Видалено",
   "ui.patch.action.created": "Створено",
   "ui.patch.action.moved": "Переміщено",
   "ui.patch.action.patched": "Пропатчено",
-
   "ui.question.subtitle.answered": "{{count}} відповідей",
   "ui.question.answer.none": "(немає відповіді)",
   "ui.question.review.notAnswered": "(не відповіли)",
   "ui.question.multiHint": "Виберіть усі відповідні варіанти",
   "ui.question.singleHint": "Виберіть одну відповідь",
   "ui.question.custom.placeholder": "Введіть свою відповідь...",
-}
+  "ui.tool.read.video": "Analyzing video",
+  "ui.tool.read.audio": "Analyzing audio",
+  "ui.tool.read.media": "Analyzing media",
+} satisfies Partial<Record<Keys, string>>
+
+export type DictUI = keyof typeof dict

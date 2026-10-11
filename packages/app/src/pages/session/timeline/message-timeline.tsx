@@ -792,6 +792,10 @@ export function MessageTimeline(props: {
     const parts = syncData.part[msgId] ?? []
     let text = ""
     for (const part of parts) {
+      // Only the answer gets spoken. Reasoning parts are the model's private
+      // thinking, and letting them through meant the voice read its own
+      // deliberation back over the top of the reply it was about to finish.
+      if (part.type === "reasoning") continue
       if (part.type === "text" && "text" in part) text += (part as any).text
     }
     text = stripThinkingBlocks(text)
@@ -957,58 +961,60 @@ export function MessageTimeline(props: {
         const lastChunk = ttsLastChunkHash.get(msg.id) || ""
         if (lastChunk && lastChunk === textHash) continue
 
-        const alreadySent = ttsSentText.get(msg.id) || ""
-
-        if (isActive) {
-          // ACTIVE message: speak while the AI is still writing — flush whole words
-          // as soon as one is available, never waiting for a sentence end.
-          // ttsSentText already records everything spoken, so when nothing new has
-          // arrived this is empty and nothing is re-sent. No per-message lockout is
-          // needed, and adding one here is what used to space out a reply into
-          // widely separated bursts.
-          const unsentText = fullText.slice(alreadySent.length)
-          if (unsentText.length < 1) continue
-
-          const endsAtWordBoundary = /\s/.test(unsentText[unsentText.length - 1] ?? "")
-          if (unsentText.length < TTS_FLUSH_MIN_CHARS || !endsAtWordBoundary) {
-            // waiting for more words
-          } else {
-            let cut = unsentText.length
-            if (unsentText.length > TTS_FLUSH_MAX_CHARS) {
-              // never cut mid-word — back off to the last space inside the budget
-              const space = unsentText.lastIndexOf(" ", TTS_FLUSH_MAX_CHARS)
-              if (space > TTS_FLUSH_MIN_CHARS) cut = space
-            }
-            const chunk = unsentText.slice(0, cut).trim()
-            if (chunk.length >= 3) {
-              ttsSentText.set(msg.id, alreadySent + chunk)
-              ttsLastChunkHash.set(msg.id, textHash)
-              sendTTSText(chunk)
-            }
-          }
-        } else {
-          // COMPLETED message: send remaining in large sentence-level chunks
-          ttsSpokenIds.add(msg.id)
-          ttsSpokenContentHashes.add(textHash)
-          persistSpokenIds()
-          const unsentText = fullText.slice(alreadySent.length).trim()
-          const textToSend = unsentText.length > 0 ? unsentText : ""
-          if (textToSend.length > 0) {
-            // Split into sentence-level chunks of ~300 chars
-            const sents = textToSend.split(/(?<=[।!?\.\n])\s*/)
-            let buf = ""
-            for (const s of sents) {
-              if (buf.length + s.length > 300 && buf.length > 0) {
-                sendTTSText(buf.trim())
-                buf = ""
-              }
-              buf += (buf ? " " : "") + s
-            }
-            if (buf.trim().length > 0) sendTTSText(buf.trim())
-          }
-        }
+        // Speak at most one message per pass. The old loop kept going after
+        // queueing a chunk, so a backlog of finished replies all got flushed into
+        // the same poll window and played on top of each other. Finishing this one
+        // first, then returning, keeps the voice to a single conversation at a time.
+        speakMessage(msg.id, isActive, fullText, textHash)
+        return
       }
     }
+  }
+
+  /**
+   * Queue the next slice of one message. While the agent is still writing this
+   * flushes whole words as they appear; once it has finished, whatever is left
+   * goes out in sentence-sized pieces.
+   */
+  function speakMessage(id: string, isActive: boolean, fullText: string, textHash: string) {
+    const alreadySent = ttsSentText.get(id) || ""
+
+    if (isActive) {
+      const unsentText = fullText.slice(alreadySent.length)
+      if (unsentText.length < 1) return
+
+      const endsAtWordBoundary = /\s/.test(unsentText[unsentText.length - 1] ?? "")
+      if (unsentText.length < TTS_FLUSH_MIN_CHARS || !endsAtWordBoundary) return
+
+      let cut = unsentText.length
+      if (unsentText.length > TTS_FLUSH_MAX_CHARS) {
+        const space = unsentText.lastIndexOf(" ", TTS_FLUSH_MAX_CHARS)
+        if (space > TTS_FLUSH_MIN_CHARS) cut = space
+      }
+      const chunk = unsentText.slice(0, cut).trim()
+      if (chunk.length < 3) return
+      ttsSentText.set(id, alreadySent + chunk)
+      ttsLastChunkHash.set(id, textHash)
+      sendTTSText(chunk)
+      return
+    }
+
+    ttsSpokenIds.add(id)
+    ttsSpokenContentHashes.add(textHash)
+    persistSpokenIds()
+    const remaining = fullText.slice(alreadySent.length).trim()
+    if (remaining.length === 0) return
+
+    const sentences = remaining.split(/(?<=[।!?\.\n])\s*/)
+    let buffer = ""
+    for (const sentence of sentences) {
+      if (buffer.length + sentence.length > 300 && buffer.length > 0) {
+        sendTTSText(buffer.trim())
+        buffer = ""
+      }
+      buffer += (buffer ? " " : "") + sentence
+    }
+    if (buffer.trim().length > 0) sendTTSText(buffer.trim())
   }
 
   // EFFECT 1: Reactive — fires when messages or parts change
@@ -1040,7 +1046,11 @@ export function MessageTimeline(props: {
     }
   ))
 
-  // EFFECT 2: Polling — 80ms so newly streamed words are picked up almost instantly
+  // EFFECT 2: Polling — picks up words as they stream in. The scan only ever
+  // considers the one message the agent is currently writing to; older ones are
+  // skipped by mountedMessageIDs. Sweeping every message on every tick used to
+  // queue several replies inside a single poll window, which is what made two or
+  // three clips play at once.
   const ttsPollInterval = setInterval(() => {
     processTTSForMessages()
   }, 80)
@@ -2125,6 +2135,12 @@ export function MessageTimeline(props: {
         }}
       >
         <Show when={showHeader()}>
+          {/*
+            The session title floats over the conversation, so it has to be
+            opaque enough to hide what scrolls underneath it. A bare `sticky`
+            left the gradient transparent and every message appeared to have its
+            top sliced off as it passed behind the title.
+          */}
           <div
             data-session-title
             classList={{

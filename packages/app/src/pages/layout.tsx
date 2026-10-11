@@ -59,7 +59,7 @@ import { useCommand, type CommandOption } from "@/context/command"
 import { ConstrainDragXAxis, getDraggableId } from "@/utils/solid-dnd"
 import { DebugBar } from "@/components/debug-bar"
 import { TabsInfoPopup } from "@/components/help-button"
-import { settingsHref } from "@/components/settings-dialog"
+
 import { Titlebar, type TitlebarUpdate } from "@/components/titlebar"
 import { useDirectoryPicker } from "@/components/directory-picker"
 import { ServerConnection, useServer } from "@/context/server"
@@ -88,6 +88,7 @@ import {
 } from "./layout/sidebar-workspace"
 import { ProjectDragOverlay, SortableProject, type ProjectSidebarContext } from "./layout/sidebar-project"
 import { SidebarContent } from "./layout/sidebar-shell"
+import { toggleSidebarStatus } from "@/components/sidebar/sidebar-status"
 
 export default function LegacyLayout(props: ParentProps) {
   const serverSDK = useServerSDK()
@@ -1116,7 +1117,11 @@ export default function LegacyLayout(props: ParentProps) {
   }
 
   function openSettings() {
-    navigate(settingsHref("general", params.id))
+    const run = ++dialogRun
+    void import("@/components/settings-v2/dialog-settings-v2").then((x) => {
+      if (dialogDead || dialogRun !== run) return
+      dialog.show(() => <x.DialogSettings />)
+    })
   }
 
   function projectRoot(directory: string) {
@@ -2246,6 +2251,9 @@ export default function LegacyLayout(props: ParentProps) {
       settingsLabel={() => language.t("sidebar.settings")}
       settingsKeybind={() => command.keybind("settings.open")}
       onOpenSettings={openSettings}
+      statusLabel={() => language.t("command.status.toggle")}
+      statusKeybind={() => command.keybind("status.toggle")}
+      onToggleStatus={toggleSidebarStatus}
       helpLabel={() => language.t("sidebar.help")}
       onOpenHelp={() => platform.openLink("https://zyraxonai.lovable.app/desktop-feedback")}
       editorDirectory={currentDir}

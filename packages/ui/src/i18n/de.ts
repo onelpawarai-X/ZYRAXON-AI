@@ -4,6 +4,10 @@ import { dict as en } from "./en"
 
 type Keys = keyof typeof en
 
+/**
+ * Every string is this locale's own wording. A key with no translation stays
+ * out of the file rather than falling back to English.
+ */
 export const dict = {
   "ui.sessionReview.title": "Sitzungsänderungen",
   "ui.sessionReview.title.git": "Git-Änderungen",
@@ -16,7 +20,6 @@ export const dict = {
   "ui.sessionReview.selection.lines": "Zeilen {{start}}-{{end}}",
   "ui.sessionReview.expandAll": "Alle erweitern",
   "ui.sessionReview.collapseAll": "Alle reduzieren",
-
   "ui.sessionReview.change.added": "Hinzugefügt",
   "ui.sessionReview.change.removed": "Entfernt",
   "ui.sessionReview.change.modified": "Geändert",
@@ -36,8 +39,7 @@ export const dict = {
   "ui.sessionReviewV2.nextFile": "Nächste Datei",
   "ui.sessionReviewV2.diffView": "Diff-Ansicht",
   "ui.sessionReviewV2.empty.noGit.title": "Keine verfolgten Änderungen",
-  "ui.sessionReviewV2.empty.noGit.description":
-    "Änderungen in diesem Projekt verfolgen, überprüfen und rückgängig machen",
+  "ui.sessionReviewV2.empty.noGit.description": "Änderungen in diesem Projekt verfolgen, überprüfen und rückgängig machen",
   "ui.sessionReviewV2.empty.noGit.action": "Git-Repository erstellen",
   "ui.sessionReviewV2.empty.noGit.actionLoading": "Git-Repository wird erstellt...",
   "ui.sessionReviewV2.empty.changes.title": "Noch keine Dateiänderungen",
@@ -49,10 +51,8 @@ export const dict = {
   "ui.fileMedia.state.error": "Fehler bei {{kind}}",
   "ui.fileMedia.state.unavailable": "{{kind}} nicht verfügbar",
   "ui.fileMedia.binary.title": "Binärdatei",
-  "ui.fileMedia.binary.description.path":
-    "{{path}} kann nicht angezeigt werden, da es sich um eine Binärdatei handelt.",
-  "ui.fileMedia.binary.description.default":
-    "Diese Datei kann nicht angezeigt werden, da es sich um eine Binärdatei handelt.",
+  "ui.fileMedia.binary.description.path": "{{path}} kann nicht angezeigt werden, da es sich um eine Binärdatei handelt.",
+  "ui.fileMedia.binary.description.default": "Diese Datei kann nicht angezeigt werden, da es sich um eine Binärdatei handelt.",
   "ui.lineComment.label.prefix": "Kommentar zu ",
   "ui.lineComment.label.suffix": "",
   "ui.lineComment.editorLabel.prefix": "Kommentiere ",
@@ -69,7 +69,6 @@ export const dict = {
   "ui.sessionTurn.diffs.showAll": "Alle anzeigen",
   "ui.sessionTurn.diffs.showLess": "Weniger anzeigen",
   "ui.sessionTurn.diffs.more": "+{{count}} weitere",
-
   "ui.sessionTurn.retry.retrying": "erneuter Versuch",
   "ui.sessionTurn.retry.inSeconds": "in {{seconds}}s",
   "ui.sessionTurn.retry.attempt": "Versuch #{{attempt}}",
@@ -77,16 +76,12 @@ export const dict = {
   "ui.sessionTurn.retry.geminiHot": "gemini ist gerade sehr überlastet",
   "ui.sessionTurn.error.freeUsageExceeded": "Kostenloses Nutzungslimit überschritten",
   "ui.sessionTurn.error.addCredits": "Guthaben aufladen",
-
   "dialog.usageExceeded.freeTier.title": "Kostenloses Limit erreicht",
-  "dialog.usageExceeded.freeTier.description":
-    "Abonniere ZYRAXON Go für zuverlässigen Zugriff auf die besten Open-Source-Modelle, ab $5/Monat.",
+  "dialog.usageExceeded.freeTier.description": "Abonniere ZYRAXON Go für zuverlässigen Zugriff auf die besten Open-Source-Modelle, ab $5/Monat.",
   "dialog.usageExceeded.freeTier.actionLabel": "Abonnieren",
   "dialog.usageExceeded.accountRateLimit.title": "Go-Limit erreicht",
-  "dialog.usageExceeded.accountRateLimit.description":
-    "Nutzungslimit erreicht. Um dieses Modell jetzt weiter zu nutzen, aktiviere die Nutzung über dein verfügbares Guthaben",
+  "dialog.usageExceeded.accountRateLimit.description": "Nutzungslimit erreicht. Um dieses Modell jetzt weiter zu nutzen, aktiviere die Nutzung über dein verfügbares Guthaben",
   "dialog.usageExceeded.accountRateLimit.actionLabel": "Einstellungen öffnen",
-
   "ui.sessionTurn.status.delegating": "Arbeit delegieren",
   "ui.sessionTurn.status.planning": "Nächste Schritte planen",
   "ui.sessionTurn.status.gatheringContext": "Erkunden",
@@ -99,7 +94,6 @@ export const dict = {
   "ui.sessionTurn.status.thinkingWithTopic": "Denken - {{topic}}",
   "ui.sessionTurn.status.gatheringThoughts": "Gedanken sammeln",
   "ui.sessionTurn.status.consideringNextSteps": "Nächste Schritte erwägen",
-
   "ui.messagePart.questions.dismissed": "Fragen verworfen",
   "ui.messagePart.compaction": "Sitzung komprimiert",
   "ui.messagePart.context.read.one": "{{count}} Lesevorgang",
@@ -113,22 +107,17 @@ export const dict = {
   "ui.messagePart.title.write": "Schreiben",
   "ui.messagePart.option.typeOwnAnswer": "Eigene Antwort eingeben",
   "ui.messagePart.review.title": "Antworten überprüfen",
-
   "ui.list.loading": "Laden",
   "ui.list.empty": "Keine Ergebnisse",
   "ui.list.clearFilter": "Filter löschen",
   "ui.list.emptyWithFilter.prefix": "Keine Ergebnisse für",
   "ui.list.emptyWithFilter.suffix": "",
-
   "ui.messageNav.newMessage": "Neue Nachricht",
-
   "ui.textField.copyToClipboard": "In die Zwischenablage kopieren",
   "ui.textField.copyLink": "Link kopieren",
   "ui.textField.copied": "Kopiert",
-
   "ui.imagePreview.alt": "Bildvorschau",
   "ui.scrollView.ariaLabel": "scrollbarer Inhalt",
-
   "ui.tool.read": "Lesen",
   "ui.tool.loaded": "Geladen",
   "ui.tool.list": "Auflisten",
@@ -143,12 +132,10 @@ export const dict = {
   "ui.tool.questions": "Fragen",
   "ui.tool.agent": "{{type}} Agent",
   "ui.tool.agent.default": "Agent",
-
   "ui.common.file.one": "Datei",
   "ui.common.file.other": "Dateien",
   "ui.common.question.one": "Frage",
   "ui.common.question.other": "Fragen",
-
   "ui.common.add": "Hinzufügen",
   "ui.common.back": "Zurück",
   "ui.common.cancel": "Abbrechen",
@@ -158,11 +145,9 @@ export const dict = {
   "ui.common.next": "Weiter",
   "ui.common.submit": "Absenden",
   "ui.common.showMore": "Mehr anzeigen",
-
   "ui.permission.deny": "Verweigern",
   "ui.permission.allowAlways": "Immer erlauben",
   "ui.permission.allowOnce": "Einmal erlauben",
-
   "ui.message.expand": "Nachricht erweitern",
   "ui.message.collapse": "Nachricht reduzieren",
   "ui.message.copy": "Kopieren",
@@ -174,19 +159,16 @@ export const dict = {
   "ui.message.interrupted": "Unterbrochen",
   "ui.message.queued": "In Warteschlange",
   "ui.message.attachment.alt": "Anhang",
-
   "ui.patch.action.deleted": "Gelöscht",
   "ui.patch.action.created": "Erstellt",
   "ui.patch.action.moved": "Verschoben",
   "ui.patch.action.patched": "Gepatched",
-
   "ui.question.subtitle.answered": "{{count}} beantwortet",
   "ui.question.answer.none": "(keine Antwort)",
   "ui.question.review.notAnswered": "(nicht beantwortet)",
   "ui.question.multiHint": "Alle zutreffenden auswählen",
   "ui.question.singleHint": "Eine Antwort auswählen",
   "ui.question.custom.placeholder": "Geben Sie Ihre Antwort ein...",
-
   "ui.fileSearch.placeholder": "Suchen",
   "ui.fileSearch.previousMatch": "Vorheriges Ergebnis",
   "ui.fileSearch.nextMatch": "Nächstes Ergebnis",
@@ -198,4 +180,9 @@ export const dict = {
   "ui.toolErrorCard.copyError": "Fehler kopieren",
   "ui.message.duration.seconds": "{{count}}s",
   "ui.message.duration.minutesSeconds": "{{minutes}}m {{seconds}}s",
+  "ui.tool.read.video": "Video analysieren",
+  "ui.tool.read.audio": "Audio analysieren",
+  "ui.tool.read.media": "Medien analysieren",
 } satisfies Partial<Record<Keys, string>>
+
+export type DictUI = keyof typeof dict

@@ -1,5 +1,13 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
+import { dict as en } from "./en"
+
+type Keys = keyof typeof en
+
+/**
+ * Every string is this locale's own wording. A key with no translation stays
+ * out of the file rather than falling back to English.
+ */
 export const dict = {
   "ui.sessionReview.title": "تغييرات الجلسة",
   "ui.sessionReview.title.git": "تغييرات Git",
@@ -45,7 +53,6 @@ export const dict = {
   "ui.fileMedia.binary.title": "ملف ثنائي",
   "ui.fileMedia.binary.description.path": "{{path}} عبارة عن ملف ثنائي ولا يمكن عرضه.",
   "ui.fileMedia.binary.description.default": "هذا ملف ثنائي ولا يمكن عرضه.",
-
   "ui.lineComment.label.prefix": "تعليق على ",
   "ui.lineComment.label.suffix": "",
   "ui.lineComment.editorLabel.prefix": "جارٍ التعليق على ",
@@ -53,7 +60,6 @@ export const dict = {
   "ui.lineComment.placeholder": "أضف تعليقًا",
   "ui.lineComment.submit": "تعليق",
   "ui.lineComment.cancel": "إلغاء",
-
   "ui.sessionTurn.steps.show": "إظهار الخطوات",
   "ui.sessionTurn.steps.hide": "إخفاء الخطوات",
   "ui.sessionTurn.summary.response": "استجابة",
@@ -63,7 +69,6 @@ export const dict = {
   "ui.sessionTurn.diffs.showAll": "إظهار الكل",
   "ui.sessionTurn.diffs.showLess": "إظهار أقل",
   "ui.sessionTurn.diffs.more": "ملفات إضافية: {{count}}",
-
   "ui.sessionTurn.retry.retrying": "إعادة المحاولة",
   "ui.sessionTurn.retry.inSeconds": "خلال {{seconds}} ثواني",
   "ui.sessionTurn.retry.attempt": "المحاولة رقم {{attempt}}",
@@ -71,16 +76,12 @@ export const dict = {
   "ui.sessionTurn.retry.geminiHot": "gemini مزدحم حاليا",
   "ui.sessionTurn.error.freeUsageExceeded": "تم تجاوز حد الاستخدام المجاني",
   "ui.sessionTurn.error.addCredits": "إضافة رصيد",
-
   "dialog.usageExceeded.freeTier.title": "تم الوصول إلى الحد المجاني",
-  "dialog.usageExceeded.freeTier.description":
-    "اشترك في ZYRAXON Go للحصول على وصول موثوق إلى أفضل النماذج مفتوحة المصدر، ابتداءً من $5/شهر.",
+  "dialog.usageExceeded.freeTier.description": "اشترك في ZYRAXON Go للحصول على وصول موثوق إلى أفضل النماذج مفتوحة المصدر، ابتداءً من $5/شهر.",
   "dialog.usageExceeded.freeTier.actionLabel": "اشترك",
   "dialog.usageExceeded.accountRateLimit.title": "تم الوصول إلى حد Go",
-  "dialog.usageExceeded.accountRateLimit.description":
-    "تم الوصول إلى حد الاستخدام. لمتابعة استخدام هذا النموذج الآن، قم بتفعيل الاستخدام من رصيدك المتاح",
+  "dialog.usageExceeded.accountRateLimit.description": "تم الوصول إلى حد الاستخدام. لمتابعة استخدام هذا النموذج الآن، قم بتفعيل الاستخدام من رصيدك المتاح",
   "dialog.usageExceeded.accountRateLimit.actionLabel": "فتح الإعدادات",
-
   "ui.sessionTurn.status.delegating": "تفويض العمل",
   "ui.sessionTurn.status.planning": "تخطيط الخطوات التالية",
   "ui.sessionTurn.status.gatheringContext": "استكشاف",
@@ -93,7 +94,6 @@ export const dict = {
   "ui.sessionTurn.status.thinkingWithTopic": "تفكير - {{topic}}",
   "ui.sessionTurn.status.gatheringThoughts": "جمع الأفكار",
   "ui.sessionTurn.status.consideringNextSteps": "النظر في الخطوات التالية",
-
   "ui.messagePart.questions.dismissed": "تم رفض الأسئلة",
   "ui.messagePart.compaction": "تم ضغط الجلسة",
   "ui.messagePart.context.read.one": "{{count}} قراءة",
@@ -107,22 +107,17 @@ export const dict = {
   "ui.messagePart.title.write": "كتابة",
   "ui.messagePart.option.typeOwnAnswer": "اكتب إجابتك الخاصة",
   "ui.messagePart.review.title": "مراجعة إجاباتك",
-
   "ui.list.loading": "جارٍ التحميل",
   "ui.list.empty": "لا توجد نتائج",
   "ui.list.clearFilter": "مسح عامل التصفية",
   "ui.list.emptyWithFilter.prefix": "لا توجد نتائج لـ",
   "ui.list.emptyWithFilter.suffix": "",
-
   "ui.messageNav.newMessage": "رسالة جديدة",
-
   "ui.textField.copyToClipboard": "نسخ إلى الحافظة",
   "ui.textField.copyLink": "نسخ الرابط",
   "ui.textField.copied": "تم النسخ",
-
   "ui.imagePreview.alt": "معاينة الصورة",
   "ui.scrollView.ariaLabel": "محتوى قابل للتمرير",
-
   "ui.tool.read": "قراءة",
   "ui.tool.loaded": "تم التحميل",
   "ui.tool.list": "قائمة",
@@ -137,12 +132,10 @@ export const dict = {
   "ui.tool.questions": "أسئلة",
   "ui.tool.agent": "وكيل {{type}}",
   "ui.tool.agent.default": "وكيل",
-
   "ui.common.file.one": "ملف",
   "ui.common.file.other": "ملفات",
   "ui.common.question.one": "سؤال",
   "ui.common.question.other": "أسئلة",
-
   "ui.common.add": "إضافة",
   "ui.common.back": "رجوع",
   "ui.common.cancel": "إلغاء",
@@ -152,11 +145,9 @@ export const dict = {
   "ui.common.next": "التالي",
   "ui.common.submit": "إرسال",
   "ui.common.showMore": "عرض المزيد",
-
   "ui.permission.deny": "رفض",
   "ui.permission.allowAlways": "السماح دائمًا",
   "ui.permission.allowOnce": "السماح مرة واحدة",
-
   "ui.message.expand": "توسيع الرسالة",
   "ui.message.collapse": "طي الرسالة",
   "ui.message.copy": "نسخ",
@@ -168,19 +159,16 @@ export const dict = {
   "ui.message.interrupted": "تمت المقاطعة",
   "ui.message.queued": "في الانتظار",
   "ui.message.attachment.alt": "مرفق",
-
   "ui.patch.action.deleted": "محذوف",
   "ui.patch.action.created": "تم الإنشاء",
   "ui.patch.action.moved": "منقول",
   "ui.patch.action.patched": "مصحح",
-
   "ui.question.subtitle.answered": "{{count}} أجيب",
   "ui.question.answer.none": "(لا توجد إجابة)",
   "ui.question.review.notAnswered": "(لم يتم الرد)",
   "ui.question.multiHint": "حدد كل ما ينطبق",
   "ui.question.singleHint": "حدد إجابة واحدة",
   "ui.question.custom.placeholder": "اكتب إجابتك...",
-
   "ui.fileSearch.placeholder": "بحث",
   "ui.fileSearch.previousMatch": "المطابقة السابقة",
   "ui.fileSearch.nextMatch": "المطابقة التالية",
@@ -192,4 +180,9 @@ export const dict = {
   "ui.toolErrorCard.copyError": "نسخ الخطأ",
   "ui.message.duration.seconds": "{{count}}ث",
   "ui.message.duration.minutesSeconds": "{{minutes}}د {{seconds}}ث",
-}
+  "ui.tool.read.video": "Analyzing video",
+  "ui.tool.read.audio": "Analyzing audio",
+  "ui.tool.read.media": "Analyzing media",
+} satisfies Partial<Record<Keys, string>>
+
+export type DictUI = keyof typeof dict

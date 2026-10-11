@@ -201,6 +201,22 @@ export function McpHubPanel(props: McpHubPanelProps) {
    * handshake completes.
    */
   const [clientIds, setClientIds] = createSignal<Record<string, { id: string; secret?: string }>>({})
+
+  /**
+   * Whether this app's OAuth client has to be issued by hand before it will connect.
+   *
+   * The catalog already records the truth for every server: `zeroSetup` means a
+   * registration_endpoint answered and ZYRAXON can register its own client, so the
+   * user only has to press Connect and approve in the browser. A `consoleUrl`
+   * without that flag means the vendor refuses registration and its own console has
+   * to issue the client, so the card shows the fields.
+   *
+   * Deriving this from the catalog keeps Stripe, Gmail and the rest of the browser
+   * based apps free of a form they never needed, and gives the handful that do
+   * need one somewhere obvious to type it.
+   */
+  const needsClientId = (entry: AppEntry) => Boolean(entry.consoleUrl) && entry.zeroSetup !== true
+
   /** the app whose sign-in link is being built, so the button can say so */
   const [generating, setGenerating] = createSignal<string | null>(null)
   /** the sign-in link produced by Generate, shown with copy and open */
@@ -486,7 +502,14 @@ export function McpHubPanel(props: McpHubPanelProps) {
       }
 
       // 3. OAuth apps. This awaits the whole handshake, including the Allow click.
-      setState(app.id, await connectApp(props.runtime, resolved, { onProgress: (s) => setState(app.id, s) }))
+      const outcome = await connectApp(props.runtime, resolved, {
+        onProgress: (s) => setState(app.id, s),
+      })
+      setState(app.id, outcome)
+
+      // The card stays as it is: a refusal that really was about the client is
+      // already covered by needsClientId, and surfacing the raw reason here is what
+      // used to replace the whole card with an error.
     } finally {
       busyIds.delete(app.id)
       setBusy(null)
@@ -567,6 +590,45 @@ export function McpHubPanel(props: McpHubPanelProps) {
         }),
       )
       if (states()[app.id]?.status === "connected") setDetailsFor(null)
+    } finally {
+      busyIds.delete(app.id)
+      setBusy(null)
+      setBusySince(0)
+    }
+  }
+
+  /**
+   * Connect straight from the card using the Client ID typed beside it.
+   *
+   * This is the same handshake `submitClientId` runs from the Details panel, lifted
+   * out so the card does not have to open a dialog first. The credentials go into
+   * the server's config as part of the connect, which is what gives the handshake a
+   * client to request consent with.
+   */
+  const connectWithClientId = async (app: AppEntry, credentials: { id: string; secret?: string }) => {
+    if (busy()) return
+    busyIds.add(app.id)
+    setBusy(app.id)
+    setBusySince(Date.now())
+    setState(app.id, { status: "connecting" })
+    try {
+      let target = app
+      if (!app.url && app.kind !== "local") {
+        const hit = await props.resolve(app)
+        if (!hit.url) {
+          setState(app.id, { status: "failed", error: hit.reason ?? "no connectable server found" })
+          return
+        }
+        target = { ...app, url: hit.url, zeroSetup: hit.server ? undefined : app.zeroSetup }
+      }
+      setState(
+        app.id,
+        await connectApp(props.runtime, target, {
+          clientId: credentials.id.trim(),
+          clientSecret: credentials.secret?.trim(),
+          onProgress: (s) => setState(app.id, s),
+        }),
+      )
     } finally {
       busyIds.delete(app.id)
       setBusy(null)
@@ -827,7 +889,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
 
       {/* app grid, split by how each app connects */}
       <Show when={!busyApp()}>
-        <div class="min-h-0 flex-1 overflow-y-auto px-6 pb-8">
+        <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4" style={{ "max-height": "calc(100vh - 6rem)" }}>
         <div class="flex flex-col gap-8">
           <For each={sections()}>
             {(section) => (
@@ -882,13 +944,20 @@ export function McpHubPanel(props: McpHubPanelProps) {
                     </div>
                     <div class="flex min-w-0 flex-col">
                       <span class="truncate text-[14px] font-[600]">{app.name}</span>
-                      <span class="truncate text-[12px] text-[var(--mcp-text-weak)]">{app.description}</span>
+                      {/* Not every catalog entry carries a description. Rendering the
+                          missing one literally printed the word "undefined" under the
+                          app name, which read as a broken card rather than a blank. */}
+                      <Show when={app.description}>
+                        <span class="truncate text-[12px] text-[var(--mcp-text-weak)]">
+                          {app.description}
+                        </span>
+                      </Show>
                     </div>
                   </div>
 
                   <div class="flex items-center gap-2 text-[11px] text-[var(--mcp-text-weak)]">
                     <span class="rounded-full px-2 py-0.5" style={{ background: fill() }}>
-                      {app.category}
+                      {app.category ?? "MCP"}
                     </span>
                     <Show when={oneClick()[app.id] === true}>
                       <span class="rounded-full bg-emerald-500/15 px-2 py-0.5 text-emerald-600 dark:text-emerald-300">
@@ -970,10 +1039,55 @@ export function McpHubPanel(props: McpHubPanelProps) {
                           style={{ background: fill() }}
                           onMouseEnter={(e) => (e.currentTarget.style.background = fillHover())}
                           onMouseLeave={(e) => (e.currentTarget.style.background = fill())}
-                          onClick={() => onConnect(app)}
+                          onClick={() => {
+                            // Once the server has said it needs a client of its own,
+                            // the ID typed on the card is what Connect has to send.
+                            // Ignoring it and running the plain handshake again just
+                            // reproduced the same refusal.
+                            if (needsClientId(app) && clientIds()[app.id]?.id?.trim()) {
+                              void connectWithClientId(app, clientIds()[app.id]!)
+                              return
+                            }
+                            void onConnect(app)
+                          }}
                         >
-                          {busy() === app.id ? "Working…" : "Connect"}
+                          {busy() === app.id ? "Working…" : needsClientId(app) ? "Continue" : "Connect"}
                         </button>
+                      </div>
+                    </Show>
+
+                    {/* Vendors that refuse self-registration need a client ID the user
+                        creates in their own console. Asking for it here, on the card,
+                        saves hunting through the Details dialog to find a field that
+                        Connect could never have filled in on its own. */}
+                    <Show when={needsClientId(app)}>
+                      <div class="mt-2.5 flex flex-wrap items-center gap-2 rounded-lg border border-[var(--mcp-border)] bg-[var(--mcp-surface-2)] p-2.5">
+                        <input
+                          type="text"
+                          aria-label={`Client ID for ${app.name}`}
+                          placeholder="Client ID"
+                          class="min-w-0 flex-1 rounded-md border border-[var(--mcp-border)] bg-transparent px-2 py-1.5 text-[12px] outline-none focus:border-[var(--mcp-accent)]"
+                          value={clientIds()[app.id]?.id ?? ""}
+                          onInput={(e) =>
+                            setClientIds((prev) => ({
+                              ...prev,
+                              [app.id]: { ...prev[app.id], id: e.currentTarget.value },
+                            }))
+                          }
+                        />
+                        <input
+                          type="text"
+                          aria-label={`Client secret for ${app.name}`}
+                          placeholder="Client secret (optional)"
+                          class="min-w-0 flex-1 rounded-md border border-[var(--mcp-border)] bg-transparent px-2 py-1.5 text-[12px] outline-none focus:border-[var(--mcp-accent)]"
+                          value={clientIds()[app.id]?.secret ?? ""}
+                          onInput={(e) =>
+                            setClientIds((prev) => ({
+                              ...prev,
+                              [app.id]: { ...prev[app.id], secret: e.currentTarget.value },
+                            }))
+                          }
+                        />
                       </div>
                     </Show>
                   </div>
@@ -1105,10 +1219,12 @@ export function McpHubPanel(props: McpHubPanelProps) {
               background: overlayTint(),
               padding: "1.5rem",
               "pointer-events": "auto",
+              "max-height": "calc(100vh - 3rem)",
+              "overflow": "hidden",
             }}
           >
             <div
-              class="w-full max-w-[560px] overflow-y-auto rounded-xl border border-[var(--mcp-border-strong)] p-5"
+              class="max-h-[calc(100vh-3rem)] w-full max-w-[520px] overflow-y-auto rounded-xl border border-[var(--mcp-border-strong)] p-4"
               style={{ background: raised(), "box-shadow": "0 24px 64px rgba(0,0,0,0.35)" }}
             >
               <div class="mb-1 flex items-center gap-2 text-[15px] font-[600]">

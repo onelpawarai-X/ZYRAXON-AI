@@ -12,7 +12,7 @@ import {
 import { ConstrainDragXAxis } from "@/utils/solid-dnd"
 import { IconButton } from "@zyraxon-ai/ui/icon-button"
 import { Tooltip, TooltipKeybind } from "@zyraxon-ai/ui/tooltip"
-import { SidebarStatus } from "@/components/sidebar/sidebar-status"
+import { SidebarStatus, toggleSidebarStatus } from "@/components/sidebar/sidebar-status"
 import { type LocalProject } from "@/context/layout"
 import { EditorModeToggle } from "./editor-mode-toggle"
 
@@ -32,6 +32,9 @@ export const SidebarContent = (props: {
   settingsLabel: Accessor<string>
   settingsKeybind: Accessor<string | undefined>
   onOpenSettings: () => void
+  statusLabel: Accessor<string>
+  statusKeybind: Accessor<string | undefined>
+  onToggleStatus: () => void
   helpLabel: Accessor<string>
   onOpenHelp: () => void
   renderPanel: () => JSX.Element
@@ -67,7 +70,7 @@ export const SidebarContent = (props: {
           >
             <DragDropSensors />
             <ConstrainDragXAxis />
-            <div class="h-full w-full flex flex-col items-center gap-3 px-3 py-3 overflow-y-auto no-scrollbar">
+            <div class="h-full w-full flex flex-col items-center gap-2 px-3 py-3 overflow-y-auto no-scrollbar">
               <SortableProvider ids={props.projects().map((p) => p.worktree)}>
                 <For each={props.projects()}>{(project) => props.renderProject(project)}</For>
               </SortableProvider>
@@ -84,7 +87,7 @@ export const SidebarContent = (props: {
                 }
               >
                 <IconButton
-                  icon="plus"
+                  icon="zy-add"
                   variant="ghost"
                   size="large"
                   onClick={props.onOpenProject}
@@ -95,10 +98,19 @@ export const SidebarContent = (props: {
             <DragOverlay>{props.renderProjectOverlay()}</DragOverlay>
           </DragDropProvider>
         </div>
-        <div class="shrink-0 w-full pt-3 pb-6 flex flex-col items-center gap-2">
+        <div class="shrink-0 w-full pt-3 pb-6 flex flex-col items-center gap-1.5">
+          <TooltipKeybind placement={placement()} title={props.statusLabel()} keybind={props.statusKeybind() ?? ""}>
+            <IconButton
+              icon="zy-status"
+              variant="ghost"
+              size="large"
+              onClick={props.onToggleStatus}
+              aria-label={props.statusLabel()}
+            />
+          </TooltipKeybind>
           <TooltipKeybind placement={placement()} title={props.settingsLabel()} keybind={props.settingsKeybind() ?? ""}>
             <IconButton
-              icon="settings-gear"
+              icon="zy-settings"
               variant="ghost"
               size="large"
               onClick={props.onOpenSettings}
@@ -107,7 +119,7 @@ export const SidebarContent = (props: {
           </TooltipKeybind>
           <Tooltip placement={placement()} value={props.helpLabel()}>
             <IconButton
-              icon="help"
+              icon="zy-help"
               variant="ghost"
               size="large"
               onClick={props.onOpenHelp}

@@ -2808,3 +2808,77 @@ export type ProjectCopiesRefreshInput = {
 }
 
 export type ProjectCopiesRefreshOutput = void
+
+export type ServerStorageUsageInput = {
+  readonly location?: {
+    readonly location?: { readonly directory?: string | undefined; readonly workspace?: string | undefined } | undefined
+  }["location"]
+}
+
+export type ServerStorageUsageOutput = {
+  readonly location: {
+    readonly directory: string
+    readonly workspaceID?: string
+    readonly project: { readonly id: string; readonly directory: string }
+  }
+  readonly data: {
+    readonly path: string
+    readonly bytes: number | "Infinity" | "-Infinity" | "NaN"
+    readonly pages: number | "Infinity" | "-Infinity" | "NaN"
+    readonly freelistPages: number | "Infinity" | "-Infinity" | "NaN"
+    readonly pageSize: number | "Infinity" | "-Infinity" | "NaN"
+    readonly sessions: number | "Infinity" | "-Infinity" | "NaN"
+    readonly messages: number | "Infinity" | "-Infinity" | "NaN"
+    readonly parts: number | "Infinity" | "-Infinity" | "NaN"
+  }
+}
+
+export type ServerStorageCompactInput = {
+  readonly location?: {
+    readonly location?: { readonly directory?: string | undefined; readonly workspace?: string | undefined } | undefined
+  }["location"]
+}
+
+export type ServerStorageCompactOutput = {
+  readonly location: {
+    readonly directory: string
+    readonly workspaceID?: string
+    readonly project: { readonly id: string; readonly directory: string }
+  }
+  readonly data: {
+    readonly sessions: number | "Infinity" | "-Infinity" | "NaN"
+    readonly messages: number | "Infinity" | "-Infinity" | "NaN"
+    readonly parts: number | "Infinity" | "-Infinity" | "NaN"
+    readonly bytesBefore: number | "Infinity" | "-Infinity" | "NaN"
+    readonly bytesAfter: number | "Infinity" | "-Infinity" | "NaN"
+  }
+}
+
+export type ServerStoragePurgeInput = {
+  readonly location?: {
+    readonly location?: { readonly directory?: string | undefined; readonly workspace?: string | undefined } | undefined
+  }["location"]
+  readonly sessionIDs?: {
+    readonly sessionIDs?: ReadonlyArray<string> | undefined
+    readonly olderThan?: string | undefined
+  }["sessionIDs"]
+  readonly olderThan?: {
+    readonly sessionIDs?: ReadonlyArray<string> | undefined
+    readonly olderThan?: string | undefined
+  }["olderThan"]
+}
+
+export type ServerStoragePurgeOutput = {
+  readonly location: {
+    readonly directory: string
+    readonly workspaceID?: string
+    readonly project: { readonly id: string; readonly directory: string }
+  }
+  readonly data: {
+    readonly sessions: number | "Infinity" | "-Infinity" | "NaN"
+    readonly messages: number | "Infinity" | "-Infinity" | "NaN"
+    readonly parts: number | "Infinity" | "-Infinity" | "NaN"
+    readonly bytesBefore: number | "Infinity" | "-Infinity" | "NaN"
+    readonly bytesAfter: number | "Infinity" | "-Infinity" | "NaN"
+  }
+}

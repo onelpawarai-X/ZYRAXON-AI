@@ -1,9 +1,14 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import { dict as en } from "./en"
+
 type Keys = keyof typeof en
 
-export const dict: Record<Keys, string> = {
+/**
+ * Every string is this locale's own wording. A key with no translation stays
+ * out of the file rather than falling back to English.
+ */
+export const dict = {
   "ui.sessionReview.title": "Sesjonsendringer",
   "ui.sessionReview.title.lastTurn": "Endringer i siste tur",
   "ui.sessionReview.diffStyle.unified": "Samlet",
@@ -30,19 +35,16 @@ export const dict: Record<Keys, string> = {
   "ui.fileMedia.binary.title": "Binærfil",
   "ui.fileMedia.binary.description.path": "{{path}} kan ikke vises fordi det er en binærfil.",
   "ui.fileMedia.binary.description.default": "Denne filen kan ikke vises fordi det er en binærfil.",
-
   "ui.lineComment.label.prefix": "Kommenter på ",
   "ui.lineComment.label.suffix": "",
   "ui.lineComment.editorLabel.prefix": "Kommenterer på ",
   "ui.lineComment.editorLabel.suffix": "",
   "ui.lineComment.placeholder": "Legg til kommentar",
   "ui.lineComment.submit": "Kommenter",
-
   "ui.sessionTurn.steps.show": "Vis trinn",
   "ui.sessionTurn.steps.hide": "Skjul trinn",
   "ui.sessionTurn.summary.response": "Svar",
   "ui.sessionTurn.diff.showMore": "Vis flere endringer ({{count}})",
-
   "ui.sessionTurn.retry.retrying": "Prøver igjen",
   "ui.sessionTurn.retry.inSeconds": "om {{seconds}}s",
   "ui.sessionTurn.retry.attempt": "forsøk #{{attempt}}",
@@ -50,16 +52,12 @@ export const dict: Record<Keys, string> = {
   "ui.sessionTurn.retry.geminiHot": "gemini er veldig overbelastet nå",
   "ui.sessionTurn.error.freeUsageExceeded": "Gratis bruk overskredet",
   "ui.sessionTurn.error.addCredits": "Legg til kreditt",
-
   "dialog.usageExceeded.freeTier.title": "Gratis grense nådd",
-  "dialog.usageExceeded.freeTier.description":
-    "Abonner på ZYRAXON Go for pålitelig tilgang til de beste åpen kildekode-modellene, fra $5/måned.",
+  "dialog.usageExceeded.freeTier.description": "Abonner på ZYRAXON Go for pålitelig tilgang til de beste åpen kildekode-modellene, fra $5/måned.",
   "dialog.usageExceeded.freeTier.actionLabel": "Abonner",
   "dialog.usageExceeded.accountRateLimit.title": "Go-grense nådd",
-  "dialog.usageExceeded.accountRateLimit.description":
-    "Bruksgrense nådd. For å fortsette å bruke denne modellen nå, aktiver bruk fra din tilgjengelige saldo",
+  "dialog.usageExceeded.accountRateLimit.description": "Bruksgrense nådd. For å fortsette å bruke denne modellen nå, aktiver bruk fra din tilgjengelige saldo",
   "dialog.usageExceeded.accountRateLimit.actionLabel": "Åpne innstillinger",
-
   "ui.sessionTurn.status.delegating": "Delegerer arbeid",
   "ui.sessionTurn.status.planning": "Planlegger neste trinn",
   "ui.sessionTurn.status.gatheringContext": "Utforsker",
@@ -72,7 +70,6 @@ export const dict: Record<Keys, string> = {
   "ui.sessionTurn.status.thinkingWithTopic": "Tenker - {{topic}}",
   "ui.sessionTurn.status.gatheringThoughts": "Samler tanker",
   "ui.sessionTurn.status.consideringNextSteps": "Vurderer neste trinn",
-
   "ui.messagePart.questions.dismissed": "Spørsmål avvist",
   "ui.messagePart.compaction": "Økt komprimert",
   "ui.messagePart.context.read.one": "{{count}} lest",
@@ -86,22 +83,17 @@ export const dict: Record<Keys, string> = {
   "ui.messagePart.title.write": "Skriv",
   "ui.messagePart.option.typeOwnAnswer": "Skriv ditt eget svar",
   "ui.messagePart.review.title": "Gjennomgå svarene dine",
-
   "ui.list.loading": "Laster",
   "ui.list.empty": "Ingen resultater",
   "ui.list.clearFilter": "Tøm filter",
   "ui.list.emptyWithFilter.prefix": "Ingen resultater for",
   "ui.list.emptyWithFilter.suffix": "",
-
   "ui.messageNav.newMessage": "Ny melding",
-
   "ui.textField.copyToClipboard": "Kopier til utklippstavlen",
   "ui.textField.copyLink": "Kopier lenke",
   "ui.textField.copied": "Kopiert",
-
   "ui.imagePreview.alt": "Bildeforhåndsvisning",
   "ui.scrollView.ariaLabel": "rullbart innhold",
-
   "ui.tool.read": "Les",
   "ui.tool.loaded": "Lastet",
   "ui.tool.list": "Liste",
@@ -116,12 +108,10 @@ export const dict: Record<Keys, string> = {
   "ui.tool.questions": "Spørsmål",
   "ui.tool.agent": "{{type}}-agent",
   "ui.tool.agent.default": "Agent",
-
   "ui.common.file.one": "fil",
   "ui.common.file.other": "filer",
   "ui.common.question.one": "spørsmål",
   "ui.common.question.other": "spørsmål",
-
   "ui.common.add": "Legg til",
   "ui.common.back": "Tilbake",
   "ui.common.cancel": "Avbryt",
@@ -131,11 +121,9 @@ export const dict: Record<Keys, string> = {
   "ui.common.next": "Neste",
   "ui.common.submit": "Send inn",
   "ui.common.showMore": "Vis mer",
-
   "ui.permission.deny": "Avslå",
   "ui.permission.allowAlways": "Tillat alltid",
   "ui.permission.allowOnce": "Tillat én gang",
-
   "ui.message.expand": "Utvid melding",
   "ui.message.collapse": "Skjul melding",
   "ui.message.copy": "Kopier",
@@ -147,19 +135,16 @@ export const dict: Record<Keys, string> = {
   "ui.message.interrupted": "Avbrutt",
   "ui.message.queued": "I kø",
   "ui.message.attachment.alt": "vedlegg",
-
   "ui.patch.action.deleted": "Slettet",
   "ui.patch.action.created": "Opprettet",
   "ui.patch.action.moved": "Flyttet",
   "ui.patch.action.patched": "Oppdatert",
-
   "ui.question.subtitle.answered": "{{count}} besvart",
   "ui.question.answer.none": "(ingen svar)",
   "ui.question.review.notAnswered": "(ikke besvart)",
   "ui.question.multiHint": "Velg alle som gjelder",
   "ui.question.singleHint": "Velg ett svar",
   "ui.question.custom.placeholder": "Skriv svaret ditt...",
-
   "ui.fileSearch.placeholder": "Finn",
   "ui.fileSearch.previousMatch": "Forrige treff",
   "ui.fileSearch.nextMatch": "Neste treff",
@@ -171,7 +156,6 @@ export const dict: Record<Keys, string> = {
   "ui.toolErrorCard.copyError": "Kopier feil",
   "ui.message.duration.seconds": "{{count}}s",
   "ui.message.duration.minutesSeconds": "{{minutes}}m {{seconds}}s",
-
   "ui.sessionReview.title.git": "Git-endringer",
   "ui.sessionReview.title.branch": "Grenendringer",
   "ui.sessionReviewV2.expandMode": "Utvid eller fold sammen diff",
@@ -196,4 +180,9 @@ export const dict: Record<Keys, string> = {
   "ui.sessionTurn.diffs.showAll": "Vis alle",
   "ui.sessionTurn.diffs.showLess": "Vis færre",
   "ui.sessionTurn.diffs.more": "+{{count}} til",
-}
+  "ui.tool.read.video": "Analyserende video",
+  "ui.tool.read.audio": "Analysere lyd",
+  "ui.tool.read.media": "Analysere medier",
+} satisfies Partial<Record<Keys, string>>
+
+export type DictUI = keyof typeof dict

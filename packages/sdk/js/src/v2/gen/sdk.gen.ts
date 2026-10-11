@@ -225,6 +225,13 @@ import type {
   SessionUnshareResponses,
   SessionUpdateErrors,
   SessionUpdateResponses,
+  StorageCompactErrors,
+  StorageCompactResponses,
+  StoragePurgeErrors,
+  StoragePurgeInput,
+  StoragePurgeResponses,
+  StorageUsageErrors,
+  StorageUsageResponses,
   SubtaskPartInput,
   SyncHistoryListErrors,
   SyncHistoryListResponses,
@@ -387,6 +394,12 @@ import type {
   V2SessionWaitResponses,
   V2SkillListErrors,
   V2SkillListResponses,
+  V2StorageCompactErrors,
+  V2StorageCompactResponses,
+  V2StoragePurgeErrors,
+  V2StoragePurgeResponses,
+  V2StorageUsageErrors,
+  V2StorageUsageResponses,
   VcsApplyErrors,
   VcsApplyResponses,
   VcsDiffErrors,
@@ -4442,6 +4455,105 @@ export class Part extends HeyApiClient {
   }
 }
 
+export class Storage extends HeyApiClient {
+  /**
+   * Get storage usage
+   *
+   * Report where the database lives, how large it is on disk, how many pages are on the freelist, and how many sessions, messages and parts it holds.
+   */
+  public usage<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<StorageUsageResponses, StorageUsageErrors, ThrowOnError>({
+      url: "/storage",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Reclaim unused disk space
+   *
+   * Checkpoint the write-ahead log, run incremental vacuum so freed pages go back to the filesystem, then optimise. Reports the before and after size.
+   */
+  public compact<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<StorageCompactResponses, StorageCompactErrors, ThrowOnError>({
+      url: "/storage/compact",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Permanently delete stored sessions
+   *
+   * Delete sessions by id, or every session older than a timestamp. Parts and messages go with them, and the freed pages are handed back to the filesystem in the same call.
+   */
+  public purge<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+      storagePurgeInput?: StoragePurgeInput
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { key: "storagePurgeInput", map: "body" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<StoragePurgeResponses, StoragePurgeErrors, ThrowOnError>({
+      url: "/storage/purge",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+}
+
 export class History extends HeyApiClient {
   /**
    * List sync events
@@ -7025,6 +7137,90 @@ export class ProjectCopy2 extends HeyApiClient {
   }
 }
 
+export class Storage2 extends HeyApiClient {
+  /**
+   * Get storage usage
+   *
+   * Report where the database lives, how large it is on disk, how many pages sit on the freelist, and how many sessions, messages and parts it holds.
+   */
+  public usage<ThrowOnError extends boolean = false>(
+    parameters?: {
+      location?: {
+        directory?: string
+        workspace?: string
+      }
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "location" }] }])
+    return (options?.client ?? this.client).get<V2StorageUsageResponses, V2StorageUsageErrors, ThrowOnError>({
+      url: "/api/storage",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Reclaim unused disk space
+   *
+   * Checkpoint the write-ahead log, run incremental vacuum so freed pages return to the filesystem, then optimise. Reports the size before and after.
+   */
+  public compact<ThrowOnError extends boolean = false>(
+    parameters?: {
+      location?: {
+        directory?: string
+        workspace?: string
+      }
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "location" }] }])
+    return (options?.client ?? this.client).post<V2StorageCompactResponses, V2StorageCompactErrors, ThrowOnError>({
+      url: "/api/storage/compact",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Permanently delete stored sessions
+   *
+   * Delete sessions by id, or every session older than a timestamp. Messages and parts go with them, and the freed pages are handed back in the same call.
+   */
+  public purge<ThrowOnError extends boolean = false>(
+    parameters: {
+      location?: {
+        directory?: string
+        workspace?: string
+      }
+      storagePurgeInput: StoragePurgeInput
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "location" },
+            { key: "storagePurgeInput", map: "body" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<V2StoragePurgeResponses, V2StoragePurgeErrors, ThrowOnError>({
+      url: "/api/storage/purge",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+}
+
 export class V2 extends HeyApiClient {
   private _health?: Health
   get health(): Health {
@@ -7109,6 +7305,11 @@ export class V2 extends HeyApiClient {
   private _projectCopy?: ProjectCopy2
   get projectCopy(): ProjectCopy2 {
     return (this._projectCopy ??= new ProjectCopy2({ client: this.client }))
+  }
+
+  private _storage?: Storage2
+  get storage(): Storage2 {
+    return (this._storage ??= new Storage2({ client: this.client }))
   }
 }
 
@@ -7238,6 +7439,11 @@ export class ZyraxonClient extends HeyApiClient {
   private _part?: Part
   get part(): Part {
     return (this._part ??= new Part({ client: this.client }))
+  }
+
+  private _storage?: Storage
+  get storage(): Storage {
+    return (this._storage ??= new Storage({ client: this.client }))
   }
 
   private _sync?: Sync

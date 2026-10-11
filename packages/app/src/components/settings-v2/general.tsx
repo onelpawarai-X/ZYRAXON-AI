@@ -19,6 +19,7 @@ import { decode64 } from "@/utils/base64"
 import { playSoundById, SOUND_OPTIONS } from "@/utils/sound"
 import { SettingsListV2 } from "./parts/list"
 import { SettingsRowV2 } from "./parts/row"
+import { SettingsCardV2 } from "./parts/layout"
 import { LayoutRetirementNotice, LayoutTransitionToggle } from "./interface-transition"
 import { SettingsAppearanceV2 } from "./appearance"
 import { SettingsNotificationsV2 } from "./notifications"
@@ -49,12 +50,6 @@ type PermissionModeOption = {
   value: PermissionMode
   label: string
 }
-
-const PERMISSION_MODES: PermissionModeOption[] = [
-  { id: "deny", value: "deny", label: "Deny" },
-  { id: "allow", value: "allow", label: "Allow" },
-  { id: "always", value: "always", label: "Always" },
-]
 
 // To prevent audio from overlapping/playing very quickly when navigating the settings menus,
 // delay the playback by 100ms during quick selection changes and pause existing sounds.
@@ -118,6 +113,17 @@ export const SettingsGeneralV2: Component<{
   // control must stay usable instead of being disabled.
   const permGlobal = createMemo(() => !permDir())
 
+  // Off by default: the agent asks before every action and the dock offers
+  // deny / allow / always. Turning it on auto-decides with the mode below.
+  const permissionAutoDecide = createMemo(() => settings.permissions.autoApprove())
+  const setPermissionAutoDecide = (value: boolean) => settings.permissions.setAutoApprove(value)
+
+  const PERMISSION_MODES = createMemo<PermissionModeOption[]>(() => [
+    { id: "deny", value: "deny", label: language.t("settings.permission.deny") },
+    { id: "allow", value: "allow", label: language.t("settings.permission.allow") },
+    { id: "always", value: "always", label: language.t("settings.permission.always") },
+  ])
+
   const currentPermissionMode = createMemo<PermissionMode>(() => {
     const directory = permDir()
     if (!directory) return permission.getGlobalPermissionMode() as PermissionMode
@@ -125,7 +131,7 @@ export const SettingsGeneralV2: Component<{
     const mode = sessionID
       ? permission.getPermissionMode(sessionID, directory)
       : permission.getDirectoryPermissionMode(directory)
-    return PERMISSION_MODES.find((option) => option.value === mode)?.value ?? "allow"
+    return PERMISSION_MODES().find((option) => option.value === mode)?.value ?? "allow"
   })
 
   const setPermissionMode = (mode: PermissionMode) => {
@@ -197,13 +203,6 @@ export const SettingsGeneralV2: Component<{
     void update.catch(() => setPinchZoom(!checked))
   }
 
-  const languageOptions = createMemo(() =>
-    language.locales.map((locale) => ({
-      value: locale,
-      label: language.label(locale),
-    })),
-  )
-
   const noneSound = { id: "none", label: "sound.option.none" } as const
   const soundOptions = [noneSound, ...SOUND_OPTIONS]
 
@@ -260,48 +259,41 @@ export const SettingsGeneralV2: Component<{
   )
 
   const GeneralSection = () => (
-    <div class="settings-v2-section">
+    <SettingsCardV2
+      icon="zy-settings"
+      title={language.t("settings.general.section.general")}
+      description={language.t("settings.general.section.general.description")}
+    >
       <SettingsListV2>
         <SettingsRowV2
-          title={language.t("settings.general.row.language.title")}
-          description={language.t("settings.general.row.language.description")}
+          title={language.t("settings.permission.title")}
+          description={language.t("settings.permission.description")}
         >
-          <SelectV2
-            appearance="inline"
-            data-action="settings-language"
-            options={languageOptions()}
-            placement="bottom-end"
-            gutter={6}
-            current={languageOptions().find((o) => o.value === language.locale())}
-            value={(o) => o.value}
-            label={(o) => o.label}
-            onSelect={(option) => option && language.setLocale(option.value)}
+          <Switch
+            checked={permissionAutoDecide()}
+            onChange={(checked) => setPermissionAutoDecide(checked)}
+            data-action="settings-permission-toggle"
           />
         </SettingsRowV2>
 
-        <SettingsRowV2
-          title="Permission"
-          description={
-            permGlobal()
-              ? "Allow, deny, or auto-approve AI requests for all projects"
-              : "Allow, deny, or auto-approve AI requests for this project"
-          }
-        >
-          <SelectV2
-            appearance="inline"
-            data-action="settings-permission-mode"
-            options={PERMISSION_MODES}
-            current={PERMISSION_MODES.find((option) => option.value === currentPermissionMode())}
-            value={(option) => option.value}
-            label={(option) => option.label}
-            onSelect={(option) => {
-              if (!option) return
-              setPermissionMode(option.value)
-            }}
-            placement="bottom-end"
-            gutter={6}
-          />
-        </SettingsRowV2>
+        <Show when={permissionAutoDecide()}>
+          <SettingsRowV2 title={language.t("settings.permission.mode.title")} description={language.t("settings.permission.mode.description")}>
+            <SelectV2
+              appearance="inline"
+              data-action="settings-permission-mode"
+              options={PERMISSION_MODES()}
+              current={PERMISSION_MODES().find((option) => option.value === currentPermissionMode())}
+              value={(option) => option.value}
+              label={(option) => option.label}
+              onSelect={(option) => {
+                if (!option) return
+                setPermissionMode(option.value)
+              }}
+              placement="bottom-end"
+              gutter={6}
+            />
+          </SettingsRowV2>
+        </Show>
 
         <SettingsRowV2
           title={language.t("settings.general.row.shell.title")}
@@ -374,13 +366,15 @@ export const SettingsGeneralV2: Component<{
           </SettingsRowV2>
         </Show>
       </SettingsListV2>
-    </div>
+    </SettingsCardV2>
   )
 
   const AdvancedSection = () => (
-    <div class="settings-v2-section">
-      <h3 class="settings-v2-section-title">{language.t("settings.general.section.advanced")}</h3>
-
+    <SettingsCardV2
+      icon="zy-shortcuts"
+      title={language.t("settings.general.section.advanced")}
+      description={language.t("settings.general.section.advanced.description")}
+    >
       <SettingsListV2>
         <SettingsRowV2
           title={language.t("settings.general.row.showFileTree.title")}
@@ -430,13 +424,15 @@ export const SettingsGeneralV2: Component<{
           </div>
         </SettingsRowV2>
       </SettingsListV2>
-    </div>
+</SettingsCardV2>
   )
 
   const SoundsSection = () => (
-    <div class="settings-v2-section">
-      <h3 class="settings-v2-section-title">{language.t("settings.general.section.sounds")}</h3>
-
+    <SettingsCardV2
+      icon="zy-notifications"
+      title={language.t("settings.general.section.sounds")}
+      description={language.t("settings.general.section.sounds.description")}
+    >
       <SettingsListV2>
         <SettingsRowV2
           title={language.t("settings.general.sounds.agent.title")}
@@ -492,13 +488,15 @@ export const SettingsGeneralV2: Component<{
           />
         </SettingsRowV2>
       </SettingsListV2>
-    </div>
+</SettingsCardV2>
   )
 
-  const UpdatesSection = () => (
-    <div class="settings-v2-section">
-      <h3 class="settings-v2-section-title">{language.t("settings.general.section.updates")}</h3>
-
+const UpdatesSection = () => (
+    <SettingsCardV2
+      icon="zy-repositories"
+      title={language.t("settings.general.section.updates")}
+      description={language.t("settings.general.section.updates.description")}
+    >
       <SettingsListV2>
         <SettingsRowV2
           title={language.t("settings.general.row.releaseNotes.title")}
@@ -521,15 +519,17 @@ export const SettingsGeneralV2: Component<{
           </ButtonV2>
         </SettingsRowV2>
       </SettingsListV2>
-    </div>
+</SettingsCardV2>
   )
 
   // We can probably remove this, right?
   const DisplaySection = () => (
     <Show when={desktop()}>
-      <div class="settings-v2-section">
-        <h3 class="settings-v2-section-title">{language.t("settings.general.section.display")}</h3>
-
+      <SettingsCardV2
+        icon="zy-appearance"
+        title={language.t("settings.general.section.display")}
+        description={language.t("settings.general.section.display.description")}
+      >
         <SettingsListV2>
           <SettingsRowV2
             title={language.t("settings.general.row.pinchZoom.title")}
@@ -540,7 +540,7 @@ export const SettingsGeneralV2: Component<{
             </div>
           </SettingsRowV2>
         </SettingsListV2>
-      </div>
+      </SettingsCardV2>
     </Show>
   )
 

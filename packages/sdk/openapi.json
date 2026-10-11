@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "zyraxon",
+    "title": "opencode",
     "version": "1.0.0",
     "description": "zyraxon api"
   },
@@ -311,7 +311,7 @@
             }
           }
         },
-        "description": "Get health information about the Zyraxon server.",
+        "description": "Get health information about the ZYRAXON server.",
         "summary": "Get health",
         "x-codeSamples": [
           {
@@ -348,7 +348,7 @@
             }
           }
         },
-        "description": "Subscribe to global events from the Zyraxon system using server-sent events.",
+        "description": "Subscribe to global events from the ZYRAXON system using server-sent events.",
         "summary": "Get global events",
         "x-codeSamples": [
           {
@@ -385,7 +385,7 @@
             }
           }
         },
-        "description": "Retrieve the current global Zyraxon configuration settings and preferences.",
+        "description": "Retrieve the current global ZYRAXON configuration settings and preferences.",
         "summary": "Get global configuration",
         "x-codeSamples": [
           {
@@ -427,7 +427,7 @@
             }
           }
         },
-        "description": "Update global Zyraxon configuration settings and preferences.",
+        "description": "Update global ZYRAXON configuration settings and preferences.",
         "summary": "Update global configuration",
         "requestBody": {
           "content": {
@@ -474,7 +474,7 @@
             }
           }
         },
-        "description": "Clean up and dispose all Zyraxon instances, releasing all resources.",
+        "description": "Clean up and dispose all ZYRAXON instances, releasing all resources.",
         "summary": "Dispose instance",
         "x-codeSamples": [
           {
@@ -661,7 +661,7 @@
             }
           }
         },
-        "description": "Retrieve the current Zyraxon configuration settings and preferences.",
+        "description": "Retrieve the current ZYRAXON configuration settings and preferences.",
         "summary": "Get configuration",
         "x-codeSamples": [
           {
@@ -720,7 +720,7 @@
             }
           }
         },
-        "description": "Update Zyraxon configuration settings and preferences.",
+        "description": "Update ZYRAXON configuration settings and preferences.",
         "summary": "Update configuration",
         "requestBody": {
           "content": {
@@ -854,7 +854,7 @@
             }
           }
         },
-        "description": "Get experimental features enabled on the Zyraxon server.",
+        "description": "Get experimental features enabled on the ZYRAXON server.",
         "summary": "Get experimental capabilities",
         "x-codeSamples": [
           {
@@ -1060,7 +1060,7 @@
             }
           }
         },
-        "description": "Persist a new active Console account/org selection for the current local Zyraxon state.",
+        "description": "Persist a new active Console account/org selection for the current local ZYRAXON state.",
         "summary": "Switch active Console org",
         "requestBody": {
           "content": {
@@ -1612,7 +1612,7 @@
             }
           }
         },
-        "description": "Get a list of all Zyraxon sessions across projects, sorted by most recently updated. Archived sessions are excluded by default.",
+        "description": "Get a list of all ZYRAXON sessions across projects, sorted by most recently updated. Archived sessions are excluded by default.",
         "summary": "List sessions",
         "x-codeSamples": [
           {
@@ -2083,11 +2083,18 @@
             }
           },
           "400": {
-            "description": "Bad request",
+            "description": "InvalidRequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BadRequestError"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/InvalidRequestError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InvalidRequestError"
+                    }
+                  ]
                 }
               }
             }
@@ -2268,7 +2275,7 @@
             }
           }
         },
-        "description": "Clean up and dispose the current Zyraxon instance, releasing all resources.",
+        "description": "Clean up and dispose the current ZYRAXON instance, releasing all resources.",
         "summary": "Dispose instance",
         "x-codeSamples": [
           {
@@ -2322,7 +2329,7 @@
             }
           }
         },
-        "description": "Retrieve the current working directory and related path information for the Zyraxon instance.",
+        "description": "Retrieve the current working directory and related path information for the ZYRAXON instance.",
         "summary": "Get paths",
         "x-codeSamples": [
           {
@@ -2707,7 +2714,7 @@
             }
           }
         },
-        "description": "Get a list of all available commands in the Zyraxon system.",
+        "description": "Get a list of all available commands in the ZYRAXON system.",
         "summary": "List commands",
         "x-codeSamples": [
           {
@@ -2765,7 +2772,7 @@
             }
           }
         },
-        "description": "Get a list of all available AI agents in the Zyraxon system.",
+        "description": "Get a list of all available AI agents in the ZYRAXON system.",
         "summary": "List agents",
         "x-codeSamples": [
           {
@@ -2839,7 +2846,7 @@
             }
           }
         },
-        "description": "Get a list of all available skills in the Zyraxon system.",
+        "description": "Get a list of all available skills in the ZYRAXON system.",
         "summary": "List skills",
         "x-codeSamples": [
           {
@@ -3281,6 +3288,86 @@
         ]
       }
     },
+    "/mcp/{name}/auth/has-tokens": {
+      "get": {
+        "tags": ["mcp"],
+        "operationId": "mcp.auth.hasTokens",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "directory",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "name": "workspace",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stored MCP credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "hasTokens": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["hasTokens"],
+                  "additionalProperties": false,
+                  "description": "Stored MCP credentials"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "McpServerNotFoundError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpServerNotFoundError"
+                }
+              }
+            }
+          }
+        },
+        "description": "Report whether a stored sign-in exists for a Model Context Protocol (MCP) server, so a client can tell an unsigned server from a rejected credential.",
+        "summary": "Check stored MCP credentials",
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createZyraxonClient } from \"@zyraxon-ai/sdk\n\nconst client = createZyraxonClient()\nawait client.mcp.auth.hasTokens({\n  ...\n})"
+          }
+        ]
+      }
+    },
     "/mcp/{name}/auth/callback": {
       "post": {
         "tags": ["mcp"],
@@ -3647,7 +3734,7 @@
             }
           }
         },
-        "description": "Get a list of projects that have been opened with Zyraxon.",
+        "description": "Get a list of projects that have been opened with ZYRAXON.",
         "summary": "List all projects",
         "x-codeSamples": [
           {
@@ -3701,7 +3788,7 @@
             }
           }
         },
-        "description": "Retrieve the currently active project that Zyraxon is working with.",
+        "description": "Retrieve the currently active project that ZYRAXON is working with.",
         "summary": "Get current project",
         "x-codeSamples": [
           {
@@ -4130,7 +4217,7 @@
             }
           }
         },
-        "description": "Get a list of all active pseudo-terminal (PTY) sessions managed by Zyraxon.",
+        "description": "Get a list of all active pseudo-terminal (PTY) sessions managed by ZYRAXON.",
         "summary": "List PTY sessions",
         "x-codeSamples": [
           {
@@ -5392,7 +5479,7 @@
             }
           }
         },
-        "description": "Get a list of all Zyraxon sessions, sorted by most recently updated.",
+        "description": "Get a list of all ZYRAXON sessions, sorted by most recently updated.",
         "summary": "List sessions",
         "x-codeSamples": [
           {
@@ -5451,7 +5538,7 @@
             }
           }
         },
-        "description": "Create a new Zyraxon session for interacting with AI assistants and managing conversations.",
+        "description": "Create a new ZYRAXON session for interacting with AI assistants and managing conversations.",
         "summary": "Create session",
         "requestBody": {
           "content": {
@@ -5644,7 +5731,7 @@
             }
           }
         },
-        "description": "Retrieve detailed information about a specific Zyraxon session.",
+        "description": "Retrieve detailed information about a specific ZYRAXON session.",
         "summary": "Get session",
         "x-codeSamples": [
           {
@@ -6324,6 +6411,9 @@
                     "type": "string"
                   },
                   "variant": {
+                    "type": "string"
+                  },
+                  "replyLanguage": {
                     "type": "string"
                   },
                   "parts": {
@@ -7208,6 +7298,9 @@
                   "variant": {
                     "type": "string"
                   },
+                  "replyLanguage": {
+                    "type": "string"
+                  },
                   "parts": {
                     "type": "array",
                     "items": {
@@ -8050,6 +8143,184 @@
           {
             "lang": "js",
             "source": "import { createZyraxonClient } from \"@zyraxon-ai/sdk\n\nconst client = createZyraxonClient()\nawait client.part.update({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/storage": {
+      "get": {
+        "tags": ["storage"],
+        "operationId": "storage.usage",
+        "parameters": [
+          {
+            "name": "directory",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "name": "workspace",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get storage usage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageUsage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          }
+        },
+        "description": "Report where the database lives, how large it is on disk, how many pages are on the freelist, and how many sessions, messages and parts it holds.",
+        "summary": "Get storage usage",
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createZyraxonClient } from \"@zyraxon-ai/sdk\n\nconst client = createZyraxonClient()\nawait client.storage.usage({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/storage/compact": {
+      "post": {
+        "tags": ["storage"],
+        "operationId": "storage.compact",
+        "parameters": [
+          {
+            "name": "directory",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "name": "workspace",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reclaim unused disk space",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoragePurge"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          }
+        },
+        "description": "Checkpoint the write-ahead log, run incremental vacuum so freed pages go back to the filesystem, then optimise. Reports the before and after size.",
+        "summary": "Reclaim unused disk space",
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createZyraxonClient } from \"@zyraxon-ai/sdk\n\nconst client = createZyraxonClient()\nawait client.storage.compact({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/storage/purge": {
+      "post": {
+        "tags": ["storage"],
+        "operationId": "storage.purge",
+        "parameters": [
+          {
+            "name": "directory",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "name": "workspace",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Permanently delete stored sessions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoragePurge"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BadRequest | InvalidRequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/effect_HttpApiError_BadRequest"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InvalidRequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "description": "Delete sessions by id, or every session older than a timestamp. Parts and messages go with them, and the freed pages are handed back to the filesystem in the same call.",
+        "summary": "Permanently delete stored sessions",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoragePurgeInput"
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createZyraxonClient } from \"@zyraxon-ai/sdk\n\nconst client = createZyraxonClient()\nawait client.storage.purge({\n  ...\n})"
           }
         ]
       }
@@ -15168,6 +15439,257 @@
         ]
       }
     },
+    "/api/storage": {
+      "get": {
+        "tags": ["storage"],
+        "operationId": "v2.storage.usage",
+        "parameters": [
+          {
+            "name": "location",
+            "in": "query",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "directory": {
+                  "type": "string"
+                },
+                "workspace": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            "required": false,
+            "style": "deepObject",
+            "explode": true
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "location": {
+                      "$ref": "#/components/schemas/LocationInfo"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/StorageUsage"
+                    }
+                  },
+                  "required": ["location", "data"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "InvalidRequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          }
+        },
+        "description": "Report where the database lives, how large it is on disk, how many pages sit on the freelist, and how many sessions, messages and parts it holds.",
+        "summary": "Get storage usage",
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createZyraxonClient } from \"@zyraxon-ai/sdk\n\nconst client = createZyraxonClient()\nawait client.v2.storage.usage({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/api/storage/compact": {
+      "post": {
+        "tags": ["storage"],
+        "operationId": "v2.storage.compact",
+        "parameters": [
+          {
+            "name": "location",
+            "in": "query",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "directory": {
+                  "type": "string"
+                },
+                "workspace": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            "required": false,
+            "style": "deepObject",
+            "explode": true
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "location": {
+                      "$ref": "#/components/schemas/LocationInfo"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/StorageResult"
+                    }
+                  },
+                  "required": ["location", "data"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "InvalidRequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          }
+        },
+        "description": "Checkpoint the write-ahead log, run incremental vacuum so freed pages return to the filesystem, then optimise. Reports the size before and after.",
+        "summary": "Reclaim unused disk space",
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createZyraxonClient } from \"@zyraxon-ai/sdk\n\nconst client = createZyraxonClient()\nawait client.v2.storage.compact({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/api/storage/purge": {
+      "post": {
+        "tags": ["storage"],
+        "operationId": "v2.storage.purge",
+        "parameters": [
+          {
+            "name": "location",
+            "in": "query",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "directory": {
+                  "type": "string"
+                },
+                "workspace": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            "required": false,
+            "style": "deepObject",
+            "explode": true
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "location": {
+                      "$ref": "#/components/schemas/LocationInfo"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/StorageResult"
+                    }
+                  },
+                  "required": ["location", "data"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "InvalidRequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/InvalidRequestError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InvalidRequestError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          }
+        },
+        "description": "Delete sessions by id, or every session older than a timestamp. Messages and parts go with them, and the freed pages are handed back in the same call.",
+        "summary": "Permanently delete stored sessions",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoragePurgeInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createZyraxonClient } from \"@zyraxon-ai/sdk\n\nconst client = createZyraxonClient()\nawait client.v2.storage.purge({\n  ...\n})"
+          }
+        ]
+      }
+    },
     "/pty/{ptyID}/connect": {
       "get": {
         "tags": ["pty"],
@@ -21012,6 +21534,12 @@
           },
           "redirectUri": {
             "type": "string"
+          },
+          "authorizationUrl": {
+            "type": "string"
+          },
+          "tokenUrl": {
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -21342,6 +21870,9 @@
               ]
             }
           },
+          "mcp_browser": {
+            "type": "string"
+          },
           "formatter": {
             "anyOf": [
               {
@@ -21641,8 +22172,15 @@
                     "type": "object",
                     "properties": {
                       "field": {
-                        "type": "string",
-                        "enum": ["reasoning", "reasoning_content", "reasoning_details"]
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": ["reasoning", "reasoning_content", "reasoning_text"]
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
                       }
                     },
                     "required": ["field"],
@@ -23224,6 +23762,314 @@
         "required": ["_tag", "sessionID", "message"],
         "additionalProperties": false
       },
+      "StorageUsage": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "bytes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": ["NaN"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["-Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity", "-Infinity", "NaN"]
+              }
+            ]
+          },
+          "pages": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": ["NaN"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["-Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity", "-Infinity", "NaN"]
+              }
+            ]
+          },
+          "freelistPages": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": ["NaN"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["-Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity", "-Infinity", "NaN"]
+              }
+            ]
+          },
+          "pageSize": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": ["NaN"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["-Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity", "-Infinity", "NaN"]
+              }
+            ]
+          },
+          "sessions": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": ["NaN"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["-Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity", "-Infinity", "NaN"]
+              }
+            ]
+          },
+          "messages": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": ["NaN"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["-Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity", "-Infinity", "NaN"]
+              }
+            ]
+          },
+          "parts": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": ["NaN"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["-Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity", "-Infinity", "NaN"]
+              }
+            ]
+          }
+        },
+        "required": ["path", "bytes", "pages", "freelistPages", "pageSize", "sessions", "messages", "parts"],
+        "additionalProperties": false
+      },
+      "StoragePurge": {
+        "type": "object",
+        "properties": {
+          "sessions": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": ["NaN"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["-Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity", "-Infinity", "NaN"]
+              }
+            ]
+          },
+          "messages": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": ["NaN"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["-Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity", "-Infinity", "NaN"]
+              }
+            ]
+          },
+          "parts": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": ["NaN"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["-Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity", "-Infinity", "NaN"]
+              }
+            ]
+          },
+          "bytesBefore": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": ["NaN"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["-Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity", "-Infinity", "NaN"]
+              }
+            ]
+          },
+          "bytesAfter": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": ["NaN"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["-Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity", "-Infinity", "NaN"]
+              }
+            ]
+          }
+        },
+        "required": ["sessions", "messages", "parts", "bytesBefore", "bytesAfter"],
+        "additionalProperties": false
+      },
+      "StoragePurgeInput": {
+        "type": "object",
+        "properties": {
+          "sessionIDs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "olderThan": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "EventTuiPromptAppend": {
         "type": "object",
         "properties": {
@@ -24291,6 +25137,128 @@
           }
         },
         "required": ["name", "data"],
+        "additionalProperties": false
+      },
+      "StorageResult": {
+        "type": "object",
+        "properties": {
+          "sessions": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": ["NaN"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["-Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity", "-Infinity", "NaN"]
+              }
+            ]
+          },
+          "messages": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": ["NaN"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["-Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity", "-Infinity", "NaN"]
+              }
+            ]
+          },
+          "parts": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": ["NaN"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["-Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity", "-Infinity", "NaN"]
+              }
+            ]
+          },
+          "bytesBefore": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": ["NaN"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["-Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity", "-Infinity", "NaN"]
+              }
+            ]
+          },
+          "bytesAfter": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": ["NaN"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["-Infinity"]
+              },
+              {
+                "type": "string",
+                "enum": ["Infinity", "-Infinity", "NaN"]
+              }
+            ]
+          }
+        },
+        "required": ["sessions", "messages", "parts", "bytesBefore", "bytesAfter"],
         "additionalProperties": false
       },
       "effect_HttpApiError_Forbidden": {
@@ -27446,6 +28414,9 @@
             "items": {
               "$ref": "#/components/schemas/PromptAgentAttachment"
             }
+          },
+          "replyLanguage": {
+            "type": "string"
           },
           "type": {
             "type": "string",
@@ -36838,6 +37809,10 @@
       "description": "Experimental HttpApi session routes."
     },
     {
+      "name": "storage",
+      "description": "Database size, reclaim and purge routes."
+    },
+    {
       "name": "sync",
       "description": "Experimental HttpApi sync routes."
     },
@@ -36920,6 +37895,10 @@
     {
       "name": "projectCopy",
       "description": "Project copy management routes."
+    },
+    {
+      "name": "storage",
+      "description": "Database size, reclaim and purge routes."
     },
     {
       "name": "pty",

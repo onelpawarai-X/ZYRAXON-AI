@@ -1,5 +1,13 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
+import { dict as en } from "./en"
+
+type Keys = keyof typeof en
+
+/**
+ * Every string is this locale's own wording. A key with no translation stays
+ * out of the file rather than falling back to English.
+ */
 export const dict = {
   "ui.sessionReview.title": "Изменения сессии",
   "ui.sessionReview.title.git": "Изменения Git",
@@ -12,7 +20,6 @@ export const dict = {
   "ui.sessionReview.selection.lines": "строки {{start}}-{{end}}",
   "ui.sessionReview.expandAll": "Развернуть всё",
   "ui.sessionReview.collapseAll": "Свернуть всё",
-
   "ui.sessionReview.change.added": "Добавлено",
   "ui.sessionReview.change.removed": "Удалено",
   "ui.sessionReview.change.modified": "Изменено",
@@ -62,7 +69,6 @@ export const dict = {
   "ui.sessionTurn.diffs.showAll": "Показать все",
   "ui.sessionTurn.diffs.showLess": "Показать меньше",
   "ui.sessionTurn.diffs.more": "+ ещё {{count}}",
-
   "ui.sessionTurn.retry.retrying": "повтор",
   "ui.sessionTurn.retry.inSeconds": "через {{seconds}}с",
   "ui.sessionTurn.retry.attempt": "попытка №{{attempt}}",
@@ -70,16 +76,12 @@ export const dict = {
   "ui.sessionTurn.retry.geminiHot": "gemini сейчас перегружен",
   "ui.sessionTurn.error.freeUsageExceeded": "Лимит бесплатного использования превышен",
   "ui.sessionTurn.error.addCredits": "Добавить кредиты",
-
   "dialog.usageExceeded.freeTier.title": "Достигнут бесплатный лимит",
-  "dialog.usageExceeded.freeTier.description":
-    "Подпишитесь на ZYRAXON Go для надёжного доступа к лучшим моделям с открытым исходным кодом, от $5/месяц.",
+  "dialog.usageExceeded.freeTier.description": "Подпишитесь на ZYRAXON Go для надёжного доступа к лучшим моделям с открытым исходным кодом, от $5/месяц.",
   "dialog.usageExceeded.freeTier.actionLabel": "Подписаться",
   "dialog.usageExceeded.accountRateLimit.title": "Достигнут лимит Go",
-  "dialog.usageExceeded.accountRateLimit.description":
-    "Достигнут лимит использования. Чтобы продолжить использовать эту модель сейчас, включите использование из доступного баланса",
+  "dialog.usageExceeded.accountRateLimit.description": "Достигнут лимит использования. Чтобы продолжить использовать эту модель сейчас, включите использование из доступного баланса",
   "dialog.usageExceeded.accountRateLimit.actionLabel": "Открыть настройки",
-
   "ui.sessionTurn.status.delegating": "Делегирование работы",
   "ui.sessionTurn.status.planning": "Планирование следующих шагов",
   "ui.sessionTurn.status.gatheringContext": "Исследование",
@@ -92,7 +94,6 @@ export const dict = {
   "ui.sessionTurn.status.thinkingWithTopic": "Размышление - {{topic}}",
   "ui.sessionTurn.status.gatheringThoughts": "Сбор мыслей",
   "ui.sessionTurn.status.consideringNextSteps": "Рассмотрение следующих шагов",
-
   "ui.messagePart.questions.dismissed": "Вопросы отклонены",
   "ui.messagePart.compaction": "Сессия сжата",
   "ui.messagePart.context.read.one": "{{count}} чтение",
@@ -106,22 +107,17 @@ export const dict = {
   "ui.messagePart.title.write": "Написать",
   "ui.messagePart.option.typeOwnAnswer": "Введите свой ответ",
   "ui.messagePart.review.title": "Проверьте ваши ответы",
-
   "ui.list.loading": "Загрузка",
   "ui.list.empty": "Нет результатов",
   "ui.list.clearFilter": "Очистить фильтр",
   "ui.list.emptyWithFilter.prefix": "Нет результатов для",
   "ui.list.emptyWithFilter.suffix": "",
-
   "ui.messageNav.newMessage": "Новое сообщение",
-
   "ui.textField.copyToClipboard": "Копировать в буфер обмена",
   "ui.textField.copyLink": "Копировать ссылку",
   "ui.textField.copied": "Скопировано",
-
   "ui.imagePreview.alt": "Предпросмотр изображения",
   "ui.scrollView.ariaLabel": "прокручиваемый контент",
-
   "ui.tool.read": "Чтение",
   "ui.tool.loaded": "Загружено",
   "ui.tool.list": "Список",
@@ -136,12 +132,10 @@ export const dict = {
   "ui.tool.questions": "Вопросы",
   "ui.tool.agent": "Агент {{type}}",
   "ui.tool.agent.default": "Агент",
-
   "ui.common.file.one": "файл",
   "ui.common.file.other": "файлов",
   "ui.common.question.one": "вопрос",
   "ui.common.question.other": "вопросов",
-
   "ui.common.add": "Добавить",
   "ui.common.back": "Назад",
   "ui.common.cancel": "Отмена",
@@ -151,11 +145,9 @@ export const dict = {
   "ui.common.next": "Далее",
   "ui.common.submit": "Отправить",
   "ui.common.showMore": "Показать ещё",
-
   "ui.permission.deny": "Запретить",
   "ui.permission.allowAlways": "Разрешить всегда",
   "ui.permission.allowOnce": "Разрешить один раз",
-
   "ui.message.expand": "Развернуть сообщение",
   "ui.message.collapse": "Свернуть сообщение",
   "ui.message.copy": "Копировать",
@@ -167,19 +159,16 @@ export const dict = {
   "ui.message.interrupted": "Прервано",
   "ui.message.queued": "В очереди",
   "ui.message.attachment.alt": "вложение",
-
   "ui.patch.action.deleted": "Удалено",
   "ui.patch.action.created": "Создано",
   "ui.patch.action.moved": "Перемещено",
   "ui.patch.action.patched": "Изменено",
-
   "ui.question.subtitle.answered": "{{count}} отвечено",
   "ui.question.answer.none": "(нет ответа)",
   "ui.question.review.notAnswered": "(не отвечено)",
   "ui.question.multiHint": "Выберите все подходящие",
   "ui.question.singleHint": "Выберите один ответ",
   "ui.question.custom.placeholder": "Введите ваш ответ...",
-
   "ui.fileSearch.placeholder": "Найти",
   "ui.fileSearch.previousMatch": "Предыдущее",
   "ui.fileSearch.nextMatch": "Следующее",
@@ -191,4 +180,9 @@ export const dict = {
   "ui.toolErrorCard.copyError": "Скопировать ошибку",
   "ui.message.duration.seconds": "{{count}}с",
   "ui.message.duration.minutesSeconds": "{{minutes}}м {{seconds}}с",
-}
+  "ui.tool.read.video": "Analyzing video",
+  "ui.tool.read.audio": "Analyzing audio",
+  "ui.tool.read.media": "Analyzing media",
+} satisfies Partial<Record<Keys, string>>
+
+export type DictUI = keyof typeof dict

@@ -2600,6 +2600,30 @@ export type SessionBusyError = {
   message: string
 }
 
+export type StorageUsage = {
+  path: string
+  bytes: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  pages: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  freelistPages: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  pageSize: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  sessions: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  messages: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  parts: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+}
+
+export type StoragePurge = {
+  sessions: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  messages: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  parts: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  bytesBefore: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  bytesAfter: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+}
+
+export type StoragePurgeInput = {
+  sessionIDs?: Array<string>
+  olderThan?: string
+}
+
 export type EventTuiPromptAppend = {
   type: "tui.prompt.append"
   properties: {
@@ -2954,6 +2978,14 @@ export type ProjectCopyError = {
     message: string
     forceRequired?: boolean
   }
+}
+
+export type StorageResult = {
+  sessions: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  messages: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  parts: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  bytesBefore: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  bytesAfter: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
 }
 
 export type EffectHttpApiErrorForbidden = {
@@ -10514,6 +10546,90 @@ export type PartUpdateResponses = {
 
 export type PartUpdateResponse = PartUpdateResponses[keyof PartUpdateResponses]
 
+export type StorageUsageData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/storage"
+}
+
+export type StorageUsageErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type StorageUsageError = StorageUsageErrors[keyof StorageUsageErrors]
+
+export type StorageUsageResponses = {
+  /**
+   * Get storage usage
+   */
+  200: StorageUsage
+}
+
+export type StorageUsageResponse = StorageUsageResponses[keyof StorageUsageResponses]
+
+export type StorageCompactData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/storage/compact"
+}
+
+export type StorageCompactErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type StorageCompactError = StorageCompactErrors[keyof StorageCompactErrors]
+
+export type StorageCompactResponses = {
+  /**
+   * Reclaim unused disk space
+   */
+  200: StoragePurge
+}
+
+export type StorageCompactResponse = StorageCompactResponses[keyof StorageCompactResponses]
+
+export type StoragePurgeData = {
+  body?: StoragePurgeInput
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/storage/purge"
+}
+
+export type StoragePurgeErrors = {
+  /**
+   * BadRequest | InvalidRequestError
+   */
+  400: EffectHttpApiErrorBadRequest | InvalidRequestError
+}
+
+export type StoragePurgeError = StoragePurgeErrors[keyof StoragePurgeErrors]
+
+export type StoragePurgeResponses = {
+  /**
+   * Permanently delete stored sessions
+   */
+  200: StoragePurge
+}
+
+export type StoragePurgeResponse = StoragePurgeResponses[keyof StoragePurgeResponses]
+
 export type SyncStartData = {
   body?: never
   path?: never
@@ -13622,6 +13738,117 @@ export type V2ProjectCopyRefreshResponses = {
 }
 
 export type V2ProjectCopyRefreshResponse = V2ProjectCopyRefreshResponses[keyof V2ProjectCopyRefreshResponses]
+
+export type V2StorageUsageData = {
+  body?: never
+  path?: never
+  query?: {
+    location?: {
+      directory?: string
+      workspace?: string
+    }
+  }
+  url: "/api/storage"
+}
+
+export type V2StorageUsageErrors = {
+  /**
+   * InvalidRequestError
+   */
+  400: InvalidRequestError
+  /**
+   * UnauthorizedError
+   */
+  401: UnauthorizedError
+}
+
+export type V2StorageUsageError = V2StorageUsageErrors[keyof V2StorageUsageErrors]
+
+export type V2StorageUsageResponses = {
+  /**
+   * Success
+   */
+  200: {
+    location: LocationInfo
+    data: StorageUsage
+  }
+}
+
+export type V2StorageUsageResponse = V2StorageUsageResponses[keyof V2StorageUsageResponses]
+
+export type V2StorageCompactData = {
+  body?: never
+  path?: never
+  query?: {
+    location?: {
+      directory?: string
+      workspace?: string
+    }
+  }
+  url: "/api/storage/compact"
+}
+
+export type V2StorageCompactErrors = {
+  /**
+   * InvalidRequestError
+   */
+  400: InvalidRequestError
+  /**
+   * UnauthorizedError
+   */
+  401: UnauthorizedError
+}
+
+export type V2StorageCompactError = V2StorageCompactErrors[keyof V2StorageCompactErrors]
+
+export type V2StorageCompactResponses = {
+  /**
+   * Success
+   */
+  200: {
+    location: LocationInfo
+    data: StorageResult
+  }
+}
+
+export type V2StorageCompactResponse = V2StorageCompactResponses[keyof V2StorageCompactResponses]
+
+export type V2StoragePurgeData = {
+  body: StoragePurgeInput
+  path?: never
+  query?: {
+    location?: {
+      directory?: string
+      workspace?: string
+    }
+  }
+  url: "/api/storage/purge"
+}
+
+export type V2StoragePurgeErrors = {
+  /**
+   * InvalidRequestError
+   */
+  400: InvalidRequestError
+  /**
+   * UnauthorizedError
+   */
+  401: UnauthorizedError
+}
+
+export type V2StoragePurgeError = V2StoragePurgeErrors[keyof V2StoragePurgeErrors]
+
+export type V2StoragePurgeResponses = {
+  /**
+   * Success
+   */
+  200: {
+    location: LocationInfo
+    data: StorageResult
+  }
+}
+
+export type V2StoragePurgeResponse = V2StoragePurgeResponses[keyof V2StoragePurgeResponses]
 
 export type PtyConnectData = {
   body?: never

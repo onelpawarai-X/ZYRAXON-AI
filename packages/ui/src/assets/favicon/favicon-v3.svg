@@ -1,9 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="16" height="16">
-  <rect width="16" height="16" fill="white"/>
-  <g transform="translate(100,100)" stroke="black" stroke-width="28" stroke-linecap="square" fill="none">
-    <line x1="-45" y1="-45" x2="-30" y2="-30"/>
-    <line x1="30" y1="30" x2="45" y2="45"/>
-    <line x1="-45" y1="45" x2="-30" y2="30"/>
-    <line x1="30" y1="-30" x2="45" y2="-45"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="ZYRAXON">
+  <defs>
+    <linearGradient id="zyg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF6B2C"/>
+      <stop offset="0.55" stop-color="#F0471F"/>
+      <stop offset="1" stop-color="#C41E0A"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#0B0B0F"/>
+  <path d="M112 96h86l58 106 58-106h86l-86 160 86 160h-86l-58-106-58 106h-86l86-160z" fill="url(#zyg)"/>
+  <rect x="112" y="392" width="288" height="20" rx="10" fill="url(#zyg)"/>
 </svg>

@@ -23,6 +23,7 @@ import { LocationGroup } from "./groups/location"
 import { IntegrationGroup } from "./groups/integration"
 import { CredentialGroup } from "./groups/credential"
 import { ProjectCopyGroup } from "./groups/project-copy"
+import { StorageGroup } from "./groups/storage"
 
 // Protocol owns middleware placement, while Server injects concrete keys so Core service identities stay downstream.
 const makeApiFromGroup = <
@@ -55,6 +56,7 @@ const makeApiFromGroup = <
     .add(makeQuestionGroup(locationMiddleware, sessionLocationMiddleware))
     .add(ReferenceGroup.middleware(locationMiddleware))
     .add(ProjectCopyGroup.middleware(locationMiddleware))
+    .add(StorageGroup.middleware(locationMiddleware))
     .annotateMerge(
       OpenApi.annotations({
         title: "zyraxon HttpApi",
@@ -65,6 +67,15 @@ const makeApiFromGroup = <
     .middleware(Authorization)
     .middleware(SchemaErrorMiddleware)
 
+/**
+ * The full protocol surface, shared by the server and any client that talks to
+ * it directly.
+ *
+ * Every group below has to be added to the returned API. `makeApi` used to
+ * return only the event group, which meant routes declared here — storage among
+ * them — never reached the server: a request for one of them answered 500 with an
+ * empty body instead of running its handler.
+ */
 export const makeApi = <
   LocationId extends HttpApiMiddleware.AnyId,
   LocationService,

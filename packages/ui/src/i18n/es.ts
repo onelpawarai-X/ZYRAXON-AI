@@ -1,5 +1,13 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
+import { dict as en } from "./en"
+
+type Keys = keyof typeof en
+
+/**
+ * Every string is this locale's own wording. A key with no translation stays
+ * out of the file rather than falling back to English.
+ */
 export const dict = {
   "ui.sessionReview.title": "Cambios de la sesión",
   "ui.sessionReview.title.git": "Cambios de Git",
@@ -45,7 +53,6 @@ export const dict = {
   "ui.fileMedia.binary.title": "Archivo binario",
   "ui.fileMedia.binary.description.path": "No se puede mostrar {{path}} porque es un archivo binario.",
   "ui.fileMedia.binary.description.default": "No se puede mostrar este archivo porque es un archivo binario.",
-
   "ui.lineComment.label.prefix": "Comentar en ",
   "ui.lineComment.label.suffix": "",
   "ui.lineComment.editorLabel.prefix": "Comentando en ",
@@ -53,7 +60,6 @@ export const dict = {
   "ui.lineComment.placeholder": "Añadir comentario",
   "ui.lineComment.submit": "Comentar",
   "ui.lineComment.cancel": "Cancelar",
-
   "ui.sessionTurn.steps.show": "Mostrar pasos",
   "ui.sessionTurn.steps.hide": "Ocultar pasos",
   "ui.sessionTurn.summary.response": "Respuesta",
@@ -63,7 +69,6 @@ export const dict = {
   "ui.sessionTurn.diffs.showAll": "Mostrar todos",
   "ui.sessionTurn.diffs.showLess": "Mostrar menos",
   "ui.sessionTurn.diffs.more": "+{{count}} más",
-
   "ui.sessionTurn.retry.retrying": "reintentando",
   "ui.sessionTurn.retry.inSeconds": "en {{seconds}}s",
   "ui.sessionTurn.retry.attempt": "intento #{{attempt}}",
@@ -71,16 +76,12 @@ export const dict = {
   "ui.sessionTurn.retry.geminiHot": "gemini está demasiado saturado",
   "ui.sessionTurn.error.freeUsageExceeded": "Límite de uso gratuito excedido",
   "ui.sessionTurn.error.addCredits": "Añadir créditos",
-
   "dialog.usageExceeded.freeTier.title": "Límite gratuito alcanzado",
-  "dialog.usageExceeded.freeTier.description":
-    "Suscríbete a ZYRAXON Go para acceso fiable a los mejores modelos de código abierto, desde $5/mes.",
+  "dialog.usageExceeded.freeTier.description": "Suscríbete a ZYRAXON Go para acceso fiable a los mejores modelos de código abierto, desde $5/mes.",
   "dialog.usageExceeded.freeTier.actionLabel": "Suscribirse",
   "dialog.usageExceeded.accountRateLimit.title": "Límite de Go alcanzado",
-  "dialog.usageExceeded.accountRateLimit.description":
-    "Límite de uso alcanzado. Para seguir usando este modelo ahora, habilita el uso desde tu saldo disponible",
+  "dialog.usageExceeded.accountRateLimit.description": "Límite de uso alcanzado. Para seguir usando este modelo ahora, habilita el uso desde tu saldo disponible",
   "dialog.usageExceeded.accountRateLimit.actionLabel": "Abrir configuración",
-
   "ui.sessionTurn.status.delegating": "Delegando trabajo",
   "ui.sessionTurn.status.planning": "Planificando siguientes pasos",
   "ui.sessionTurn.status.gatheringContext": "Explorando",
@@ -93,7 +94,6 @@ export const dict = {
   "ui.sessionTurn.status.thinkingWithTopic": "Pensando - {{topic}}",
   "ui.sessionTurn.status.gatheringThoughts": "Recopilando pensamientos",
   "ui.sessionTurn.status.consideringNextSteps": "Considerando siguientes pasos",
-
   "ui.messagePart.questions.dismissed": "Preguntas descartadas",
   "ui.messagePart.compaction": "Sesión compactada",
   "ui.messagePart.context.read.one": "{{count}} lectura",
@@ -107,22 +107,17 @@ export const dict = {
   "ui.messagePart.title.write": "Escribir",
   "ui.messagePart.option.typeOwnAnswer": "Escribe tu propia respuesta",
   "ui.messagePart.review.title": "Revisa tus respuestas",
-
   "ui.list.loading": "Cargando",
   "ui.list.empty": "Sin resultados",
   "ui.list.clearFilter": "Borrar filtro",
   "ui.list.emptyWithFilter.prefix": "Sin resultados para",
   "ui.list.emptyWithFilter.suffix": "",
-
   "ui.messageNav.newMessage": "Nuevo mensaje",
-
   "ui.textField.copyToClipboard": "Copiar al portapapeles",
   "ui.textField.copyLink": "Copiar enlace",
   "ui.textField.copied": "Copiado",
-
   "ui.imagePreview.alt": "Vista previa de imagen",
   "ui.scrollView.ariaLabel": "contenido desplazable",
-
   "ui.tool.read": "Leer",
   "ui.tool.loaded": "Cargado",
   "ui.tool.list": "Listar",
@@ -137,12 +132,10 @@ export const dict = {
   "ui.tool.questions": "Preguntas",
   "ui.tool.agent": "Agente {{type}}",
   "ui.tool.agent.default": "Agente",
-
   "ui.common.file.one": "archivo",
   "ui.common.file.other": "archivos",
   "ui.common.question.one": "pregunta",
   "ui.common.question.other": "preguntas",
-
   "ui.common.add": "Añadir",
   "ui.common.back": "Atrás",
   "ui.common.cancel": "Cancelar",
@@ -152,11 +145,9 @@ export const dict = {
   "ui.common.next": "Siguiente",
   "ui.common.submit": "Enviar",
   "ui.common.showMore": "Mostrar más",
-
   "ui.permission.deny": "Denegar",
   "ui.permission.allowAlways": "Permitir siempre",
   "ui.permission.allowOnce": "Permitir una vez",
-
   "ui.message.expand": "Expandir mensaje",
   "ui.message.collapse": "Colapsar mensaje",
   "ui.message.copy": "Copiar",
@@ -168,19 +159,16 @@ export const dict = {
   "ui.message.interrupted": "Interrumpido",
   "ui.message.queued": "En cola",
   "ui.message.attachment.alt": "adjunto",
-
   "ui.patch.action.deleted": "Eliminado",
   "ui.patch.action.created": "Creado",
   "ui.patch.action.moved": "Movido",
   "ui.patch.action.patched": "Parcheado",
-
   "ui.question.subtitle.answered": "{{count}} respondidas",
   "ui.question.answer.none": "(sin respuesta)",
   "ui.question.review.notAnswered": "(no respondida)",
   "ui.question.multiHint": "Selecciona todas las que correspondan",
   "ui.question.singleHint": "Selecciona una respuesta",
   "ui.question.custom.placeholder": "Escribe tu respuesta...",
-
   "ui.fileSearch.placeholder": "Buscar",
   "ui.fileSearch.previousMatch": "Anterior",
   "ui.fileSearch.nextMatch": "Siguiente",
@@ -192,4 +180,9 @@ export const dict = {
   "ui.toolErrorCard.copyError": "Copiar error",
   "ui.message.duration.seconds": "{{count}}s",
   "ui.message.duration.minutesSeconds": "{{minutes}}m {{seconds}}s",
-}
+  "ui.tool.read.video": "Analizar vídeo",
+  "ui.tool.read.audio": "Analizar audio",
+  "ui.tool.read.media": "Analizar los medios",
+} satisfies Partial<Record<Keys, string>>
+
+export type DictUI = keyof typeof dict
