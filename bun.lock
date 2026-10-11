@@ -33,6 +33,10 @@
         "turbo": "2.10.2",
       },
     },
+    "packages/agent-reliability-kernel": {
+      "name": "@zyraxon-ai/agent-reliability-kernel",
+      "version": "0.1.0",
+    },
     "packages/app": {
       "name": "@zyraxon-ai/app",
       "version": "19.0.2",
@@ -3044,6 +3048,8 @@
     "@xmldom/xmldom": ["@xmldom/xmldom@0.8.14", "https://registry.npmmirror.com/@xmldom/xmldom/-/xmldom-0.8.14.tgz", {}, "sha512-T4EDRUBVZYRldYApjEJiU0e1stYWaRAX7CuSnKzrpwdZKo53zGV8/pqfzV6FfwNl9YThD2OumQYvqtvjvgG7aQ=="],
 
     "@zip.js/zip.js": ["@zip.js/zip.js@2.7.62", "https://registry.npmmirror.com/@zip.js/zip.js/-/zip.js-2.7.62.tgz", {}, "sha512-OaLvZ8j4gCkLn048ypkZu29KX30r8/OfFF2w4Jo5WXFr+J04J+lzJ5TKZBVgFXhlvSkqNFQdfnY1Q8TMTCyBVA=="],
+
+    "@zyraxon-ai/agent-reliability-kernel": ["@zyraxon-ai/agent-reliability-kernel@workspace:packages/agent-reliability-kernel"],
 
     "@zyraxon-ai/app": ["@zyraxon-ai/app@workspace:packages/app"],
 

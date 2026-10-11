@@ -1,6 +1,18 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-import { countryFlag } from "./countries"
+/**
+ * Regional indicator flags come straight from the ISO 3166-1 alpha-2 code, so
+ * every flag is the real one. `UN` is skipped because it is not a country and
+ * has no flag of its own.
+ *
+ * This lives here, not in `countries`, because `countries` builds its table at
+ * module load from `LANGUAGES`. Defining it on this side keeps the dependency
+ * pointing one way, so neither module reads the other's bindings too early.
+ */
+export function countryFlag(code: string) {
+  if (code.length !== 2 || code === "UN") return ""
+  return String.fromCodePoint(...[...code.toUpperCase()].map((char) => 0x1f1a5 + char.charCodeAt(0)))
+}
 
 /**
  * Every language ZYRAXON can render in.
