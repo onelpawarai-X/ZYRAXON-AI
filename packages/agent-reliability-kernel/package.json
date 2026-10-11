@@ -1,0 +1,10 @@
+{
+  "name": "@zyraxon-ai/agent-reliability-kernel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Policy-gated, budget-aware execution and verification primitives for ZYRAXON AI agents.",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
