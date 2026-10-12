@@ -64,7 +64,7 @@ Prefer guidance that is:
 
 ## ZYRAXON-specific terms
 
-- **MCP Tools**: Model Context Protocol tools (136+ tools across 7 categories)
+- **MCP Integrations**: Model Context Protocol apps (108 integrations)
 - **Self-Healing**: ZYRAXON's ability to detect and fix missing capabilities automatically
 - **Memory System**: Cross-session memory via zyraxon.db with auto-injection of relevant memories per session
 - **Agent Mode**: Operating mode (General, Build, Plan, Beast, PRO, APEX PREDATOR, DARK EMPEROR)

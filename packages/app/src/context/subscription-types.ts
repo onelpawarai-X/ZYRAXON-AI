@@ -168,6 +168,7 @@ export const TOOL_TIER_MAP: Record<string, SubscriptionTier> = {
 
   // MCP TOOL FALLBACKS — always free (the 4 MCP servers' tools)
   mcp_websearch: "free",
+  mcp_catalog: "free", mcp_status: "free", mcp_connect: "free",
   nuphus_screenshot: "free", nuphus_list_windows: "free", nuphus_focus_window: "free", nuphus_click: "free",
   nuphus_type: "free", nuphus_hotkey: "free", nuphus_scroll: "free", nuphus_mouse_move: "free",
   nuphus_drag: "free", nuphus_ocr: "free", nuphus_clipboard_get: "free", nuphus_clipboard_set: "free",
@@ -264,7 +265,7 @@ export const TOOL_TIER_MAP: Record<string, SubscriptionTier> = {
   api_tester: "pro", apply_patch: "pro", code_analyzer: "pro", code_mode: "pro",
   media_fetch: "pro", screen_vision: "pro", self_evolve: "pro", svg_generate: "pro",
   x_behavior_rules: "pro", x_learn_from_task: "pro", x_media_data_extract: "pro", x_media_image_edit: "pro",
-  x_media_ocr: "pro", x_media_video_process: "pro", x_plan_create: "pro", x_plan_execute: "pro",
+  x_media_ocr: "pro", x_media_probe: "pro", x_media_video_process: "pro", x_plan_create: "pro", x_plan_execute: "pro",
   x_plan_status: "pro",
 
   // MAX
@@ -352,6 +353,7 @@ export const TOOL_TIER_MAP: Record<string, SubscriptionTier> = {
   x_desktop_share: "pro", x_desktop_link: "pro", x_desktop_stop_share: "pro",
   x_cdp_connect: "max", x_cdp_disconnect: "max", x_comp_click_at: "max", x_comp_drag: "max",
   x_comp_key_press: "max", x_comp_list_windows: "max", x_comp_move_mouse: "max", x_comp_open_app: "max",
+  x_comp_desktop_info: "max",
   x_comp_screenshot: "max", x_comp_scroll: "max", x_comp_type_text: "max",
 
   // ULTRA
@@ -399,7 +401,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       "Basic Browser Automation",
       "Mode Switching (general/build/plan/explore/vision)",
     ],
-    toolCount: 126,
+    toolCount: 190,
     memoryOptimization: "Basic (100 entries, 10MB cache)",
     maxAgents: 1,
     maxProjects: "3",
@@ -428,7 +430,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       "Multi-Agent (up to 3 agents)",
       "Priority Processing",
     ],
-    toolCount: 304,
+    toolCount: 514,
     memoryOptimization: "Pro (500 entries, 50MB cache)",
     maxAgents: 3,
     maxProjects: "Unlimited",
@@ -464,7 +466,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       "Team Workspace (3 members)",
       "GitHub Integration",
     ],
-    toolCount: 337,
+    toolCount: 841,
     memoryOptimization: "Max (2000 entries, 200MB cache)",
     maxAgents: 8,
     maxProjects: "Unlimited + Team",
@@ -497,7 +499,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       "Early Access to New Features",
       "Memory (10000 entries, 1GB cache)",
     ],
-    toolCount: 38,
+    toolCount: 902,
     memoryOptimization: "Ultra (10000 entries, 1GB cache)",
     maxAgents: -1,
     maxProjects: "Unlimited + Team + Enterprise",
@@ -506,19 +508,19 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
 
 export const TIER_STATS: Record<SubscriptionTier, { totalTools: number; categories: string[] }> = {
   free: {
-    totalTools: 126,
+    totalTools: 190,
     categories: ["Core AI", "Math", "Science", "Finance", "Data Science", "Security Basics", "Daily Life", "Memory", "Documents", "Tasks", "Captcha", "Subscription", "Acid/Base", "Chemistry", "Biology", "Life Tools", "System Info", "Web Search", "Nuphus Desktop", "Touchpoint Desktop"],
   },
   pro: {
-    totalTools: 304,
+    totalTools: 514,
     categories: ["Everything in Free", "Aviation", "Ground Vehicles", "Drones", "Helicopters", "ML & Safety", "Common Sense & Ethics", "Creativity", "Data Science Advanced", "Finance Advanced", "Vehicle Systems", "Planning", "Media Processing", "OCR", "Code Analysis", "API Testing", "Screen Vision", "Self-Evolution", "Task Automation"],
   },
   max: {
-    totalTools: 337,
+    totalTools: 841,
     categories: ["Everything in Pro", "Space", "Industrial", "Infrastructure", "Security", "Survey", "Agriculture", "Marine", "Construction", "Physical Interface", "SDR", "Digital Twin", "Dashboard", "Alert", "Data Logger", "Remote Control", "Predictive Maintenance", "Decision Support", "Authorization", "Extended AI", "Engineering", "Advanced Security", "CDP Browser", "Computer Control", "Site Builder"],
   },
   ultra: {
-    totalTools: 38,
+    totalTools: 902,
     categories: ["Everything in Max", "Singularity", "Guardian", "Universal Command Engine", "Ultra Tools", "Self-Improvement"],
   },
 }

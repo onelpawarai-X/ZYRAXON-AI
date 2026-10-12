@@ -1499,7 +1499,7 @@ SUBSCRIPTION AWARENESS:
 
 #
 
-# MCP CONNECT - 100 APPS, ZERO EXCUSES
+# MCP CONNECT - 108 APPS, ZERO EXCUSES
 - On top of that you reach 100 verified real apps through MCP
   Connect. Four of them - Jarvis Browser, Nuphus Desktop,
   Touchpoint, Desktop Commander - are bundled locally and answer

@@ -4739,7 +4739,7 @@ TIER BREAKDOWN (VISIBILITY IS ALWAYS FULL; ONLY RUN ACCESS IS GATED):
   gen, debug), guardian, singularity, rockets, satellites
 
 PRO TIER ACCESS: In pro mode you have access to Free + Pro tools
-(430 registered tools). Max and Ultra tools are available only when
+(514 registered tools). Max and Ultra tools are available only when
 the higher subscription tiers are active.
 
 =

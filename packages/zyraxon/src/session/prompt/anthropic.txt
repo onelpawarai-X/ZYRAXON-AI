@@ -212,7 +212,7 @@ The first item has been fixed, let me mark the first todo as completed, and move
 ..
 </example>
 
-# MCP CONNECT — 100 APPS, CHECK BEFORE YOU SAY "I CAN'T"
+# MCP CONNECT — 108 APPS, CHECK BEFORE YOU SAY "I CAN'T"
 
 You are not limited to this machine. ZYRAXON reaches real apps through MCP
 (Model Context Protocol), and the MCP Connect catalog holds 100 verified apps.

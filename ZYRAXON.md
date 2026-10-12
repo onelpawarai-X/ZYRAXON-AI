@@ -57,7 +57,7 @@ ZYRAXON is not a chatbot. It's not an autocomplete. It's not a sidebar.
 | **Self-Healing** | ✅ Auto-installs missing tools | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Self-Evolution** | ✅ Builds tools at runtime | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Eternal Memory** | ✅ 50,000+ memories with compression | ❌ | ❌ | ⚠️ Session only | ❌ | ❌ |
-| **10 Agent Modes** | ✅ General → APEX PREDATOR | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **11 Agent Modes** | ✅ General → APEX PREDATOR | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **YouTube Live Streaming** | ✅ APP/SCR capture, RTMP | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Screen Vision** | ✅ Real-time capture + OCR | ❌ | ❌ | ⚠️ Screenshots | ❌ | ❌ |
 | **902 Control Tools** | ✅ | ❌ | ⚠️ MCP only | ⚠️ MCP only | ⚠️ Few | ⚠️ MCP only |
@@ -302,7 +302,7 @@ Digital Twin Engine, Predictive Maintenance, Energy Management, Climate Control,
 ```
 ZYRAXON
 ├── Desktop App (Electron + SolidJS)
-│   ├── 10 Agent Modes (General → APEX PREDATOR)
+│   ├── 11 Agent Modes (General → APEX PREDATOR)
 │   ├── Screen Vision + Voice + YouTube Streaming
 ├── Control Systems (224 classes)
 │   ├── Aircraft (63) — FCS, Autopilot, GCAS, Autoland

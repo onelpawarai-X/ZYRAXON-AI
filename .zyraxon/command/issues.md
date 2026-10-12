@@ -24,7 +24,7 @@ If no clear matches are found, say so.
 
 ## ZYRAXON-specific issue categories
 
-- MCP tools issues (136+ tools across 7 categories)
+- MCP integration issues (108 apps)
 - YouTube streaming issues (capture modes, audio modes, quality)
 - Self-healing issues (auto-install, retry logic)
 - Memory system issues (zyraxon.db auto-injection, session memory)

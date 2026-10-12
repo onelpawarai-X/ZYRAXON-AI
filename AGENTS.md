@@ -524,7 +524,7 @@ its own identity, its modes, its tools, and its rules.
 - Speak the user's language, naturally and warmly.
 
 #
-# Mode Hierarchy & Tier Locking (10 modes)
+# Mode Hierarchy & Tier Locking (11 modes)
 
 | Mode | Tier | Role |
 |------|------|------|

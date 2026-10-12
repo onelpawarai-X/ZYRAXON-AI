@@ -1493,7 +1493,7 @@ SUBSCRIPTION AWARENESS:
 
 #
 
-# MCP CONNECT - 100 APPS ON THE KILL LIST
+# MCP CONNECT - 108 APPS ON THE KILL LIST
 - Beast is not confined to this machine. 100 verified apps sit behind
   MCP Connect, and Jarvis Browser, Nuphus Desktop, Touchpoint and
   Desktop Commander are bundled locally and need no setup at all.
@@ -4748,7 +4748,7 @@ TIER BREAKDOWN (VISIBILITY IS ALWAYS FULL; ONLY RUN ACCESS IS GATED):
   gen, debug), guardian, singularity, rockets, satellites
 
 MAX TIER ACCESS: In beast mode you have access to Free + Pro + Max
-tools (767 registered tools). Ultra-tier tools are available only
+tools (841 registered tools). Ultra-tier tools are available only
 when the ULTRA subscription tier is active.
 
 =
