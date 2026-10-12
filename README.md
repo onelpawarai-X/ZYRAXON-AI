@@ -1,45 +1,4 @@
-<!--
-  Copyright (c) 2026 onelpawarai. All rights reserved.
-  SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
--->
-<!-- ========================================================= -->
-<!--   ZYRAXON AI — AGENT ENGINEERING + COMMUNITY  (top)         -->
-<!-- ========================================================= -->
 
-<div align="center">
-
-<h1 style="font-family: Orbitron; letter-spacing: 4px; color: #00D4FF;">ZYRAXON AI</h1>
-
-<br/><br/>
-
-<b>Autonomous agent engineering — reasoning, tools, execution and verification, shipped as one product.</b>
-
-</div>
-
----
-
-## 🤝 Work with ZYRAXON AI — and stay part of it
-
-<div align="center">
-
-<b>ZYRAXON AI is a movement, not a solo project. If you work with me, you are in — for good.</b>
-
-</div>
-
-<br/>
-
-**This is the standing, everyday invitation:**
-
-| | Do this | Where |
-|---|---|---|
-| 🧩 | **Contribute** — PRs, bug fixes, features, tests, docs | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
-| 🛠️ | **Build with me** — pick an open issue and ship it | [`Issues`](https://github.com/onelpawarai-X/ZYRAXON-AI/issues) |
-| 🚀 | **Improve the project** — make the agent smarter, faster, more reliable | [`Discussions`](https://github.com/onelpawarai-X/ZYRAXON-AI/discussions) |
-| 📣 | **Spread the word** — share ZYRAXON AI with your network | [`Website`](https://zyraxonai.lovable.app) |
-| 🎥 | **Make videos** — demos and tutorials, uploaded and tagged | [`YouTube`](https://www.youtube.com/@ZYRAXONAI) |
-| ♻️ | **Keep going** — a little every day; momentum compounds | ⭐ [Star the project](https://github.com/onelpawarai-X/ZYRAXON-AI) |
-
-<div align="center">
 
 <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/blob/main/CONTRIBUTING.md"><img alt="Contribute" src="https://img.shields.io/badge/Contribute-Start%20Here-38BDF8?style=for-the-badge&logo=github&logoColor=FFFFFF"/></a>
 <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/issues"><img alt="Open issues" src="https://img.shields.io/badge/Open%20Issues-Pick%20One-8B5CF6?style=for-the-badge&logo=githubissues&logoColor=FFFFFF"/></a>
