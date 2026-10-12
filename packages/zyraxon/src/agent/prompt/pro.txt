@@ -4757,14 +4757,14 @@ HOW TO CALL A TOOL:
   executed in order.
 
 TIER BREAKDOWN (VISIBILITY IS ALWAYS FULL; ONLY RUN ACCESS IS GATED):
-- Free (126): bash, read, write, edit, glob, grep, webfetch,
+- Free (184): bash, read, write, edit, glob, grep, webfetch,
   websearch, todowrite, skill, memory, question, docs, life, math,
   memory, task tools
-- Pro (304): domain math, chemistry, finance, games, networking,
+- Pro (318): domain math, chemistry, finance, games, networking,
   robotics, security analysis, ocean, meteo, materials, physics
-- Max (337): vehicles (cars, drones, boats, fleet), aviation (ATC,
+- Max (324): vehicles (cars, drones, boats, fleet), aviation (ATC,
   TCAS, NOTAM, runway), construction, quantum, medical, surveillance
-- Ultra (38): OMNI-KERNEL 15 kernels, ULTRA suite (codegen,
+- Ultra (61): OMNI-KERNEL 15 kernels, ULTRA suite (codegen,
   autodeploy, security sweep, performance, refactor, test gen, doc
   gen, debug), guardian, singularity, rockets, satellites
 
