@@ -360,6 +360,14 @@ const layer = Layer.effect(
             args: { input: z.string().describe("JSON input for the ultra tool") },
             execute: async (args: any) => {
               try {
+                const tier = getCurrentTier()
+                const required = getToolRequiredTier(`ultra_${name}`)
+                if (!hasAccess(tier, required)) {
+                  return {
+                    output: `Access denied: ultra_${name} requires ${required} tier. You are on ${tier} tier. Upgrade your subscription to use this tool.`,
+                    metadata: { locked: true, required, current: tier },
+                  }
+                }
                 const input = typeof args.input === "string" ? JSON.parse(args.input) : (args.input ?? {})
                 const result = await entry.execute(input)
                 return {
@@ -381,6 +389,14 @@ const layer = Layer.effect(
             args: { input: z.string().describe("JSON input for the omni mechanism tool") },
             execute: async (args: any) => {
               try {
+                const tier = getCurrentTier()
+                const required = getToolRequiredTier(`omni_${name}`)
+                if (!hasAccess(tier, required)) {
+                  return {
+                    output: `Access denied: omni_${name} requires ${required} tier. You are on ${tier} tier. Upgrade your subscription to use this tool.`,
+                    metadata: { locked: true, required, current: tier },
+                  }
+                }
                 const input = typeof args.input === "string" ? JSON.parse(args.input) : (args.input ?? {})
                 const result = await entry.execute(input)
                 return {
@@ -500,7 +516,37 @@ const layer = Layer.effect(
   tool.mcp_catalog,
   tool.mcp_status,
   tool.mcp_connect,
+  tool.mcp_disconnect,
             tool.x_mode_switch,
+            // Session, UI-button, preview and desktop-share tools are built above
+            // but were never added here, so they existed in the registry record and
+            // in the tier map while never reaching the model. Every one of them is
+            // now injected like the rest of the catalog.
+            tool.x_session_list,
+            tool.x_session_open,
+            tool.x_session_send,
+            tool.x_session_subagent,
+            tool.x_session_switch,
+            tool.x_session_remove,
+            tool.x_ui_buttons_list,
+            ...uiButtonToolDefs.map((_, i) => tool[uiButtonToolIds[i] as keyof typeof tool] as Tool.Def),
+            tool.x_preview_list_windows,
+            tool.x_preview_attach_window,
+            tool.x_preview_detach_window,
+            tool.x_preview_launch_app,
+            tool.x_preview_screenshot,
+            tool.x_preview_click,
+            tool.x_preview_type,
+            tool.x_preview_fill_form,
+            tool.x_preview_key,
+            tool.x_preview_scroll,
+            tool.x_preview_read_text,
+            tool.x_preview_elements,
+            tool.x_preview_find,
+            tool.x_preview_wait,
+            tool.x_desktop_share,
+            tool.x_desktop_link,
+            tool.x_desktop_stop_share,
             ...(tool.execute ? [tool.execute] : []),
             ...(flags.experimentalLspTool ? [tool.lsp] : []),
             ...(flags.experimentalPlanMode && flags.client === "cli" ? [tool.plan] : []),
@@ -548,7 +594,14 @@ const layer = Layer.effect(
     })
 
     const tools: Interface["tools"] = Effect.fn("ToolRegistry.tools")(function* (input) {
-      const currentTier = getCurrentTier()
+      // Every tool is handed to the model on every tier and in every mode. The tier
+      // only decides whether a tool may run, not whether the model may see it.
+      //
+      // Filtering definitions by tier used to hide 661 of the 753 X tools from a
+      // free-tier model, so the model could not answer "what tools do I have?"
+      // without undercounting, and would refuse work it actually owned a tool for.
+      // The gate moved to execution time (see SessionTools.resolve), where a locked
+      // tool answers with a clear upgrade message instead of silently not existing.
       const filtered = (yield* all()).filter((tool) => {
         if (tool.id === WebSearchTool.id) {
           return webSearchEnabled(input.providerID, { exa: flags.enableExa, parallel: flags.enableParallel })
@@ -558,9 +611,6 @@ const layer = Layer.effect(
           input.modelID.includes("gpt-") && !input.modelID.includes("oss") && !input.modelID.includes("gpt-4")
         if (tool.id === ApplyPatchTool.id) return usePatch
         if (tool.id === EditTool.id || tool.id === WriteTool.id) return !usePatch
-
-        const requiredTier = getToolRequiredTier(tool.id)
-        if (!hasAccess(currentTier, requiredTier)) return false
 
         return true
       })

@@ -109,6 +109,43 @@ if (!pythonCmd) {
     process.exit(1);
 }
 
+// ─── Dependency self-heal ─────────────────────────────────────────
+// The vendored libs/ tree is a win_amd64 install, so on Linux and macOS the
+// server resolves mcp/pydantic_core from the platform interpreter. When that
+// interpreter has never had the MCP SDK, `import mcp.server.fastmcp` dies and the
+// server shows as failed with no explanation. Install the runtime packages the
+// first time it happens so the server heals itself instead of staying red.
+var RUNTIME_DEPS = ['mcp[cli]<2', 'rapidfuzz', 'websocket-client', 'Pillow', 'screeninfo'];
+
+function depsPresent() {
+    try {
+        execFileSync(pythonCmd, ['-c', 'import mcp.server.fastmcp, rapidfuzz, websocket, PIL, screeninfo'], {
+            stdio: ['pipe', 'pipe', 'pipe'],
+            timeout: 8000
+        });
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+function installDeps() {
+    process.stderr.write('[touchpoint-mcp] MCP runtime packages missing — installing once\n');
+    var pipCmds = [[pythonCmd, ['-m', 'pip']], ['pip3', []], ['pip', []]];
+    for (var i = 0; i < pipCmds.length; i++) {
+        try {
+            execFileSync(pipCmds[i][0], pipCmds[i][1].concat(['install', '--quiet', '--disable-pip-version-check'].concat(RUNTIME_DEPS)), {
+                stdio: ['pipe', 'pipe', 'pipe'],
+                timeout: 300000
+            });
+            if (depsPresent()) return true;
+        } catch (e) {}
+    }
+    return false;
+}
+
+if (!depsPresent()) installDeps();
+
 var env = Object.assign({}, process.env, {
     TOUCHPOINT_MODE: process.env.TOUCHPOINT_MODE || 'no-vision'
 });

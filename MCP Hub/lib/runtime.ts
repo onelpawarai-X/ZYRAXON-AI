@@ -30,7 +30,7 @@ export interface McpClientLike {
        * still reaches ZYRAXON. That is the only way to finish a sign-in when the default
        * browser is not the one already signed in.
        */
-      start: (input: { name: string }) => Promise<{ data?: { authorizationUrl?: string; oauthState?: string } }>
+      start: (input: { name: string; open?: string }) => Promise<{ data?: { authorizationUrl?: string; oauthState?: string } }>
       /** whether a stored sign-in exists, so a refusal can be told apart from a bad key */
       hasTokens: (input: { name: string }) => Promise<{ data?: { hasTokens?: boolean } }>
       /** forget stored tokens and client registration for a server */
@@ -157,8 +157,8 @@ export function bindRuntime(host: HostBindings): McpRuntime {
      * browser — which is what makes signing in possible when the account lives in a
      * different profile from the default browser.
      */
-    startAuth: async (name) => {
-      const data = await host.client.mcp.auth.start({ name })
+    startAuth: async (name, options) => {
+      const data = await host.client.mcp.auth.start({ name, open: options?.open ? "true" : undefined })
       return data.data?.authorizationUrl ?? ""
     },
 

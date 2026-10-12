@@ -284,8 +284,14 @@ export function McpHubPanel(props: McpHubPanelProps) {
 
   /** the app whose sign-in link is being built, so the button can say so */
   const [generating, setGenerating] = createSignal<string | null>(null)
-  /** the sign-in link produced by Generate, shown with copy and open */
-  const [consentUrl, setConsentUrl] = createSignal<string | null>(null)
+  /**
+   * The sign-in link produced by Generate, tagged with the app it belongs to.
+   *
+   * Keying by app id is what stops a link built for one app from showing on
+   * another: the Details panel swaps apps in place, so a bare URL signal kept
+   * the previous app's link on screen until the next Generate overwrote it.
+   */
+  const [consentUrl, setConsentUrl] = createSignal<{ id: string; url: string } | null>(null)
   const [registryHits, setRegistryHits] = createSignal<RegistryServer[]>([])
   const [registryTerm, setRegistryTerm] = createSignal("")
   /** which registry server each app resolved to */
@@ -763,8 +769,8 @@ export function McpHubPanel(props: McpHubPanelProps) {
         await new Promise((resolve) => setTimeout(resolve, 400))
       }
 
-      const url = await props.runtime.startAuth(app.id)
-      setConsentUrl(url || null)
+      const url = await props.runtime.startAuth(app.id, { open: true })
+      setConsentUrl(url ? { id: app.id, url } : null)
     } catch {
       setConsentUrl(null)
     } finally {
@@ -1506,32 +1512,34 @@ export function McpHubPanel(props: McpHubPanelProps) {
                 </button>
               </div>
 
-              <Show when={consentUrl()}>
-                {(url) => (
-                  <div class="mt-4 rounded-md border border-[var(--mcp-border)] p-3">
-                    <div class="mb-1 text-[12px] font-[600]">Sign-in link</div>
-                    <div class="mb-2 text-[11px] text-[var(--mcp-text-weak)]">
-                      Open it in the browser where you are signed in, approve the app, then come back here. ZYRAXON
-                      receives the reply automatically.
+              <Show when={consentUrl()} keyed>
+                {(link) => (
+                  <Show when={link.id === app().id}>
+                    <div class="mt-4 rounded-md border border-[var(--mcp-border)] p-3">
+                      <div class="mb-1 text-[12px] font-[600]">Sign-in link</div>
+                      <div class="mb-2 text-[11px] text-[var(--mcp-text-weak)]">
+                        Open it in the browser where you are signed in, approve the app, then come back here. ZYRAXON
+                        receives the reply automatically.
+                      </div>
+                      <div class="select-all break-all font-mono text-[11px]">{link.url}</div>
+                      <div class="mt-2 flex gap-2">
+                        <button
+                          type="button"
+                          class="rounded-md border border-[var(--mcp-border)] px-2 py-1 text-[12px] hover:bg-white/5"
+                          onClick={() => navigator.clipboard?.writeText(link.url)}
+                        >
+                          Copy link
+                        </button>
+                        <button
+                          type="button"
+                          class="rounded-md border border-[var(--mcp-border)] px-2 py-1 text-[12px] hover:bg-white/5"
+                          onClick={() => void props.runtime.openUrl(link.url)}
+                        >
+                          Open link
+                        </button>
+                      </div>
                     </div>
-                    <div class="select-all break-all font-mono text-[11px]">{url()}</div>
-                    <div class="mt-2 flex gap-2">
-                      <button
-                        type="button"
-                        class="rounded-md border border-[var(--mcp-border)] px-2 py-1 text-[12px] hover:bg-white/5"
-                        onClick={() => navigator.clipboard?.writeText(url())}
-                      >
-                        Copy link
-                      </button>
-                      <button
-                        type="button"
-                        class="rounded-md border border-[var(--mcp-border)] px-2 py-1 text-[12px] hover:bg-white/5"
-                        onClick={() => void props.runtime.openUrl(url())}
-                      >
-                        Open link
-                      </button>
-                    </div>
-                  </div>
+                  </Show>
                 )}
               </Show>
             </div>

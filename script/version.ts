@@ -12,7 +12,7 @@ const sha = process.env.GITHUB_SHA ?? (await $`git rev-parse HEAD`.text()).trim(
 const zyraxonVersion = {
   version: Script.version,
   sha,
-  mcpToolsCount: 136,
+  mcpToolsCount: 108,
   streamingEnabled: true,
   selfHealingEnabled: true,
   memorySystemEnabled: true,

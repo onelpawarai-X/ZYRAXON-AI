@@ -18,7 +18,7 @@ new sst.cloudflare.x.SolidStart("Teams", {
     ZYRAXON_STORAGE_BUCKET: storage.name,
     // ZYRAXON-specific enterprise features
     ZYRAXON_VERSION: "1.14.0",
-    ZYRAXON_MCP_TOOLS_COUNT: "136",
+    ZYRAXON_MCP_TOOLS_COUNT: "108",
     ZYRAXON_STREAMING_ENABLED: "true",
     ZYRAXON_SELF_HEALING_ENABLED: "true",
     ZYRAXON_MEMORY_SYSTEM_ENABLED: "true",

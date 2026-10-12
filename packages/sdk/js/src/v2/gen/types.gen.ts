@@ -8559,6 +8559,7 @@ export type McpAuthStartData = {
   query?: {
     directory?: string
     workspace?: string
+    open?: string
   }
   url: "/mcp/{name}/auth"
 }

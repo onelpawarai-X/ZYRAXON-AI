@@ -369,7 +369,7 @@ export function NewHome() {
   const DEFAULT_PROJECT = createMemo<LocalProject>(() => ({
     worktree: homedir() || "/",
     expanded: true,
-    name: "Default Project",
+    name: language.t("home.defaultProject"),
   }))
   const newSessionProject = createMemo(
     () =>
@@ -818,7 +818,7 @@ export function NewHome() {
                     class="pointer-events-auto h-7 px-2 [font-weight:530]"
                     onClick={openMcpHub}
                   >
-                    MCP Connect
+                    {language.t("home.mcpConnect")}
                   </ButtonV2>
                   <ButtonV2
                     data-action="home-new-session"
@@ -982,7 +982,7 @@ function HomeProjectColumn(props: {
                       }}
                     >
                       <IconV2 name="folder" size="small" class="text-v2-icon-icon-muted" />
-                      <span class={HOME_PROJECT_NAV_LABEL}>Default Project</span>
+                      <span class={HOME_PROJECT_NAV_LABEL}>{props.language.t("home.defaultProject")}</span>
                     </button>
                     <button
                       type="button"
@@ -1066,7 +1066,7 @@ function HomeUtilityNav(props: {
       >
         <span class="flex items-center gap-2">
           <IconV2 name="cloud" size="small" />
-          <span class={HOME_PROJECT_NAV_LABEL}>Cloud Agent</span>
+          <span class={HOME_PROJECT_NAV_LABEL}>{props.language.t("home.cloudAgent")}</span>
         </span>
       </button>
       <button
@@ -1076,7 +1076,7 @@ function HomeUtilityNav(props: {
       >
         <span class="flex items-center gap-2">
           <IconV2 name="globe" size="small" />
-          <span class={HOME_PROJECT_NAV_LABEL}>Marketplace</span>
+          <span class={HOME_PROJECT_NAV_LABEL}>{props.language.t("home.marketplace")}</span>
         </span>
       </button>
       <button
@@ -1100,14 +1100,14 @@ function HomeUtilityNav(props: {
         </span>
       </button>
       <Portal>
-        <CloudAgentDialog show={showCloudAgent()} onClose={() => setShowCloudAgent(false)} />
-        <MarketplaceDialog show={showMarketplace()} onClose={() => setShowMarketplace(false)} />
+        <CloudAgentDialog show={showCloudAgent()} onClose={() => setShowCloudAgent(false)} language={props.language} />
+        <MarketplaceDialog show={showMarketplace()} onClose={() => setShowMarketplace(false)} language={props.language} />
       </Portal>
     </div>
   )
 }
 
-function CloudAgentDialog(props: { show: boolean; onClose: () => void }) {
+function CloudAgentDialog(props: { show: boolean; onClose: () => void; language: ReturnType<typeof useLanguage> }) {
   // Open Cloud Agent in system Chrome browser — full mic + speech support
   createEffect(() => {
     if (props.show) {
@@ -1138,7 +1138,7 @@ function CloudAgentDialog(props: { show: boolean; onClose: () => void }) {
       >
         <div class="flex flex-col items-center gap-4">
           <IconV2 name="cloud" size="large" class="text-v2-icon-icon-muted animate-pulse" />
-          <span class="text-sm font-medium text-v2-text-text-base">Opening Cloud Agent in Chrome...</span>
+          <span class="text-sm font-medium text-v2-text-text-base">{props.language.t("home.cloudAgent.opening")}</span>
           <span class="text-xs text-v2-text-text-muted">ZYRAXON-Pro will open in your system browser</span>
         </div>
       </div>
@@ -1146,7 +1146,7 @@ function CloudAgentDialog(props: { show: boolean; onClose: () => void }) {
   )
 }
 
-function MarketplaceDialog(props: { show: boolean; onClose: () => void }) {
+function MarketplaceDialog(props: { show: boolean; onClose: () => void; language: ReturnType<typeof useLanguage> }) {
   return (
     <div
       class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
@@ -1160,7 +1160,7 @@ function MarketplaceDialog(props: { show: boolean; onClose: () => void }) {
         <div class="flex items-center justify-between border-b border-v2-border-border-base px-4 py-3">
           <div class="flex items-center gap-2">
             <IconV2 name="globe" size="small" class="text-v2-icon-icon-muted" />
-            <span class="text-sm font-medium text-v2-text-text-base">ZYRAXON Marketplace</span>
+            <span class="text-sm font-medium text-v2-text-text-base">{props.language.t("home.marketplace.title")}</span>
           </div>
           <button
             type="button"
@@ -1174,7 +1174,7 @@ function MarketplaceDialog(props: { show: boolean; onClose: () => void }) {
           src="https://agent-ecosystem-hub.lovable.app"
           class="h-full w-full flex-1 border-0"
           allow="clipboard-read; clipboard-write"
-          title="ZYRAXON Marketplace"
+          title={props.language.t("home.marketplace.title")}
         />
       </div>
     </div>

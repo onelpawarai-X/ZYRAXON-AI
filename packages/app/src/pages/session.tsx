@@ -535,7 +535,7 @@ export default function Page() {
   const sessionPanelMax = createMemo(() => {
     const available = sessionPanelAvailable()
     if (available === undefined) return 1000
-    return sessionPanelWidthMax({ available, split: splitReview() })
+    return sessionPanelWidthMax({ available, split: splitReview(), review: desktopV2ReviewOpen() })
   })
   // Clamp at render time so window or sidebar resizes squeeze the chat panel
   // instead of the review pane, without overwriting the persisted width.
@@ -544,6 +544,7 @@ export default function Page() {
       width: layout.session.width(),
       available: sessionPanelAvailable(),
       split: splitReview(),
+      review: desktopV2ReviewOpen(),
     }),
   )
   const previewActive = getPreviewActive()

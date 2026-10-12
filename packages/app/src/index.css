@@ -406,3 +406,40 @@
 .zyraxon-mic-recording {
   animation: zyraxon-mic-glow 1.5s ease-in-out infinite;
 }
+
+/* --- Right-to-left layout ---
+   The document flips to `dir="rtl"` for Arabic, Hebrew, Persian, Urdu and
+   Yiddish. The layout is built from physical properties (left/right borders,
+   `margin-left: auto`, `text-align: left`), which do not mirror on their own —
+   the UI ended up reversed without being mirrored, so icons hugged the wrong
+   edge. These rules mirror the physical values the settings surfaces and general
+   chrome rely on. */
+:root[dir="rtl"] .settings-v2-rail,
+:root[dir="rtl"] .zy-extensions-nav {
+  border-right: none;
+  border-left: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.06));
+}
+
+:root[dir="rtl"] .settings-v2-rail-title,
+:root[dir="rtl"] .settings-v2-rail-item,
+:root[dir="rtl"] .zy-extensions-tab {
+  text-align: right;
+}
+
+:root[dir="rtl"] .settings-v2-rail-item::before {
+  left: auto;
+  right: -10px;
+  border-radius: 3px 0 0 3px;
+}
+
+:root[dir="rtl"] .zy-extensions-tab-count,
+:root[dir="rtl"] .settings-v2-rail-count {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+/* The rail is on the right in RTL; the item's active indicator must stay on the
+   inner edge, next to the content, instead of the outer window edge. */
+:root[dir="rtl"] .settings-v2-rail-item::before {
+  transform: translateY(-50%) scaleY(0.4);
+}

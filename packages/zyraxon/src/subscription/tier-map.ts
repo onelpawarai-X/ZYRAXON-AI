@@ -157,7 +157,7 @@ export const TOOL_TIER_MAP: Record<string, Tier> = {
   api_tester: "pro", apply_patch: "pro", code_analyzer: "pro", code_mode: "pro",
   media_fetch: "pro", screen_vision: "pro", self_evolve: "pro", svg_generate: "pro",
   x_behavior_rules: "pro", x_learn_from_task: "pro", x_media_data_extract: "pro", x_media_image_edit: "pro",
-  x_media_ocr: "pro", x_media_video_process: "pro", x_plan_create: "pro", x_plan_execute: "pro",
+  x_media_ocr: "pro", x_media_probe: "pro", x_media_video_process: "pro", x_plan_create: "pro", x_plan_execute: "pro",
   x_plan_status: "pro",
 
   // MAX
@@ -242,6 +242,7 @@ export const TOOL_TIER_MAP: Record<string, Tier> = {
   github_connect: "max", external_directory: "max",
   x_cdp_connect: "max", x_cdp_disconnect: "max", x_comp_click_at: "max", x_comp_drag: "max",
   x_comp_key_press: "max", x_comp_list_windows: "max", x_comp_move_mouse: "max", x_comp_open_app: "max",
+  x_comp_desktop_info: "max",
   x_comp_screenshot: "max", x_comp_scroll: "max", x_comp_type_text: "max",
 
   // ULTRA

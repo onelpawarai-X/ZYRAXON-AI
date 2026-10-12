@@ -55,7 +55,9 @@ export interface McpRuntime {
      * Chrome while ZYRAXON defaults to Edge can approve in the right place, and the loopback
      * still comes back here.
      */
-    startAuth: (name: string) => Promise<string>;
+    startAuth: (name: string, options?: {
+        open?: boolean;
+    }) => Promise<string>;
     /**
      * Detach a server for good.
   *

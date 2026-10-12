@@ -39,6 +39,7 @@ export interface McpClientLike {
              */
             start: (input: {
                 name: string;
+                open?: string;
             }) => Promise<{
                 data?: {
                     authorizationUrl?: string;
