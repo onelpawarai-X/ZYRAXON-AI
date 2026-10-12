@@ -170,7 +170,7 @@ export function DailyTasksPanel() {
 
             {/* Time picker */}
             <div class="flex items-center gap-2">
-              <Icon name="clock" size="small" class="text-icon-weak" />
+              <Icon name="task" size="small" class="text-icon-weak" />
               <input
                 type="time"
                 value={newTime()}
