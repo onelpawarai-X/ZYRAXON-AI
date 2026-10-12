@@ -71,7 +71,7 @@ export const SettingsRoute: Component = () => {
       title: language.t("settings.section.desktop"),
       items: [
         { value: "general", label: language.t("settings.tab.general"), icon: "sliders" },
-        { value: "language", label: language.t("settings.tab.language"), icon: "languages" },
+        { value: "language", label: language.t("settings.tab.language"), icon: "zy-language" },
         { value: "appearance", label: language.t("settings.tab.appearance"), icon: "eye" },
         { value: "notifications", label: language.t("settings.tab.notifications"), icon: "bubble-5" },
         { value: "shortcuts", label: language.t("settings.tab.shortcuts"), icon: "keyboard" },
@@ -98,7 +98,7 @@ export const SettingsRoute: Component = () => {
     {
       title: language.t("settings.section.app"),
       items: [
-        { value: "subscription", label: language.t("settings.tab.subscription"), icon: "star" },
+        { value: "subscription", label: language.t("settings.tab.subscription"), icon: "zy-subscription" },
         { value: "about", label: language.t("settings.tab.about"), icon: "help" },
       ],
     },

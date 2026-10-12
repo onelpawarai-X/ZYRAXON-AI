@@ -427,7 +427,7 @@ export function SessionSidePanel(props: {
                               value="daily-tasks"
                               class="flex items-center gap-1.5"
                             >
-                              <Icon name="calendar" size="small" />
+                              <Icon name="task" size="small" />
                               <span>Daily Tasks</span>
                             </Tabs.Trigger>
                               <Show when={contextOpen()}>
@@ -671,7 +671,7 @@ export function SessionSidePanel(props: {
                               value="daily-tasks"
                               class="flex items-center gap-1.5"
                             >
-                              <Icon name="calendar" size="small" />
+                              <Icon name="task" size="small" />
                               <span>Daily Tasks</span>
                             </Tabs.Trigger>
                             <Show when={contextOpen()}>

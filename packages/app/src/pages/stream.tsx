@@ -345,7 +345,7 @@ export default function StreamPage() {
                 </Button>
               }
             >
-              <Button onClick={stopStream} variant="destructive" class="px-8 py-3 text-16-medium">
+              <Button onClick={stopStream} variant="ghost" class="px-8 py-3 text-16-medium !text-red-500 !border-red-500/40 hover:!bg-red-500/10">
                 Stop Streaming
               </Button>
             </Show>
