@@ -112,6 +112,9 @@ import { workspaceHandlers } from "./handlers/workspace"
 import { instanceContextLayer } from "./middleware/instance-context"
 import { workspaceRoutingLayer } from "./middleware/workspace-routing"
 import { disposeMiddleware } from "./lifecycle"
+import { Automation } from "@/automation/service"
+import { AutomationSessionDispatch } from "@/automation/session-dispatch"
+import { routes as automationRoutes } from "@/automation/routes"
 import { memoMap } from "@zyraxon-ai/core/effect/memo-map"
 import { compressionLayer } from "./middleware/compression"
 import { corsVaryFix } from "./middleware/cors-vary"
@@ -269,6 +272,8 @@ const app = LayerNode.group([
   ProjectV2.node,
   ProjectCopy.node,
   PtyTicket.node,
+  Automation.node,
+  AutomationSessionDispatch.node,
 ])
 
 export function createRoutes(
@@ -282,6 +287,7 @@ export function createRoutes(
     ptyConnectApiRoutes,
     instanceRoutes,
     serverRoutes,
+    automationRoutes as Layer.Layer<never, never, RouteRequirements>,
     OpenAICompat.layer,
     docRoute,
     uiRoute,
