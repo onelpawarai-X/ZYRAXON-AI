@@ -1394,24 +1394,29 @@ const layer = Layer.effect(
       const verifier = randomUUID().replace(/-/g, "")
       const challenge = yield* Effect.promise(() => sha256Base64Url(verifier))
 
-      // Discovery is skipped entirely when the endpoints were recorded for this server.
-      // Fifteen vendors document their sign-in URL but serve no discovery document at all,
-      // so insisting on discovery rejected apps that are perfectly reachable.
-      const discovered =
+      // Discovery always runs, even when the catalog records endpoints for this vendor.
+      //
+      // The recorded endpoints only say where the sign-in and token URLs live; they say
+      // nothing about whether the vendor will issue a client. Discovery is the only way
+      // to learn that, because the registration endpoint lives on the authorization
+      // server, not in the catalog. Skipping it whenever endpoints were recorded made
+      // every vendor the catalog documents — Stripe, Atlassian, Airtable, Framer,
+      // Replicate and the rest — fall through to "needs a client ID and secret" without
+      // ever attempting registration, so apps that publish dynamic client registration
+      // were told to configure a client by hand.
+      //
+      // The recorded pair stays the floor: when discovery finds nothing, its endpoints
+      // are what the consent URL is built from.
+      const configuredEndpoints =
         oauthConfig?.authorizationUrl && oauthConfig?.tokenUrl
-          ? yield* Effect.succeed({
-              endpoints: {
-                authorizationEndpoint: oauthConfig.authorizationUrl,
-                tokenEndpoint: oauthConfig.tokenUrl,
-                source: "configured" as const,
-              } as McpOAuthDiscovery.DiscoveryEndpoints,
-              error: undefined as string | undefined,
-            })
-          : // Both discovery and registration are Effects, so they are run as Effects.
-            // Wrapping one in Effect.tryPromise returned the Effect itself as a value —
-            // every downstream read then worked on a function object instead of endpoints,
-            // which is where "Unknown error: undefined" came from.
-            yield* McpOAuthDiscovery.discoverOAuthEndpoints(mcpConfig.url).pipe(
+          ? { authorizationUrl: oauthConfig.authorizationUrl, tokenUrl: oauthConfig.tokenUrl }
+          : undefined
+
+      // Both discovery and registration are Effects, so they are run as Effects.
+      // Wrapping one in Effect.tryPromise returned the Effect itself as a value —
+      // every downstream read then worked on a function object instead of endpoints,
+      // which is where "Unknown error: undefined" came from.
+      const discovered = yield* McpOAuthDiscovery.discoverOAuthEndpoints(mcpConfig.url, configuredEndpoints).pipe(
         Effect.map((endpoints) => ({
           endpoints,
           error: undefined as string | undefined,

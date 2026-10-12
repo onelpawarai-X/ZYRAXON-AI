@@ -105,6 +105,10 @@ const getCurrentUrl = () => {
   if (location.hostname.includes("zyraxonai.lovable.app")) return "http://localhost:4096"
   if (import.meta.env.DEV)
     return `http://${import.meta.env.VITE_ZYRAXON_SERVER_HOST ?? "localhost"}:${import.meta.env.VITE_ZYRAXON_SERVER_PORT ?? "4096"}`
+  // A production build served from a static host has no backend on its own
+  // origin, so let the build pin the API server explicitly. Without this the
+  // app targets its own origin and every API call returns the static index.html.
+  if (import.meta.env.VITE_ZYRAXON_SERVER_URL) return import.meta.env.VITE_ZYRAXON_SERVER_URL
   return location.origin
 }
 

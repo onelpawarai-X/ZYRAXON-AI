@@ -525,7 +525,12 @@ export default function Page() {
   const sessionPanelAvailable = createMemo(() => {
     const width = panelRowWidth()
     if (width === undefined) return undefined
-    return width - (settings.general.newLayoutDesigns() ? 8 : 0)
+    const gap = settings.general.newLayoutDesigns() ? 8 : 0
+    // The terminal owns a full-height column of its own, so the chat panel's clamp
+    // has to leave room for it instead of letting the row overflow.
+    const terminal =
+      settings.general.newLayoutDesigns() && desktopTerminalOpen() ? layout.terminal.width() + gap : 0
+    return width - gap - terminal
   })
   const sessionPanelMax = createMemo(() => {
     const available = sessionPanelAvailable()
@@ -2491,33 +2496,17 @@ const queueEnabled = createMemo(() => {
                   />
                 </div>
               </Show>
-              <Show when={desktopV2PanelLayout().stacked}>
-                <div class="relative h-2 shrink-0" onPointerDown={() => size.start()}>
-                  <ResizeHandle
-                    class="!relative !inset-auto !h-full !w-full !transform-none"
-                    direction="vertical"
-                    size={layout.terminal.height()}
-                    min={100}
-                    max={typeof window === "undefined" ? 600 : window.innerHeight * 0.6}
-                    collapseThreshold={50}
-                    onResize={(height) => {
-                      size.touch()
-                      layout.terminal.resize(height)
-                    }}
-                    onCollapse={() => view().terminal.close()}
-                  />
-                </div>
-              </Show>
-              <Show when={terminalOpen()}>
-                <div
-                  classList={{
-                    "min-h-0 shrink-0": desktopV2PanelLayout().stacked,
-                    "min-h-0 flex-1": !desktopV2PanelLayout().stacked,
-                  }}
-                >
-                  <TerminalPanelV2 stacked={desktopV2PanelLayout().stacked} />
-                </div>
-              </Show>
+            </div>
+          </Show>
+          {/* The terminal is its own full-height column on the far right. It is never
+              nested under the review panel, so opening it never pushes review content
+              down or hides it behind the terminal. */}
+          <Show when={isDesktop() && terminalOpen()}>
+            <div
+              class="min-w-0 h-full flex flex-none"
+              style={{ width: `${layout.terminal.width()}px` }}
+            >
+              <TerminalPanelV2 />
             </div>
           </Show>
         </Show>

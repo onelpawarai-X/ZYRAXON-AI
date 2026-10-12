@@ -5,7 +5,7 @@ import { Icon } from "@zyraxon-ai/ui/icon"
 import { useLanguage } from "@/context/language"
 import { localeCoverage } from "@/context/language"
 import { COUNTRIES, searchCountries, type Country } from "@/i18n/countries"
-import { direction, flag, findLanguage } from "@/i18n/languages"
+import { direction, findLanguage } from "@/i18n/languages"
 import "./settings-v2.css"
 
 /**
@@ -55,9 +55,7 @@ export function SettingsLanguageV2() {
                     setQuery("")
                   }}
                 >
-                  <span class="language-v2-flag" aria-hidden="true">
-                    {entry.flag}
-                  </span>
+                  <span class={`language-v2-flag fi fi-${entry.code.toLowerCase()}`} aria-hidden="true" />
                   <span class="language-v2-country-text">
                     <span class="language-v2-country-name">{entry.name}</span>
                     <Show when={entry.native !== entry.name}>
@@ -85,9 +83,10 @@ export function SettingsLanguageV2() {
           }
         >
           <header class="language-v2-header" dir={direction(language.locale())}>
-            <span class="language-v2-flag language-v2-flag-large" aria-hidden="true">
-              {flag(country().code)}
-            </span>
+            <span
+              class={`language-v2-flag language-v2-flag-large fi fi-${country().code.toLowerCase()}`}
+              aria-hidden="true"
+            />
             <div class="language-v2-header-text">
               <span class="language-v2-header-name">{country().name}</span>
               <span class="language-v2-header-native">{country().native}</span>

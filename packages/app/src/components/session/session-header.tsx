@@ -34,6 +34,7 @@ import { IconButtonV2 } from "@zyraxon-ai/ui/v2/icon-button-v2"
 import { Icon as IconV2 } from "@zyraxon-ai/ui/v2/icon"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
 import { useTitlebarRightMount } from "../titlebar"
+import { StatusPopoverV2 } from "@/components/status-popover"
 import { getPreviewActive } from "@/pages/session/preview-state"
 
 const OPEN_APPS = [
@@ -243,6 +244,14 @@ export function SessionHeader() {
     previewOpened: getPreviewActive()(),
     onPreviewToggle: () => view().previewPanel.toggle(),
     onOpenSubscription: openSettings,
+    /* The session header always carries the status bar and the review toggle. The
+       status used to be hidden unless the General setting was on, which is why the
+       session page showed neither. */
+    statusVisible: true,
+    terminalOpened: view().terminal.opened(),
+    onTerminalToggle: toggleTerminal,
+    reviewOpened: view().reviewPanel.opened(),
+    onReviewToggle: () => view().reviewPanel.toggle(),
   }))
 
   const selectApp = (app: OpenApp) => {
@@ -518,12 +527,50 @@ type SessionHeaderV2ActionsState = {
   previewOpened: boolean
   onPreviewToggle: () => void
   onOpenSubscription: () => void
+  statusVisible: boolean
+  terminalOpened: boolean
+  onTerminalToggle: () => void
+  reviewOpened: boolean
+  onReviewToggle: () => void
 }
 function SessionHeaderV2Actions(props: { state: SessionHeaderV2ActionsState }) {
   const language = useLanguage()
 
   return (
     <div class="flex items-center gap-2">
+      <Show when={props.state.statusVisible}>
+        <TooltipV2 class="shrink-0" placement="bottom" value={language.t("status.popover.trigger")}>
+          <StatusPopoverV2 />
+        </TooltipV2>
+      </Show>
+      <TooltipV2 class="shrink-0" placement="bottom" value={language.t("command.terminal.toggle")}>
+        <IconButtonV2
+          type="button"
+          variant="ghost-muted"
+          size="large"
+          class="!w-9 shrink-0"
+          state={props.state.terminalOpened ? "pressed" : undefined}
+          onClick={props.state.onTerminalToggle}
+          aria-label={language.t("command.terminal.toggle")}
+          aria-expanded={props.state.terminalOpened}
+          aria-controls="terminal-panel"
+          icon={<IconV2 name={props.state.terminalOpened ? "terminal-active" : "terminal"} />}
+        />
+      </TooltipV2>
+      <TooltipV2 class="shrink-0" placement="bottom" value={language.t("command.review.toggle")}>
+        <IconButtonV2
+          type="button"
+          variant="ghost-muted"
+          size="large"
+          class="!w-9 shrink-0"
+          state={props.state.reviewOpened ? "pressed" : undefined}
+          onClick={props.state.onReviewToggle}
+          aria-label={language.t("command.review.toggle")}
+          aria-expanded={props.state.reviewOpened}
+          aria-controls="review-panel"
+          icon={<IconV2 name={props.state.reviewOpened ? "review-active" : "review"} />}
+        />
+      </TooltipV2>
       <Show when={props.state.previewVisible}>
         <TooltipV2
           class="shrink-0"

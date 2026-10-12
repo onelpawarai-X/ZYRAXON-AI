@@ -71,3 +71,5 @@ packages/desktop/electron.vite.config.*.mjs
 /.sync-*.log
 /.sync-*.ps1
 /.pr-body.md
+
+.agent_tmp/

@@ -4,6 +4,10 @@
 @import "@zyraxon-ai/session-ui/styles";
 @import "@zyraxon-ai/ui/v2/styles/tailwind.css";
 @import "tw-animate-css";
+/* Real national flags as SVG. Emoji flags render as bare letters ("BD") on any
+   machine without a colour-emoji font — most Linux desktops and every container —
+   so the country picker shows a real flag everywhere instead. */
+@import "flag-icons/css/flag-icons.min.css";
 
 /* The MCP Hub lives at the repository root, outside packages/, so the default
    source("../../../../") in ui/styles/tailwind never sees it. Without this its

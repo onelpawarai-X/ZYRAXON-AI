@@ -3,6 +3,7 @@
 interface ImportMetaEnv {
   readonly VITE_ZYRAXON_SERVER_HOST: string
   readonly VITE_ZYRAXON_SERVER_PORT: string
+  readonly VITE_ZYRAXON_SERVER_URL?: string
   readonly VITE_ZYRAXON_CHANNEL?: "dev" | "beta" | "prod"
 
   readonly VITE_SENTRY_DSN?: string

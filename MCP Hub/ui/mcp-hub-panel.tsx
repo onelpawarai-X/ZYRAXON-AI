@@ -26,6 +26,25 @@ const authLabel: Record<string, string> = {
 }
 
 /**
+ * Turn every bare URL in a guide line into a real link.
+ *
+ * The guide names the exact console page a client has to be created on, and the exact
+ * redirect URL that page must carry. Reading a URL and retyping it is where the
+ * redirect value gets mistyped, so both are clickable here instead: the console opens
+ * in a new tab, and the redirect can be copied straight from the same screen.
+ */
+const linkify = (text: string) =>
+  text.split(/(https?:\/\/[^\s,)]+)/g).map((part) =>
+    /^https?:\/\//.test(part) ? (
+      <a class="underline" href={part} target="_blank" rel="noopener">
+        {part}
+      </a>
+    ) : (
+      part
+    ),
+  )
+
+/**
  * Which language the guide is read in, remembered between openings.
  *
  * The guide is the document that takes the place of the vendor's own
@@ -35,6 +54,27 @@ const authLabel: Record<string, string> = {
  * a card is opened.
  */
 const GUIDE_LANG_KEY = "zyraxon.mcp.guide.lang"
+
+/**
+ * Client credentials the user typed once, kept so they are never asked again.
+ *
+ * A console-issued client ID belongs to the person who owns the vendor account, and
+ * re-typing it on every visit made a one-time setup feel like a repeated chore. The
+ * server keeps its own registration after the first handshake; this copy exists so
+ * the card can go straight to Connect on the next open.
+ */
+const CLIENT_IDS_KEY = "zyraxon.mcp.clientIds"
+
+function readClientIds(): Record<string, { id: string; secret?: string }> {
+  try {
+    const raw = localStorage.getItem(CLIENT_IDS_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === "object" ? parsed : {}
+  } catch {
+    return {}
+  }
+}
 
 function readGuideLang(): string {
   try {
@@ -169,16 +209,6 @@ export function McpHubPanel(props: McpHubPanelProps) {
   const [category, setCategory] = createSignal<string>("All")
 
   /**
-   * The vendors whose consoles refuse a client they did not issue themselves.
-   *
-   * These need the person to create a client and paste its ID, so only they get
-   * the Client ID box. Every other server registers a client on its own and goes
-   * straight to Connect — asking the rest for an ID they will never need is what
-   * made the box look like a required step it was not.
-   */
-  const MANUAL_OAUTH_IDS = new Set(["slack", "zoom", "hubspot", "box", "mongodb", "nango"])
-
-  /**
    * Connection state outlives this panel. The servers themselves live in the server
    * process, so navigating to another route and coming back used to wipe the local
    * signal and show every app as disconnected while they were in fact still connected.
@@ -193,6 +223,25 @@ export function McpHubPanel(props: McpHubPanelProps) {
   const [detailsFor, setDetailsFor] = createSignal<AppEntry | null>(null)
   const [tokenValue, setTokenValue] = createSignal("")
   /**
+   * The app whose client credentials are being collected, and the values typed so far.
+   *
+   * Connect opens this instead of putting the fields on the card: the card is a list of
+   * apps, not a form, and an always-visible credential box pushed the whole grid down.
+   */
+  const [clientFormFor, setClientFormFor] = createSignal<AppEntry | null>(null)
+  const [clientFormId, setClientFormId] = createSignal("")
+  const [clientFormSecret, setClientFormSecret] = createSignal("")
+  /**
+   * What the client dialog continues into once it is submitted.
+   *
+   * `connect` is the Connect button's path: save the client and run the handshake.
+   * `generate` is the Details panel's: save the client and build the consent link
+   * without opening a browser, so the link can be carried to the browser that holds
+   * the account. Both need the same client, so they share the same dialog and only
+   * differ in what happens after Continue.
+   */
+  const [clientFormMode, setClientFormMode] = createSignal<"connect" | "generate">("connect")
+  /**
    * The client credentials a console-issued app needs, keyed by app.
    *
    * These live here rather than in the catalog because they belong to the person who owns
@@ -200,22 +249,38 @@ export function McpHubPanel(props: McpHubPanelProps) {
    * Holding them for the session is enough — the server keeps the registration once a
    * handshake completes.
    */
-  const [clientIds, setClientIds] = createSignal<Record<string, { id: string; secret?: string }>>({})
+  const [clientIds, setClientIds] = createSignal<Record<string, { id: string; secret?: string }>>(readClientIds())
+
+  // Persist whatever was typed so a console-issued client is a one-time entry, not a
+  // prompt on every visit.
+  createEffect(() => {
+    try {
+      localStorage.setItem(CLIENT_IDS_KEY, JSON.stringify(clientIds()))
+    } catch {
+      // no storage in this context — the in-memory copy still covers this session
+    }
+  })
 
   /**
    * Whether this app's OAuth client has to be issued by hand before it will connect.
    *
-   * The catalog already records the truth for every server: `zeroSetup` means a
-   * registration_endpoint answered and ZYRAXON can register its own client, so the
-   * user only has to press Connect and approve in the browser. A `consoleUrl`
-   * without that flag means the vendor refuses registration and its own console has
-   * to issue the client, so the card shows the fields.
+   * The live probe is the authority. `oneClick` is filled from the server's own
+   * discovery chain: `true` means a registration_endpoint answered and ZYRAXON can
+   * register its own client, so the user only has to press Connect and approve in the
+   * browser. `false` means the vendor refuses registration and its own console has to
+   * issue the client, so the card shows the fields.
    *
-   * Deriving this from the catalog keeps Stripe, Gmail and the rest of the browser
-   * based apps free of a form they never needed, and gives the handful that do
-   * need one somewhere obvious to type it.
+   * The catalog's `zeroSetup`/`consoleUrl` flags are only a fallback for the moment
+   * before the probe answers. They were hand-set and drifted: a dozen vendors the
+   * catalog documents — Stripe, Atlassian, Airtable, Framer, Replicate — were marked
+   * as needing a client even though they publish registration, and the Google apps
+   * were marked the other way. Asking the server is what makes the badge, the fields
+   * and the connect flow agree with reality.
    */
-  const needsClientId = (entry: AppEntry) => Boolean(entry.consoleUrl) && entry.zeroSetup !== true
+  const needsClientId = (entry: AppEntry) =>
+    entry.kind === "oauth" && oneClick()[entry.id] !== undefined
+      ? oneClick()[entry.id] === false
+      : Boolean(entry.consoleUrl) && entry.zeroSetup !== true
 
   /** the app whose sign-in link is being built, so the button can say so */
   const [generating, setGenerating] = createSignal<string | null>(null)
@@ -565,45 +630,68 @@ export function McpHubPanel(props: McpHubPanelProps) {
   }
 
   /**
-   * Connect an app that needs a client its vendor's console issued.
+   * What the Connect button does.
    *
-   * The client is written into the server's config as part of the connect, so the
-   * handshake has something to ask for consent with. Without it the server tries to
-   * register one itself, which the publishers behind these consoles refuse — so this
-   * field is the whole difference between them working and not.
+   * Apps whose vendor refuses self-registration need a client the user creates in the
+   * vendor's console. That is asked for once, in a dialog opened from Connect — not on
+   * the card, where the fields sat permanently and pushed the grid down. Once a client
+   * is saved, Connect reuses it and goes straight to the handshake.
    */
-  const submitClientId = async () => {
-    const app = detailsFor()
-    const credentials = app ? clientIds()[app.id] : undefined
-    if (!app || !credentials?.id?.trim()) return
-    busyIds.add(app.id)
-    setBusy(app.id)
-    setBusySince(Date.now())
-    setState(app.id, { status: "connecting" })
-    try {
-      setState(
-        app.id,
-        await connectApp(props.runtime, app, {
-          clientId: credentials.id.trim(),
-          clientSecret: credentials.secret?.trim(),
-          onProgress: (s) => setState(app.id, s),
-        }),
-      )
-      if (states()[app.id]?.status === "connected") setDetailsFor(null)
-    } finally {
-      busyIds.delete(app.id)
-      setBusy(null)
-      setBusySince(0)
+  const beginConnect = (app: AppEntry) => {
+    if (needsClientId(app)) {
+      const saved = clientIds()[app.id]
+      if (saved?.id?.trim()) {
+        void connectWithClientId(app, saved)
+        return
+      }
+      setClientFormId("")
+      setClientFormSecret("")
+      setClientFormMode("connect")
+      setClientFormFor(app)
+      return
     }
+    void onConnect(app)
   }
 
   /**
-   * Connect straight from the card using the Client ID typed beside it.
+   * Generate a sign-in link.
    *
-   * This is the same handshake `submitClientId` runs from the Details panel, lifted
-   * out so the card does not have to open a dialog first. The credentials go into
-   * the server's config as part of the connect, which is what gives the handshake a
-   * client to request consent with.
+   * For an app whose vendor issues its own clients, the client has to exist before the
+   * link can be built, so this asks for it first through the same dialog Connect uses —
+   * but continues into link generation rather than a handshake, and never opens a
+   * browser. Everything else goes straight to the link.
+   */
+  const beginGenerate = (app: AppEntry) => {
+    if (needsClientId(app) && !clientIds()[app.id]?.id?.trim()) {
+      setClientFormId("")
+      setClientFormSecret("")
+      setClientFormMode("generate")
+      setClientFormFor(app)
+      return
+    }
+    void generateConsentUrl(app)
+  }
+
+  /** Continue in the client dialog: remember the credentials, then start connecting. */
+  const submitClientForm = () => {
+    const app = clientFormFor()
+    const id = clientFormId().trim()
+    if (!app || !id) return
+    const credentials = { id, secret: clientFormSecret().trim() || undefined }
+    setClientIds((prev) => ({ ...prev, [app.id]: credentials }))
+    setClientFormFor(null)
+    if (clientFormMode() === "generate") {
+      void generateConsentUrl(app)
+      return
+    }
+    void connectWithClientId(app, credentials)
+  }
+
+  /**
+   * Run the OAuth handshake with a client the user supplied.
+   *
+   * The credentials go into the server's config as part of the connect, which is what
+   * gives the handshake a client to request consent with.
    */
   const connectWithClientId = async (app: AppEntry, credentials: { id: string; secret?: string }) => {
     if (busy()) return
@@ -1068,55 +1156,10 @@ export function McpHubPanel(props: McpHubPanelProps) {
                           style={{ background: fill() }}
                           onMouseEnter={(e) => (e.currentTarget.style.background = fillHover())}
                           onMouseLeave={(e) => (e.currentTarget.style.background = fill())}
-                          onClick={() => {
-                            // Once the server has said it needs a client of its own,
-                            // the ID typed on the card is what Connect has to send.
-                            // Ignoring it and running the plain handshake again just
-                            // reproduced the same refusal.
-                            if (needsClientId(app) && clientIds()[app.id]?.id?.trim()) {
-                              void connectWithClientId(app, clientIds()[app.id]!)
-                              return
-                            }
-                            void onConnect(app)
-                          }}
+                          onClick={() => beginConnect(app)}
                         >
-                          {busy() === app.id ? "Working…" : needsClientId(app) ? "Continue" : "Connect"}
+                          {busy() === app.id ? "Working…" : "Connect"}
                         </button>
-                      </div>
-                    </Show>
-
-                    {/* Vendors that refuse self-registration need a client ID the user
-                        creates in their own console. Asking for it here, on the card,
-                        saves hunting through the Details dialog to find a field that
-                        Connect could never have filled in on its own. */}
-                    <Show when={needsClientId(app)}>
-                      <div class="mt-2.5 flex flex-wrap items-center gap-2 rounded-lg border border-[var(--mcp-border)] bg-[var(--mcp-surface-2)] p-2.5">
-                        <input
-                          type="text"
-                          aria-label={`Client ID for ${app.name}`}
-                          placeholder="Client ID"
-                          class="min-w-0 flex-1 rounded-md border border-[var(--mcp-border)] bg-transparent px-2 py-1.5 text-[12px] outline-none focus:border-[var(--mcp-accent)]"
-                          value={clientIds()[app.id]?.id ?? ""}
-                          onInput={(e) =>
-                            setClientIds((prev) => ({
-                              ...prev,
-                              [app.id]: { ...prev[app.id], id: e.currentTarget.value },
-                            }))
-                          }
-                        />
-                        <input
-                          type="text"
-                          aria-label={`Client secret for ${app.name}`}
-                          placeholder="Client secret (optional)"
-                          class="min-w-0 flex-1 rounded-md border border-[var(--mcp-border)] bg-transparent px-2 py-1.5 text-[12px] outline-none focus:border-[var(--mcp-accent)]"
-                          value={clientIds()[app.id]?.secret ?? ""}
-                          onInput={(e) =>
-                            setClientIds((prev) => ({
-                              ...prev,
-                              [app.id]: { ...prev[app.id], secret: e.currentTarget.value },
-                            }))
-                          }
-                        />
                       </div>
                     </Show>
                   </div>
@@ -1235,6 +1278,77 @@ export function McpHubPanel(props: McpHubPanelProps) {
         )}
       </Show>
 
+      {/* client dialog — opened from Connect for vendors that issue the client by hand.
+          Asking here, once, keeps the credential fields off the card and means the
+          second visit goes straight to the browser. */}
+      <Show when={clientFormFor()}>
+        {(app) => (
+          <div
+            style={{
+              position: "fixed",
+              inset: "0",
+              "z-index": "2147483100",
+              display: "flex",
+              "align-items": "center",
+              "justify-content": "center",
+              background: overlayTint(),
+              padding: "1.5rem",
+              "pointer-events": "auto",
+            }}
+          >
+            <div
+              class="w-full max-w-[460px] rounded-xl border border-[var(--mcp-border-strong)] p-5"
+              style={{ background: raised(), "box-shadow": "0 24px 64px rgba(0,0,0,0.35)" }}
+            >
+              <div class="mb-1 text-[15px] font-[600]">
+                {clientFormMode() === "generate" ? `Sign-in link for ${app().name}` : `Connect ${app().name}`}
+              </div>
+              <div class="mb-4 text-[12px] text-[var(--mcp-text-weak)]">
+                {app().name} does not let ZYRAXON register its own client, so it needs the client ID from your{" "}
+                <Show when={app().consoleUrl} fallback={<span>own developer console</span>}>
+                  <a class="underline" href={app().consoleUrl} target="_blank" rel="noopener">
+                    developer console
+                  </a>
+                </Show>
+                . You only have to enter it once.
+              </div>
+              <input
+                value={clientFormId()}
+                onInput={(e) => setClientFormId(e.currentTarget.value)}
+                onKeyDown={(e) => e.key === "Enter" && submitClientForm()}
+                placeholder={line(guideLang(), "pasteClientId")}
+                class="mb-2 h-9 w-full rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
+              />
+              <input
+                value={clientFormSecret()}
+                onInput={(e) => setClientFormSecret(e.currentTarget.value)}
+                onKeyDown={(e) => e.key === "Enter" && submitClientForm()}
+                placeholder={line(guideLang(), "pasteSecret")}
+                class="mb-4 h-9 w-full rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
+              />
+              <div class="flex justify-end gap-2">
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5"
+                  onClick={() => setClientFormFor(null)}
+                >
+                  {line(guideLang(), "cancel")}
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] font-[600] disabled:opacity-50"
+                  disabled={!clientFormId().trim()}
+                  style={{ background: fill() }}
+                  onClick={submitClientForm}
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Show>
+
       <Show when={detailsFor()}>
         {(app) => (
           <div
@@ -1283,9 +1397,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
                 </label>
               </div>
               <ul class="mb-4 ml-4 list-disc space-y-1 text-[12px]">
-                <For each={guideFor(app(), guideLang())}>
-                  {(guideLine) => <li>{guideLine}</li>}
-                </For>
+                <For each={guideFor(app(), guideLang())}>{(guideLine) => <li>{linkify(guideLine)}</li>}</For>
               </ul>
 
               <Show when={docsByApp[app().id]}>
@@ -1331,7 +1443,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
                   }
                 >
                   {app().steps!.map((step) => (
-                    <li>{catalogText(step, guideLang())}</li>
+                    <li>{linkify(catalogText(step, guideLang()))}</li>
                   ))}
                 </Show>
               </ol>
@@ -1343,51 +1455,15 @@ export function McpHubPanel(props: McpHubPanelProps) {
                 </div>
               </Show>
 
-              <Show when={app().kind === "oauth" && app().consoleUrl && MANUAL_OAUTH_IDS.has(app().id)}>
-                <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">
-                  {line(guideLang(), "oauthClient")}
-                </div>
-                <div class="mb-2 text-[11px] text-[var(--mcp-text-weak)]">
-                  <For
-                    each={line(guideLang(), "oauthHelp", {
+              <Show when={needsClientId(app())}>
+                <div class="mb-3 text-[11px] text-[var(--mcp-text-weak)]">
+                  {linkify(
+                    line(guideLang(), "oauthHelp", {
                       console: app().consoleUrl ?? "",
                       redirect: REDIRECT,
-                    }).split(app().consoleUrl ?? "\u0000")}
-                  >
-                    {(part, index) => (
-                      <>
-                        <Show when={index() > 0 && app().consoleUrl}>
-                          <a class="underline" href={app().consoleUrl} target="_blank" rel="noopener">
-                            {app().consoleUrl}
-                          </a>
-                        </Show>
-                        {part}
-                      </>
-                    )}
-                  </For>
+                    }),
+                  )}
                 </div>
-                <input
-                  value={clientIds()[app().id]?.id ?? ""}
-                  onInput={(e) =>
-                    setClientIds((prev) => ({
-                      ...prev,
-                      [app().id]: { ...prev[app().id], id: e.currentTarget.value },
-                    }))
-                  }
-                  placeholder={line(guideLang(), "pasteClientId")}
-                  class="mb-2 h-9 w-full rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
-                />
-                <input
-                  value={clientIds()[app().id]?.secret ?? ""}
-                  onInput={(e) =>
-                    setClientIds((prev) => ({
-                      ...prev,
-                      [app().id]: { id: prev[app().id]?.id ?? "", secret: e.currentTarget.value },
-                    }))
-                  }
-                  placeholder={line(guideLang(), "pasteSecret")}
-                  class="mb-3 h-9 w-full rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
-                />
               </Show>
 
               <div class="flex flex-wrap justify-end gap-2">
@@ -1412,7 +1488,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
                   class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5 disabled:opacity-50"
                   disabled={busy() !== null}
                   title="Build the sign-in link so it can be opened in whichever browser holds your account"
-                  onClick={() => generateConsentUrl(app())}
+                  onClick={() => beginGenerate(app())}
                 >
                   {generating() === app().id ? line(guideLang(), "generating") : line(guideLang(), "generateLink")}
                 </button>
@@ -1421,7 +1497,10 @@ export function McpHubPanel(props: McpHubPanelProps) {
                   class="rounded-md px-3 py-1.5 text-[13px] font-[600] disabled:opacity-50"
                   disabled={busy() !== null}
                   style={{ background: fill() }}
-                  onClick={() => (MANUAL_OAUTH_IDS.has(app().id) ? submitClientId() : onConnect(app()))}
+                  onClick={() => {
+                    setDetailsFor(null)
+                    beginConnect(app())
+                  }}
                 >
                   Connect
                 </button>
