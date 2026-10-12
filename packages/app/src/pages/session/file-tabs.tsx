@@ -641,7 +641,7 @@ function SessionFileViewV1(props: { tab: string }) {
             })()}
           </Match>
           <Match when={state()?.loaded}>
-            <MonacoEditor path={path() ?? ""} value={contents()} language={getLanguageFromPath(path() ?? "")} class="h-full w-full" onChange={(val) => { if (path()) autoSave(path()!, val) }} onSave={(val) => { if (path() && sdk().directory) { setSaveStatus("saving"); const absPath = sdk().directory + "/" + path()!; window.api.writeFile(absPath, val).then((r: boolean) => { if (r) { setSaveStatus("saved"); file.load(path()!, { force: true }).catch(() => {}) } else { setSaveStatus("idle") } }).catch(() => setSaveStatus("idle")) } }} />
+            <MonacoEditor path={path() ?? ""} value={contents()} language={getLanguageFromPath(path() ?? "")} class="h-full w-full" onChange={(val) => { if (path()) autoSave(path()!, val) }} onSave={(val) => { if (path() && sdk().directory) { setSaveStatus("saving"); const absPath = sdk().directory + "/" + path()!; window.api?.writeFile?.(absPath, val).then((r) => { if (r) { setSaveStatus("saved"); file.load(path()!, { force: true }).catch(() => {}) } else { setSaveStatus("idle") } }).catch(() => setSaveStatus("idle")) } }} />
           </Match>
         </Switch>
       </ScrollView>
@@ -1087,7 +1087,7 @@ function SessionFileViewV2(props: { tab: string }) {
             })()}
           </Match>
           <Match when={state()?.loaded}>
-            <MonacoEditor path={path() ?? ""} value={contents()} language={getLanguageFromPath(path() ?? "")} class="h-full w-full" onChange={(val) => { if (path()) autoSaveV2(path()!, val) }} onSave={(val) => { if (path() && sdk().directory) { setSaveStatusV2("saving"); const absPath = sdk().directory + "/" + path()!; window.api.writeFile(absPath, val).then((r: boolean) => { if (r) { setSaveStatusV2("saved"); file.load(path()!, { force: true }).catch(() => {}) } else { setSaveStatusV2("idle") } }).catch(() => setSaveStatusV2("idle")) } }} />
+            <MonacoEditor path={path() ?? ""} value={contents()} language={getLanguageFromPath(path() ?? "")} class="h-full w-full" onChange={(val) => { if (path()) autoSaveV2(path()!, val) }} onSave={(val) => { if (path() && sdk().directory) { setSaveStatusV2("saving"); const absPath = sdk().directory + "/" + path()!; window.api?.writeFile?.(absPath, val).then((r) => { if (r) { setSaveStatusV2("saved"); file.load(path()!, { force: true }).catch(() => {}) } else { setSaveStatusV2("idle") } }).catch(() => setSaveStatusV2("idle")) } }} />
           </Match>
         </Switch>
       </ScrollView>

@@ -470,7 +470,7 @@ export function SessionHeader() {
                     <div class="hidden md:flex items-center gap-1 shrink-0">
                       <TooltipKeybind
                         title="ZYRAXON Ecosystem"
-                        keybind={[]}
+                        keybind=""
                       >
                         <Button
                           variant="ghost"

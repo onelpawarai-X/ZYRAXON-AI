@@ -1639,3 +1639,65 @@
 .zy-agents-hint {
   margin: 0;
 }
+
+/* ─── Docked settings ────────────────────────────────────────────────────────
+   Settings is docked to the app edge instead of floating over it. The host layer
+   is a flex row that pushes the panel flush to the trailing edge with no scrim,
+   so the app behind stays visible and fully usable. The panel mirrors the app's
+   own zoom and keeps a real close button, so it reads as part of the app. */
+[data-dialog-docked][data-dialog-layer] {
+  padding: 0;
+}
+
+[data-dialog-docked][data-dialog-layer] [data-component="dialog-v2"] {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  pointer-events: none;
+}
+
+[data-dialog-docked][data-dialog-layer] [data-component="dialog-v2"] [data-slot="dialog-container"] {
+  width: min(calc(100vw - 24px), 980px);
+  height: 100%;
+  max-height: 100%;
+  border-radius: 12px 0 0 12px;
+  border-right: 0;
+  border-left: 1px solid var(--v2-border-border-weaker, rgb(255 255 255 / 0.06));
+  box-shadow: -18px 0 48px rgb(0 0 0 / 0.35);
+  pointer-events: auto;
+  animation: zy-settings-dock-in 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes zy-settings-dock-in {
+  from {
+    transform: translateX(28px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-dialog-docked][data-dialog-layer] [data-component="dialog-v2"] [data-slot="dialog-container"] {
+    animation: none;
+  }
+}
+
+[data-dialog-docked][data-dialog-layer] [data-component="dialog-v2"] [data-slot="dialog-close-button"] {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  color: var(--v2-icon-icon-muted, rgb(255 255 255 / 0.6));
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+[data-dialog-docked][data-dialog-layer] [data-component="dialog-v2"] [data-slot="dialog-close-button"]:hover {
+  background: var(--v2-overlay-simple-overlay-hover, rgb(255 255 255 / 0.08));
+  color: var(--v2-text-text-base, rgb(255 255 255 / 0.92));
+  transform: rotate(90deg);
+}

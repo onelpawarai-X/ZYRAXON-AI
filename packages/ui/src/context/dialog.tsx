@@ -14,11 +14,19 @@ import {
   type JSX,
   startTransition,
   For,
+  Show,
 } from "solid-js"
 import { Dialog as Kobalte } from "@kobalte/core/dialog"
 import { makeEventListener } from "@solid-primitives/event-listener"
 
 type DialogElement = () => JSX.Element
+
+type DialogShowOptions = {
+  // A docked dialog sits against the app edge instead of floating over it: it is
+  // non-modal, has no scrim, and leaves the app behind fully usable. Settings uses
+  // this so it reads as part of the app rather than a box on top of it.
+  docked?: boolean
+}
 
 type Active = {
   id: string
@@ -77,9 +85,16 @@ function init() {
     makeEventListener(window, "keydown", onKeyDown, { capture: true })
   })
 
-  const mount = (element: DialogElement, owner: Owner, onClose: (() => void) | undefined, layer: number) => {
+  const mount = (
+    element: DialogElement,
+    owner: Owner,
+    onClose: (() => void) | undefined,
+    layer: number,
+    options?: DialogShowOptions,
+  ) => {
     const id = Math.random().toString(36).slice(2)
     const zIndex = 50 + layer * 10
+    const docked = options?.docked === true
     let dispose: (() => void) | undefined
     let setClosing: ((closing: boolean) => void) | undefined
 
@@ -90,7 +105,7 @@ function init() {
         setClosing = setClosingSignal
         return (
           <Kobalte
-            modal
+            modal={!docked}
             open={!closing()}
             onOpenChange={(open: boolean) => {
               if (open) return
@@ -98,20 +113,23 @@ function init() {
             }}
           >
             <Kobalte.Portal>
-              <Kobalte.Overlay
-                data-component="dialog-overlay"
-                style={{ "z-index": String(zIndex) }}
-                onClick={() => close(id)}
-              />
+              <Show when={!docked}>
+                <Kobalte.Overlay
+                  data-component="dialog-overlay"
+                  style={{ "z-index": String(zIndex) }}
+                  onClick={() => close(id)}
+                />
+              </Show>
               <div
                 data-dialog-layer={layer}
+                data-dialog-docked={docked ? "" : undefined}
                 style={{
                   position: "fixed",
                   inset: "0",
                   "z-index": String(zIndex),
                   display: "flex",
-                  "align-items": "center",
-                  "justify-content": "center",
+                  "align-items": docked ? "stretch" : "center",
+                  "justify-content": docked ? "flex-end" : "center",
                   "pointer-events": "none",
                 }}
               >
@@ -129,16 +147,16 @@ function init() {
     setStack((items) => [...items, active])
   }
 
-  const push = (element: DialogElement, owner: Owner, onClose?: () => void) => {
+  const push = (element: DialogElement, owner: Owner, onClose?: () => void, options?: DialogShowOptions) => {
     if (timer.current !== undefined) {
       clearTimeout(timer.current)
       timer.current = undefined
     }
     lock.value = false
-    mount(element, owner, onClose, stack().length)
+    mount(element, owner, onClose, stack().length, options)
   }
 
-  const show = (element: DialogElement, owner: Owner, onClose?: () => void) => {
+  const show = (element: DialogElement, owner: Owner, onClose?: () => void, options?: DialogShowOptions) => {
     for (const item of stack()) item.dispose()
     setStack([])
     if (timer.current !== undefined) {
@@ -146,7 +164,7 @@ function init() {
       timer.current = undefined
     }
     lock.value = false
-    mount(element, owner, onClose, 0)
+    mount(element, owner, onClose, 0, options)
   }
 
   return {
@@ -184,13 +202,13 @@ export function useDialog() {
     get active() {
       return ctx.stack().at(-1)
     },
-    show(element: DialogElement, onClose?: () => void) {
+    show(element: DialogElement, onClose?: () => void, options?: DialogShowOptions) {
       const base = ctx.stack().at(-1)?.owner ?? owner
-      return startTransition(() => ctx.show(element, base, onClose))
+      return startTransition(() => ctx.show(element, base, onClose, options))
     },
-    push(element: DialogElement, onClose?: () => void) {
+    push(element: DialogElement, onClose?: () => void, options?: DialogShowOptions) {
       const base = ctx.stack().at(-1)?.owner ?? owner
-      return startTransition(() => ctx.push(element, base, onClose))
+      return startTransition(() => ctx.push(element, base, onClose, options))
     },
     close() {
       ctx.close()

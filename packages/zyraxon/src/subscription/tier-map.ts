@@ -7,10 +7,9 @@ import type { Tier } from "./canonical"
 export const TOOL_TIER_MAP: Record<string, Tier> = {
 
   // FREE
-  bash: "free", edit: "free", execute: "free", glob: "free",
-  grep: "free", invalid: "free", list_mcp_resource_templates: "free", list_mcp_resources: "free",
-  lsp: "free", memory: "free", patch: "free", plan: "free",
-  question: "free", read: "free", read_mcp_resource: "free", skill: "free",
+  bash: "free", edit: "free", glob: "free",
+  grep: "free", invalid: "free", memory: "free", plan: "free",
+  question: "free", read: "free", skill: "free",
   todowrite: "free", webfetch: "free", websearch: "free", write: "free",
   x_analogy_add: "free", x_causal_add_link: "free", x_context_set: "free", x_doc_count_words: "free",
   x_doc_create: "free", x_doc_edit: "free", x_doc_markdown_to_html: "free", x_doc_read: "free",
@@ -25,6 +24,11 @@ export const TOOL_TIER_MAP: Record<string, Tier> = {
   x_memory_update: "free", x_memory_view: "free", x_reason_add_fact: "free", x_skill_create: "free",
   x_skill_delete: "free", x_skill_list: "free", x_spatial_add_obj: "free",   x_subscription_status: "free",
   x_mode_switch: "free",
+
+  // Interactive session primitives registered directly in the tool registry. They were
+  // absent from this map, so getToolRequiredTier() fell back to "max" and locked them
+  // for free users even though every other primitive of their kind is free.
+  media_generate: "pro", mcp_disconnect: "free",
 
   // MULTI-SESSION CONTROL (free trial) — work across every session in parallel
   x_session_list: "free", x_session_open: "free", x_session_send: "free",

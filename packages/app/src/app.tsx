@@ -268,6 +268,7 @@ declare global {
       installVsix?: (vsixUrl: string, extensionId: string, meta?: { displayName?: string; version?: string; publisher?: string; description?: string; icon?: string }) => Promise<{ ok: boolean; error?: string }>
       getEditorState?: () => Promise<{ active: boolean }>
       setSubscriptionState?: (stateJson: string) => Promise<void>
+      writeFile?: (path: string, content: string) => Promise<boolean>
     }
   }
 }

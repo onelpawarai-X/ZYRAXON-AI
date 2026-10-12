@@ -559,7 +559,18 @@ const layer = Layer.effect(
 
     const all: Interface["all"] = Effect.fn("ToolRegistry.all")(function* () {
       const s = yield* InstanceState.get(state)
-      return [...s.builtin, ...s.custom] as Tool.Def[]
+      // Built-ins and the X custom registry overlap on a handful of ids (task,
+      // system_info, site_*, media_fetch, ...). Both are registered, but the model
+      // must only ever see one definition per id. Built-ins win, so the runtime
+      // list stays a true set.
+      const seen = new Set<string>()
+      const out: Tool.Def[] = []
+      for (const tool of [...s.builtin, ...s.custom] as Tool.Def[]) {
+        if (seen.has(tool.id)) continue
+        seen.add(tool.id)
+        out.push(tool)
+      }
+      return out
     })
 
     const ids: Interface["ids"] = Effect.fn("ToolRegistry.ids")(function* () {
@@ -597,7 +608,7 @@ const layer = Layer.effect(
       // Every tool is handed to the model on every tier and in every mode. The tier
       // only decides whether a tool may run, not whether the model may see it.
       //
-      // Filtering definitions by tier used to hide 661 of the 753 X tools from a
+      // Filtering definitions by tier used to hide most of the 807 X tools from a
       // free-tier model, so the model could not answer "what tools do I have?"
       // without undercounting, and would refuse work it actually owned a tool for.
       // The gate moved to execution time (see SessionTools.resolve), where a locked

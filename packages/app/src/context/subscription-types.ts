@@ -120,11 +120,11 @@ export function validateSecretCode(code: string): { tier: SubscriptionTier; dura
 // and vice versa.
 // ═══════════════════════════════════════════════════════════════
 export const TOOL_TIER_MAP: Record<string, SubscriptionTier> = {
+
   // FREE
-  bash: "free", edit: "free", execute: "free", glob: "free",
-  grep: "free", invalid: "free", list_mcp_resource_templates: "free", list_mcp_resources: "free",
-  lsp: "free", memory: "free", patch: "free", plan: "free",
-  question: "free", read: "free", read_mcp_resource: "free", skill: "free",
+  bash: "free", edit: "free", glob: "free",
+  grep: "free", invalid: "free", memory: "free", plan: "free",
+  question: "free", read: "free", skill: "free",
   todowrite: "free", webfetch: "free", websearch: "free", write: "free",
   x_analogy_add: "free", x_causal_add_link: "free", x_context_set: "free", x_doc_count_words: "free",
   x_doc_create: "free", x_doc_edit: "free", x_doc_markdown_to_html: "free", x_doc_read: "free",
@@ -137,17 +137,19 @@ export const TOOL_TIER_MAP: Record<string, SubscriptionTier> = {
   x_math_matrix: "free", x_math_prime: "free", x_math_stats: "free", x_memory_append: "free",
   x_memory_create: "free", x_memory_delete: "free", x_memory_read: "free", x_memory_search: "free",
   x_memory_update: "free", x_memory_view: "free", x_reason_add_fact: "free", x_skill_create: "free",
-  x_skill_delete: "free", x_skill_list: "free", x_spatial_add_obj: "free", x_subscription_status: "free",
+  x_skill_delete: "free", x_skill_list: "free", x_spatial_add_obj: "free",   x_subscription_status: "free",
   x_mode_switch: "free",
-  x_task_create: "free", x_task_delete: "free", x_task_list: "free", x_task_run_now: "free",
-  x_task_scheduler_status: "free", x_task_start_scheduler: "free", x_task_toggle: "free", x_world_add_object: "free",
-  task: "free", system_info: "free",
 
-  // MULTI-SESSION CONTROL — free trial
+  // Interactive session primitives registered directly in the tool registry. They were
+  // absent from this map, so getToolRequiredTier() fell back to "max" and locked them
+  // for free users even though every other primitive of their kind is free.
+  media_generate: "pro", mcp_disconnect: "free",
+
+  // MULTI-SESSION CONTROL (free trial) — work across every session in parallel
   x_session_list: "free", x_session_open: "free", x_session_send: "free",
   x_session_subagent: "free", x_session_switch: "free", x_session_remove: "free",
 
-  // UI BUTTON MONITORING — free trial
+  // UI BUTTON MONITORING (free trial) — one tool per button in the running app
   x_ui_buttons_list: "free",
   x_ui_button_send: "free", x_ui_button_stop: "free", x_ui_button_new_session: "free",
   x_ui_button_review: "free", x_ui_button_preview: "free", x_ui_button_sidebar: "free",
@@ -155,18 +157,27 @@ export const TOOL_TIER_MAP: Record<string, SubscriptionTier> = {
   x_ui_button_attach: "free", x_ui_button_todo: "free", x_ui_button_settings: "free",
   x_ui_button_plan_exit: "free",
 
-  // PREVIEW BOX CONTROL — free trial
+  // PREVIEW BOX CONTROL (free trial) — the agent's own screen, cross-platform
   x_preview_list_windows: "free", x_preview_attach_window: "free", x_preview_detach_window: "free",
   x_preview_launch_app: "free", x_preview_open_url: "free", x_preview_screenshot: "free",
   x_preview_click: "free", x_preview_type: "free", x_preview_fill_form: "free",
   x_preview_key: "free", x_preview_scroll: "free", x_preview_read_text: "free",
   x_preview_elements: "free", x_preview_find: "free", x_preview_wait: "free",
 
-  // IN-APP PREVIEW — free trial
+  // REMOTE DESKTOP (pro) — reach this machine from any device
+  x_desktop_share: "pro", x_desktop_link: "pro", x_desktop_stop_share: "pro",
+
+  // IN-APP PREVIEW (free trial) — serve and verify a site without the real browser
   site_preview: "free", site_create: "free", site_publish: "free",
   site_unpublish: "free", site_domain: "free",
+  x_task_create: "free", x_task_delete: "free", x_task_list: "free", x_task_run_now: "free",
+  x_task_scheduler_status: "free", x_task_start_scheduler: "free", x_task_toggle: "free", x_world_add_object: "free",
+  task: "free", system_info: "free",
 
-  // MCP TOOL FALLBACKS — always free (the 4 MCP servers' tools)
+  // MCP TOOLS — always free. Covers the 82 catalog apps (4 bundled local servers
+  // plus every app ZYRAXON can authorize on the user's behalf) and the agent-facing
+  // MCP control tools. Connecting an app the user already paid for must never be
+  // gated behind a tier, or the agent would tell the user it cannot do the job.
   mcp_websearch: "free",
   mcp_catalog: "free", mcp_status: "free", mcp_connect: "free",
   nuphus_screenshot: "free", nuphus_list_windows: "free", nuphus_focus_window: "free", nuphus_click: "free",
@@ -348,9 +359,6 @@ export const TOOL_TIER_MAP: Record<string, SubscriptionTier> = {
   x_weather_check_turbulence: "max", x_weather_get_winds_aloft: "max", x_weather_parse_metar: "max", x_wind_get_vector: "max",
   x_wind_update_gps: "max", x_wind_update_imu: "max",
   github_connect: "max", external_directory: "max",
-
-  // REMOTE DESKTOP — pro
-  x_desktop_share: "pro", x_desktop_link: "pro", x_desktop_stop_share: "pro",
   x_cdp_connect: "max", x_cdp_disconnect: "max", x_comp_click_at: "max", x_comp_drag: "max",
   x_comp_key_press: "max", x_comp_list_windows: "max", x_comp_move_mouse: "max", x_comp_open_app: "max",
   x_comp_desktop_info: "max",
@@ -373,6 +381,7 @@ export const TOOL_TIER_MAP: Record<string, SubscriptionTier> = {
   x_veh_sat_antenna: "ultra", x_veh_sat_attitude: "ultra", x_veh_sat_camera: "ultra", x_veh_sat_connect: "ultra",
   x_veh_sat_deorbit: "ultra", x_veh_sat_orbit: "ultra", x_veh_sat_safemode: "ultra", x_veh_sat_solar: "ultra",
   x_veh_sat_thruster: "ultra",
+
 }
 
 export function getToolRequiredTier(toolId: string): SubscriptionTier {
@@ -401,7 +410,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       "Basic Browser Automation",
       "Mode Switching (general/build/plan/explore/vision)",
     ],
-    toolCount: 190,
+    toolCount: 184,
     memoryOptimization: "Basic (100 entries, 10MB cache)",
     maxAgents: 1,
     maxProjects: "3",
@@ -430,7 +439,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       "Multi-Agent (up to 3 agents)",
       "Priority Processing",
     ],
-    toolCount: 514,
+    toolCount: 502,
     memoryOptimization: "Pro (500 entries, 50MB cache)",
     maxAgents: 3,
     maxProjects: "Unlimited",
@@ -466,7 +475,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       "Team Workspace (3 members)",
       "GitHub Integration",
     ],
-    toolCount: 841,
+    toolCount: 826,
     memoryOptimization: "Max (2000 entries, 200MB cache)",
     maxAgents: 8,
     maxProjects: "Unlimited + Team",
@@ -499,7 +508,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       "Early Access to New Features",
       "Memory (10000 entries, 1GB cache)",
     ],
-    toolCount: 902,
+    toolCount: 887,
     memoryOptimization: "Ultra (10000 entries, 1GB cache)",
     maxAgents: -1,
     maxProjects: "Unlimited + Team + Enterprise",
@@ -508,19 +517,19 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
 
 export const TIER_STATS: Record<SubscriptionTier, { totalTools: number; categories: string[] }> = {
   free: {
-    totalTools: 190,
+    totalTools: 184,
     categories: ["Core AI", "Math", "Science", "Finance", "Data Science", "Security Basics", "Daily Life", "Memory", "Documents", "Tasks", "Captcha", "Subscription", "Acid/Base", "Chemistry", "Biology", "Life Tools", "System Info", "Web Search", "Nuphus Desktop", "Touchpoint Desktop"],
   },
   pro: {
-    totalTools: 514,
+    totalTools: 502,
     categories: ["Everything in Free", "Aviation", "Ground Vehicles", "Drones", "Helicopters", "ML & Safety", "Common Sense & Ethics", "Creativity", "Data Science Advanced", "Finance Advanced", "Vehicle Systems", "Planning", "Media Processing", "OCR", "Code Analysis", "API Testing", "Screen Vision", "Self-Evolution", "Task Automation"],
   },
   max: {
-    totalTools: 841,
+    totalTools: 826,
     categories: ["Everything in Pro", "Space", "Industrial", "Infrastructure", "Security", "Survey", "Agriculture", "Marine", "Construction", "Physical Interface", "SDR", "Digital Twin", "Dashboard", "Alert", "Data Logger", "Remote Control", "Predictive Maintenance", "Decision Support", "Authorization", "Extended AI", "Engineering", "Advanced Security", "CDP Browser", "Computer Control", "Site Builder"],
   },
   ultra: {
-    totalTools: 902,
+    totalTools: 887,
     categories: ["Everything in Max", "Singularity", "Guardian", "Universal Command Engine", "Ultra Tools", "Self-Improvement"],
   },
 }

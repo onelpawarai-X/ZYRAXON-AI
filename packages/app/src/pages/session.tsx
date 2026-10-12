@@ -426,7 +426,7 @@ export default function Page() {
           }
         }
         // Fallback: click the submit button
-        const submitBtn = document.querySelector('[data-action="prompt-submit"]')
+        const submitBtn = document.querySelector<HTMLElement>('[data-action="prompt-submit"]')
         if (submitBtn) submitBtn.click()
       }, 100)
     })

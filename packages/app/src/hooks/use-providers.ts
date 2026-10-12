@@ -20,7 +20,7 @@ export const popularProviders = [
 ]
 const popularProviderSet = new Set(popularProviders)
 
-export function useProviders(directory: Accessor<string | undefined>) {
+export function useProviders(directory?: Accessor<string | undefined>) {
   const serverSync = useServerSync()
   const params = useParams()
   const dir = () => (directory ? directory() : decode64(params.dir))
@@ -44,7 +44,6 @@ export function useProviders(directory: Accessor<string | undefined>) {
   return {
     all: () => providers().all,
     default: () => providers().default,
-    defaultModel: () => providers().defaultModel,
     popular: () =>
       pipe(
         providers().all,

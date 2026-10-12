@@ -110,7 +110,11 @@ export const DialogSettings: Component<{
   const [tab, setTab] = createSignal<Section>(isSection(props.defaultValue) ? props.defaultValue : "general")
 
   const showProviders = () => {
-    void dialog.show(() => <DialogSettings sessionID={props.sessionID} defaultValue="providers" />)
+    void dialog.show(
+      () => <DialogSettings sessionID={props.sessionID} defaultValue="providers" />,
+      undefined,
+      { docked: true },
+    )
   }
 
   // Provider rows are directory scoped; the dialog has no route param, so fall

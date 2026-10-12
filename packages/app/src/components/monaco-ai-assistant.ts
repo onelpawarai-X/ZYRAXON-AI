@@ -80,7 +80,7 @@ export class MonacoAIAssistant {
     if (typeof window !== "undefined" && (window as any).api?.getDefaultServerUrl) {
       for (let i = 0; i < 20; i++) {
         try {
-          const url = await (window as any).api.getDefaultServerUrl() as Promise<string | null>
+          const url = (await (window as any).api.getDefaultServerUrl()) as string | null
           if (url) {
             this.resolvedUrl = url
             this.config.baseUrl = url + "/v1"

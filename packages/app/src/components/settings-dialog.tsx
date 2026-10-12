@@ -18,7 +18,11 @@ export function useSettingsDialog(defaultValue?: string) {
   const params = useParams<{ id?: string }>()
 
   return (section?: string) => {
-    void dialog.show(() => <DialogSettings sessionID={params.id} defaultValue={section ?? defaultValue} />)
+    void dialog.show(
+      () => <DialogSettings sessionID={params.id} defaultValue={section ?? defaultValue} />,
+      undefined,
+      { docked: true },
+    )
   }
 }
 
