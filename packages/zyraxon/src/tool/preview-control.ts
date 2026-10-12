@@ -87,7 +87,7 @@ Windows, macOS and Linux.`,
 
 const AttachParameters = Schema.Struct({
   title: Schema.String.annotate({
-    description: "Window title to mirror, exactly as returned by preview_list_windows",
+    description: "Window title to mirror, exactly as returned by x_preview_list_windows",
   }),
   url: Schema.optional(Schema.String).annotate({
     description: "Optional URL to open first in the Preview panel",
@@ -123,7 +123,7 @@ on it. Call preview_detach_window when you are done.`,
                 {
                   found: false,
                   requested: params.title,
-                  hint: "No window matched that title. Call preview_list_windows to see the exact titles.",
+                  hint: "No window matched that title. Call x_preview_list_windows to see the exact titles.",
                   available: (data?.windows ?? []).slice(0, 15).map((w) => w.title),
                 },
                 null,
