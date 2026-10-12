@@ -38,6 +38,7 @@ import {
   onCleanup,
   type ParentProps,
   Show,
+  untrack,
 } from "solid-js"
 import { Dynamic } from "solid-js/web"
 import { makeEventListener } from "@solid-primitives/event-listener"
@@ -67,6 +68,7 @@ import LegacyLayout from "@/pages/layout"
 import NewLayout from "@/pages/layout-new"
 import { ErrorPage } from "./pages/error"
 import { useCheckServerHealth } from "./utils/server-health"
+import { markDailyTaskAutoSubmit } from "@/utils/daily-task"
 import { legacySessionHref, legacySessionServer, requireServerKey, sessionHref } from "./utils/session-route"
 import { createSessionLineage } from "@/pages/session/session-lineage"
 
@@ -304,26 +306,77 @@ function BodyDesignClass() {
 function SharedProviders(props: ParentProps) {
   initStreamListeners()
 
-  // Listen for daily task activation from main process
-  if (typeof window !== "undefined" && (window as any).api?.onDailyTaskActivate) {
-    (window as any).api.onDailyTaskActivate((data: { taskId: string; prompt: string; time: string }) => {
-      console.log("[DailyTask] Activating AI for task:", data.prompt)
-      // Dispatch event so session page can handle it
-      window.dispatchEvent(new CustomEvent("daily-task-run", { detail: data }))
-    })
-  }
-
   return (
     <>
       <BodyDesignClass />
       <CommandProvider>
         <DesktopCommands />
         <HighlightsProvider>
-          <SubscriptionProvider>{props.children}</SubscriptionProvider>
+          <SubscriptionProvider>
+            <DailyTaskActivation />
+            {props.children}
+          </SubscriptionProvider>
         </HighlightsProvider>
       </CommandProvider>
     </>
   )
+}
+
+// Daily task activation from the desktop main process. Routing the prompt straight
+// through a window event only worked while the legacy session page was mounted;
+// the new layout renders the composer on NewHome and /new-session, neither of which
+// listened, so scheduled prompts were dropped. This handler lives in the router root
+// (always mounted) and opens a session with the prompt pre-filled, working across the
+// legacy session page, /new-session drafts, and the new-layout home composer.
+function DailyTaskActivation() {
+  const global = useGlobal()
+  const server = useServer()
+  const tabs = useTabs()
+  const settings = useSettings()
+
+  const openWithPrompt = (prompt: string) => {
+    const conn = server.current
+    const directory = (() => {
+      if (!conn) return undefined
+      const ctx = global.ensureServerCtx(conn)
+      if (!ctx) return undefined
+      const projects = ctx.projects.list()
+      return (
+        projects.find((project) => project.worktree === ctx.projects.last())?.worktree ??
+        projects[0]?.worktree ??
+        ctx.sync.data.path?.home ??
+        undefined
+      )
+    })()
+    if (!conn || !directory) return false
+
+    const ctx = global.ensureServerCtx(conn)
+    ctx?.projects.open(directory)
+    ctx?.projects.touch(directory)
+
+    if (settings.general.newLayoutDesigns()) {
+      markDailyTaskAutoSubmit()
+      void tabs.newDraft({ server: ServerConnection.key(conn), directory }, prompt)
+      return true
+    }
+
+    return false
+  }
+
+  if (typeof window !== "undefined" && (window as any).api?.onDailyTaskActivate) {
+    ;(window as any).api.onDailyTaskActivate((data: { taskId: string; prompt: string; time: string }) => {
+      console.log("[DailyTask] Activating AI for task:", data.prompt)
+      if (!data?.prompt) return
+      untrack(() => {
+        const handled = openWithPrompt(data.prompt)
+        if (handled) return
+        // Fallback: keep the legacy window event for any other mounted listener.
+        window.dispatchEvent(new CustomEvent("daily-task-run", { detail: data }))
+      })
+    })
+  }
+
+  return null
 }
 
 function DesktopCommands() {
