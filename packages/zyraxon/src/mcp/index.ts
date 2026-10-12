@@ -539,6 +539,8 @@ export interface Interface {
   ) => Effect.Effect<Awaited<ReturnType<MCPClient["readResource"]>> | undefined>
   readonly startAuth: (
     mcpName: string,
+    onAuthorization?: (authorizationUrl: string, oauthState: string) => void,
+    options?: { open?: boolean },
   ) => Effect.Effect<{ authorizationUrl: string; oauthState: string }, NotFoundError>
   readonly authenticate: (
     mcpName: string,
@@ -1356,6 +1358,16 @@ const layer = Layer.effect(
       // state that callback will carry. Waiting for startAuth to return before acting
       // on this is what put a two to three minute gap between the click and Chrome.
       onAuthorization?: (authorizationUrl: string, oauthState: string) => void,
+      // `open` keeps the whole handshake alive in the background: the consent URL is
+      // returned and the callback is awaited here rather than by the caller.
+      //
+      // The Generate-link flow needs this. It returns the URL and then nobody drives the
+      // handshake, so a waiter was never registered: the person pasted the link, approved
+      // it, and the loopback callback arrived at a listener holding no promise for that
+      // state — the approval was discarded and the app never connected. Handing the
+      // handshake to a detached fiber means the callback has an owner whether the person
+      // pressed Connect or carried a generated link to another browser.
+      options?: { open?: boolean },
     ) {
       const mcpConfig = yield* requireMcpConfig(mcpName)
       if (mcpConfig.type !== "remote") throw new Error(`MCP server ${mcpName} is not a remote server`)
@@ -1537,6 +1549,10 @@ const layer = Layer.effect(
         yield* Effect.logInfo("oauth consent url ready", { server: mcpName, url })
         if (onAuthorization) {
           onAuthorization(url, oauthState)
+        } else if (options?.open) {
+          // Generate-link mode. The URL is handed back for the person to carry to
+          // whichever browser holds the account, so nothing is opened here — opening it
+          // in the default browser is exactly what the generated link exists to avoid.
         } else {
           // No callback is driving this handshake, so the page opens itself. A missed
           // callback used to leave the consent URL built and never shown — the browser
@@ -1597,7 +1613,7 @@ const layer = Layer.effect(
       // transport is not brought up until the callback arrives. `createClient` is
       // synchronous, so this is a plain `Effect.try` — not a promise wrapper, which
       // previously treated the returned Effect object as the resolved value.
-      return yield* Effect.try({
+      const authResult = yield* Effect.try({
         try: () => {
           const client = createClient(directory)
           void directory
@@ -1619,6 +1635,37 @@ const layer = Layer.effect(
           } satisfies AuthResult & { error?: string })
         }),
       )
+
+      // Generate-link mode: the caller returns the URL to the person and never calls
+      // `authenticate`, so the callback would otherwise arrive with no one waiting for it.
+      // A detached fiber holds the waiter and completes the exchange when the approval
+      // lands. It is fired only when the handshake produced a usable consent URL, and its
+      // failure is logged rather than surfaced, because the person is in another browser
+      // and has nothing to read a stack trace in.
+      if (options?.open && authResult.authorizationUrl) {
+        const callback = McpOAuthCallback.waitForCallback(oauthState, mcpName)
+        yield* Effect.gen(function* () {
+          const code = yield* Effect.promise(() => callback)
+          const storedState = yield* auth.getOAuthState(mcpName)
+          if (storedState !== oauthState) {
+            yield* auth.clearOAuthState(mcpName)
+            throw new Error("OAuth state mismatch - potential CSRF attack")
+          }
+          yield* auth.clearOAuthState(mcpName)
+          return yield* finishAuth(mcpName, code)
+        }).pipe(
+          Effect.tap((status) => Effect.logInfo("generated-link sign-in finished", { server: mcpName, status })),
+          Effect.catchCause((cause) =>
+            Effect.logWarning("generated-link sign-in did not finish", {
+              server: mcpName,
+              reason: Cause.pretty(cause),
+            }).pipe(Effect.ignore),
+          ),
+          Effect.forkDetach,
+        )
+      }
+
+      return authResult
     })
 
     const authenticate = Effect.fn("MCP.authenticate")(function* (

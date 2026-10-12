@@ -180,7 +180,7 @@ const InspectParameters = Schema.Struct({
 
 function makeTool(spec: ButtonSpec) {
   return Tool.define<typeof InspectParameters, Metadata, never>(
-    `ui_button_${spec.key}`,
+    `x_ui_button_${spec.key}`,
     Effect.gen(function* () {
       return {
         description: `Inspect ${spec.description} in the running ZYRAXON window.
@@ -251,7 +251,7 @@ const ListButtonsParameters = Schema.Struct({
 })
 
 export const UIButtonsListTool = Tool.define<typeof ListButtonsParameters, Metadata, never>(
-  "ui_buttons_list",
+  "x_ui_buttons_list",
   Effect.gen(function* () {
     return {
       description: `List every button currently present in the running ZYRAXON window, with its
@@ -285,4 +285,4 @@ before inspecting a specific control.`,
   }),
 )
 
-export const UIButtonToolIds = APP_BUTTONS.map((spec) => `ui_button_${spec.key}`)
+export const UIButtonToolIds = APP_BUTTONS.map((spec) => `x_ui_button_${spec.key}`)

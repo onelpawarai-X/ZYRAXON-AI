@@ -1201,6 +1201,12 @@ export const dict = {
   "shortcut.help": "نشان دادن پانل کمک",
   "shortcut.help.body": "هر میانبر در تنظیمات ذکر شده است، و همان لیست با کلید نشان داده شده در آن باز می شود.",
   "editor.voiceInput": "ورودی صدا",
+  "home.defaultProject": "پروژه پیش‌فرض",
+  "home.mcpConnect": "اتصال MCP",
+  "home.cloudAgent": "عامل ابری",
+  "home.marketplace": "بازار",
+  "home.marketplace.title": "بازار ZYRAXON",
+  "home.cloudAgent.opening": "در حال باز کردن عامل ابری در Chrome...",
 } satisfies Partial<Record<Keys, string>>
 
 export type DictAPP = keyof typeof dict

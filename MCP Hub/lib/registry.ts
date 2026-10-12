@@ -490,13 +490,50 @@ export async function discoverOAuth(serverUrl: string): Promise<OAuthEndpoints |
 
 /**
  * A server is connectable without the user supplying anything when its authorization
- * server publishes dynamic client registration (RFC 7591).
+ * server accepts a dynamic client registration (RFC 7591).
  *
- * The previous version of this asked only the host-wide
- * `/.well-known/oauth-authorization-server` on the server's own origin, which returned
- * false for every app that authorizes elsewhere — 29 of them, including Higgsfield —
- * and for every server keyed by path.
+ * Publishing a `registration_endpoint` is not the same as honouring it. Figma and
+ * Dropbox both advertise one and then answer 403 — Figma with a bare "Forbidden",
+ * Dropbox with "Dynamic client registration is not supported. Only pre-registered MCP
+ * trusted partners are allowed." Reading only the endpoint's presence therefore marked
+ * both as one-click apps, and pressing Connect on either built no consent URL at all:
+ * registration was refused, `startAuth` returned an empty link, and the card sat there
+ * as though the app were broken. The badge, the client-ID fields and the connect flow
+ * all read this one answer, so it has to be the answer the registration itself gives.
+ *
+ * The registration is attempted for real, with the same redirect the handshake uses,
+ * and the result is cached per endpoint so a re-render does not register again.
  */
+const zeroSetupCache = new Map<string, Promise<boolean>>()
+
 export async function supportsZeroSetup(endpoint: string): Promise<boolean> {
-  return (await discoverOAuth(endpoint))?.registrationEndpoint !== undefined
+  const cached = zeroSetupCache.get(endpoint)
+  if (cached) return cached
+  const probe = probeZeroSetup(endpoint).catch(() => false)
+  zeroSetupCache.set(endpoint, probe)
+  return probe
+}
+
+async function probeZeroSetup(endpoint: string): Promise<boolean> {
+  const found = await discoverOAuth(endpoint)
+  if (!found?.registrationEndpoint) return false
+
+  const res = await fetch(found.registrationEndpoint, {
+    method: "POST",
+    headers: { "content-type": "application/json", accept: "application/json" },
+    body: JSON.stringify({
+      client_name: "ZYRAXON",
+      redirect_uris: ["http://127.0.0.1:19876/mcp/oauth/callback"],
+      grant_types: ["authorization_code", "refresh_token"],
+      response_types: ["code"],
+      token_endpoint_auth_method: "none",
+    }),
+    signal: AbortSignal.timeout(HOP_TIMEOUT_MS),
+  })
+
+  if (!res.ok) return false
+  // A 2xx is not enough: a client ID is what the handshake needs, and a body without
+  // one cannot produce a consent URL.
+  const body = (await res.json().catch(() => undefined)) as { client_id?: unknown } | undefined
+  return typeof body?.client_id === "string" && body.client_id.length > 0
 }

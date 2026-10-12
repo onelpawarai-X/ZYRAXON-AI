@@ -114,7 +114,7 @@ const ShareParameters = Schema.Struct({
 })
 
 export const DesktopShareTool = Tool.define<typeof ShareParameters, Metadata, never>(
-  "desktop_share",
+  "x_desktop_share",
   Effect.gen(function* () {
     return {
       description: `Turn this computer into a live server the user can open from any device.
@@ -174,7 +174,7 @@ const LinkParameters = Schema.Struct({
 })
 
 export const DesktopLinkTool = Tool.define<typeof LinkParameters, Metadata, never>(
-  "desktop_link",
+  "x_desktop_link",
   Effect.gen(function* () {
     return {
       description: `Bring a shared desktop session back and return its link.
@@ -242,7 +242,7 @@ Pass the sessionId if the user has an old link; omit it to restore the most rece
 const StopParameters = Schema.Struct({})
 
 export const DesktopStopTool = Tool.define<typeof StopParameters, Metadata, never>(
-  "desktop_stop_share",
+  "x_desktop_stop_share",
   Effect.gen(function* () {
     return {
       description:

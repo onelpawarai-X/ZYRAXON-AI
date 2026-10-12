@@ -174,12 +174,12 @@ export const browserApps: AppEntry[] = [
   { id: "asana", icon: "asana", iconDomain: "asana.com", name: "Asana", description: "Tasks, projects and timelines", category: "Productivity", kind: "oauth", url: "https://mcp.asana.com/mcp", color: "#F06A6A", zeroSetup: true },
 
   // Design
-  { id: "figma", icon: "figma", iconDomain: "figma.com", name: "Figma", description: "Design files and components", category: "Design", kind: "oauth", url: "https://mcp.figma.com/mcp", color: "#F24E1E", consoleUrl: "https://www.figma.com/developers/mcp", steps: [
-      "Open https://www.figma.com/developers/mcp and sign in.",
-      "Press Enable or Create a client to generate a client for your account.",
-      "Register http://127.0.0.1:19876/oauth/callback as its callback URL if the form asks for one.",
+  { id: "figma", icon: "figma", iconDomain: "figma.com", name: "Figma", description: "Design files and components", category: "Design", kind: "oauth", url: "https://mcp.figma.com/mcp", color: "#F24E1E", consoleUrl: "https://www.figma.com/developers/apps", steps: [
+      "Open https://www.figma.com/developers/apps and sign in.",
+      "Press Create a new app, then Add a redirect URL.",
+      "Set the redirect URL to http://127.0.0.1:19876/oauth/callback and save the app.",
       "Copy the Client ID into the field here and press Connect.",
-    ], note: "Figma refuses client registration from other applications, so the ID comes from your own account.", oauth: { authorizationUrl: "https://www.figma.com/oauth/mcp", tokenUrl: "https://api.figma.com/v1/oauth/token" } },
+    ], note: "Figma only lets clients listed in its MCP catalog (https://www.figma.com/mcp-catalog/) connect to the Figma MCP server, so a normal app's client ID may still be refused after signing in.", oauth: { authorizationUrl: "https://www.figma.com/oauth/mcp", tokenUrl: "https://api.figma.com/v1/oauth/token" } },
   { id: "canva", icon: "canva", iconDomain: "canva.com", name: "Canva", description: "Designs, brand assets and images", category: "Design", kind: "oauth", url: "https://mcp.canva.com/mcp", color: "#00C4CC", zeroSetup: true },
   { id: "framer", iconDomain: "framer.com", name: "Framer", description: "Design and publish sites", category: "Design", kind: "oauth", url: "https://mcp.framer.com/mcp", scope: "account_info read_write", color: "#0055FF", consoleUrl: "https://www.framer.com/developers/", steps: [
       "Open https://www.framer.com/developers/ and sign in.",
@@ -229,8 +229,8 @@ export const browserApps: AppEntry[] = [
   // Search and marketing
   { id: "algolia", icon: "algolia", iconDomain: "algolia.com", name: "Algolia", description: "Search index and records", category: "Search", kind: "oauth", url: "https://mcp.algolia.com/mcp", color: "#5468FF", zeroSetup: true },
   { id: "typesense", iconDomain: "typesense.org", name: "Typesense", description: "Search clusters and collections", category: "Search", kind: "oauth", url: "https://cloud.typesense.org/mcp/v1", color: "#F5A800", zeroSetup: true },
-  { id: "nango", iconDomain: "nango.dev", name: "Nango", description: "Auth for hundreds of integrations", category: "Automation", kind: "oauth", url: "https://mcp.nango.dev/mcp", scope: "openid email offline_access", color: "#0F172A", consoleUrl: "https://dashboard.nango.dev/", steps: [
-      "Open https://dashboard.nango.dev and sign in.",
+  { id: "nango", iconDomain: "nango.dev", name: "Nango", description: "Auth for hundreds of integrations", category: "Automation", kind: "oauth", url: "https://mcp.nango.dev/mcp", scope: "openid email offline_access", color: "#0F172A", consoleUrl: "https://app.nango.dev/", steps: [
+      "Open https://app.nango.dev and sign in.",
       "Go to Settings → Integrations, or the OAuth tab for the provider you need.",
       "Create an OAuth app with http://127.0.0.1:19876/oauth/callback as the redirect, and copy the Client ID and Secret.",
       "Paste them into the fields here and press Connect.",
@@ -259,7 +259,13 @@ export const browserApps: AppEntry[] = [
       "Copy the Client ID shown in the General tab into the field here.",
       "Press Connect and approve the app in the browser that opens.",
     ], oauth: { authorizationUrl: "https://account.box.com/api/oauth2/authorize", tokenUrl: "https://api.box.com/oauth2/token" } },
-  { id: "dropbox", icon: "dropbox", iconDomain: "dropbox.com", name: "Dropbox", description: "Files and folders", category: "Storage", kind: "oauth", url: "https://mcp.dropbox.com/mcp", color: "#0061FF", zeroSetup: true },
+  { id: "dropbox", icon: "dropbox", iconDomain: "dropbox.com", name: "Dropbox", description: "Files and folders", category: "Storage", kind: "oauth", url: "https://mcp.dropbox.com/mcp", color: "#0061FF", consoleUrl: "https://www.dropbox.com/developers/apps", steps: [
+      "Open https://www.dropbox.com/developers/apps and press Create app.",
+      "Choose Scoped access and the Full Dropbox or App folder access you want, then name the app.",
+      "Open the app's Permissions tab and tick the file and account scopes you need, then press Submit.",
+      "Open the OAuth 2 section and add http://127.0.0.1:19876/mcp/oauth/callback as a Redirect URI.",
+      "Copy the App key as the Client ID and the App secret as the Client Secret into the two fields here, then press Connect.",
+    ], note: "Dropbox publishes a registration endpoint but refuses every self-registration with \"Only pre-registered MCP trusted partners are allowed\", so the client has to come from your own console.", oauth: { authorizationUrl: "https://www.dropbox.com/oauth2/authorize", tokenUrl: "https://api.dropboxapi.com/oauth2/token" } },
   { id: "render", iconDomain: "render.com", name: "Render", description: "Deploy web services and GPUs", category: "Hosting", kind: "oauth", url: "https://mcp.render.com/mcp", color: "#46E3B7", consoleUrl: "https://dashboard.render.com/", steps: [
       "Open https://dashboard.render.com and sign in.",
       "Open Settings → API Keys, then Create Key if you have none.",
@@ -285,8 +291,8 @@ export const browserApps: AppEntry[] = [
   { id: "intercom", icon: "intercom", iconDomain: "intercom.com", name: "Intercom", description: "Inbox and customer support", category: "Sales", kind: "oauth", url: "https://mcp.intercom.com/mcp", color: "#1F8DED" },
   // The host root, not /mcp — that path 404s here. No registration_endpoint, so this
   // one needs a client id that the user supplies rather than one we can create.
-  { id: "hubspot", icon: "hubspot", iconDomain: "hubspot.com", name: "HubSpot", description: "CRM, deals and contacts", category: "Sales", kind: "oauth", url: "https://mcp.hubspot.com", color: "#FF7A59", consoleUrl: "https://developers.hubspot.com/console", steps: [
-      "Open https://developers.hubspot.com/console and press Create a developer account if asked.",
+  { id: "hubspot", icon: "hubspot", iconDomain: "hubspot.com", name: "HubSpot", description: "CRM, deals and contacts", category: "Sales", kind: "oauth", url: "https://mcp.hubspot.com", color: "#FF7A59", consoleUrl: "https://app.hubspot.com/developer", steps: [
+      "Open https://app.hubspot.com/developer and press Create a developer account if asked.",
       "Press Create app and pick Public when asked for the type.",
       "Open Settings → Authentication, and set the Redirect URI to http://127.0.0.1:19876/oauth/callback.",
       "Copy the Client ID and the Client Secret into the two fields here.",
@@ -346,7 +352,7 @@ export const browserApps: AppEntry[] = [
       "Paste them into the two fields here and press Connect. Google MCP does not register clients by itself, so this one-time step is required.",
     ], tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#00897B", via: "google" },
   { id: "pdf", iconDomain: "ifillpdf.com", name: "PDF", description: "Read and extract from PDFs", category: "Documents", kind: "oauth", url: "https://ifillpdf.com/api/mcp", color: "#E3262F", note: "Served by iFillPDF, not Adobe. Its sign-in document points at a hosted identity provider and registers clients itself, so nothing has to be filled in.", via: "ifillpdf", zeroSetup: true },
-  { id: "planetscale", iconDomain: "planetscale.com", name: "PlanetScale", description: "Serverless MySQL branches", category: "Database", kind: "oauth", url: "https://mcp.pscale.dev/mcp/planetscale", tokenUrl: "https://planetscale.com/portal", color: "#000000" },
+  { id: "planetscale", iconDomain: "planetscale.com", name: "PlanetScale", description: "Serverless MySQL branches", category: "Database", kind: "oauth", url: "https://mcp.pscale.dev/mcp/planetscale", consoleUrl: "https://app.planetscale.com", color: "#000000" },
   { id: "captions", iconDomain: "captions.ai", name: "Captions", description: "Edit video with AI assistance", category: "Media", kind: "oauth", url: "https://mcp.captions.ai/mcp", tokenUrl: "https://www.captions.ai", color: "#111111" },
 
   // A server can refuse every tool call while still answering initialize and

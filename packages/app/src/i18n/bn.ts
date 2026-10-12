@@ -1326,4 +1326,10 @@ export const dict = {
   "settings.extensions.config.file": ".zyraxon/zyraxon.jsonc",
   "settings.extensions.config.pluginFile": ".zyraxon/plugin",
   "settings.extensions.config.lspFile": ".zyraxon/lsp.jsonc",
+  "home.defaultProject": "ডিফল্ট প্রজেক্ট",
+  "home.mcpConnect": "MCP সংযোগ",
+  "home.cloudAgent": "ক্লাউড এজেন্ট",
+  "home.marketplace": "মার্কেটপ্লেস",
+  "home.marketplace.title": "ZYRAXON মার্কেটপ্লেস",
+  "home.cloudAgent.opening": "Chrome-এ ক্লাউড এজেন্ট খোলা হচ্ছে...",
 } satisfies Partial<Record<Keys, string>>

@@ -17,6 +17,8 @@ interface SubStatusResult {
   data?: {
     tier: Tier
     toolAccess: string
+    toolsVisible: string
+    toolsUsable: string
     daysRemaining: number | null
     isPermanent: boolean
     activatedAt: string | null
@@ -112,7 +114,12 @@ export function execute(args: any): SubStatusResult {
     ok: true,
     data: {
       tier,
-      toolAccess: `${toolCount} tools`,
+      // The whole catalog is visible to the agent on every tier; the tier only
+      // decides which of those tools may actually run. Report both so the agent
+      // never undercounts itself by equating "usable" with "existing".
+      toolsVisible: `${xToolRegistry.length} tools (always visible in every tier and mode)`,
+      toolsUsable: `${toolCount} of ${xToolRegistry.length} tools usable on ${tier}`,
+      toolAccess: `${toolCount} usable of ${xToolRegistry.length} visible`,
       daysRemaining,
       isPermanent,
       activatedAt: state.activatedAt ? new Date(state.activatedAt).toISOString() : null,

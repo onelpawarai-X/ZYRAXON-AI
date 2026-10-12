@@ -1201,6 +1201,12 @@ export const dict = {
   "shortcut.help": "הצג את לוח העזרה",
   "shortcut.help.body": "כל קיצור דרך מופיע תחת הגדרות, ואותה רשימה נפתחת עם מפתח המוצג שם.",
   "editor.voiceInput": "קלט קולי",
+  "home.defaultProject": "פרויקט ברירת מחדל",
+  "home.mcpConnect": "חיבור MCP",
+  "home.cloudAgent": "סוכן ענן",
+  "home.marketplace": "חנות",
+  "home.marketplace.title": "חנות ZYRAXON",
+  "home.cloudAgent.opening": "פותח את סוכן הענן ב-Chrome...",
 } satisfies Partial<Record<Keys, string>>
 
 export type DictAPP = keyof typeof dict

@@ -137,7 +137,7 @@ function TimelineThinkingRow(props: { reasoningHeading?: string; showReasoningSu
     <div data-slot="session-turn-thinking" class="thinking-container">
       <span class="thinking-pulse-ring" />
       <TextShimmer text={language.t("ui.sessionTurn.status.thinking")} />
-      <Show when={!props.showReasoningSummaries}>
+      <Show when={props.showReasoningSummaries}>
         <TextReveal text={props.reasoningHeading} class="session-turn-thinking-heading" travel={25} duration={700} />
       </Show>
     </div>
@@ -743,47 +743,29 @@ export function MessageTimeline(props: {
     return hash.toString(36)
   }
 
-  const nonLatinRe = /[\u0980-\u09FF\u0900-\u097F\u0600-\u06FF\u0400-\u04FF\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7AF\u0E00-\u0E7F]/
-
-  function stripThinkingBlocks(text: string): string {
+  /**
+   * Reasoning tags a provider might wrap private thinking in.
+   *
+   * These are removed from anything a human reads or hears. Code fences and
+   * non-Latin lines are NOT removed here: a ```code``` block is a box the model
+   * deliberately rendered, and stripping it turned a finished reply into plain,
+   * jumbled text the moment streaming ended.
+   */
+  function stripReasoningTags(text: string): string {
     text = text.replace(/<thinking>[\s\S]*?<\/thinking>/gi, "")
     text = text.replace(/<\/?thinking[^>]*>/gi, "")
-    text = text.replace(/```[\s\S]*?```/g, "")
     text = text.replace(/<tool_use>[\s\S]*?<\/tool_use>/gi, "")
     text = text.replace(/<tool_result>[\s\S]*?<\/tool_result>/gi, "")
     text = text.replace(/<\/?antml:thinking[^>]*>/gi, "")
-    text = text.replace(/<think>[\s\S]*?<\/think>/gi, "")
+    text = text.replace(/ thinking[\s\S]*?<\/think>/gi, "")
     text = text.replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, "")
     text = text.replace(/\[INST\][\s\S]*?\[\/INST\]/gi, "")
     text = text.replace(/<<SYS>>[\s\S]*?<\/<SYS>>/gi, "")
     return text
   }
 
-  function stripEnglishReasoning(text: string): string {
-    const lines = text.split("\n")
-    const hasNonLatin = lines.some((l) => nonLatinRe.test(l))
-    if (!hasNonLatin) return text
-    return lines
-      .filter((line) => {
-        const t = line.trim()
-        if (!t) return true
-        return nonLatinRe.test(t)
-      })
-      .join("\n")
-      .trim()
-  }
-
-  function extractCleanText(msgId: string): string {
-    const syncData = sync().data
-    const parts = syncData.part[msgId] ?? []
-    let text = ""
-    for (const part of parts) {
-      if (part.type === "text" && "text" in part) text += (part as any).text
-    }
-    text = stripThinkingBlocks(text)
-    text = stripEnglishReasoning(text)
-    text = text.replace(/\n{3,}/g, "\n\n").trim()
-    return text
+  function stripThinkingBlocks(text: string): string {
+    return stripReasoningTags(text)
   }
 
   // TTS text: strip thinking blocks only, keep ALL languages (Bengali + English)
@@ -1777,8 +1759,11 @@ export function MessageTimeline(props: {
                 const p = part()
                 if (p.type === "text" && "text" in p) {
                   const originalText = (p as any).text || ""
-                  let cleaned = stripThinkingBlocks(originalText)
-                  cleaned = stripEnglishReasoning(cleaned)
+                  // Only provider reasoning tags are removed from what is shown.
+                  // Code fences and non-Latin lines are the reply's own rendered
+                  // boxes and must survive, or a finished message collapses into
+                  // plain jumbled text the moment streaming stops.
+                  const cleaned = stripReasoningTags(originalText)
                   if (cleaned !== originalText) {
                     return { ...p, text: cleaned } as typeof p
                   }

@@ -7,7 +7,7 @@ import { HttpApi, HttpApiEndpoint, HttpApiError, HttpApiGroup, OpenApi } from "e
 import { McpServerNotFoundError } from "../errors"
 import { Authorization } from "../middleware/authorization"
 import { InstanceContextMiddleware } from "../middleware/instance-context"
-import { WorkspaceRoutingMiddleware, WorkspaceRoutingQuery } from "../middleware/workspace-routing"
+import { WorkspaceRoutingMiddleware, WorkspaceRoutingQuery, WorkspaceRoutingQueryFields } from "../middleware/workspace-routing"
 import { described } from "./metadata"
 
 export const AddPayload = Schema.Struct({
@@ -79,7 +79,13 @@ export const McpApi = HttpApi.make("mcp")
         ),
         HttpApiEndpoint.post("authStart", McpPaths.auth, {
           params: { name: Schema.String },
-          query: WorkspaceRoutingQuery,
+          query: Schema.Struct({
+            ...WorkspaceRoutingQueryFields,
+            // Generate-link mode. The caller wants the consent URL and nothing else, and
+            // this keeps the callback waiter alive in the background so the approval lands
+            // even though no `authenticate` call is coming.
+            open: Schema.optional(Schema.String),
+          }),
           success: described(AuthStartResponse, "OAuth flow started"),
           error: [UnsupportedOAuthError, McpServerNotFoundError],
         }).annotateMerge(

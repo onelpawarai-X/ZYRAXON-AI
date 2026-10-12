@@ -63,7 +63,7 @@ const ListParameters = Schema.Struct({
 })
 
 export const SessionListTool = Tool.define<typeof ListParameters, Metadata, Session.Service>(
-  "session_list",
+  "x_session_list",
   Effect.gen(function* () {
     const sessions = yield* Session.Service
     return {
@@ -103,7 +103,7 @@ const OpenParameters = Schema.Struct({
 })
 
 export const SessionOpenTool = Tool.define<typeof OpenParameters, Metadata, Session.Service>(
-  "session_open",
+  "x_session_open",
   Effect.gen(function* () {
     const sessions = yield* Session.Service
     return {
@@ -150,7 +150,7 @@ const SendParameters = Schema.Struct({
 })
 
 export const SessionSendTool = Tool.define<typeof SendParameters, Metadata, Session.Service>(
-  "session_send",
+  "x_session_send",
   Effect.gen(function* () {
     const sessions = yield* Session.Service
     return {
@@ -218,7 +218,7 @@ const SubagentParameters = Schema.Struct({
 })
 
 export const SessionSubagentTool = Tool.define<typeof SubagentParameters, Metadata, Session.Service>(
-  "session_subagent",
+  "x_session_subagent",
   Effect.gen(function* () {
     const sessions = yield* Session.Service
     return {
@@ -271,7 +271,7 @@ const SwitchParameters = Schema.Struct({
 })
 
 export const SessionSwitchTool = Tool.define<typeof SwitchParameters, Metadata, Session.Service>(
-  "session_switch",
+  "x_session_switch",
   Effect.gen(function* () {
     const sessions = yield* Session.Service
     return {
@@ -310,7 +310,7 @@ const RemoveParameters = Schema.Struct({
 })
 
 export const SessionRemoveTool = Tool.define<typeof RemoveParameters, Metadata, Session.Service>(
-  "session_remove",
+  "x_session_remove",
   Effect.gen(function* () {
     const sessions = yield* Session.Service
     return {

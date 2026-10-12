@@ -20,6 +20,13 @@ _bundled_usable = sys.platform == "win32" and _libs.is_dir()
 if _bundled_usable:
     sys.path.insert(0, str(_libs))
     os.environ["PYTHONPATH"] = str(_libs) + os.pathsep + os.environ.get("PYTHONPATH", "")
+elif _libs.is_dir():
+    # Linux and macOS still need the pure-Python `touchpoint` package that ships in
+    # libs/, but the tree is a win_amd64 install: putting it first shadowed working
+    # system packages with unusable .pyd extensions and the server died on
+    # `import pydantic_core`. Appending keeps the platform's own mcp/pydantic_core
+    # in front while `touchpoint` itself resolves from the bundle.
+    sys.path.append(str(_libs))
 os.environ.setdefault("TOUCHPOINT_MODE", "no-vision")
 
 from mcp.server.fastmcp import FastMCP

@@ -35,6 +35,9 @@ const dicts = new Map<Locale, Dictionary>([[DEFAULT_LOCALE, ENGLISH]])
 const merge = (app: Promise<Source>, ui: Promise<Source>) =>
   Promise.all([app, ui]).then(([a, b]) => i18n.flatten({ ...a.dict, ...b.dict }) as Dictionary)
 
+/** App-only dictionaries: locales the UI package has no translation for yet. */
+const mergeApp = (app: Promise<Source>) => app.then((a) => i18n.flatten({ ...a.dict }) as Dictionary)
+
 /**
  * Languages with a hand-maintained full dictionary. Everything else falls back
  * to the generated core vocabulary so a missing key degrades to English rather
@@ -69,6 +72,52 @@ const fullDicts: Partial<Record<Locale, () => Promise<Dictionary>>> = {
   th: () => merge(import("@/i18n/th"), import("@zyraxon-ai/ui/i18n/th")),
   bs: () => merge(import("@/i18n/bs"), import("@zyraxon-ai/ui/i18n/bs")),
   tr: () => merge(import("@/i18n/tr"), import("@zyraxon-ai/ui/i18n/tr")),
+  // Right-to-left locales ship full dictionaries. They were missing from this
+  // registry, so selecting Hebrew, Persian, Urdu or Yiddish flipped the document
+  // to RTL while the dictionary stayed empty — an English layout reversed, which
+  // is what "the language does not translate" actually was.
+  he: () => merge(import("@/i18n/he"), import("@zyraxon-ai/ui/i18n/he")),
+  fa: () => merge(import("@/i18n/fa"), import("@zyraxon-ai/ui/i18n/fa")),
+  ur: () => merge(import("@/i18n/ur"), import("@zyraxon-ai/ui/i18n/ur")),
+  yi: () => merge(import("@/i18n/yi"), import("@zyraxon-ai/ui/i18n/yi")),
+  // Remaining hand-maintained dictionaries that had no core pack to fall back to.
+  af: () => merge(import("@/i18n/af"), import("@zyraxon-ai/ui/i18n/af")),
+  bg: () => merge(import("@/i18n/bg"), import("@zyraxon-ai/ui/i18n/bg")),
+  ca: () => merge(import("@/i18n/ca"), import("@zyraxon-ai/ui/i18n/ca")),
+  cs: () => merge(import("@/i18n/cs"), import("@zyraxon-ai/ui/i18n/cs")),
+  el: () => mergeApp(import("@/i18n/el")),
+  eo: () => mergeApp(import("@/i18n/eo")),
+  et: () => merge(import("@/i18n/et"), import("@zyraxon-ai/ui/i18n/et")),
+  eu: () => merge(import("@/i18n/eu"), import("@zyraxon-ai/ui/i18n/eu")),
+  fi: () => merge(import("@/i18n/fi"), import("@zyraxon-ai/ui/i18n/fi")),
+  fo: () => merge(import("@/i18n/fo"), import("@zyraxon-ai/ui/i18n/fo")),
+  gl: () => merge(import("@/i18n/gl"), import("@zyraxon-ai/ui/i18n/gl")),
+  hu: () => merge(import("@/i18n/hu"), import("@zyraxon-ai/ui/i18n/hu")),
+  is: () => merge(import("@/i18n/is"), import("@zyraxon-ai/ui/i18n/is")),
+  lb: () => merge(import("@/i18n/lb"), import("@zyraxon-ai/ui/i18n/lb")),
+  lt: () => merge(import("@/i18n/lt"), import("@zyraxon-ai/ui/i18n/lt")),
+  lv: () => merge(import("@/i18n/lv"), import("@zyraxon-ai/ui/i18n/lv")),
+  nds: () => merge(import("@/i18n/nds"), import("@zyraxon-ai/ui/i18n/nds")),
+  nl: () => merge(import("@/i18n/nl"), import("@zyraxon-ai/ui/i18n/nl")),
+  nn: () => merge(import("@/i18n/nn"), import("@zyraxon-ai/ui/i18n/nn")),
+  oc: () => merge(import("@/i18n/oc"), import("@zyraxon-ai/ui/i18n/oc")),
+  ro: () => mergeApp(import("@/i18n/ro")),
+  sk: () => merge(import("@/i18n/sk"), import("@zyraxon-ai/ui/i18n/sk")),
+  sl: () => merge(import("@/i18n/sl"), import("@zyraxon-ai/ui/i18n/sl")),
+  sq: () => mergeApp(import("@/i18n/sq")),
+  sv: () => merge(import("@/i18n/sv"), import("@zyraxon-ai/ui/i18n/sv")),
+  // Remaining app-only locales. Every locale in the picker must resolve a real
+  // dictionary; without an entry the UI was left in English while an RTL locale
+  // still mirrored the layout.
+  az: () => merge(import("@/i18n/az"), import("@zyraxon-ai/ui/i18n/az")),
+  hi: () => merge(import("@/i18n/hi"), import("@zyraxon-ai/ui/i18n/hi")),
+  id: () => mergeApp(import("@/i18n/id")),
+  it: () => merge(import("@/i18n/it"), import("@zyraxon-ai/ui/i18n/it")),
+  ky: () => merge(import("@/i18n/ky"), import("@zyraxon-ai/ui/i18n/ky")),
+  ms: () => mergeApp(import("@/i18n/ms")),
+  sw: () => mergeApp(import("@/i18n/sw")),
+  tl: () => mergeApp(import("@/i18n/tl")),
+  vi: () => mergeApp(import("@/i18n/vi")),
 }
 
 /** Core vocabulary chunks, one module per pack so a locale pulls only what it needs. */

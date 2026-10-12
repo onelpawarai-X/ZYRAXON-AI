@@ -68,13 +68,4 @@ export interface OAuthEndpoints {
  * the resource document's own authorization servers, then the well-known paths.
  */
 export declare function discoverOAuth(serverUrl: string): Promise<OAuthEndpoints | undefined>;
-/**
- * A server is connectable without the user supplying anything when its authorization
- * server publishes dynamic client registration (RFC 7591).
- *
- * The previous version of this asked only the host-wide
- * `/.well-known/oauth-authorization-server` on the server's own origin, which returned
- * false for every app that authorizes elsewhere — 29 of them, including Higgsfield —
- * and for every server keyed by path.
- */
 export declare function supportsZeroSetup(endpoint: string): Promise<boolean>;

@@ -1322,6 +1322,13 @@ export const dict = {
   "settings.extensions.action.open": "Open",
   "settings.extensions.action.connectMcp": "Add MCP server",
 
+  "home.defaultProject": "Default Project",
+  "home.mcpConnect": "MCP Connect",
+  "home.cloudAgent": "Cloud Agent",
+  "home.marketplace": "Marketplace",
+  "home.marketplace.title": "ZYRAXON Marketplace",
+  "home.cloudAgent.opening": "Opening Cloud Agent in Chrome...",
+
   "shortcut.goto.home": "Go to the home screen",
   "session.hub.context": "Context and usage",
   "session.hub.project": "Project and changes",

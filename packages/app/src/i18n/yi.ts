@@ -1322,4 +1322,10 @@ export const dict = {
     "אַלע קארטֿיקשטערצונגען שטייען אין הֲגעונות, און דער גלייך ליסטע פענט זיך מיט דער בינדונג וואָס זיי ערשט צייגט.",
 
   "editor.voiceInput": "שטימע־איינגאב",
+  "home.defaultProject": "פֿאַרשטעלן פּראָיעקט",
+  "home.mcpConnect": "MCP פֿאַרבינדונג",
+  "home.cloudAgent": "וואָלקן אַגענט",
+  "home.marketplace": "מאַרקעט",
+  "home.marketplace.title": "ZYRAXON מאַרקעט",
+  "home.cloudAgent.opening": "עפֿנט וואָלקן אַגענט אין Chrome...",
 } satisfies Partial<Record<Keys, string>>

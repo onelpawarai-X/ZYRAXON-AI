@@ -24,7 +24,6 @@ import { useSettings } from "@/context/settings"
 import { useNavigate } from "@solidjs/router"
 import { useSync } from "@/context/sync"
 import { useTerminal } from "@/context/terminal"
-import { focusTerminalById } from "@/pages/session/helpers"
 import { useSessionLayout } from "@/pages/session/session-layout"
 import { messageAgentColor } from "@/utils/agent"
 import { decode64 } from "@/utils/base64"
@@ -216,9 +215,11 @@ export function SessionHeader() {
     view().terminal.toggle()
     if (!next) return
 
-    const id = terminal.active()
-    if (!id) return
-    focusTerminalById(id)
+    // Ask the terminal panel to take focus once it has mounted. Focusing the
+    // textarea synchronously here ran before the panel rendered, so the focus
+    // fell through to the chat composer and the user's first keystrokes landed
+    // in the wrong box.
+    terminal.requestFocus(terminal.active())
   }
 
   const [prefs, setPrefs] = persisted(Persist.global("open.app"), createStore({ app: "finder" as OpenApp }))

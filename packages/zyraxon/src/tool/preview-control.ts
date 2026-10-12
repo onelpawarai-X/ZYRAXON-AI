@@ -56,7 +56,7 @@ const WindowsParameters = Schema.Struct({
 })
 
 export const PreviewListWindowsTool = Tool.define<typeof WindowsParameters, Metadata, never>(
-  "preview_list_windows",
+  "x_preview_list_windows",
   Effect.gen(function* () {
     return {
       description: `List every window open on this machine, so you can mirror one into the Preview panel.
@@ -95,7 +95,7 @@ const AttachParameters = Schema.Struct({
 })
 
 export const PreviewAttachWindowTool = Tool.define<typeof AttachParameters, Metadata, never>(
-  "preview_attach_window",
+  "x_preview_attach_window",
   Effect.gen(function* () {
     return {
       description: `Mirror an application that is already open into the Preview panel.
@@ -153,7 +153,7 @@ on it. Call preview_detach_window when you are done.`,
 const DetachParameters = Schema.Struct({})
 
 export const PreviewDetachTool = Tool.define<typeof DetachParameters, Metadata, never>(
-  "preview_detach_window",
+  "x_preview_detach_window",
   Effect.gen(function* () {
     return {
       description: "Stop mirroring the attached application and return the Preview panel to its normal page view.",
@@ -178,7 +178,7 @@ const LaunchParameters = Schema.Struct({
 })
 
 export const PreviewLaunchTool = Tool.define<typeof LaunchParameters, Metadata, never>(
-  "preview_launch_app",
+  "x_preview_launch_app",
   Effect.gen(function* () {
     return {
       description: `Launch any installed application on the machine, then mirror it into the Preview panel.
@@ -251,7 +251,7 @@ const TargetParameters = Schema.Struct({
 })
 
 export const PreviewScreenshotTool = Tool.define<typeof TargetParameters, Metadata, never>(
-  "preview_screenshot",
+  "x_preview_screenshot",
   Effect.gen(function* () {
     return {
       description: `Capture what is currently in the Preview panel and look at it.
@@ -292,7 +292,7 @@ const ClickParameters = Schema.Struct({
 })
 
 export const PreviewClickTool = Tool.define<typeof ClickParameters, Metadata, never>(
-  "preview_click",
+  "x_preview_click",
   Effect.gen(function* () {
     return {
       description: `Click inside the application shown in the Preview panel.
@@ -327,7 +327,7 @@ const TypeParameters = Schema.Struct({
 })
 
 export const PreviewTypeTool = Tool.define<typeof TypeParameters, Metadata, never>(
-  "preview_type",
+  "x_preview_type",
   Effect.gen(function* () {
     return {
       description: `Type text into the application shown in the Preview panel.
@@ -364,7 +364,7 @@ const FillFormParameters = Schema.Struct({
 })
 
 export const PreviewFillFormTool = Tool.define<typeof FillFormParameters, Metadata, never>(
-  "preview_fill_form",
+  "x_preview_fill_form",
   Effect.gen(function* () {
     return {
       description: `Fill a whole form inside the application shown in the Preview panel, then optionally submit it.
@@ -426,7 +426,7 @@ const KeyParameters = Schema.Struct({
 })
 
 export const PreviewKeyTool = Tool.define<typeof KeyParameters, Metadata, never>(
-  "preview_key",
+  "x_preview_key",
   Effect.gen(function* () {
     return {
       description: `Press a key or key combination inside the application shown in the Preview panel.
@@ -456,7 +456,7 @@ const ScrollParameters = Schema.Struct({
 })
 
 export const PreviewScrollTool = Tool.define<typeof ScrollParameters, Metadata, never>(
-  "preview_scroll",
+  "x_preview_scroll",
   Effect.gen(function* () {
     return {
       description: `Scroll the application shown in the Preview panel.
@@ -490,7 +490,7 @@ const ReadParameters = Schema.Struct({
 })
 
 export const PreviewReadTool = Tool.define<typeof ReadParameters, Metadata, never>(
-  "preview_read_text",
+  "x_preview_read_text",
   Effect.gen(function* () {
     return {
       description: `Read the text currently visible in the application shown in the Preview panel.
@@ -524,7 +524,7 @@ const ElementsParameters = Schema.Struct({
 })
 
 export const PreviewElementsTool = Tool.define<typeof ElementsParameters, Metadata, never>(
-  "preview_elements",
+  "x_preview_elements",
   Effect.gen(function* () {
     return {
       description: `List the interactive elements inside the application shown in the Preview panel.
@@ -561,7 +561,7 @@ const FindParameters = Schema.Struct({
 })
 
 export const PreviewFindTool = Tool.define<typeof FindParameters, Metadata, never>(
-  "preview_find",
+  "x_preview_find",
   Effect.gen(function* () {
     return {
       description: `Search the application shown in the Preview panel for an element by name.
@@ -591,7 +591,7 @@ const WaitParameters = Schema.Struct({
 })
 
 export const PreviewWaitTool = Tool.define<typeof WaitParameters, Metadata, never>(
-  "preview_wait",
+  "x_preview_wait",
   Effect.gen(function* () {
     return {
       description: `Wait for a window in the Preview panel to appear.

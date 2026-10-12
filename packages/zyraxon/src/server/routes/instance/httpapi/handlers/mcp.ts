@@ -85,12 +85,12 @@ export const mcpHandlers = HttpApiBuilder.group(InstanceHttpApi, "mcp", (handler
       ).pipe(Effect.mapError(() => new HttpApiError.BadRequest({})))
     })
 
-    const authStart = Effect.fn("McpHttpApi.authStart")(function* (ctx: { params: { name: string } }) {
+    const authStart = Effect.fn("McpHttpApi.authStart")(function* (ctx: { params: { name: string }; query: { open?: string } }) {
       return yield* Effect.gen(function* () {
         if (!(yield* mcp.supportsOAuth(ctx.params.name))) {
           return yield* new UnsupportedOAuthError({ error: `MCP server ${ctx.params.name} does not support OAuth` })
         }
-        return yield* mcp.startAuth(ctx.params.name)
+        return yield* mcp.startAuth(ctx.params.name, undefined, { open: ctx.query.open === "true" })
       }).pipe(
         Effect.catchTag("MCP.NotFoundError", (error) =>
           Effect.fail(new McpServerNotFoundError({ name: error.name, message: `MCP server not found: ${error.name}` })),

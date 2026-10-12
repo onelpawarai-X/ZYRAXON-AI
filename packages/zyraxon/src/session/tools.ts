@@ -10,6 +10,7 @@ import { Permission } from "@/permission"
 import { Tool } from "@/tool/tool"
 import { ToolJsonSchema } from "@/tool/json-schema"
 import { ToolRegistry } from "@/tool/registry"
+import { TOOL_TIER_MAP, getCurrentTier, hasAccess, getToolRequiredTier } from "@/subscription/canonical"
 import { Truncate } from "@/tool/truncate"
 import { omniBeforeToolCall, omniAfterToolCall } from "@/omni/lifecycle"
 
@@ -111,6 +112,28 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
           Effect.gen(function* () {
             const ctx = context(args, options)
             const toolStartTime = Date.now()
+
+            // Tier gate at execution time, not at injection time. The model sees
+            // every tool on every tier, so it always knows what exists; running a
+            // tool above the current tier returns a clear upgrade message instead
+            // of the tool silently not existing.
+            //
+            // Only tools with an explicit tier assignment are gated. Built-ins with
+            // no entry (read-only helpers, MCP plumbing) must never be locked by the
+            // "unknown means max" default, or they would break on every tier.
+            if (item.id in TOOL_TIER_MAP) {
+              const requiredTier = getToolRequiredTier(item.id)
+              const currentTier = getCurrentTier()
+              if (!hasAccess(currentTier, requiredTier)) {
+                const denied = {
+                  title: `Locked: ${item.id}`,
+                  metadata: { locked: true, requiredTier, currentTier },
+                  output: `Access denied: the ${item.id} tool requires ${requiredTier} tier, and you are on ${currentTier}. The tool exists and is injected — it is only run access that is locked. Ask the user to upgrade to ${requiredTier} to run it.`,
+                }
+                yield* input.processor.completeToolCall(options.toolCallId, denied)
+                return denied
+              }
+            }
 
             // OMNI-KERNEL: processBeforeToolCall — secret redaction + prediction
             const beforeResult = yield* Effect.promise(() =>
