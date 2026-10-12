@@ -1,19 +1,4 @@
 
-
-<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/blob/main/CONTRIBUTING.md"><img alt="Contribute" src="https://img.shields.io/badge/Contribute-Start%20Here-38BDF8?style=for-the-badge&logo=github&logoColor=FFFFFF"/></a>
-<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/issues"><img alt="Open issues" src="https://img.shields.io/badge/Open%20Issues-Pick%20One-8B5CF6?style=for-the-badge&logo=githubissues&logoColor=FFFFFF"/></a>
-<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/discussions"><img alt="Discussions" src="https://img.shields.io/badge/Discussions-Join%20In-A78BFA?style=for-the-badge&logo=github&logoColor=FFFFFF"/></a>
-<a href="https://www.youtube.com/@ZYRAXONAI"><img alt="YouTube" src="https://img.shields.io/badge/YouTube-Upload%20%26%20Share-FF0000?style=for-the-badge&logo=youtube&logoColor=FFFFFF"/></a>
-
-<br/><br/>
-
-<i>Work with me · Contribute · Improve · Promote · Upload videos — every day.</i>
-
-</div>
-
-<hr/>
-
-
 <!-- UNLOCK GROUP BANNER -->
 <div align="center">
 
