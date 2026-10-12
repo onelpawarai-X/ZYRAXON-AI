@@ -78,11 +78,46 @@ const layer = Layer.effect(
  */
 let damaged: { detail?: string } | undefined
 
+/**
+ * Is this error "the file is simply not there yet"?
+ *
+ * The filesystem layer wraps the platform failure as `FileSystemError { cause }`, and the
+ * underlying Effect `PlatformError` carries a `reason._tag` of `NotFound`. Both shapes are
+ * checked because the cause may be the raw error or the wrapped one depending on where the
+ * failure surfaced. A false negative here would only re-open the old bug for one code path,
+ * so the check stays deliberately broad.
+ */
+function isNotFound(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false
+  if ("code" in error && (error as { code?: unknown }).code === "ENOENT") return true
+  if ("reason" in error) {
+    const reason = (error as { reason?: unknown }).reason
+    if (reason && typeof reason === "object" && "_tag" in reason) {
+      if ((reason as { _tag?: unknown })._tag === "NotFound") return true
+    }
+  }
+  if ("cause" in error) return isNotFound((error as { cause?: unknown }).cause)
+  const message = error instanceof Error ? error.message : ""
+  return message.includes("NotFound")
+}
+
 const read = Effect.fn("McpAuth.read")(function* () {
   return yield* fs.readJson(filepath).pipe(
-    Effect.map((data): AuthData => Option.getOrElse(decodeAuthData(data), () => ({}) as AuthData) as AuthData),
+    Effect.map((data): AuthData => {
+      // A successful parse clears any earlier damage: the file is readable again, so a
+      // later write is safe. Without this the flag outlived the corruption it recorded and
+      // the store stayed read-only for the life of the process.
+      damaged = undefined
+      return Option.getOrElse(decodeAuthData(data), () => ({}) as AuthData) as AuthData
+    }),
     Effect.catch((e) =>
       Effect.sync(() => {
+        // A file that has never been written is an empty store, not damage. Treating
+        // "missing" as "corrupt" made every first sign-in on a fresh install fail: the
+        // store was flagged, `mutate` then refused to write, and the credential file
+        // could never be created — a permanent deadlock that no amount of retrying
+        // cleared. Only a file that is actually present and unreadable is damage.
+        if (isNotFound(e)) return {} as AuthData
         damaged ??= { detail: e instanceof Error ? e.message : String(e) }
         return {} as AuthData
       }),

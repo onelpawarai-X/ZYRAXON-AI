@@ -209,6 +209,10 @@ export const LANGUAGES: readonly Language[] = [
   { code: "niu", english: "Niuean", native: "Niuē", region: "NU", dir: "ltr" },
   { code: "tvl", english: "Tuvalu", native: "Te 'gana Tūvalu", region: "TV", dir: "ltr" },
   { code: "gil", english: "Gilbertese", native: "Taunggit", region: "KI", dir: "ltr" },
+  { code: "tkl", english: "Tokelauan", native: "Gagana Tokelau", region: "TK", dir: "ltr" },
+  { code: "haw", english: "Hawaiian", native: "ʻŌlelo Hawaiʻi", region: "US", dir: "ltr" },
+  { code: "hmn", english: "Hmong", native: "Hmoob", region: "LA", dir: "ltr" },
+  { code: "na", english: "Nauruan", native: "Dorerin Naoero", region: "NR", dir: "ltr" },
 
   // --- Africa ---
   { code: "sw", english: "Swahili", native: "Kiswahili", region: "KE", dir: "ltr" },
@@ -258,6 +262,21 @@ export const LANGUAGES: readonly Language[] = [
   { code: "bi", english: "Bislama", native: "Bislama", region: "VU", dir: "ltr" },
   { code: "pau", english: "Palauan", native: "a tekoi er a Belau", region: "PW", dir: "ltr" },
   { code: "nrf", english: "Nafsan", native: "Nafsan", region: "VU", dir: "ltr" },
+  { code: "kmb", english: "Kimbundu", native: "Kimbundu", region: "AO", dir: "ltr" },
+  { code: "bjn", english: "Banjar", native: "Bahasa Banjar", region: "ID", dir: "ltr" },
+  { code: "mga", english: "Middle Irish", native: "Gaoidhealg", region: "IE", dir: "ltr" },
+  { code: "sco", english: "Scots", native: "Scots", region: "GB", dir: "ltr" },
+  { code: "gsw", english: "Swiss German", native: "Schwiizertüütsch", region: "CH", dir: "ltr" },
+  { code: "co", english: "Corsican", native: "Corsu", region: "FR", dir: "ltr" },
+  { code: "nah", english: "Nahuatl", native: "Nāhuatl", region: "MX", dir: "ltr" },
+  { code: "aym", english: "Aymara", native: "Aymar aru", region: "BO", dir: "ltr" },
+  { code: "mvf", english: "Mongolian (Peripheral)", native: "Монгол хэл", region: "MN", dir: "ltr" },
+  { code: "myv", english: "Erzya", native: "Эрзянь кель", region: "RU", dir: "ltr" },
+  { code: "chv", english: "Chuvash", native: "Чӑваш чӗлхи", region: "RU", dir: "ltr" },
+  { code: "ce", english: "Chechen", native: "Нохчийн мотт", region: "RU", dir: "ltr" },
+  { code: "kv", english: "Komi", native: "Коми кыв", region: "RU", dir: "ltr" },
+  { code: "mot", english: "Barí", native: "Barí", region: "CO", dir: "ltr" },
+  { code: "ibp", english: "Iban", native: "Jaku Iban", region: "MY", dir: "ltr" },
 
   // --- Europe minor and constructed ---
   { code: "el", english: "Greek", native: "Ελληνικά", region: "GR", dir: "ltr" },

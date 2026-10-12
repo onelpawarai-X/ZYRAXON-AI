@@ -227,7 +227,13 @@ const translate = i18n.translator(() => dict() ?? ({} as Dictionary), i18n.resol
 
 const t = ((key: keyof Dictionary, params?: Record<string, string | number | boolean>) => {
   const value = translate(key, params)
-  if (typeof value === "string") return value
+  if (typeof value === "string" && value.length > 0) return value
+  // Fall back to the English source rather than rendering nothing. A locale that
+  // has not translated a key yet should still show a real label — the empty
+  // string this used to return made a partially translated language look like a
+  // broken interface, which is exactly what switching to a core pack produced.
+  const fallback = ENGLISH[key]
+  if (typeof fallback === "string" && fallback.length > 0) return fallback
   if (typeof process !== "undefined" && process.env?.ZYRAXON_DEBUG_I18N) console.warn(`[i18n] missing ${String(key)}`)
   return ""
 }) as (key: keyof Dictionary, params?: Record<string, string | number | boolean>) => string

@@ -23,7 +23,8 @@ import { NamedError } from "@zyraxon-ai/core/util/error"
 import { InstallationVersion } from "@zyraxon-ai/core/installation/version"
 import { withTimeout } from "@/util/timeout"
 import { FSUtil } from "@zyraxon-ai/core/fs-util"
-import { McpOAuthPendingProvider, McpOAuthProvider, OAUTH_CALLBACK_PATH } from "./oauth-provider"
+import { randomUUID } from "node:crypto"
+import { McpOAuthPendingProvider, McpOAuthProvider, OAUTH_CALLBACK_PATH, OAUTH_CALLBACK_PORT } from "./oauth-provider"
 import { McpOAuthDiscovery } from "./oauth-discovery"
 import { McpOAuthCallback } from "./oauth-callback"
 import { McpAuth } from "./auth"
@@ -429,7 +430,8 @@ async function exchangeAuthorizationCode(
     let detail = text.slice(0, 200)
     try {
       const parsed = JSON.parse(text) as { error_description?: string; error?: string }
-      if (parsed.error_description || parsed.error) detail = parsed.error_description ?? parsed.error
+      const message = parsed.error_description ?? parsed.error
+      if (message) detail = message
     } catch {}
     throw new Error(`token endpoint returned HTTP ${response.status}${detail ? ` — ${detail}` : ""}`)
   }
@@ -788,6 +790,19 @@ const layer = Layer.effect(
         if (typeof process !== "undefined" && (process as any).resourcesPath) {
           candidates.push((process as any).resourcesPath as string)
         }
+        // A compiled binary cannot resolve a path relative to its own module, so the
+        // only reliable anchors are the executable itself and the working directory.
+        // Both are walked upward to find a `packages/desktop/resources` directory,
+        // which is where the servers live in every checkout and packaged layout.
+        for (const anchor of [process.execPath, process.cwd()]) {
+          if (!anchor) continue
+          let dir = path.dirname(anchor)
+          for (let i = 0; i < 6 && dir !== path.dirname(dir); i++) {
+            candidates.push(path.join(dir, "packages", "desktop", "resources"))
+            candidates.push(path.join(dir, "resources"))
+            dir = path.dirname(dir)
+          }
+        }
         try {
           const { fileURLToPath } = require("url") as typeof import("url")
           const here = path.dirname(fileURLToPath(import.meta.url))
@@ -826,11 +841,8 @@ const layer = Layer.effect(
         command: resolvedCmd,
         args: resolvedArgs,
         cwd,
-        // A stdio MCP server is a child process, and on Windows a console app
-        // spawned without this flashes a black console window for every server on
-        // every reconnect. The child's stdio is piped, so the window served no
-        // purpose; hiding it keeps the app from strobing while it starts up.
-        windowsHide: true,
+        // The SDK already passes `windowsHide: true` on win32 when it spawns the child,
+        // so the console window a stdio server would otherwise flash is handled there.
         env: {
           ...process.env,
           ...(cmd === "opencode" ? { BUN_BE_BUN: "1" } : {}),
@@ -1380,26 +1392,26 @@ const layer = Layer.effect(
       // connect failure.
       const redirectUri = effectiveRedirectUri ?? `http://127.0.0.1:${OAUTH_CALLBACK_PORT}${OAUTH_CALLBACK_PATH}`
       const verifier = randomUUID().replace(/-/g, "")
-      const challenge = yield* Effect.promise(() => Effect.runPromise(sha256Base64Url(verifier)))
+      const challenge = yield* Effect.promise(() => sha256Base64Url(verifier))
 
       // Discovery is skipped entirely when the endpoints were recorded for this server.
-// Fifteen vendors document their sign-in URL but serve no discovery document at all,
-// so insisting on discovery rejected apps that are perfectly reachable.
-const discovered =
-  oauthConfig?.authorizationUrl && oauthConfig?.tokenUrl
-    ? Effect.succeed({
-        endpoints: {
-          authorizationEndpoint: oauthConfig.authorizationUrl,
-          tokenEndpoint: oauthConfig.tokenUrl,
-          source: "configured" as const,
-        } as McpOAuthDiscovery.DiscoveryEndpoints,
-        error: undefined as string | undefined,
-      })
-    : // Both discovery and registration are Effects, so they are run as Effects.
-      // Wrapping one in Effect.tryPromise returned the Effect itself as a value —
-      // every downstream read then worked on a function object instead of endpoints,
-      // which is where "Unknown error: undefined" came from.
-      yield* McpOAuthDiscovery.discoverOAuthEndpoints(mcpConfig.url).pipe(
+      // Fifteen vendors document their sign-in URL but serve no discovery document at all,
+      // so insisting on discovery rejected apps that are perfectly reachable.
+      const discovered =
+        oauthConfig?.authorizationUrl && oauthConfig?.tokenUrl
+          ? yield* Effect.succeed({
+              endpoints: {
+                authorizationEndpoint: oauthConfig.authorizationUrl,
+                tokenEndpoint: oauthConfig.tokenUrl,
+                source: "configured" as const,
+              } as McpOAuthDiscovery.DiscoveryEndpoints,
+              error: undefined as string | undefined,
+            })
+          : // Both discovery and registration are Effects, so they are run as Effects.
+            // Wrapping one in Effect.tryPromise returned the Effect itself as a value —
+            // every downstream read then worked on a function object instead of endpoints,
+            // which is where "Unknown error: undefined" came from.
+            yield* McpOAuthDiscovery.discoverOAuthEndpoints(mcpConfig.url).pipe(
         Effect.map((endpoints) => ({
           endpoints,
           error: undefined as string | undefined,
@@ -1441,7 +1453,6 @@ const discovered =
       if (!clientId && discovered.endpoints.registrationEndpoint) {
         const registered = yield* McpOAuthDiscovery.registerClient(discovered.endpoints, {
           client_name: "ZYRAXON",
-          client_uri: "https://zyraxonai.lovable.app",
           redirect_uris: [redirectUri],
           grant_types: ["authorization_code", "refresh_token"],
           response_types: ["code"],
@@ -1488,9 +1499,9 @@ const discovered =
       }
 
       // Persist the registration so the next connect does not repeat it.
-      yield* Effect.promise(() =>
-        auth.set(mcpName, { clientInfo: { clientId, clientSecret, clientIdIssuedAt: Date.now() }, oauthState }, mcpConfig.url),
-      ).pipe(Effect.ignore)
+      yield* auth
+        .set(mcpName, { clientInfo: { clientId, clientSecret, clientIdIssuedAt: Date.now() }, oauthState }, mcpConfig.url)
+        .pipe(Effect.ignore)
       yield* auth.updateCodeVerifier(mcpName, verifier)
 
       const authorizationUrl = new URL(discovered.endpoints.authorizationEndpoint)
@@ -1578,14 +1589,16 @@ const discovered =
       const directory = yield* InstanceState.directory
 
       // The consent URL is known now, so the browser can open immediately. The
-      // transport is not brought up until the callback arrives.
-      return yield* Effect.tryPromise({
+      // transport is not brought up until the callback arrives. `createClient` is
+      // synchronous, so this is a plain `Effect.try` — not a promise wrapper, which
+      // previously treated the returned Effect object as the resolved value.
+      return yield* Effect.try({
         try: () => {
           const client = createClient(directory)
           void directory
           return { authorizationUrl: authorizationUrl.toString(), oauthState, client } satisfies AuthResult
         },
-        catch: (error) => error,
+        catch: (error) => (error instanceof Error ? error : new Error(String(error))),
       }).pipe(
         Effect.catch((error) => {
           // A remote server can refuse for any number of ordinary reasons: a bad
@@ -1646,10 +1659,6 @@ const discovered =
       const result = yield* startAuth(mcpName, openConsentPage)
       if (!result.authorizationUrl) {
         const client = "client" in result ? result.client : undefined
-        if ("error" in result) {
-          const _probe: null = result.error
-          void _probe
-        }
         // startAuth reports an unreachable endpoint by returning a client-less
         // result with the reason attached. Closing anything we managed to build and
         // answering with that reason is what lets the card show what actually went
@@ -1736,7 +1745,7 @@ const discovered =
             expiresAt: exchanged.tokens.expires_in ? Date.now() / 1000 + exchanged.tokens.expires_in : undefined,
             scope: exchanged.tokens.scope,
           },
-          mcpConfig.url,
+          mcpConfig.type === "remote" ? mcpConfig.url : undefined,
         )
       } else {
         const pending = pendingOAuthTransports.get(mcpName)

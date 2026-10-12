@@ -2600,30 +2600,6 @@ export type SessionBusyError = {
   message: string
 }
 
-export type StorageUsage = {
-  path: string
-  bytes: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
-  pages: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
-  freelistPages: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
-  pageSize: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
-  sessions: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
-  messages: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
-  parts: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
-}
-
-export type StoragePurge = {
-  sessions: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
-  messages: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
-  parts: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
-  bytesBefore: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
-  bytesAfter: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
-}
-
-export type StoragePurgeInput = {
-  sessionIDs?: Array<string>
-  olderThan?: string
-}
-
 export type EventTuiPromptAppend = {
   type: "tui.prompt.append"
   properties: {
@@ -2980,12 +2956,28 @@ export type ProjectCopyError = {
   }
 }
 
+export type StorageUsage = {
+  path: string
+  bytes: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  pages: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  freelistPages: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  pageSize: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  sessions: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  messages: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  parts: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+}
+
 export type StorageResult = {
   sessions: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
   messages: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
   parts: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
   bytesBefore: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
   bytesAfter: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+}
+
+export type StoragePurgeInput = {
+  sessionIDs?: Array<string>
+  olderThan?: string
 }
 
 export type EffectHttpApiErrorForbidden = {
@@ -8770,6 +8762,38 @@ export type McpDisconnectResponses = {
 
 export type McpDisconnectResponse = McpDisconnectResponses[keyof McpDisconnectResponses]
 
+export type McpOpenUrlData = {
+  body?: {
+    url: string
+  }
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/mcp/open-url"
+}
+
+export type McpOpenUrlErrors = {
+  /**
+   * BadRequest | InvalidRequestError
+   */
+  400: EffectHttpApiErrorBadRequest | InvalidRequestError
+}
+
+export type McpOpenUrlError = McpOpenUrlErrors[keyof McpOpenUrlErrors]
+
+export type McpOpenUrlResponses = {
+  /**
+   * URL opened in the machine's real browser
+   */
+  200: {
+    success: true
+  }
+}
+
+export type McpOpenUrlResponse = McpOpenUrlResponses[keyof McpOpenUrlResponses]
+
 export type ProjectListData = {
   body?: never
   path?: never
@@ -10545,90 +10569,6 @@ export type PartUpdateResponses = {
 }
 
 export type PartUpdateResponse = PartUpdateResponses[keyof PartUpdateResponses]
-
-export type StorageUsageData = {
-  body?: never
-  path?: never
-  query?: {
-    directory?: string
-    workspace?: string
-  }
-  url: "/storage"
-}
-
-export type StorageUsageErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError
-}
-
-export type StorageUsageError = StorageUsageErrors[keyof StorageUsageErrors]
-
-export type StorageUsageResponses = {
-  /**
-   * Get storage usage
-   */
-  200: StorageUsage
-}
-
-export type StorageUsageResponse = StorageUsageResponses[keyof StorageUsageResponses]
-
-export type StorageCompactData = {
-  body?: never
-  path?: never
-  query?: {
-    directory?: string
-    workspace?: string
-  }
-  url: "/storage/compact"
-}
-
-export type StorageCompactErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError
-}
-
-export type StorageCompactError = StorageCompactErrors[keyof StorageCompactErrors]
-
-export type StorageCompactResponses = {
-  /**
-   * Reclaim unused disk space
-   */
-  200: StoragePurge
-}
-
-export type StorageCompactResponse = StorageCompactResponses[keyof StorageCompactResponses]
-
-export type StoragePurgeData = {
-  body?: StoragePurgeInput
-  path?: never
-  query?: {
-    directory?: string
-    workspace?: string
-  }
-  url: "/storage/purge"
-}
-
-export type StoragePurgeErrors = {
-  /**
-   * BadRequest | InvalidRequestError
-   */
-  400: EffectHttpApiErrorBadRequest | InvalidRequestError
-}
-
-export type StoragePurgeError = StoragePurgeErrors[keyof StoragePurgeErrors]
-
-export type StoragePurgeResponses = {
-  /**
-   * Permanently delete stored sessions
-   */
-  200: StoragePurge
-}
-
-export type StoragePurgeResponse = StoragePurgeResponses[keyof StoragePurgeResponses]
 
 export type SyncStartData = {
   body?: never

@@ -22,7 +22,6 @@ import { SettingsRowV2 } from "./parts/row"
 import { SettingsCardV2 } from "./parts/layout"
 import { LayoutRetirementNotice, LayoutTransitionToggle } from "./interface-transition"
 import { SettingsAppearanceV2 } from "./appearance"
-import { SettingsNotificationsV2 } from "./notifications"
 import "./settings-v2.css"
 
 let demoSoundState = {
@@ -562,8 +561,6 @@ const UpdatesSection = () => (
         <GeneralSection />
 
         <SettingsAppearanceV2 />
-
-        <SettingsNotificationsV2 />
 
         <SoundsSection />
 

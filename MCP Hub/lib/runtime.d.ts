@@ -58,6 +58,17 @@ export interface McpClientLike {
                 name: string;
             }) => Promise<unknown>;
         };
+        /**
+         * Open a URL in the machine's real browser through the server.
+         *
+         * `window.open` cannot do this: in the packaged desktop app it opens an embedded
+         * webview instead of the browser that holds the account, and in a browser tab it is
+         * blocked as a popup. Handing the URL to the server reaches the same OS-level opener
+         * the Connect button already uses.
+         */
+        openUrl: (input: {
+            url: string;
+        }) => Promise<unknown>;
     };
     /**
      * The live tool ids, used only to count what a card contributed.

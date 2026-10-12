@@ -10,8 +10,18 @@ let embeddedUIPromise: Promise<Record<string, string> | null> | undefined
 
 export const UI_UPSTREAM = new URL("https://app.zyraxonai.lovable.app")
 
+// The app loads its display fonts from Google Fonts and embeds the Marketplace
+// hub in an iframe. Both are cross-origin, so a policy that only allowed `self`
+// silently dropped the fonts (every heading fell back to a system face) and
+// rendered the Marketplace panel as an empty frame. The two origins are named
+// explicitly rather than widening to `*`, so the policy still constrains
+// everything else to the app itself.
+const FONT_STYLE_ORIGINS = "https://fonts.googleapis.com"
+const FONT_FILE_ORIGINS = "https://fonts.gstatic.com"
+const FRAME_ORIGINS = "https://agent-ecosystem-hub.lovable.app"
+
 export const csp = (hash = "") =>
-  `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'${hash ? ` 'sha256-${hash}'` : ""}; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; media-src 'self' data:; connect-src * data:`
+  `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'${hash ? ` 'sha256-${hash}'` : ""}; style-src 'self' 'unsafe-inline' ${FONT_STYLE_ORIGINS}; img-src 'self' data: https:; font-src 'self' data: ${FONT_FILE_ORIGINS}; media-src 'self' data:; frame-src 'self' ${FRAME_ORIGINS}; connect-src * data:`
 export const DEFAULT_CSP = csp()
 
 export function themePreloadHash(body: string) {
