@@ -84,7 +84,7 @@ const encryptionEngine = () => (_encryption ??= new EncryptionEngine())
 export const xToolRegistry: XToolDef[] = [
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // AVIATION (24 tools)
+  // AVIATION (25 tools)
   // ═══════════════════════════════════════════════════════════════════════════
 
   {
@@ -982,7 +982,7 @@ export const xToolRegistry: XToolDef[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SPACE (24 tools)
+  // SPACE (22 tools)
   // ═══════════════════════════════════════════════════════════════════════════
 
   {
@@ -1294,7 +1294,7 @@ export const xToolRegistry: XToolDef[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // HELICOPTER (18 tools)
+  // HELICOPTER (19 tools)
   // ═══════════════════════════════════════════════════════════════════════════
 
   {
@@ -2287,7 +2287,7 @@ export const xToolRegistry: XToolDef[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SURVEY (15 tools)
+  // SURVEY (14 tools)
   // ═══════════════════════════════════════════════════════════════════════════
 
   {
@@ -3243,7 +3243,7 @@ export const xToolRegistry: XToolDef[] = [
   { id: "x_relax_add_problem", name: "Constraint Relax Add Problem", description: "Add problem for constraint relaxation", parameters: { id: { type: "string", required: true }, constraints: { type: "array", required: true }, objective: { type: "string", required: true } }, category: "creativity", execute: async (a) => { const c = new ConstraintRelaxer(); c.addProblem(a.id, a.constraints, a.objective); return { ok: true } } },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ULTRA X TOOLS — SINGULARITY TIER (15 tools)
+  // ULTRA X TOOLS — SINGULARITY TIER (34 tools)
   // ═══════════════════════════════════════════════════════════════════════════
 
 
@@ -3308,7 +3308,7 @@ export const xToolRegistry: XToolDef[] = [
   { id: "x_guardian_clear", name: "Code Guardian Clear", description: "Clear all pending errors", parameters: {}, category: "code-guardian", execute: async () => { const { CodeGuardianAIFeedback } = await import("./code-guardian"); new CodeGuardianAIFeedback().clear(); return { ok: true } } },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // EXTENDED MATHEMATICS TOOLS (15 tools)
+  // EXTENDED MATHEMATICS TOOLS (8 tools)
   // ═══════════════════════════════════════════════════════════════════════════
   { id: "x_math_matrix", name: "Matrix Operations", description: "Add, multiply, transpose, determinant, inverse, rank of matrices", parameters: { operation: { type: "string", description: "add|multiply|transpose|determinant|inverse|rank", required: true }, matrixA: { type: "string", description: "JSON 2D array", required: true }, matrixB: { type: "string", description: "JSON 2D array (for binary ops)" } }, category: "mathematics", execute: async (a) => { const A = new MatrixOperations(JSON.parse(a.matrixA)); if (a.operation === "determinant") return A.determinant(); if (a.operation === "inverse") return A.inverse(); if (a.operation === "rank") return A.rank(); if (a.operation === "transpose") return { ok: true, data: A.transpose() }; if (a.matrixB) { const B = new MatrixOperations(JSON.parse(a.matrixB)); if (a.operation === "add") return A.add(B); if (a.operation === "multiply") return A.multiply(B); } return { ok: false, error: "Invalid operation" }; } },
   { id: "x_math_derivative", name: "Derivative Calculator", description: "Numerical derivative of a function at a point", parameters: { functionStr: { type: "string", description: "JS function expression like 'x => x**2 + 3*x'", required: true }, x: { type: "number", required: true } }, category: "mathematics", execute: async (a) => { const f = new Function("return " + a.functionStr)(); return CalculusEngine.derivative(f, a.x); } },
@@ -3320,7 +3320,7 @@ export const xToolRegistry: XToolDef[] = [
   { id: "x_math_combinatorics", name: "Combinatorics Calculator", description: "Permutation, combination, Catalan number, partitions", parameters: { operation: { type: "string", description: "permutation|combination|catalan|partitions", required: true }, n: { type: "number", required: true }, r: { type: "number" } }, category: "mathematics", execute: async (a) => { const C = CombinatoricsEngine; switch (a.operation) { case "permutation": return C.permutation(a.n, a.r || 0); case "combination": return C.combination(a.n, a.r || 0); case "catalan": return C.catalanNumber(a.n); case "partitions": return C.partitions(a.n); default: return { ok: false, error: "Invalid operation" }; } } },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // EXTENDED PHYSICS TOOLS (12 tools)
+  // EXTENDED PHYSICS TOOLS (5 tools)
   // ═══════════════════════════════════════════════════════════════════════════
   { id: "x_physics_mechanics", name: "Classical Mechanics", description: "Force, energy, momentum, projectile motion, pendulum, friction", parameters: { operation: { type: "string", description: "force|kineticEnergy|potentialEnergy|momentum|projectile|pendulum|spring|work|power|friction", required: true }, params: { type: "string", description: "JSON params", required: true } }, category: "physics", execute: async (a) => { const p = JSON.parse(a.params); const M = ClassicalMechanics; switch (a.operation) { case "force": return M.force(p.mass, p.acceleration); case "kineticEnergy": return M.kineticEnergy(p.mass, p.velocity); case "potentialEnergy": return M.potentialEnergy(p.mass, p.g || 9.81, p.height); case "momentum": return M.momentum(p.mass, p.velocity); case "projectile": return M.projectileMotion(p.v0, p.angle, p.g); case "pendulum": return M.simplePendulum(p.length, p.g); case "spring": return M.springForce(p.k, p.displacement); case "work": return M.work(p.force, p.distance, p.angle); case "power": return M.power(p.force, p.velocity); case "friction": return M.friction(p.normalForce, p.coefficient); default: return { ok: false, error: "Invalid operation" }; } } },
   { id: "x_physics_thermo", name: "Thermodynamics Calculator", description: "Ideal gas law, heat transfer, entropy, Carnot efficiency, thermal expansion", parameters: { operation: { type: "string", description: "idealGas|heatTransfer|entropy|carnot|expansion|conduction|adiabatic", required: true }, params: { type: "string", required: true } }, category: "physics", execute: async (a) => { const p = JSON.parse(a.params); const T = Thermodynamics; switch (a.operation) { case "idealGas": return T.idealGasLaw(p.P || 0, p.V || 0, p.T || 0, p.n || 0); case "heatTransfer": return T.heatTransfer(p.m, p.c, p.deltaT); case "entropy": return T.entropyChange(p.Q, p.T); case "carnot": return T.carnotEfficiency(p.T_hot, p.T_cold); case "expansion": return T.thermalExpansion(p.length, p.alpha, p.deltaT); case "conduction": return T.heatConduction(p.k, p.A, p.dT, p.thickness); case "adiabatic": return T.adiabaticProcess(p.gamma, p.P1, p.V1, p.V2); default: return { ok: false }; } } },
@@ -3404,7 +3404,7 @@ export const xToolRegistry: XToolDef[] = [
   { id: "x_sec_ssl", name: "SSL Certificate Checker", description: "Check SSL certificate details for a domain", parameters: { domain: { type: "string", required: true } }, category: "security", execute: async (a) => SecurityTools.sslCheck(a.domain) },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // EXTENDED DAILY LIFE TOOLS (12 tools)
+  // EXTENDED DAILY LIFE TOOLS (13 tools)
   // ═══════════════════════════════════════════════════════════════════════════
   { id: "x_life_bmi", name: "BMI Calculator", description: "Calculate Body Mass Index and category", parameters: { weightKg: { type: "number", required: true }, heightM: { type: "number", required: true } }, category: "daily-life", execute: async (a) => DailyLifeTools.bmi(a.weightKg, a.heightM) },
   { id: "x_life_calories", name: "Calorie Needs Calculator", description: "Calculate BMR, TDEE, and recommended intake", parameters: { weight: { type: "number", description: "kg", required: true }, height: { type: "number", description: "cm", required: true }, age: { type: "number", required: true }, gender: { type: "string", description: "male|female", required: true }, activity: { type: "string", description: "sedentary|light|moderate|active|very_active", required: true } }, category: "daily-life", execute: async (a) => DailyLifeTools.calorieNeeds(a.weight, a.height, a.age, a.gender as any, a.activity) },

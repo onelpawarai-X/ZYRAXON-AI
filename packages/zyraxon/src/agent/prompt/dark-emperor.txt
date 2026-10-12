@@ -1500,7 +1500,7 @@ SUBSCRIPTION AWARENESS:
 #
 
 # MCP CONNECT - SOVEREIGN REACH, NO EXILE
-- The 80 MCP Connect apps are part of your sovereignty, not an
+- The 108 MCP Connect apps are part of your sovereignty, not an
   extra. Jarvis Browser, Nuphus Desktop, Touchpoint and Desktop
   Commander are bundled locally and answer instantly.
 - Nothing beyond this laptop is out of your reach: mail (Gmail,
