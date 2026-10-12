@@ -259,13 +259,7 @@ export const browserApps: AppEntry[] = [
       "Copy the Client ID shown in the General tab into the field here.",
       "Press Connect and approve the app in the browser that opens.",
     ], oauth: { authorizationUrl: "https://account.box.com/api/oauth2/authorize", tokenUrl: "https://api.box.com/oauth2/token" } },
-  { id: "dropbox", icon: "dropbox", iconDomain: "dropbox.com", name: "Dropbox", description: "Files and folders", category: "Storage", kind: "oauth", url: "https://mcp.dropbox.com/mcp", color: "#0061FF", consoleUrl: "https://www.dropbox.com/developers/apps", steps: [
-      "Open https://www.dropbox.com/developers/apps and press Create app.",
-      "Choose Scoped access and the Full Dropbox or App folder access you want, then name the app.",
-      "Open the app's Permissions tab and tick the file and account scopes you need, then press Submit.",
-      "Open the OAuth 2 section and add http://127.0.0.1:19876/mcp/oauth/callback as a Redirect URI.",
-      "Copy the App key as the Client ID and the App secret as the Client Secret into the two fields here, then press Connect.",
-    ], note: "Dropbox publishes a registration endpoint but refuses every self-registration with \"Only pre-registered MCP trusted partners are allowed\", so the client has to come from your own console.", oauth: { authorizationUrl: "https://www.dropbox.com/oauth2/authorize", tokenUrl: "https://api.dropboxapi.com/oauth2/token" } },
+  { id: "dropbox", icon: "dropbox", iconDomain: "dropbox.com", name: "Dropbox", description: "Files and folders", category: "Storage", kind: "oauth", url: "https://mcp.dropbox.com/mcp", color: "#0061FF", zeroSetup: true },
   { id: "render", iconDomain: "render.com", name: "Render", description: "Deploy web services and GPUs", category: "Hosting", kind: "oauth", url: "https://mcp.render.com/mcp", color: "#46E3B7", consoleUrl: "https://dashboard.render.com/", steps: [
       "Open https://dashboard.render.com and sign in.",
       "Open Settings → API Keys, then Create Key if you have none.",
