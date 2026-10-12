@@ -9,6 +9,7 @@ import { SettingsRowV2 } from "./parts/row"
 import "./settings-v2.css"
 
 const WEBSITE_URL = "https://zyraxonai.lovable.app"
+const GITHUB_URL = "https://github.com/onelpawarai-X/ZYRAXON-AI"
 
 export const SettingsAboutV2: Component = () => {
   const language = useLanguage()
@@ -26,6 +27,11 @@ export const SettingsAboutV2: Component = () => {
       </div>
 
       <div class="settings-v2-tab-body">
+        <div class="settings-v2-section">
+          <div class="settings-v2-section-title">{language.t("app.name.desktop")}</div>
+          <p class="settings-v2-hint">{language.t("settings.about.tagline")}</p>
+        </div>
+
         <div class="settings-v2-section">
           <SettingsListV2>
             <SettingsRowV2
@@ -52,14 +58,40 @@ export const SettingsAboutV2: Component = () => {
             </SettingsRowV2>
 
             <SettingsRowV2
-              title={language.t("settings.about.row.website.title")}
+              title={language.t("settings.about.row.copyright.title")}
+              description={language.t("settings.about.row.copyright.description")}
+            >
+              <span class="text-13-regular text-v2-text-text-muted">{language.t("settings.about.footer.copyright")}</span>
+            </SettingsRowV2>
+          </SettingsListV2>
+        </div>
+
+        <div class="settings-v2-section">
+          <div class="settings-v2-section-title">{language.t("settings.about.links.title")}</div>
+          <SettingsListV2>
+            <SettingsRowV2
+              title={language.t("settings.about.link.website")}
               description={language.t("settings.about.row.website.description")}
             >
               <Link class="settings-v2-link" href={WEBSITE_URL}>
                 zyraxonai.lovable.app
               </Link>
             </SettingsRowV2>
+
+            <SettingsRowV2
+              title={language.t("settings.about.link.github")}
+              description={language.t("settings.about.row.github.description")}
+            >
+              <Link class="settings-v2-link" href={GITHUB_URL}>
+                github.com/onelpawarai-X/ZYRAXON-AI
+              </Link>
+            </SettingsRowV2>
           </SettingsListV2>
+        </div>
+
+        <div class="settings-v2-section">
+          <div class="settings-v2-section-title">{language.t("settings.about.description.title")}</div>
+          <p class="settings-v2-hint">{language.t("settings.about.description")}</p>
         </div>
       </div>
     </>
