@@ -26,6 +26,7 @@ import { ensureDirectory } from "@zyraxon-ai/core/default-project"
 import { Reference } from "@zyraxon-ai/core/reference"
 import { MCP } from "@/mcp"
 import { PermissionV1 } from "@zyraxon-ai/core/v1/permission"
+import { subscriptionContext } from "@/subscription/canonical"
 
 export function provider(model: Provider.Model) {
   if (model.api.id.includes("muse-spark")) return [PROMPT_META]
@@ -46,6 +47,7 @@ export function provider(model: Provider.Model) {
 
 export interface Interface {
   readonly environment: (model: Provider.Model) => Effect.Effect<string[]>
+  readonly subscription: () => Effect.Effect<string>
   readonly skills: (agent: Agent.Info) => Effect.Effect<string | undefined>
   readonly mcp: (agent: Agent.Info, permission?: PermissionV1.Ruleset) => Effect.Effect<string | undefined>
 }
@@ -98,6 +100,10 @@ const layer = Layer.effect(
                 "</available_references>",
               ].join("\n"),
         ].filter((part): part is string => part !== undefined)
+      }),
+
+      subscription: Effect.fn("SystemPrompt.subscription")(function* () {
+        return subscriptionContext()
       }),
 
       skills: Effect.fn("SystemPrompt.skills")(function* (agent: Agent.Info) {

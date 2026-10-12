@@ -178,3 +178,46 @@ export function subscriptionFilePath(): string {
   return subscriptionPath()
 }
 
+const TIER_LABEL: Record<Tier, string> = {
+  free: "FREE",
+  pro: "PRO",
+  max: "MAX",
+  ultra: "ULTRA",
+}
+
+const TIER_UNLOCKED: Record<Tier, string> = {
+  free: "pro, max and ultra",
+  pro: "max and ultra",
+  max: "ultra",
+  ultra: "nothing",
+}
+
+// Every registered tool is visible on every tier; the tier only changes what may run.
+// This note is computed once per session build and injected into the system context so
+// the agent reads its own tier instead of spending a tool call on x_subscription_status.
+export function subscriptionContext(): string {
+  const tier = getCurrentTier()
+  const state = readSubState()
+  const usable = Object.values(TOOL_TIER_MAP).filter((required) => hasAccess(tier, required)).length
+  const total = Object.keys(TOOL_TIER_MAP).length
+  const expires =
+    state.expiresAt === null
+      ? "no expiry — permanent"
+      : new Date(state.expiresAt).toISOString()
+
+  return [
+    "<subscription>",
+    `  tier: ${tier} (${TIER_LABEL[tier]})`,
+    `  tools_visible: ${total} (the full catalog is always visible, on every tier)`,
+    `  tools_usable_now: ${usable}`,
+    `  locked_until: ${TIER_UNLOCKED[tier]}`,
+    `  expires: ${expires}`,
+    "  Every registered tool is injected on every tier. The tier only decides",
+    "  which of them may RUN. Never ask the user or call a tool to learn the",
+    "  tier — it is written here. When a request needs a locked tool, do the",
+    "  maximum work that is allowed and, in one warm line, name the tier that",
+    "  would finish it.",
+    "</subscription>",
+  ].join("\n")
+}
+
