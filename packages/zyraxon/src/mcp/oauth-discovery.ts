@@ -274,10 +274,10 @@ const challenge = Effect.fn("discovery.challenge")(function* (serverUrl: string)
     }),
   })
 
-  if (!response) return { status: 0, fields: {} } satisfies Challenge
+  if (!response) return { status: 0, fields: {} as Record<string, string> } satisfies Challenge
 
   const header = response.headers.get("www-authenticate")
-  if (!header) return { status: response.status, fields: {} } satisfies Challenge
+  if (!header) return { status: response.status, fields: {} as Record<string, string> } satisfies Challenge
 
   const fields = parseChallenge(header)
   // A URL the server states itself is fetched exactly as given, never rebuilt.
@@ -303,12 +303,17 @@ const challenge = Effect.fn("discovery.challenge")(function* (serverUrl: string)
  * well-known paths and from the server-as-its-own-issuer fallback. The log line a
  * failure prints was therefore naming the wrong step.
  */
-const resolveIssuer = Effect.fn("discovery.resolveIssuer")(function* (
+const resolveIssuer: (
+  issuer: string,
+  walk: Walk,
+  source: DiscoveryEndpoints["source"],
+  depth?: number,
+) => Effect.Effect<DiscoveryEndpoints | undefined, never, never> = Effect.fn("discovery.resolveIssuer")(function* (
   issuer: string,
   walk: Walk,
   source: DiscoveryEndpoints["source"],
   depth = 0,
-): Generator<never, DiscoveryEndpoints | undefined, never> {
+) {
   if (depth > 3) return undefined
 
   for (const candidate of issuerCandidates(issuer)) {
@@ -432,14 +437,16 @@ export const discoverOAuthEndpoints = Effect.fn("discovery.endpoints")(function*
   configured?: { authorizationUrl: string; tokenUrl: string },
 ) {
   return yield* walkForEndpoints(serverUrl, configured).pipe(
-    Effect.timeoutFail({
+    Effect.timeoutOrElse({
       duration: Duration.millis(DISCOVERY_BUDGET_MS),
-      onTimeout: () =>
-        new DiscoveryError({
-          message: `Finding the sign-in details for this app took longer than ${DISCOVERY_BUDGET_MS / 1000} seconds and was stopped.`,
-          stage: "challenge",
-          tried: [],
-        }),
+      orElse: () =>
+        Effect.fail(
+          new DiscoveryError({
+            message: `Finding the sign-in details for this app took longer than ${DISCOVERY_BUDGET_MS / 1000} seconds and was stopped.`,
+            stage: "challenge",
+            tried: [],
+          }),
+        ),
     }),
   )
 })

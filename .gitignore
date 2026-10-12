@@ -26,6 +26,11 @@ out/
 # --- Dependency installs (NOT project source) ---------------------------
 node_modules/
 
+# --- Runtime state kept inside the workspace (databases, caches, tmp) ----
+# The workspace-local data root the serve script points every XDG location
+# at. It is machine state, not project source, and it is large.
+.zyraxon-data/
+
 # ...except the vendored runtime assets the desktop app ships with.
 # Re-include the directory first, then its contents, because git cannot
 # descend into an excluded parent directory.

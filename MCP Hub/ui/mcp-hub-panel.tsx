@@ -6,7 +6,7 @@ import { For, Show, createEffect, createMemo, createSignal, onCleanup, onMount }
 import type { AppEntry } from "../catalog/seed"
 import { allSeedApps, appIcon, browserApps, categories, docsByApp } from "../catalog/seed"
 import { LANGUAGES, REDIRECT, catalogText, detectLanguage, guideFor, line } from "../catalog/guide"
-import { connectApp, describe, type ConnectionState, type McpRuntime } from "../lib/connect"
+import { connectApp, describe, toServerConfig, type ConnectionState, type McpRuntime } from "../lib/connect"
 import type { Resolution } from "../lib/resolve"
 import { searchRegistry, supportsZeroSetup, type RegistryServer } from "../lib/registry"
 
@@ -644,16 +644,45 @@ export function McpHubPanel(props: McpHubPanelProps) {
    * account is often already signed in somewhere other than the default browser, and
    * approving there still delivers the reply to ZYRAXON's loopback. Opening it is offered
    * right beside the link for the other case.
+   *
+   * The server has to know about the entry before it can sign in. `auth.start` reads the
+   * server from config, so an app that was never connected answered `MCP server not
+   * found` and the button produced no link at all. Resolving and writing the entry first
+   * is what makes Generate work for every app, not only the ones already connected.
    */
   const generateConsentUrl = async (app: AppEntry) => {
+    if (busy()) return
     setGenerating(app.id)
     setConsentUrl(null)
+    busyIds.add(app.id)
+    setBusy(app.id)
+    setBusySince(Date.now())
     try {
+      let target = app
+      if (!app.url && app.kind !== "local") {
+        const hit = await props.resolve(app)
+        if (!hit.url) return
+        target = { ...app, url: hit.url, zeroSetup: hit.server ? undefined : app.zeroSetup }
+        setResolved((prev) => ({ ...prev, [app.id]: hit.server?.name ?? hit.url! }))
+      }
+
+      const credentials = clientIds()[app.id]
+      const config = toServerConfig(target, undefined, credentials?.id?.trim(), credentials?.secret?.trim())
+      if (config.type === "local" || config.type === "remote") {
+        await props.runtime.addServer(app.id, config).catch(() => undefined)
+        // The entry is written and then probed, so the handshake reads it a moment
+        // later. Without this pause it asks for a server that is still being written.
+        await new Promise((resolve) => setTimeout(resolve, 400))
+      }
+
       const url = await props.runtime.startAuth(app.id)
       setConsentUrl(url || null)
     } catch {
       setConsentUrl(null)
     } finally {
+      busyIds.delete(app.id)
+      setBusy(null)
+      setBusySince(0)
       setGenerating(null)
     }
   }
@@ -1418,7 +1447,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
                       <button
                         type="button"
                         class="rounded-md border border-[var(--mcp-border)] px-2 py-1 text-[12px] hover:bg-white/5"
-                        onClick={() => window.open(url(), "_blank", "noopener")}
+                        onClick={() => void props.runtime.openUrl(url())}
                       >
                         Open link
                       </button>

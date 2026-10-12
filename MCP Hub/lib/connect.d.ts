@@ -88,6 +88,14 @@ export interface McpRuntime {
      * credential we hold was rejected", and only the first is worth opening a browser for.
      */
     hasTokens: (name: string) => Promise<boolean>;
+    /**
+     * Open a URL in the machine's real browser.
+     *
+     * The panel cannot do this itself: `window.open` opens an embedded webview in the
+     * packaged desktop app and is popup-blocked in a plain tab. The server routes it to the
+     * same OS-level opener the Connect button uses, so it works on Linux, macOS and Windows.
+     */
+    openUrl: (url: string) => Promise<void>;
 }
 /** Build the ZYRAXON config entry for an app. */
 export declare function toServerConfig(app: AppEntry, token?: string, clientId?: string, clientSecret?: string): McpLocalConfig | McpRemoteConfig | Record<string, never>;

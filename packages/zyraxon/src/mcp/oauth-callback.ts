@@ -243,7 +243,7 @@ export function waitForCallback(oauthState: string, mcpName?: string): Promise<s
       }
     }, CALLBACK_TIMEOUT_MS)
 
-    pendingAuths.set(oauthState, { resolve, reject, timeout })
+    pendingAuths.set(oauthState, { resolve, reject, timeout, oauthState })
   })
 }
 

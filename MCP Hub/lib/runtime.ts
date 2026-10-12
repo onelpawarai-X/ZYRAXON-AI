@@ -36,6 +36,15 @@ export interface McpClientLike {
       /** forget stored tokens and client registration for a server */
       remove: (input: { name: string }) => Promise<unknown>
     }
+    /**
+     * Open a URL in the machine's real browser through the server.
+     *
+     * `window.open` cannot do this: in the packaged desktop app it opens an embedded
+     * webview instead of the browser that holds the account, and in a browser tab it is
+     * blocked as a popup. Handing the URL to the server reaches the same OS-level opener
+     * the Connect button already uses.
+     */
+    openUrl: (input: { url: string }) => Promise<unknown>
   }
   /**
    * The live tool ids, used only to count what a card contributed.
@@ -201,6 +210,18 @@ export function bindRuntime(host: HostBindings): McpRuntime {
     setBrowserPath: async (path) => {
       // A deep merge: writes just this key, leaves every other setting alone.
       await host.updateConfig({ mcp_browser: path.trim() })
+    },
+
+    /**
+     * Open a URL in the machine's real browser, through the server.
+     *
+     * The Details panel used `window.open`, which the packaged desktop app turns into an
+     * embedded webview and a plain browser tab blocks as a popup. The server's `mcp.openUrl`
+     * reaches the same OS-level opener as the Connect button, so a generated sign-in link
+     * opens where the account actually lives on every platform.
+     */
+    openUrl: async (url) => {
+      await host.client.mcp.openUrl({ url })
     },
   }
 }

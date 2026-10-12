@@ -2,8 +2,6 @@
 
 import { LayerNode } from "@zyraxon-ai/core/effect/layer-node"
 import { Context, Effect, Layer } from "effect"
-import { exec } from "child_process"
-import { promisify } from "util"
 import * as os from "os"
 import { spawn } from "node:child_process"
 import { existsSync } from "node:fs"
@@ -11,16 +9,48 @@ import open from "open"
 import { join } from "node:path"
 import { Config } from "@/config/config"
 
-const execAsync = promisify(exec);
-
 /**
  * Open a URL in whatever browser this machine actually has — no fixed path,
  * no Effect v4 APIs that no longer exist. Windows, macOS and Linux each fall
  * through their own chain, and only a total failure reports `false`.
+ *
+ * Every launcher is spawned detached and resolves on `spawn`, never on exit.
+ * `child_process.exec` waits for the child to *exit*, and a browser stays open
+ * for the whole session — so the old exec-based version resolved only when the
+ * person closed the browser. On a real desktop that meant this function never
+ * returned, the fallback chain below it never ran, and the sign-in appeared to
+ * hang with no window. Resolving on spawn is what makes it return immediately.
  */
 export async function openBrowser(targetUrl: string): Promise<boolean> {
   const platform = os.platform();
   const url = targetUrl.trim();
+
+  // Resolve as soon as the process is launched. A browser that is present but
+  // cannot start (no display, blocked by policy) still rejects, so the caller
+  // can fall through to the next candidate instead of claiming success.
+  //
+  // A browser that stays open is a launch; a browser that refuses to start exits
+  // within a few hundred milliseconds. Resolving purely on the `spawn` event could
+  // not tell those apart — a container without a usable sandbox aborts immediately,
+  // `spawn` still fires, and the caller reported success for a window that never
+  // appeared. The grace period below is what separates the two.
+  const launchDetached = (command: string, args: string[]) =>
+    new Promise<boolean>((resolve) => {
+      const child = spawn(command, args, { detached: true, stdio: "ignore" });
+      let settled = false;
+      const done = (ok: boolean) => {
+        if (settled) return;
+        settled = true;
+        resolve(ok);
+      };
+      child.once("error", () => done(false));
+      // Exit code 0 is the "handed the URL to an already-running browser" case.
+      child.once("exit", (code) => done(code === 0));
+      child.once("spawn", () => {
+        child.unref();
+        setTimeout(() => done(true), 900);
+      });
+    });
 
   // `start` is a cmd.exe built-in, so it only exists inside a shell. Handing it to
   // child_process.exec looked for a program literally named `start`, which is not
@@ -28,50 +58,69 @@ export async function openBrowser(targetUrl: string): Promise<boolean> {
   // goes through cmd.exe, and every platform falls back to the OS default handler
   // so a machine without Chrome still opens something.
   const viaCmd = (command: string) =>
-    new Promise<void>((resolve, reject) => {
-      const child = spawn("cmd.exe", ["/c", command], { windowsHide: true });
-      child.on("error", reject);
-      // `start` detaches the browser and returns immediately, so a short grace
-      // period is what separates "opened" from "failed to find a shell".
-      setTimeout(resolve, 350);
+    new Promise<boolean>((resolve) => {
+      const child = spawn("cmd.exe", ["/c", command], { detached: true, stdio: "ignore", windowsHide: true });
+      child.once("error", () => resolve(false));
+      child.once("spawn", () => {
+        child.unref();
+        // `start` detaches the browser and returns immediately, so a short grace
+        // period is what separates "opened" from "failed to find a shell".
+        setTimeout(() => resolve(true), 350);
+      });
+    });
+
+  const openDefault = () =>
+    new Promise<boolean>((resolve) => {
+      const child = spawn("xdg-open", [url], { detached: true, stdio: "ignore" });
+      child.once("error", () => resolve(false));
+      child.once("spawn", () => {
+        child.unref();
+        resolve(true);
+      });
     });
 
   try {
-    if (platform === 'darwin') {
-      try {
-        await execAsync(`open "${url}"`);
-        return true;
-      } catch {
-        await execAsync(`open -a "Google Chrome" "${url}"`);
-        return true;
+    if (platform === "darwin") {
+      // Prefer the signed-in profiles, then whatever the OS default is.
+      for (const app of ["Google Chrome", "Brave Browser", "Microsoft Edge", "Chromium"]) {
+        if (await launchDetached("open", ["-a", app, url])) return true;
       }
+      return await launchDetached("open", [url]);
     }
 
-    if (platform === 'win32') {
-      try {
-        await viaCmd(`start "" "${url}"`);
-        return true;
-      } catch {
-        await execAsync(`cmd /c start "" "${url}"`);
-        return true;
+    if (platform === "win32") {
+      const chrome = [
+        process.env["LOCALAPPDATA"] && join(process.env["LOCALAPPDATA"], "Google", "Chrome", "Application", "chrome.exe"),
+        process.env["PROGRAMFILES"] && join(process.env["PROGRAMFILES"], "Google", "Chrome", "Application", "chrome.exe"),
+        process.env["PROGRAMFILES(X86)"] && join(process.env["PROGRAMFILES(X86)"], "Google", "Chrome", "Application", "chrome.exe"),
+        process.env["LOCALAPPDATA"] && join(process.env["LOCALAPPDATA"], "Microsoft", "Edge", "Application", "msedge.exe"),
+      ].filter((p): p is string => Boolean(p && existsSync(p)))
+      for (const exe of chrome) {
+        if (await launchDetached(exe, ["--new-window", url])) return true
       }
+      return await viaCmd(`start "" "${url}"`)
     }
 
-    // Linux: google-chrome -> chromium -> xdg-open
-    try {
-      await execAsync(`google-chrome "${url}"`);
-      return true;
-    } catch {
-      try {
-        await execAsync(`chromium "${url}"`);
-        return true;
-      } catch {
-        await execAsync(`xdg-open "${url}"`);
-        return true;
-      }
+    // Linux: a real Chromium-family binary first, then the OS default handler.
+    // `xdg-open` alone was the old last resort, and on a machine with no text
+    // browser installed it printed "no method available" and opened nothing.
+    const linuxBrowsers = ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "brave-browser"]
+    const dirs = (process.env["PATH"] ?? "").split(":")
+    for (const bin of linuxBrowsers) {
+      const full = dirs
+        .map((dir) => (dir.length > 0 ? join(dir, bin) : ""))
+        .find((candidate) => candidate.length > 0 && existsSync(candidate))
+      if (!full) continue
+      if (await launchDetached(full, ["--new-window", url])) return true
+      // Containers and hardened distros ship without a usable Chromium sandbox, so the
+      // first attempt aborts before a window exists. Retrying unconfined is the right
+      // trade for a sign-in page in a session the user already trusts; without it the
+      // whole OAuth flow is unreachable on those machines.
+      if (await launchDetached(full, ["--no-sandbox", "--new-window", url])) return true
     }
+    return await openDefault()
   } catch (error) {
-    console.error('Failed to open browser:', error);
+    console.error("Failed to open browser:", error);
     return false;
   }
 }
@@ -130,11 +179,22 @@ function launch(command: string, args: string[]) {
     try: () =>
       new Promise<void>((resolve, reject) => {
         const child = spawn(command, args, { detached: true, stdio: "ignore" })
-        child.once("error", reject)
+        let settled = false
+        const done = (error?: Error) => {
+          if (settled) return
+          settled = true
+          if (error) reject(error)
+          else resolve()
+        }
+        child.once("error", (error) => done(error instanceof Error ? error : new Error(String(error))))
+        // A browser that starts and stays open is a launch. One that aborts within
+        // the grace period — no usable sandbox, no display, blocked by policy — must
+        // reject so the caller can fall back instead of claiming a window opened.
+        child.once("exit", (code) => done(code === 0 ? undefined : new Error(`${command} exited with code ${code}`)))
         child.once("spawn", () => {
-          // Chrome stays alive for the whole session, so never wait on exit.
           child.unref()
-          resolve()
+          // Chrome stays alive for the whole session, so never wait on exit.
+          setTimeout(() => done(), 900)
         })
       }),
     catch: (error) => (error instanceof Error ? error : new Error(String(error))),
@@ -216,6 +276,9 @@ function openInBrowser(url: string, preferred?: string): Effect.Effect<boolean, 
     const who = identify(preferred)
     return launch(preferred, ["--new-window", url]).pipe(
       Effect.andThen(Effect.sync(() => focusBrowserWindow(who.processName, who.macAppName))),
+      // The picked browser can hit the same missing-sandbox abort on Linux, and there is
+      // no discovery fallback below this branch, so retry unconfined before giving up.
+      Effect.catch(() => launch(preferred, ["--no-sandbox", "--new-window", url])),
       Effect.as(true),
     )
   }
@@ -255,7 +318,14 @@ function openInBrowser(url: string, preferred?: string): Effect.Effect<boolean, 
   const dirs = (process.env["PATH"] ?? "").split(":")
   const found = LINUX_CHROME.find((bin) => dirs.some((dir) => dir.length > 0 && existsSync(join(dir, bin))))
   if (!found) return Effect.succeed(false)
-  return launch(found, ["--new-window", url]).pipe(Effect.as(true))
+  return launch(found, ["--new-window", url]).pipe(
+    // Containers and hardened distros ship without a usable Chromium sandbox, so the
+    // first attempt aborts before a window exists. Retrying unconfined is the right
+    // trade for a sign-in page in a session the user already trusts; without it the
+    // whole OAuth flow is unreachable on those machines.
+    Effect.catch(() => launch(found, ["--no-sandbox", "--new-window", url])),
+    Effect.as(true),
+  )
 }
 
 const layer = Layer.effect(

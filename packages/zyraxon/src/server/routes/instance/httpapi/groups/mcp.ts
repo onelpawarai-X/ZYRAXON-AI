@@ -29,6 +29,12 @@ export const HasTokensResponse = Schema.Struct({
 export const AuthRemoveResponse = Schema.Struct({
   success: Schema.Literal(true),
 })
+export const OpenUrlPayload = Schema.Struct({
+  url: Schema.String,
+})
+export const OpenUrlResponse = Schema.Struct({
+  success: Schema.Literal(true),
+})
 export class UnsupportedOAuthError extends Schema.ErrorClass<UnsupportedOAuthError>("McpUnsupportedOAuthError")(
   { error: Schema.String },
   { httpApiStatus: 400 },
@@ -42,6 +48,7 @@ export const McpPaths = {
   authHasTokens: "/mcp/:name/auth/has-tokens",
   connect: "/mcp/:name/connect",
   disconnect: "/mcp/:name/disconnect",
+  openUrl: "/mcp/open-url",
 } as const
 
 export const McpApi = HttpApi.make("mcp")
@@ -153,6 +160,19 @@ export const McpApi = HttpApi.make("mcp")
           OpenApi.annotations({
             identifier: "mcp.disconnect",
             description: "Disconnect an MCP server.",
+          }),
+        ),
+        HttpApiEndpoint.post("openUrl", McpPaths.openUrl, {
+          query: WorkspaceRoutingQuery,
+          payload: OpenUrlPayload,
+          success: described(OpenUrlResponse, "URL opened in the machine's real browser"),
+          error: HttpApiError.BadRequest,
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "mcp.openUrl",
+            summary: "Open a URL in the real browser",
+            description:
+              "Open a URL in the machine's real browser rather than an embedded webview. Used by the MCP Hub so a generated sign-in link can be approved in the browser that already holds the account.",
           }),
         ),
       )

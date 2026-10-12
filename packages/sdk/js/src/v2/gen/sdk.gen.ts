@@ -110,6 +110,8 @@ import type {
   McpDisconnectErrors,
   McpDisconnectResponses,
   McpLocalConfig,
+  McpOpenUrlErrors,
+  McpOpenUrlResponses,
   McpRemoteConfig,
   McpStatusErrors,
   McpStatusResponses,
@@ -225,13 +227,7 @@ import type {
   SessionUnshareResponses,
   SessionUpdateErrors,
   SessionUpdateResponses,
-  StorageCompactErrors,
-  StorageCompactResponses,
-  StoragePurgeErrors,
   StoragePurgeInput,
-  StoragePurgeResponses,
-  StorageUsageErrors,
-  StorageUsageResponses,
   SubtaskPartInput,
   SyncHistoryListErrors,
   SyncHistoryListResponses,
@@ -2568,6 +2564,43 @@ export class Mcp extends HeyApiClient {
     })
   }
 
+  /**
+   * Open a URL in the real browser
+   *
+   * Open a URL in the machine's real browser rather than an embedded webview. Used by the MCP Hub so a generated sign-in link can be approved in the browser that already holds the account.
+   */
+  public openUrl<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+      url?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "url" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<McpOpenUrlResponses, McpOpenUrlErrors, ThrowOnError>({
+      url: "/mcp/open-url",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+
   private _auth?: Auth2
   get auth(): Auth2 {
     return (this._auth ??= new Auth2({ client: this.client }))
@@ -4444,105 +4477,6 @@ export class Part extends HeyApiClient {
     )
     return (options?.client ?? this.client).patch<PartUpdateResponses, PartUpdateErrors, ThrowOnError>({
       url: "/session/{sessionID}/message/{messageID}/part/{partID}",
-      ...options,
-      ...params,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-        ...params.headers,
-      },
-    })
-  }
-}
-
-export class Storage extends HeyApiClient {
-  /**
-   * Get storage usage
-   *
-   * Report where the database lives, how large it is on disk, how many pages are on the freelist, and how many sessions, messages and parts it holds.
-   */
-  public usage<ThrowOnError extends boolean = false>(
-    parameters?: {
-      directory?: string
-      workspace?: string
-    },
-    options?: Options<never, ThrowOnError>,
-  ) {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "query", key: "directory" },
-            { in: "query", key: "workspace" },
-          ],
-        },
-      ],
-    )
-    return (options?.client ?? this.client).get<StorageUsageResponses, StorageUsageErrors, ThrowOnError>({
-      url: "/storage",
-      ...options,
-      ...params,
-    })
-  }
-
-  /**
-   * Reclaim unused disk space
-   *
-   * Checkpoint the write-ahead log, run incremental vacuum so freed pages go back to the filesystem, then optimise. Reports the before and after size.
-   */
-  public compact<ThrowOnError extends boolean = false>(
-    parameters?: {
-      directory?: string
-      workspace?: string
-    },
-    options?: Options<never, ThrowOnError>,
-  ) {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "query", key: "directory" },
-            { in: "query", key: "workspace" },
-          ],
-        },
-      ],
-    )
-    return (options?.client ?? this.client).post<StorageCompactResponses, StorageCompactErrors, ThrowOnError>({
-      url: "/storage/compact",
-      ...options,
-      ...params,
-    })
-  }
-
-  /**
-   * Permanently delete stored sessions
-   *
-   * Delete sessions by id, or every session older than a timestamp. Parts and messages go with them, and the freed pages are handed back to the filesystem in the same call.
-   */
-  public purge<ThrowOnError extends boolean = false>(
-    parameters?: {
-      directory?: string
-      workspace?: string
-      storagePurgeInput?: StoragePurgeInput
-    },
-    options?: Options<never, ThrowOnError>,
-  ) {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "query", key: "directory" },
-            { in: "query", key: "workspace" },
-            { key: "storagePurgeInput", map: "body" },
-          ],
-        },
-      ],
-    )
-    return (options?.client ?? this.client).post<StoragePurgeResponses, StoragePurgeErrors, ThrowOnError>({
-      url: "/storage/purge",
       ...options,
       ...params,
       headers: {
@@ -7137,7 +7071,7 @@ export class ProjectCopy2 extends HeyApiClient {
   }
 }
 
-export class Storage2 extends HeyApiClient {
+export class Storage extends HeyApiClient {
   /**
    * Get storage usage
    *
@@ -7307,9 +7241,9 @@ export class V2 extends HeyApiClient {
     return (this._projectCopy ??= new ProjectCopy2({ client: this.client }))
   }
 
-  private _storage?: Storage2
-  get storage(): Storage2 {
-    return (this._storage ??= new Storage2({ client: this.client }))
+  private _storage?: Storage
+  get storage(): Storage {
+    return (this._storage ??= new Storage({ client: this.client }))
   }
 }
 
@@ -7439,11 +7373,6 @@ export class ZyraxonClient extends HeyApiClient {
   private _part?: Part
   get part(): Part {
     return (this._part ??= new Part({ client: this.client }))
-  }
-
-  private _storage?: Storage
-  get storage(): Storage {
-    return (this._storage ??= new Storage({ client: this.client }))
   }
 
   private _sync?: Sync

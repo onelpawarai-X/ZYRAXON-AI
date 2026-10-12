@@ -5,7 +5,7 @@ import { Cause, Effect, Schema } from "effect"
 import { HttpApiBuilder, HttpApiError } from "effect/unstable/httpapi"
 import { InstanceHttpApi } from "../api"
 import { McpServerNotFoundError } from "../errors"
-import { AddPayload, AuthCallbackPayload, StatusMap, UnsupportedOAuthError } from "../groups/mcp"
+import { AddPayload, AuthCallbackPayload, OpenUrlPayload, StatusMap, UnsupportedOAuthError } from "../groups/mcp"
 
 /**
  * A reason a person can read.
@@ -197,6 +197,22 @@ export const mcpHandlers = HttpApiBuilder.group(InstanceHttpApi, "mcp", (handler
       return true
     })
 
+    /**
+     * Open a URL in the machine's real browser.
+     *
+     * The panel used `window.open`, which in the packaged desktop app opens an embedded
+     * webview rather than the browser that already holds the account, and in a plain
+     * browser tab is blocked as a popup. Handing the URL to the server makes the OS open
+     * it through the same `McpBrowser` path the Connect button already uses, so Generate
+     * and Open link behave the same on Linux, macOS and Windows.
+     */
+    const openUrl = Effect.fn("McpHttpApi.openUrl")(function* (ctx: { payload: typeof OpenUrlPayload.Type }) {
+      yield* mcp
+        .openUrl(ctx.payload.url)
+        .pipe(Effect.mapError((error) => new HttpApiError.BadRequest({})))
+      return { success: true as const }
+    })
+
     return handlers
       .handle("status", status)
       .handle("add", add)
@@ -207,5 +223,6 @@ export const mcpHandlers = HttpApiBuilder.group(InstanceHttpApi, "mcp", (handler
       .handle("authRemove", authRemove)
       .handle("connect", connect)
       .handle("disconnect", disconnect)
+      .handle("openUrl", openUrl)
   }),
 )
