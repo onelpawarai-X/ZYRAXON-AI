@@ -1410,16 +1410,18 @@ const layer = Layer.effect(
             yield* plugin.trigger("experimental.chat.messages.transform", {}, { messages: msgs })
 
             const _tSysPrompt = Date.now()
-            const [skills, env, instructions, mcpInstructions, modelMsgs] = yield* Effect.all([
+            const [skills, env, instructions, mcpInstructions, subscription, modelMsgs] = yield* Effect.all([
               sys.skills(agent),
               sys.environment(model),
               instruction.system().pipe(Effect.orDie),
               sys.mcp(agent, session.permission),
+              sys.subscription(),
               MessageV2.toModelMessagesEffect(msgs, model),
             ])
             yield* Effect.logInfo("loop_timing", { "session.id": sessionID, step, op: "system_prompt_all", ms: Date.now() - _tSysPrompt })
             const system = [
               ...env,
+              subscription,
               ...instructions,
               ...(mcpInstructions ? [mcpInstructions] : []),
               ...(skills ? [skills] : []),
