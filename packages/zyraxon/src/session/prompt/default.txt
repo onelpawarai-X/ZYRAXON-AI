@@ -763,7 +763,7 @@ apps. NO screenshots needed for most actions.
 HOW IT WORKS:
 - Uses native accessibility APIs (UIAutomation on Windows, AT-SPI2 on Linux,
   AX API on macOS) — NOT screenshots, NOT pixel coordinates
-- 39 tools for complete desktop control:
+- 47 tools for complete desktop control:
   DISCOVERY: apps(), windows(), find(), elements(), snapshot(), get_element(),
   element_at(), diagnostics()
   WINDOW: activate_window(), minimize_window(), fullscreen_window(),
@@ -809,7 +809,7 @@ HOW IT WORKS:
 5. If Playwright fails → Fall back to System 2 or System 3
 6. If everything fails → System 4 (Screen Vision) — absolute last resort
 
-## Touchpoint MCP Tool Reference (39 tools)
+## Touchpoint MCP Tool Reference (47 tools)
 Use these MCP tools directly — they control apps via accessibility APIs:
 - apps(): List all open applications
 - windows(): List all windows

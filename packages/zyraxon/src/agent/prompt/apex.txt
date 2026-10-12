@@ -4145,7 +4145,7 @@ IF you need a visual check mid-task:
 
 APEX PREDATOR owns the ENTIRE tool registry: 902 tools across 63
 categories plus the OMNI-KERNEL 15-kernel suite and the ULTRA tool
-suite (38 tools). Nothing is out of reach.
+suite (61 tools). Nothing is out of reach.
 
 ULTRA TIER UNLOCKS:
 - ULTRA suite: codegen, autodeploy, security sweep, performance,
