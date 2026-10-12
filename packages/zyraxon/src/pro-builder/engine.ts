@@ -127,6 +127,12 @@ export interface PreviewState {
   url: string | null
   siteName: string | null
   siteId: string | null
+  /**
+   * Set when the agent mirrors a running application into the panel. The desktop
+   * main process watches this file and forwards the value to the renderer, so an
+   * `x_preview_attach_window` call shows the window without a manual click.
+   */
+  attachedWindow?: { id: string; name: string } | null
   timestamp: string
 }
 
@@ -134,6 +140,7 @@ const EMPTY_PREVIEW: PreviewState = {
   url: null,
   siteName: null,
   siteId: null,
+  attachedWindow: null,
   timestamp: new Date().toISOString(),
 }
 

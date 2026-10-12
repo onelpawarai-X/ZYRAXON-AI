@@ -70,6 +70,13 @@ export type PreviewState = {
   url: string | null
   siteName: string | null
   siteId: string | null
+  /**
+   * The running application the agent asked the panel to mirror, if any. The main
+   * process watches the shared preview-state file and forwards this so a tool call
+   * (`x_preview_attach_window`) puts the window on the user's screen the same way a
+   * click on the panel does, and `x_preview_detach_window` clears it again.
+   */
+  attachedWindow?: { id: string; name: string } | null
   timestamp: string
 }
 

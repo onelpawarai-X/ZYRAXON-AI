@@ -252,12 +252,13 @@ declare global {
       deepLinks?: string[]
     }
     api?: {
-      getPreviewState?: () => Promise<{ url: string | null; siteName: string | null; siteId: string | null; timestamp: string }>
+      getPreviewState?: () => Promise<{ url: string | null; siteName: string | null; siteId: string | null; attachedWindow?: { id: string; name: string } | null; timestamp: string }>
       listPreviewSources?: () => Promise<
         Array<{ id: string; name: string; appIcon: string | null; thumbnail: string | null }>
       >
       openPreviewTarget?: (target: string) => Promise<boolean>
-      onSitePreviewUpdate?: (cb: (state: { url: string | null; siteName: string | null; siteId: string | null; timestamp: string }) => void) => () => void
+      onSitePreviewUpdate?: (cb: (state: { url: string | null; siteName: string | null; siteId: string | null; attachedWindow?: { id: string; name: string } | null; timestamp: string }) => void) => () => void
+      setPreviewState?: (state: { url: string | null; siteName: string | null; siteId: string | null; attachedWindow?: { id: string; name: string } | null; timestamp: string }) => Promise<void>
       openLink?: (url: string) => void
       setTitlebar?: (theme: { mode: "light" | "dark"; scheme?: "system" | "light" | "dark" }) => Promise<void>
       exportDebugLogs?: () => Promise<string>

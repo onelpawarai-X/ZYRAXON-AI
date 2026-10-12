@@ -15,10 +15,11 @@
  * window only mirrors it, and detaching stops immediately.
  */
 
-import { createSignal, onCleanup, onMount, Show, For } from "solid-js"
+import { createEffect, createSignal, onCleanup, onMount, Show, For } from "solid-js"
 import { IconButtonV2 } from "@zyraxon-ai/ui/v2/icon-button-v2"
 import { Icon as IconV2 } from "@zyraxon-ai/ui/v2/icon"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
+import { setPreviewActiveState, getAttachedWindow, setAttachedWindowState } from "./preview-state"
 
 type DeviceMode = "desktop" | "tablet" | "mobile"
 
@@ -26,6 +27,7 @@ type PreviewState = {
   url: string | null
   siteName: string | null
   siteId: string | null
+  attachedWindow?: { id: string; name: string } | null
   timestamp: string
 }
 
@@ -80,7 +82,7 @@ export function SitePreview() {
     }
   }
 
-  const attach = async (source: CaptureSource) => {
+  const attach = async (source: CaptureSource, mirror = true) => {
     stopStream()
     setStreamError(null)
     try {
@@ -97,6 +99,9 @@ export function SitePreview() {
       setAttached(source)
       setMode("window")
       setPicking(false)
+      // Mirror the choice into the shared signal so the agent and the panel agree on
+      // what is attached, whichever side started it.
+      if (mirror) setAttachedWindowState({ id: source.id, name: source.name })
       queueMicrotask(() => {
         if (videoRef) {
           videoRef.srcObject = next
@@ -112,20 +117,46 @@ export function SitePreview() {
     stopStream()
     setAttached(null)
     setMode("url")
+    // Clearing the shared signal is what also clears the file on the agent side, so the
+    // panel is not left holding a window the agent already let go of.
+    setAttachedWindowState(null)
+    void window.api?.setPreviewState?.({
+      ...preview(),
+      attachedWindow: null,
+      timestamp: new Date().toISOString(),
+    })
   }
+
+  // The agent drives this panel: x_preview_attach_window writes the window it wants
+  // mirrored to the shared state and x_preview_detach_window clears it. Reacting to that
+  // signal here is what makes a tool call show the app on screen without a manual click.
+  // Same signal on Windows, macOS and Linux.
+  createEffect(() => {
+    const want = getAttachedWindow()()
+    const current = attached()
+    if (!want) return
+    if (current?.id === want.id) return
+    setPreviewActiveState(true)
+    void attach({ id: want.id, name: want.name, appIcon: null, thumbnail: null }, false)
+  })
 
   onMount(() => {
     // Subscribe before reading the current state so an update published while the read is
     // in flight is still delivered. onCleanup has to run in this synchronous scope: after an
     // await there is no owner left to attach it to, and Solid's onCleanup silently drops it,
     // which leaks one IPC listener every time the panel is mounted.
-    const unsubscribe = window.api?.onSitePreviewUpdate?.((state) => setPreview(state))
+    const unsubscribe = window.api?.onSitePreviewUpdate?.((state) => {
+      setPreview(state)
+      setAttachedWindowState(state.attachedWindow ?? null)
+    })
     if (unsubscribe) onCleanup(unsubscribe)
 
     void (async () => {
       if (window.api?.getPreviewState) {
         try {
-          setPreview(await window.api.getPreviewState())
+          const state = await window.api.getPreviewState()
+          setPreview(state)
+          setAttachedWindowState(state.attachedWindow ?? null)
         } catch {}
       }
       await loadSources()
