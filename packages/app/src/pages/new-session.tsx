@@ -18,6 +18,7 @@ import {
 } from "@/components/prompt-project-selector"
 import { useComments } from "@/context/comments"
 import { usePrompt } from "@/context/prompt"
+import { consumeDailyTaskAutoSubmit } from "@/utils/daily-task"
 import { useSDK } from "@/context/sdk"
 import { useSync } from "@/context/sync"
 import { useServerSync } from "@/context/server-sync"
@@ -143,6 +144,13 @@ export default function NewSessionPage() {
   createEffect(() => {
     if (!prompt.ready()) return
     promptInputV2Controller.restoreFocus()
+  })
+
+  createEffect(() => {
+    if (!prompt.ready()) return
+    if (!consumeDailyTaskAutoSubmit()) return
+    // Allow the controller to observe the seeded prompt before submitting.
+    untrack(() => setTimeout(() => promptInputV2Controller.submit(), 200))
   })
 
   const ready = Promise.resolve()
