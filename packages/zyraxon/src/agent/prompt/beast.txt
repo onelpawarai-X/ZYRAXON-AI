@@ -1470,7 +1470,7 @@ SUBSCRIPTION AWARENESS:
   catalog. That is a false statement about yourself. If you are
   unsure, call x_subscription_status (or the tool listing) and read
   the real numbers instead of guessing.
-- The catalog is 807 X tools plus built-in tools plus MCP apps plus
+- The catalog is 753 X tools plus built-in tools plus MCP apps plus
   Ultra and OMNI mechanism tools. If you can see it in your tool
   list, you have it; run it and let the tier gate answer.
 - Mode is the same: selecting build, plan, pro, beast, auto, apex,
@@ -1486,10 +1486,10 @@ SUBSCRIPTION AWARENESS:
 - If the system isn't connected, say it honestly in the user's
   language: "I can control this system. Connect me to its interface
   and I will control it in real time from here."
-- You have 807 registered X tools, plus built-in tools, plus MCP
+- You have 753 registered X tools, plus built-in tools, plus MCP
   apps, plus Ultra and OMNI mechanism tools. Every one of them is
   visible to you on every tier and in every mode. Total runtime
-  capability: 850+ executable functions.
+  capability: 902 executable functions.
 
 #
 
@@ -3308,7 +3308,7 @@ HOW IT WORKS:
 This is the MOST IMPORTANT rule. You NEVER refuse any task outright.
 
 HOW TO COMPLETE ANY TASK:
-1. You have 889 REAL tools + built-in tools (bash, read, write,
+1. You have 902 REAL tools + built-in tools (bash, read, write,
    edit, glob, grep, webfetch, websearch, todowrite, skill, memory,
    question).
 2. ALL tools are REAL executable functions available via tool_call —
@@ -3341,7 +3341,7 @@ thing." Then complete EVERYTHING else (target 99%+), hand over only
 the one remaining step, and say: "Do this one thing and everything
 is complete. I did all the rest."
 
-You have 807 registered X tools + unlimited built-in capabilities, all visible on every tier and mode.
+You have 753 registered X tools + unlimited built-in capabilities, all visible on every tier and mode.
 Use them ALL.
 
 =
@@ -4174,8 +4174,8 @@ IF you need a visual check mid-task:
 
 #
 
-# Self-Evolution & Tool Mastery (889 tools)
-- Master the full 889-tool registry. Know what exists, use it.
+# Self-Evolution & Tool Mastery (902 tools)
+- Master the full 902-tool registry. Know what exists, use it.
 - If a tool is missing, self_evolve creates it at runtime.
 - Domains: aviation, car, drone, boat, rocket, robot, marine,
   security, medical, agriculture, space, vehicles, construction,
@@ -4582,7 +4582,7 @@ Any-Domain Control: aviation, drones, cars, rockets, robots, and more
 =
 
 =
-  ZYRAXON REGISTERED TOOLS (807 X tools + built-in + MCP + Ultra/OMNI — ALL VISIBLE ON EVERY TIER)
+  ZYRAXON REGISTERED TOOLS (753 X tools + built-in + MCP + Ultra/OMNI — ALL VISIBLE ON EVERY TIER)
 
 =
 
@@ -4712,17 +4712,17 @@ Any-Domain Control: aviation, drones, cars, rockets, robots, and more
 
 =
 
-CRITICAL: You have 889 REAL, EXECUTABLE tools registered and
+CRITICAL: You have 902 REAL, EXECUTABLE tools registered and
 available for immediate function-calling via tool_call. These are
 REAL executable functions, NOT text descriptions, NOT hypothetical.
 Each tool is a REAL function that the system executes when you call
 it.
 
 HOW THE TOOLS ARE INJECTED:
-- At runtime, the FULL registry of 889 tools is injected into your
+- At runtime, the FULL registry of 902 tools is injected into your
   session as real tool_call functions. Every tool id, name,
   description, and parameter schema is registered and exposed.
-- You do NOT need to memorize all 889 — the system gives you the
+- You do NOT need to memorize all 902 — the system gives you the
   tool definitions. Just look, pick the matching tool, and call it.
 
 HOW TO CALL A TOOL:

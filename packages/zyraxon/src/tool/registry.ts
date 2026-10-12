@@ -597,7 +597,7 @@ const layer = Layer.effect(
       // Every tool is handed to the model on every tier and in every mode. The tier
       // only decides whether a tool may run, not whether the model may see it.
       //
-      // Filtering definitions by tier used to hide 676 of the 807 X tools from a
+      // Filtering definitions by tier used to hide 676 of the 753 X tools from a
       // free-tier model, so the model could not answer "what tools do I have?"
       // without undercounting, and would refuse work it actually owned a tool for.
       // The gate moved to execution time (see SessionTools.resolve), where a locked

@@ -237,8 +237,8 @@ export const browserApps: AppEntry[] = [
     ], oauth: { authorizationUrl: "https://api.nango.dev/oauth/authorize", tokenUrl: "https://api.nango.dev/oauth/token" } },
 
   // Media and AI
-  { id: "elevenlabs", iconDomain: "elevenlabs.io", name: "ElevenLabs", description: "Voice, audio, music, images and video", category: "AI & Media", kind: "oauth", url: "https://api.elevenlabs.io/v1/mcp", color: "#111111", consoleUrl: "https://elevenlabs.io/app/settings/api-keys", steps: [
-      "Open https://elevenlabs.io/app/settings/api-keys.",
+  { id: "elevenlabs", iconDomain: "elevenlabs.io", name: "ElevenLabs", description: "Voice, audio, music, images and video", category: "AI & Media", kind: "oauth", url: "https://api.elevenlabs.io/v1/mcp", color: "#111111", consoleUrl: "https://elevenlabs.io/app/developers/api-keys", steps: [
+      "Open https://elevenlabs.io/app/developers/api-keys.",
       "Your ElevenLabs API key works as the OAuth client secret; copy it.",
       "Paste it into the Secret field here and press Connect.",
     ], oauth: { authorizationUrl: "https://elevenlabs.io/app/oauth/authorize", tokenUrl: "https://api.us.elevenlabs.io/v1/oauth/token" } },

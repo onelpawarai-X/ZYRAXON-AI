@@ -760,7 +760,7 @@ export function MessageTimeline(props: {
     text = text.replace(/ thinking[\s\S]*?<\/think>/gi, "")
     text = text.replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, "")
     text = text.replace(/\[INST\][\s\S]*?\[\/INST\]/gi, "")
-    text = text.replace(/<<SYS>>[\s\S]*?<\/<SYS>>/gi, "")
+    text = text.replace(/<<SYS>>[\s\S]*?<\/SYS>>/gi, "")
     return text
   }
 

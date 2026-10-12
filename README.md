@@ -16,7 +16,7 @@ Members receive the latest unlock codes from the community. Codes are **only** s
 
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=700&size=26&duration=4500&pause=1200&color=00D4FF&center=true&vCenter=true&width=820&lines=Not+just+talk.+Build%2C+code%2C+deploy%2C+think%2C+act.;A+coding+agent+that+drives+your+machine.;889+tools.+106+verified+MCP+integrations." alt="Typing" />
+<img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=700&size=26&duration=4500&pause=1200&color=00D4FF&center=true&vCenter=true&width=820&lines=Not+just+talk.+Build%2C+code%2C+deploy%2C+think%2C+act.;A+coding+agent+that+drives+your+machine.;902+tools.+108+verified+MCP+integrations." alt="Typing" />
 
 <br/>
 
@@ -72,11 +72,11 @@ Every number below is counted from the source tree, not estimated.
 
 | | Count | |
 |---|---:|---|
-| **Tools** | 889 | each one registered with a required tier |
-| **MCP integrations** | 106 | every app probed by hand before being listed |
-| **Agent modes** | 12 | from scoped exploration to full autonomy |
+| **Tools** | 902 | each one registered with a required tier |
+| **MCP integrations** | 108 | every app probed by hand before being listed |
+| **Agent modes** | 11 | from scoped exploration to full autonomy |
 | **Tool categories** | 63 | aircraft, marine, finance, medical, robotics, and more |
-| **Bundled local MCP servers** | 5 | ship with the app, nothing to install |
+| **Bundled local MCP servers** | 4 | ship with the app, nothing to install |
 
 ### Tools by tier
 
@@ -86,9 +86,9 @@ is answerable without reading the whole registry.
 
 | Tier | Tools | Unlocks |
 |:--|--:|---|
-| `free` | 189 | Read, write, patch, bash, grep, glob, search, plan, MCP, memory |
-| `pro` | 316 | Browser control, document tooling, media analysis |
-| `max` | 323 | Knowledge graph, causal reasoning, simulation |
+| `free` | 190 | Read, write, patch, bash, grep, glob, search, plan, MCP, memory |
+| `pro` | 324 | Browser control, document tooling, media analysis |
+| `max` | 327 | Knowledge graph, causal reasoning, simulation |
 | `ultra` | 61 | OMNI-KERNEL, autonomous and self-extending operation |
 
 ### How the MCP catalog connects
@@ -165,9 +165,9 @@ change from rippling into the UI.
 | **Capability**                |                                     **ZYRAXON**                                     |   **Cursor**   |   **Copilot**  |    **Devin**    | **Claude Code** | **Windsurf** |
 | :---------------------------- | :---------------------------------------------------------------------------------: | :------------: | :------------: | :-------------: | :-------------: | :----------: |
 | **Full Desktop Control**      |                   **● FULL**<br>Click · Type · Scroll · Open Apps                   |        —       |        —       | ◐ Cloud Browser |        —        |       —      |
-| **105+ MCP Applications**     | **● CONNECTED ECOSYSTEM**<br>105+ Applications · MCP Connectors · External Services |      ◐ MCP     |      ◐ MCP     |      ◐ MCP      |      ◐ MCP      |     ◐ MCP    |
-| **805+ Control Tools**        |          **● NATIVE TOOL LAYER**<br>Automation · System · Browser · Control         |        —       |      ◐ MCP     |      ◐ MCP      |    ◐ Limited    |     ◐ MCP    |
-| **Vehicle & Machine Control** |        **● 805 TOOLS**<br>Aircraft · Cars · Drones · Boats · Rockets · Robots       |        —       |        —       |        —        |        —        |       —      |
+| **108 MCP Applications**     | **● CONNECTED ECOSYSTEM**<br>108 Applications · MCP Connectors · External Services |      ◐ MCP     |      ◐ MCP     |      ◐ MCP      |      ◐ MCP      |     ◐ MCP    |
+| **902 Control Tools**        |          **● NATIVE TOOL LAYER**<br>Automation · System · Browser · Control         |        —       |      ◐ MCP     |      ◐ MCP      |    ◐ Limited    |     ◐ MCP    |
+| **Vehicle & Machine Control** |        **● 902 TOOLS**<br>Aircraft · Cars · Drones · Boats · Rockets · Robots       |        —       |        —       |        —        |        —        |       —      |
 | **Autonomous Flight**         |                   **● FULL**<br>Autoland · GCAS · TCAS · Approach                   |        —       |        —       |        —        |        —        |       —      |
 | **Autonomous Driving**        |                  **● FULL**<br>Sensor Fusion · AEB · Lane · Parking                 |        —       |        —       |        —        |        —        |       —      |
 | **Self-Healing**              |              **● AUTONOMOUS**<br>Automatic Tool Installation & Recovery             |        —       |        —       |        —        |        —        |       —      |
@@ -189,8 +189,8 @@ change from rippling into the UI.
 
 ### ZYRAXON
 
-**105+ MCP Applications**
-**805+ Control Tools**
+**108 MCP Applications**
+**902 Control Tools**
 **25+ AI Providers**
 **50,000+ Persistent Memories**
 **10 Agent Modes**
