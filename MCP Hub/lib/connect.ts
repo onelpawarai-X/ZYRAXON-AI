@@ -130,21 +130,22 @@ const CONNECT_TIMEOUT_MS = 180_000
 /**
  * How long an anonymous connect is given before sign-in is assumed.
  *
- * Short on purpose. The common case by far is an OAuth app refusing an anonymous
- * request, and that refusal is exactly what is being waited for — but a public server is
- * usually live inside this window too, so the trade costs a genuinely ready server very
- * little and saves every OAuth app the full connect budget.
+ * Kept deliberately short: the common case by far is an OAuth app refusing an
+ * anonymous request, and that refusal is exactly what is being waited for. The
+ * browser should be in front of the user within a beat of pressing Connect, so the
+ * probe only exists to let an already-public server answer first — it is not a
+ * budget for a slow server, which the connect deadline covers instead.
  */
-const NEEDS_AUTH_PROBE_MS = 1_200
+const NEEDS_AUTH_PROBE_MS = 350
 
 /**
  * How long to let `add` finish writing before the handshake reads the entry back.
  *
  * The status can already say `needs_auth` while the write is still on its way, and the
- * handshake then looks up a name that is not there yet. A short bound is enough: the
- * write is local, so this only ever waits as long as it actually needs.
+ * handshake then looks up a name that is not there yet. The write is local and lands in
+ * a few milliseconds, so this bound only ever waits as long as it actually needs.
  */
-const SERVER_WRITE_GRACE_MS = 3_000
+const SERVER_WRITE_GRACE_MS = 800
 
 /**
  * How long the sign-in itself is given.

@@ -141,7 +141,11 @@ const icons = {
   },
   review: {
     viewBox: "0 0 20 20",
-    body: `<path d="M7 14.5H13M7 7.99512H10.0049M10.0049 7.99512H13M10.0049 7.99512V5M10.0049 7.99512V11M18 18V2L2 2L2 18H18Z" stroke="currentColor"/>`,
+    body: `<rect x="2.25" y="3.25" width="15.5" height="13.5" rx="2.25" stroke="currentColor" stroke-width="1.5"/><path d="M10 3.25V16.75" stroke="currentColor" stroke-width="1.5"/><path d="M5 7H7.5M5 10H7.5M5 13H6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12.5 7H15M12.5 10H15M13.5 13H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
+  },
+  "review-active": {
+    viewBox: "0 0 20 20",
+    body: `<rect x="2.25" y="3.25" width="15.5" height="13.5" rx="2.25" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.5"/><path d="M10 3.25V16.75" stroke="currentColor" stroke-width="1.5"/><path d="M5 7H7.5M5 10H7.5M5 13H6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12.5 7H15M12.5 10H15M13.5 13H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
   },
   "outline-sliders": {
     viewBox: "0 0 16 16",
@@ -190,6 +194,14 @@ const icons = {
   cloud: {
     viewBox: "0 0 20 20",
     body: `<path d="M5.5 14.5C3.29 14.5 1.5 12.71 1.5 10.5C1.5 8.55 2.87 6.91 4.7 6.55C5.18 4.52 7.02 3 9.2 3C11.06 3 12.66 4.13 13.34 5.72C13.62 5.68 13.91 5.66 14.2 5.66C17.1 5.66 19.5 7.82 19.5 10.5C19.5 13.18 17.1 15.5 14.2 15.5H5.5V14.5Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+  terminal: {
+    viewBox: "0 0 20 20",
+    body: `<rect x="2.25" y="3.25" width="15.5" height="13.5" rx="2.25" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 8.25L7.75 10.5L5.5 12.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 12.75H14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
+  },
+  "terminal-active": {
+    viewBox: "0 0 20 20",
+    body: `<rect x="2.25" y="3.25" width="15.5" height="13.5" rx="2.25" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 8.25L7.75 10.5L5.5 12.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 12.75H14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
   },
 }
 

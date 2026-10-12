@@ -203,7 +203,9 @@ const defaultSettings: Settings = {
     showFileTree: true,
     showNavigation: false,
     showSearch: false,
-    showStatus: false,
+    /* The server status bar is a requested part of the session header, so it is on
+       by default; the General settings row still lets anyone turn it off. */
+    showStatus: true,
     showTerminal: false,
     showReasoningSummaries: false,
     shellToolPartsExpanded: false,

@@ -205,7 +205,7 @@ export const browserApps: AppEntry[] = [
       "Set the Authorization callback URL to http://127.0.0.1:19876/oauth/callback.",
       "Press Register application.",
       "Copy the Client ID and, if you set one, the Client Secret into the fields here, then press Connect.",
-    ], oauth: { authorizationUrl: "https://github.com/login/oauth/authorize", tokenUrl: "https://github.com/login/oauth/access_token" }, zeroSetup: true },
+    ], oauth: { authorizationUrl: "https://github.com/login/oauth/authorize", tokenUrl: "https://github.com/login/oauth/access_token" } },
   { id: "supabase", icon: "supabase", iconDomain: "supabase.com", name: "Supabase", description: "Postgres, auth and storage", category: "Database", kind: "oauth", url: "https://mcp.supabase.com/mcp", color: "#3ECF8E", zeroSetup: true },
   { id: "mongodb", icon: "mongodb", iconDomain: "mongodb.com", name: "MongoDB", description: "Atlas clusters and documents", category: "Database", kind: "oauth", url: "https://mcp.mongodb.com/mcp", color: "#00ED64", consoleUrl: "https://cloud.mongodb.com/", steps: [
       "Open https://cloud.mongodb.com and sign in to your Atlas account.",
@@ -213,7 +213,7 @@ export const browserApps: AppEntry[] = [
       "Press Create New Application, name it, set the callback to http://127.0.0.1:19876/oauth/callback, and copy the Client ID and Secret.",
       "Add the scopes listed below under Scopes.",
       "Paste the Client ID into the field here, then press Connect.",
-    ], oauth: { authorizationUrl: "https://cloud.mongodb.com/oauth/authorize", tokenUrl: "https://authorize.mongodb.com/tokens" }, zeroSetup: true },
+    ], oauth: { authorizationUrl: "https://cloud.mongodb.com/oauth/authorize", tokenUrl: "https://authorize.mongodb.com/tokens" } },
 
   // Payments and commerce
   { id: "stripe", icon: "stripe", iconDomain: "stripe.com", name: "Stripe", description: "Payments, customers and invoices", category: "Payments", kind: "oauth", url: "https://mcp.stripe.com", color: "#635BFF", consoleUrl: "https://dashboard.stripe.com/connect/developer", steps: [
@@ -234,7 +234,7 @@ export const browserApps: AppEntry[] = [
       "Go to Settings → Integrations, or the OAuth tab for the provider you need.",
       "Create an OAuth app with http://127.0.0.1:19876/oauth/callback as the redirect, and copy the Client ID and Secret.",
       "Paste them into the fields here and press Connect.",
-    ], oauth: { authorizationUrl: "https://api.nango.dev/oauth/authorize", tokenUrl: "https://api.nango.dev/oauth/token" }, zeroSetup: true },
+    ], oauth: { authorizationUrl: "https://api.nango.dev/oauth/authorize", tokenUrl: "https://api.nango.dev/oauth/token" } },
 
   // Media and AI
   { id: "elevenlabs", iconDomain: "elevenlabs.io", name: "ElevenLabs", description: "Voice, audio, music, images and video", category: "AI & Media", kind: "oauth", url: "https://api.elevenlabs.io/v1/mcp", color: "#111111", consoleUrl: "https://elevenlabs.io/app/settings/api-keys", steps: [
@@ -258,14 +258,14 @@ export const browserApps: AppEntry[] = [
       "Press Add App, then Save Changes.",
       "Copy the Client ID shown in the General tab into the field here.",
       "Press Connect and approve the app in the browser that opens.",
-    ], oauth: { authorizationUrl: "https://account.box.com/api/oauth2/authorize", tokenUrl: "https://api.box.com/oauth2/token" }, zeroSetup: true },
+    ], oauth: { authorizationUrl: "https://account.box.com/api/oauth2/authorize", tokenUrl: "https://api.box.com/oauth2/token" } },
   { id: "dropbox", icon: "dropbox", iconDomain: "dropbox.com", name: "Dropbox", description: "Files and folders", category: "Storage", kind: "oauth", url: "https://mcp.dropbox.com/mcp", color: "#0061FF", zeroSetup: true },
   { id: "render", iconDomain: "render.com", name: "Render", description: "Deploy web services and GPUs", category: "Hosting", kind: "oauth", url: "https://mcp.render.com/mcp", color: "#46E3B7", consoleUrl: "https://dashboard.render.com/", steps: [
       "Open https://dashboard.render.com and sign in.",
       "Open Settings → API Keys, then Create Key if you have none.",
       "Copy the key into the Client ID field here. Render uses one value for both roles.",
       "Press Connect.",
-    ], oauth: { authorizationUrl: "https://api.render.com/v1/oauth/authorize", tokenUrl: "https://api.render.com/v1/oauth/token" }, zeroSetup: true },
+    ], oauth: { authorizationUrl: "https://api.render.com/v1/oauth/authorize", tokenUrl: "https://api.render.com/v1/oauth/token" } },
   // Communication and support
   { id: "slack", icon: "slack", iconDomain: "slack.com", name: "Slack", description: "Channels, messages and files", category: "Communication", kind: "oauth", url: "https://mcp.slack.com/mcp", scope: "channels:read channels:write channels:manage bookmarks:read bookmarks:write chats:read chats:write dnd:read dnd:write emoji:read files:read files:write groups:read groups:write im:history im:read im:write mpim:history mpim:read mpim:write reactions:read reactions:write search:read search:write team:read user:read user:write userprofile:read users:read users:write", color: "#4A154B", consoleUrl: "https://api.slack.com/apps", steps: [
       "Open https://api.slack.com/apps and press Create New App → From scratch.",
@@ -296,13 +296,55 @@ export const browserApps: AppEntry[] = [
   // Social and marketing
   { id: "instagram", icon: "instagram", iconDomain: "instagram.com", name: "Instagram", description: "Profiles, posts and media", category: "Marketing", kind: "oauth", url: "https://mcp.aisa.one/instagram/mcp", color: "#E4405F", via: "aisa" },
   { id: "whatsapp", icon: "whatsapp", iconDomain: "whatsapp.com", name: "WhatsApp Business", description: "Send and receive messages", category: "Communication", kind: "oauth", url: "https://api.izap.ai/mcp", color: "#25D366", via: "izap", zeroSetup: true },
-  { id: "gmail", icon: "gmail", iconDomain: "gmail.com", name: "Gmail", description: "Read, search and send mail", category: "Communication", kind: "oauth", url: "https://gmailmcp.googleapis.com/mcp/v1", tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#EA4335", via: "google" },
-  { id: "google-drive", icon: "drive", iconDomain: "drive.google.com", name: "Google Drive", description: "Files, folders and permissions", category: "Storage", kind: "oauth", url: "https://drivemcp.googleapis.com/mcp/v1", tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#0F9D58", via: "google" },
-  { id: "google-docs", icon: "docs", iconDomain: "docs.google.com", name: "Google Docs", description: "Read and update documents", category: "Productivity", kind: "oauth", url: "https://docsmcp.googleapis.com/mcp/v1", tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#4285F4", via: "google" },
-  { id: "google-sheets", icon: "sheets", iconDomain: "sheets.google.com", name: "Google Sheets", description: "Values, formulas and ranges", category: "Productivity", kind: "oauth", url: "https://sheetsmcp.googleapis.com/mcp/v1", tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#0F9D58", via: "google" },
-  { id: "google-slides", icon: "slides", iconDomain: "slides.google.com", name: "Google Slides", description: "Presentations and slide pages", category: "Productivity", kind: "oauth", url: "https://slidesmcp.googleapis.com/mcp/v1", tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#F4B400", via: "google" },
-  { id: "google-calendar", icon: "calendar", iconDomain: "calendar.google.com", name: "Google Calendar", description: "Events, calendars and free time", category: "Productivity", kind: "oauth", url: "https://calendarmcp.googleapis.com/mcp/v1", tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#4285F4", via: "google" },
-  { id: "google-chat", icon: "chat", iconDomain: "chat.google.com", name: "Google Chat", description: "Messages and conversations", category: "Communication", kind: "oauth", url: "https://chatmcp.googleapis.com/mcp/v1", tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#00897B", via: "google" },
+  { id: "gmail", icon: "gmail", iconDomain: "gmail.com", name: "Gmail", description: "Read, search and send mail", category: "Communication", kind: "oauth", url: "https://gmailmcp.googleapis.com/mcp/v1", consoleUrl: "https://console.cloud.google.com/apis/credentials", steps: [
+      "Open https://console.cloud.google.com/apis/credentials and pick the Google Cloud project you want to use.",
+      "Press Create credentials → OAuth client ID. Choose Web application as the type.",
+      "Under Authorized redirect URIs add http://127.0.0.1:19876/oauth/callback exactly as written, then press Create.",
+      "Google shows the Client ID and Client secret. Copy both.",
+      "Paste them into the two fields here and press Connect. Google MCP does not register clients by itself, so this one-time step is required.",
+    ], tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#EA4335", via: "google" },
+  { id: "google-drive", icon: "drive", iconDomain: "drive.google.com", name: "Google Drive", description: "Files, folders and permissions", category: "Storage", kind: "oauth", url: "https://drivemcp.googleapis.com/mcp/v1", consoleUrl: "https://console.cloud.google.com/apis/credentials", steps: [
+      "Open https://console.cloud.google.com/apis/credentials and pick the Google Cloud project you want to use.",
+      "Press Create credentials → OAuth client ID. Choose Web application as the type.",
+      "Under Authorized redirect URIs add http://127.0.0.1:19876/oauth/callback exactly as written, then press Create.",
+      "Google shows the Client ID and Client secret. Copy both.",
+      "Paste them into the two fields here and press Connect. Google MCP does not register clients by itself, so this one-time step is required.",
+    ], tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#0F9D58", via: "google" },
+  { id: "google-docs", icon: "docs", iconDomain: "docs.google.com", name: "Google Docs", description: "Read and update documents", category: "Productivity", kind: "oauth", url: "https://docsmcp.googleapis.com/mcp/v1", consoleUrl: "https://console.cloud.google.com/apis/credentials", steps: [
+      "Open https://console.cloud.google.com/apis/credentials and pick the Google Cloud project you want to use.",
+      "Press Create credentials → OAuth client ID. Choose Web application as the type.",
+      "Under Authorized redirect URIs add http://127.0.0.1:19876/oauth/callback exactly as written, then press Create.",
+      "Google shows the Client ID and Client secret. Copy both.",
+      "Paste them into the two fields here and press Connect. Google MCP does not register clients by itself, so this one-time step is required.",
+    ], tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#4285F4", via: "google" },
+  { id: "google-sheets", icon: "sheets", iconDomain: "sheets.google.com", name: "Google Sheets", description: "Values, formulas and ranges", category: "Productivity", kind: "oauth", url: "https://sheetsmcp.googleapis.com/mcp/v1", consoleUrl: "https://console.cloud.google.com/apis/credentials", steps: [
+      "Open https://console.cloud.google.com/apis/credentials and pick the Google Cloud project you want to use.",
+      "Press Create credentials → OAuth client ID. Choose Web application as the type.",
+      "Under Authorized redirect URIs add http://127.0.0.1:19876/oauth/callback exactly as written, then press Create.",
+      "Google shows the Client ID and Client secret. Copy both.",
+      "Paste them into the two fields here and press Connect. Google MCP does not register clients by itself, so this one-time step is required.",
+    ], tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#0F9D58", via: "google" },
+  { id: "google-slides", icon: "slides", iconDomain: "slides.google.com", name: "Google Slides", description: "Presentations and slide pages", category: "Productivity", kind: "oauth", url: "https://slidesmcp.googleapis.com/mcp/v1", consoleUrl: "https://console.cloud.google.com/apis/credentials", steps: [
+      "Open https://console.cloud.google.com/apis/credentials and pick the Google Cloud project you want to use.",
+      "Press Create credentials → OAuth client ID. Choose Web application as the type.",
+      "Under Authorized redirect URIs add http://127.0.0.1:19876/oauth/callback exactly as written, then press Create.",
+      "Google shows the Client ID and Client secret. Copy both.",
+      "Paste them into the two fields here and press Connect. Google MCP does not register clients by itself, so this one-time step is required.",
+    ], tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#F4B400", via: "google" },
+  { id: "google-calendar", icon: "calendar", iconDomain: "calendar.google.com", name: "Google Calendar", description: "Events, calendars and free time", category: "Productivity", kind: "oauth", url: "https://calendarmcp.googleapis.com/mcp/v1", consoleUrl: "https://console.cloud.google.com/apis/credentials", steps: [
+      "Open https://console.cloud.google.com/apis/credentials and pick the Google Cloud project you want to use.",
+      "Press Create credentials → OAuth client ID. Choose Web application as the type.",
+      "Under Authorized redirect URIs add http://127.0.0.1:19876/oauth/callback exactly as written, then press Create.",
+      "Google shows the Client ID and Client secret. Copy both.",
+      "Paste them into the two fields here and press Connect. Google MCP does not register clients by itself, so this one-time step is required.",
+    ], tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#4285F4", via: "google" },
+  { id: "google-chat", icon: "chat", iconDomain: "chat.google.com", name: "Google Chat", description: "Messages and conversations", category: "Communication", kind: "oauth", url: "https://chatmcp.googleapis.com/mcp/v1", consoleUrl: "https://console.cloud.google.com/apis/credentials", steps: [
+      "Open https://console.cloud.google.com/apis/credentials and pick the Google Cloud project you want to use.",
+      "Press Create credentials → OAuth client ID. Choose Web application as the type.",
+      "Under Authorized redirect URIs add http://127.0.0.1:19876/oauth/callback exactly as written, then press Create.",
+      "Google shows the Client ID and Client secret. Copy both.",
+      "Paste them into the two fields here and press Connect. Google MCP does not register clients by itself, so this one-time step is required.",
+    ], tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#00897B", via: "google" },
   { id: "pdf", iconDomain: "ifillpdf.com", name: "PDF", description: "Read and extract from PDFs", category: "Documents", kind: "oauth", url: "https://ifillpdf.com/api/mcp", color: "#E3262F", note: "Served by iFillPDF, not Adobe. Its sign-in document points at a hosted identity provider and registers clients itself, so nothing has to be filled in.", via: "ifillpdf", zeroSetup: true },
   { id: "planetscale", iconDomain: "planetscale.com", name: "PlanetScale", description: "Serverless MySQL branches", category: "Database", kind: "oauth", url: "https://mcp.pscale.dev/mcp/planetscale", tokenUrl: "https://planetscale.com/portal", color: "#000000" },
   { id: "captions", iconDomain: "captions.ai", name: "Captions", description: "Edit video with AI assistance", category: "Media", kind: "oauth", url: "https://mcp.captions.ai/mcp", tokenUrl: "https://www.captions.ai", color: "#111111" },

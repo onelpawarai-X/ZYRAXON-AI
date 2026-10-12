@@ -29,7 +29,7 @@ import { createSizing, focusTerminalById } from "@/pages/session/helpers"
 import { getTerminalHandoff, setTerminalHandoff } from "@/pages/session/handoff"
 import { useSessionLayout } from "@/pages/session/session-layout"
 
-export function TerminalPanelV2(props: { stacked?: boolean } = {}) {
+export function TerminalPanelV2() {
   const layout = useLayout()
   const terminal = useTerminal()
   const sdk = useSDK()
@@ -57,11 +57,8 @@ export function TerminalPanelV2(props: { stacked?: boolean } = {}) {
 
   const max = () => store.view * 0.6
   const pane = () => Math.min(height(), max())
-  const stacked = createMemo(() => isDesktop() && props.stacked)
-  const panelHeight = createMemo(() =>
-    isDesktop() ? (stacked() ? `${pane()}px` : "100%") : opened() ? `${pane()}px` : "0px",
-  )
-  const contentHeight = createMemo(() => (isDesktop() ? (stacked() ? `${pane()}px` : "100%") : `${pane()}px`))
+  const panelHeight = createMemo(() => (isDesktop() ? "100%" : opened() ? `${pane()}px` : "0px"))
+  const contentHeight = createMemo(() => (isDesktop() ? "100%" : `${pane()}px`))
   const newTerminalKeybind = createMemo(() => command.keybindParts("terminal.new"))
 
   onMount(() => {
@@ -176,16 +173,35 @@ export function TerminalPanelV2(props: { stacked?: boolean } = {}) {
       inert={!opened()}
       class="relative shrink-0 overflow-hidden bg-v2-background-bg-base"
       classList={{
-        "w-full": !isDesktop() || stacked(),
-        "min-w-0 h-full flex-1": isDesktop() && opened() && !stacked(),
+        "w-full": !isDesktop(),
+        "h-full w-full min-w-0 flex-1": isDesktop(),
         "w-0 h-full pointer-events-none": isDesktop() && !opened(),
         "rounded-[10px] shadow-[var(--v2-elevation-raised)]": isDesktop() && newLayout(),
         "transition-[height] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[height] motion-reduce:transition-none":
           !isDesktop() && !size.active(),
       }}
-      style={{ height: panelHeight() }}
+      style={{ height: isDesktop() ? "100%" : panelHeight() }}
     >
-      <div classList={{ "md:hidden": !stacked(), hidden: stacked() }} onPointerDown={() => size.start()}>
+      {/* Desktop: the terminal is a full-height right column, so it is sized by
+          width and resized horizontally. Mobile keeps the vertical handle. */}
+      <Show when={isDesktop()}>
+        <div class="absolute inset-y-0 left-0 z-10" onPointerDown={() => size.start()}>
+          <ResizeHandle
+            class="!relative !inset-auto !h-full"
+            direction="horizontal"
+            size={layout.terminal.width()}
+            min={260}
+            max={typeof window === "undefined" ? 900 : window.innerWidth * 0.7}
+            collapseThreshold={60}
+            onResize={(next) => {
+              size.touch()
+              layout.terminal.resizeWidth(next)
+            }}
+            onCollapse={close}
+          />
+        </div>
+      </Show>
+      <div classList={{ "md:hidden": isDesktop(), hidden: isDesktop() }} onPointerDown={() => size.start()}>
         <ResizeHandle
           classList={{
             "-top-1": newLayout(),
@@ -206,7 +222,6 @@ export function TerminalPanelV2(props: { stacked?: boolean } = {}) {
         class="absolute inset-0 flex flex-col overflow-hidden"
         classList={{
           "border-t border-border-weak-base": opened() && !isDesktop(),
-          "border-t border-border-weaker-base": opened() && stacked() && !newLayout(),
           "border-l border-border-weaker-base": opened() && isDesktop() && !newLayout(),
           "pointer-events-none": !opened(),
         }}
