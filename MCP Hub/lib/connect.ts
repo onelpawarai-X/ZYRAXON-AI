@@ -523,7 +523,7 @@ function explain(name: string, error: string | undefined): string {
   // user who knows what to do and a user who concludes the app is broken. Each entry is
   // the page where that vendor issues a client, taken from its own documentation.
   const CONSOLE: Record<string, string> = {
-    figma: "https://www.figma.com/developers/mcp",
+    figma: "https://www.figma.com/developers/apps",
     fal: "https://fal.ai/dashboard/keys",
     linear: "https://linear.app/settings/api",
   }
