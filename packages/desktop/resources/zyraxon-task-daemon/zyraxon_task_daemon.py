@@ -103,6 +103,15 @@ TIME_PATTERN = re.compile(r"^([01]?\d|2[0-3]):([0-5]\d)$")
 # Mirrors DAY_NAMES in daily-task-storage.ts:27.
 DAY_NAMES = ("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
 
+# Automation events waiting for the agent. The backend owns this store; the daemon only
+# reads it to answer "is there anything the agent still has to do?", which is what lets a
+# webhook or a polled connector wake the app while it is closed.
+AUTOMATION_EVENT_TABLE = "automation_event"
+# Statuses that mean "recorded but the agent has not handled it yet".
+AUTOMATION_OPEN_STATUSES = ("pending", "claimed")
+# The flag the app checks to know a wake came from automation, not from the person.
+AUTOMATION_WAKE_ARG = "--automation-wake"
+
 # (app id, product name) per build channel - index.ts:58 and
 # electron-builder.config.ts:87. Resolution probes all three so a beta or dev
 # install is found just as readily as the prod one.
@@ -179,6 +188,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     state = load_state()
     read_throttle = Throttle(NOTICE_LOG_SECONDS)
     missing_app_throttle = Throttle(NOTICE_LOG_SECONDS)
+    automation_throttle = Throttle(NOTICE_LOG_SECONDS)
     last_wall_clock = time.time()
 
     try:
@@ -187,12 +197,19 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             last_wall_clock = detect_clock_jump(last_wall_clock, now)
             refresh_lock(LOCK_FILE)
 
+            # Automation is checked independently of the Daily Task store: a fresh install
+            # with no tasks yet must still wake for a webhook, and a task store that cannot
+            # be read must not silence automation.
+            blocked = not wake_for_automation(state, args, automation_throttle)
+
             tasks = load_tasks(tasks_file, read_throttle)
             if tasks is None:
+                if args.once or _stop_requested:
+                    break
                 sleep_until_stopped(min(interval, 5.0))
                 continue
 
-            blocked = not wake_due_tasks(tasks, now, state, args, missing_app_throttle)
+            blocked = not wake_due_tasks(tasks, now, state, args, missing_app_throttle) or blocked
             if args.once or _stop_requested:
                 break
             sleep_until_stopped(seconds_until_next_wake(tasks, now, state, interval, blocked))
@@ -495,10 +512,11 @@ def resolve_app_command(override: Optional[str], app_args: Sequence[str]) -> Opt
         if sys.platform == "darwin" and path.suffix == ".app":
             if not path.is_dir():
                 continue
-            if app_args:
-                logger.warning("ignoring --app-arg values for the bundle %s: %s", path, " ".join(app_args))
             # `open -a` activates an already-running bundle - the macOS equivalent of
-            # the single-instance lock - instead of starting a second copy.
+            # the single-instance lock - instead of starting a second copy. Extra args
+            # must go after --args, or `open` treats them as files to open.
+            if app_args:
+                return ["/usr/bin/open", "-a", str(path), "--args", *app_args]
             return ["/usr/bin/open", "-a", str(path)]
         if not path.is_file() or not os.access(str(path), os.X_OK):
             continue
@@ -554,6 +572,100 @@ def launch_app(command: Sequence[str]) -> Optional[int]:
         return None
     logger.info("launched %s (pid %s)", " ".join(command), process.pid)
     return process.pid
+
+
+def automation_db_path() -> Path:
+    """The durable automation store the backend writes.
+
+    The backend resolves its data dir exactly like xdg-basedir does: $XDG_DATA_HOME, or
+    ~/.local/share on every platform. The desktop sidecar does not override
+    XDG_DATA_HOME (server.ts:266 only sets XDG_STATE_HOME), so the store is always under
+    <data>/zyraxon/automation regardless of the channel-specific userData directory.
+    """
+    data_home = os.environ.get("XDG_DATA_HOME")
+    base = Path(data_home).expanduser() if data_home else Path.home() / ".local" / "share"
+    return base / "zyraxon" / "automation" / "events.db"
+
+
+def open_automation_events() -> Optional[int]:
+    """Open count of events the agent still has to act on, or None when unreadable.
+
+    Read-only and read-only-URI so the daemon never contends with the backend's own
+    writer. A missing file means "nothing recorded yet", which is a real zero, not an
+    error - only an unreadable database returns None so the caller can back off.
+    """
+    db_path = automation_db_path()
+    if not db_path.exists():
+        return 0
+    import sqlite3
+
+    try:
+        connection = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=2.0)
+    except sqlite3.Error as error:
+        logger.debug("cannot open automation store %s: %s", db_path, error)
+        return None
+    try:
+        placeholders = ",".join("?" for _ in AUTOMATION_OPEN_STATUSES)
+        row = connection.execute(
+            f"SELECT COUNT(*) FROM {AUTOMATION_EVENT_TABLE} WHERE status IN ({placeholders})",
+            AUTOMATION_OPEN_STATUSES,
+        ).fetchone()
+        return int(row[0]) if row else 0
+    except sqlite3.Error as error:
+        # A store the backend has not created its table in yet is "nothing pending".
+        logger.debug("automation store query failed: %s", error)
+        return 0
+    finally:
+        connection.close()
+
+
+def wake_for_automation(
+    state: WakeState,
+    args: argparse.Namespace,
+    notice: Throttle,
+) -> bool:
+    """Wake the app when automation events are waiting. False means "blocked, nothing woken".
+
+    The wake marker stores the count that was open when the app was last launched, so the
+    daemon does not relaunch on every poll for the same backlog. The marker is keyed by
+    date, so a backlog that is still open tomorrow gets one more wake attempt.
+    """
+    open_count = open_automation_events()
+    if open_count is None:
+        if notice.allow():
+            logger.warning("automation store unreadable - skipping automation wake")
+        return True
+    if open_count == 0:
+        return True
+
+    today = datetime.now().date().isoformat()
+    key = f"automation|{today}"
+    last_woken = state["woken"].get(key)
+    if last_woken is not None:
+        try:
+            if int(last_woken) >= open_count:
+                return True
+        except ValueError:
+            pass
+
+    command = resolve_app_command(args.app, args.app_args)
+    if command is None:
+        if notice.allow():
+            logger.warning("packaged ZYRAXON app not found - no automation wake, no marker written")
+        return False
+
+    # The automation-wake flag is the signal the app uses to know it was opened by a
+    # webhook rather than by the person, which is what later lets it close itself again.
+    command = [*command, AUTOMATION_WAKE_ARG]
+    logger.info("waking ZYRAXON for %d automation event(s)", open_count)
+    if args.dry_run:
+        logger.info("dry run: would run %s", " ".join(command))
+        return True
+    if launch_app(command) is None:
+        return False
+    state["woken"][key] = str(open_count)
+    persist_state(state)
+    return True
 
 
 def acquire_lock(path: Path) -> bool:

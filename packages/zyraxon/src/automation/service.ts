@@ -76,6 +76,9 @@ const make = Effect.gen(function* () {
 
   const observers = new Map<string, (event: AutomationEvent) => Promise<void>>()
   let timer: ReturnType<typeof setInterval> | undefined
+  // One drain at a time. A second kick while a drain is running is dropped: the running
+  // drain already re-queries the store, so it picks up whatever the new event added.
+  let draining = false
 
   /**
    * A scheduled task is enqueued as an ordinary event when its time has arrived and it has
@@ -179,6 +182,21 @@ const make = Effect.gen(function* () {
     return delivered
   })
 
+  /**
+   * Drain the queue in the background so a webhook returns as soon as the event is durable.
+   * An agent turn takes minutes; blocking the HTTP request on it would stall the caller and
+   * delay the wake path, while the event is already safe on disk for the next drain.
+   *
+   * Runs on the global runtime rather than forking into the caller's scope: the webhook's
+   * request scope closes the moment the response is written, and a drain bound to it would
+   * be interrupted in the middle of an agent turn.
+   */
+  const drain = () => {
+    if (draining) return
+    draining = true
+    Effect.runFork(flush().pipe(Effect.ensuring(Effect.sync(() => (draining = false)))))
+  }
+
   const pending = Effect.fn("Automation.pending")((limit = 50) =>
     Effect.promise(() => AutomationEventStore.undelivered(limit)),
   )
@@ -187,7 +205,7 @@ const make = Effect.gen(function* () {
     const inserted = yield* Effect.promise(() => AutomationEventStore.record(input.connectorID, [input]))
     if (inserted > 0) {
       emitChange(inserted)
-      yield* flush()
+      drain()
     }
     return inserted > 0
   })
@@ -234,6 +252,9 @@ const make = Effect.gen(function* () {
       const interval = intervalFromEnv()
       timer = setInterval(tick, interval)
       ;(timer as { unref?: () => void }).unref?.()
+      // A backlog left by a previous run (the app was closed when the event arrived) is
+      // drained as soon as the dispatcher is registered, not one poll interval later.
+      drain()
       yield* Effect.logInfo("automation poller started", { interval })
     }),
     stop: Effect.fn("Automation.stop")(function* () {
