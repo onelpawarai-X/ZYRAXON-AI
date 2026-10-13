@@ -73,3 +73,4 @@ packages/desktop/electron.vite.config.*.mjs
 /.pr-body.md
 
 .agent_tmp/
+agent-work/

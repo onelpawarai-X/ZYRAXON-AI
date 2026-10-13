@@ -508,26 +508,28 @@ export function usePromptInputV2Controller(props: PromptInputV2ControllerProps):
     },
     view: {
       placeholder: designPlaceholder,
-      agent:
-        props.controls.agents.visible && props.controls.agents.options.length > 0
-          ? {
-              options: () =>
-                props.controls.agents.options.map((name) => ({
-                  id: name,
-                  label: name,
-                  locked: agentLocked(name),
-                })),
-              current: () => props.controls.agents.current,
-              onSelect: (name) => {
-                if (agentLocked(name)) {
-                  subscription.requestToolAccess(`locked_mode_${name}`)
-                  return
-                }
-                props.controls.agents.select(name)
-              },
-              onLocked: (name) => subscription.requestToolAccess(`locked_mode_${name}`),
-            }
-          : undefined,
+      // Stable control object; only `options()` is reactive. The agent list arrives
+      // after mount, so gating visibility on a one-time read left the mode selector
+      // permanently hidden in the V2 layout.
+      agent: {
+        options: () =>
+          props.controls.agents.visible
+            ? props.controls.agents.options.map((name) => ({
+                id: name,
+                label: name,
+                locked: agentLocked(name),
+              }))
+            : [],
+        current: () => props.controls.agents.current,
+        onSelect: (name: string) => {
+          if (agentLocked(name)) {
+            subscription.requestToolAccess(`locked_mode_${name}`)
+            return
+          }
+          props.controls.agents.select(name)
+        },
+        onLocked: (name: string) => subscription.requestToolAccess(`locked_mode_${name}`),
+      },
       variant: {
         options: () => variants().map((value) => ({ id: value, label: value })),
         current: () => props.controls.model.selection.variant.current() ?? "default",
