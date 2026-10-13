@@ -621,7 +621,9 @@ const layer = Layer.effect(
             if (!resourcesPath) {
               try {
                 const { fileURLToPath } = require("url") as typeof import("url")
-                const here = pathMod.dirname(fileURLToPath(new URL(".", import.meta.url).href))
+                // new URL(".", import.meta.url) already names the directory; wrapping it in
+                // dirname() walked one level too high and pointed at <repo>/desktop/resources.
+                const here = fileURLToPath(new URL(".", import.meta.url).href)
                 const devRes = pathMod.resolve(here, "../../../desktop/resources")
                 if (fsSync.existsSync(pathMod.join(devRes, "default-mcp-config.json"))) {
                   resourcesPath = devRes

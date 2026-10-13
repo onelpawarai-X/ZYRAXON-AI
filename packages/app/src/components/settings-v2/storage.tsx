@@ -56,7 +56,8 @@ export const SettingsStorageV2: Component<{ directory?: () => string | undefined
 
   const [usage, { refetch }] = createResource(async (): Promise<StorageUsage | undefined> => {
     const result = await sdk().client.v2.storage.usage({ location: { directory: props.directory?.() } })
-    return result.data as StorageUsage | undefined
+    // The route answers with a `{ location, data }` envelope, so the payload sits one level in.
+    return result.data?.data as StorageUsage | undefined
   })
 
   const reclaimed = createMemo(() => {
@@ -81,8 +82,9 @@ export const SettingsStorageV2: Component<{ directory?: () => string | undefined
               location: { directory: props.directory?.() },
               storagePurgeInput: { olderThan: cutoff() },
             })
-      const freed = (result.data as StorageResult | undefined)?.bytesBefore ?? 0
-      const after = (result.data as StorageResult | undefined)?.bytesAfter ?? 0
+      const payload = result.data?.data as StorageResult | undefined
+      const freed = payload?.bytesBefore ?? 0
+      const after = payload?.bytesAfter ?? 0
       setNotice(
         language.t(`settings.storage.${kind}.done`, { freed: formatBytes(freed - after) }),
       )
