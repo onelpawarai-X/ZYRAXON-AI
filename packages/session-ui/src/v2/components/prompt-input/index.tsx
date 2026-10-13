@@ -228,10 +228,8 @@ export function PromptInputV2(props: PromptInputV2Props) {
             onContext={props.controller.openContext}
             onShell={props.controller.openShell}
           />
-          <Show when={view.agent}>
-            {(control) => (
-              <PromptInputV2ConfiguredSelect title="Choose agent" keybind={["Mod", "."]} control={control()} />
-            )}
+          <Show when={view.agent?.options().length}>
+            <PromptInputV2ConfiguredSelect title="Choose agent" keybind={["Mod", "."]} control={view.agent!} />
           </Show>
           <Show
             when={props.modelControl}
