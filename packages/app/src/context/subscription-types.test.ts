@@ -1,7 +1,7 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import { describe, expect, test } from "bun:test"
-import { ZYRAXON_AGENTS } from "@/context/collab"
+import { ZYRAXON_AGENTS } from "@/context/collab-agents"
 import {
   FREE_STATE,
   TIER_ORDER,

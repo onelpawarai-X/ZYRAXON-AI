@@ -28,6 +28,19 @@ type Saved = {
   session: Record<string, State | undefined>
 }
 
+// The local agent list mixes backend `Agent` records with a synthetic "auto"
+// entry that has no backend config, so it needs its own item shape.
+type AgentItem = {
+  name: string
+  description?: string
+  mode: string
+  color?: string
+  hidden?: boolean
+  native?: boolean
+  model?: ModelKey
+  variant?: string
+}
+
 const WORKSPACE_KEY = "__workspace__"
 const handoff = new Map<string, State>()
 
@@ -69,7 +82,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
     const settings = useSettings()
 
     const id = createMemo(() => params.id || undefined)
-    const list = createMemo(() => {
+    const list = createMemo<AgentItem[]>(() => {
       const backendAgents = sync().data.agent.filter((item) => item.mode !== "subagent" && !item.hidden)
       // Add "auto" mode as first option for collaboration
       const autoAgent = {
@@ -212,7 +225,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
     const agent = {
       list,
       visible: agentsVisible,
-      current() {
+      current(): AgentItem | undefined {
         return pickAgent(agentsVisible() ? (scope()?.agent ?? store.current) : "build")
       },
       set(name: string | undefined) {

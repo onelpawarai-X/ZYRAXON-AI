@@ -270,14 +270,7 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
       }
     }
 
-    let sdkScope = ""
-    try {
-      const sdk = serverSdk()
-      sdkScope = sdk?.scope ?? ""
-    } catch {
-      sdkScope = "fallback"
-    }
-    const target = Persist.serverGlobal(sdkScope, "layout", ["layout.v6"])
+    const target = Persist.serverGlobal(ServerScope.local, "layout", ["layout.v6"])
     const [store, setStore, _, ready] = persisted(
       { ...target, migrate },
       createStore({

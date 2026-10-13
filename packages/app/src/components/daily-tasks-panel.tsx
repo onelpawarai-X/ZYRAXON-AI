@@ -226,7 +226,7 @@ export function DailyTasksPanel() {
               <div class="mb-2 p-2 rounded-lg border border-border bg-surface">
                 <div class="flex items-start gap-2">
                   <IconButton
-                    icon={task.enabled ? "check-circle" : "circle"}
+                    icon={task.enabled ? "circle-check" : "circle"}
                     variant="ghost"
                     size="small"
                     onClick={() => toggleTask(task.id)}

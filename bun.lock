@@ -310,7 +310,7 @@
     },
     "packages/core": {
       "name": "@zyraxon-ai/core",
-      "version": "19.0.5",
+      "version": "19.0.6",
       "bin": {
         "zyraxon": "./bin/zyraxon",
       },
@@ -404,7 +404,7 @@
     },
     "packages/desktop": {
       "name": "@zyraxon-ai/desktop",
-      "version": "19.0.5",
+      "version": "19.0.6",
       "dependencies": {
         "@playwright/mcp": "0.0.79",
         "@zip.js/zip.js": "2.7.62",
@@ -476,7 +476,7 @@
     },
     "packages/effect-drizzle-sqlite": {
       "name": "@zyraxon-ai/effect-drizzle-sqlite",
-      "version": "19.0.5",
+      "version": "19.0.6",
       "dependencies": {
         "drizzle-orm": "catalog:",
         "effect": "catalog:",
@@ -490,7 +490,7 @@
     },
     "packages/effect-sqlite-node": {
       "name": "@zyraxon-ai/effect-sqlite-node",
-      "version": "19.0.5",
+      "version": "19.0.6",
       "dependencies": {
         "effect": "catalog:",
       },
@@ -550,7 +550,7 @@
     },
     "packages/http-recorder": {
       "name": "@zyraxon-ai/http-recorder",
-      "version": "19.0.5",
+      "version": "19.0.6",
       "dependencies": {
         "@effect/platform-node": "4.0.0-beta.83",
         "@effect/platform-node-shared": "4.0.0-beta.83",
@@ -581,7 +581,7 @@
     },
     "packages/llm": {
       "name": "@zyraxon-ai/llm",
-      "version": "19.0.5",
+      "version": "19.0.6",
       "dependencies": {
         "@smithy/eventstream-codec": "4.2.14",
         "@smithy/util-utf8": "4.2.2",
@@ -600,7 +600,7 @@
     },
     "packages/plugin": {
       "name": "@zyraxon-ai/plugin",
-      "version": "19.0.5",
+      "version": "19.0.6",
       "dependencies": {
         "@ai-sdk/provider": "3.0.8",
         "@zyraxon-ai/sdk": "workspace:*",
@@ -662,7 +662,7 @@
     },
     "packages/sdk-next": {
       "name": "@zyraxon-ai/sdk-next",
-      "version": "19.0.5",
+      "version": "19.0.6",
       "dependencies": {
         "@zyraxon-ai/client": "workspace:*",
         "@zyraxon-ai/server": "workspace:*",
@@ -676,7 +676,7 @@
     },
     "packages/sdk/js": {
       "name": "@zyraxon-ai/sdk",
-      "version": "19.0.5",
+      "version": "19.0.6",
       "dependencies": {
         "cross-spawn": "^7.0.3",
       },
@@ -691,7 +691,7 @@
     },
     "packages/server": {
       "name": "@zyraxon-ai/server",
-      "version": "19.0.5",
+      "version": "19.0.6",
       "dependencies": {
         "@zyraxon-ai/core": "workspace:*",
         "@zyraxon-ai/protocol": "workspace:*",

@@ -523,7 +523,7 @@ async function probeZeroSetup(endpoint: string): Promise<boolean> {
     headers: { "content-type": "application/json", accept: "application/json" },
     body: JSON.stringify({
       client_name: "ZYRAXON",
-      redirect_uris: ["http://127.0.0.1:19876/mcp/oauth/callback"],
+      redirect_uris: ["http://127.0.0.1:19876/oauth/callback"],
       grant_types: ["authorization_code", "refresh_token"],
       response_types: ["code"],
       token_endpoint_auth_method: "none",

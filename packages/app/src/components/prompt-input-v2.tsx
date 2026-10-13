@@ -434,17 +434,25 @@ export function usePromptInputV2Controller(props: PromptInputV2ControllerProps):
     })),
   )
   const variants = createMemo(() => ["default", ...props.controls.model.selection.variant.list()])
+  // The app prompt model and the session-ui v2 model describe the same data with
+  // structurally identical parts but separately declared types. The controller
+  // only reads this state, so adapt at the boundary rather than rebuilding it.
+  const storeForEditor =
+    prompt.capture().store as unknown as Exclude<
+      Parameters<typeof createPromptInputV2Controller>[0]["store"],
+      Function
+    >
   const controller = createPromptInputV2Controller({
-    store: () => prompt.capture().store,
+    store: storeForEditor,
     state: interaction,
     identity: () => prompt.capture(),
     history: {
       entries: (mode) =>
         history.entries(mode).map((value) => {
           const entry = normalizePromptHistoryEntry(value)
-          return { prompt: entry.prompt, metadata: entry.comments }
+          return { prompt: entry.prompt as never, metadata: entry.comments }
         }),
-      add: (value, mode) => history.add(value, mode, mode === "shell" ? [] : historyComments()),
+      add: (value, mode) => history.add(value as never, mode, mode === "shell" ? [] : historyComments()),
       capture: historyComments,
       restore: (metadata) => restoreHistoryComments(metadata as PromptHistoryComment[]),
     },

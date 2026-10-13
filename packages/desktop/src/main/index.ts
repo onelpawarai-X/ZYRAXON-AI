@@ -50,6 +50,7 @@ import { spawnWslSidecar } from "./wsl/sidecar"
 import { migrate } from "./migrate"
 import { cleanupStoreFiles } from "./store-cleanup"
 import { registerTaskDaemonIpcHandlers } from "./task-daemon"
+import { armAutomationClose, stopAutomationClose } from "./automation-wake"
 
 const APP_NAMES: Record<string, string> = {
   dev: "ZYRAXON Dev",
@@ -262,6 +263,7 @@ const main = Effect.gen(function* () {
     isQuitting = true
     event.preventDefault()
     setAppQuitting()
+    stopAutomationClose()
     closeCloudAgentWindow()
     try {
       const { getVoiceBridgeModule } = require("./voice-bridge-singleton") as typeof import("./voice-bridge-singleton")
@@ -504,6 +506,10 @@ const main = Effect.gen(function* () {
         console.error("[Main] Sidecar health check failed:", String(e))
         logger.error("sidecar health check failed", String(e))
       })
+
+      // A daemon launch exists only to let automation drain; once it has, the app closes
+      // itself. A launch the person made never arms this.
+      armAutomationClose(url, password)
 
       logger.log("loading task finished")
     } catch (error) {

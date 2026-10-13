@@ -20,7 +20,7 @@ export const DialogSettings: Component<{ defaultValue?: string }> = (props) => {
   const [tab, setTab] = createSignal(props.defaultValue ?? "general")
 
   const showProviders = () => {
-    void dialog.show(() => <DialogSettings defaultValue="providers" />)
+    void dialog.show(() => <DialogSettings defaultValue="providers" />, undefined, { docked: true })
   }
 
   return (

@@ -197,8 +197,9 @@ function scheduleProviderRefetch(queryClient: QueryClient, scope: ServerScope, d
   setTimeout(() => {
     void queryClient
       .refetchQueries({ queryKey: [scope, directory, "providers"], type: "active" })
-      .then((results) => {
-        const loaded = results.some((result) => result.status === "success" && (result.data?.all?.size ?? 0) > 0)
+      .then(() => {
+        const data = queryClient.getQueryData<NormalizedProviderListResponse>([scope, directory, "providers"])
+        const loaded = (data?.all?.size ?? 0) > 0
         if (!loaded) scheduleProviderRefetch(queryClient, scope, directory, attempts - 1)
       })
       .catch(() => {})

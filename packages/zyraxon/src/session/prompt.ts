@@ -49,6 +49,7 @@ import { InstanceState } from "@/effect/instance-state"
 import { TaskTool, type TaskPromptOps } from "@/tool/task"
 import { SessionRunState } from "./run-state"
 import { autoInjectContext, autoStoreConversation } from "../memory/auto-injection"
+import { pendingBlock as pendingAutomation } from "../automation/event-store"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 import { EventV2Bridge } from "@/event-v2-bridge"
 import { Database } from "@zyraxon-ai/core/database/database"
@@ -1437,6 +1438,12 @@ const layer = Layer.effect(
             const autoCtx = yield* Effect.promise(() => autoInjectContext(lastUserText, lastUser.agent, sessionID))
             yield* Effect.logInfo("loop_timing", { "session.id": sessionID, step, op: "autoInjectContext", ms: Date.now() - _tAutoCtx })
             if (autoCtx) system.push(autoCtx)
+
+            // Connected-app events that arrived while the person was away. The durable
+            // automation store is the source of truth, so an event survives a restart and
+            // still reaches this turn.
+            const automationCtx = yield* Effect.promise(() => pendingAutomation())
+            if (automationCtx) system.push(automationCtx)
 
             // AUTO VISION: Inject latest daemon screenshot as image ONLY in VISION mode
             // The daemon is started ONLY when the user is in VISION mode (see Agent.Activate).

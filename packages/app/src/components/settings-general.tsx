@@ -270,7 +270,7 @@ export const SettingsGeneral: Component = () => {
                 settings.general.setNewLayoutDesigns(checked)
                 if (!checked) return
                 void import("@/components/settings-v2").then((module) => {
-                  void dialog.show(() => <module.DialogSettings />)
+                  void dialog.show(() => <module.DialogSettings />, undefined, { docked: true })
                 })
               }}
             />

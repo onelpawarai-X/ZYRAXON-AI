@@ -131,6 +131,18 @@ on it. Call preview_detach_window when you are done.`,
               ),
             }
           }
+          // Publish the choice to the shared preview state. The desktop main process
+          // watches that file and forwards it to the renderer, which is what actually
+          // puts the window on the user's screen — without this the panel stays on the
+          // page view and the attach never becomes visible.
+          yield* Effect.promise(async () => {
+            const engine = await import("../pro-builder/engine")
+            const current = await engine.readPreviewState()
+            await engine.writePreviewState({
+              ...current,
+              attachedWindow: { id: target.handle as string, name: target.title ?? params.title },
+            })
+          })
           return {
             title: `Attached ${target.title}`,
             metadata: { handle: target.handle, attached: true },
@@ -159,10 +171,19 @@ export const PreviewDetachTool = Tool.define<typeof DetachParameters, Metadata, 
       description: "Stop mirroring the attached application and return the Preview panel to its normal page view.",
       parameters: DetachParameters,
       execute: () =>
-        Effect.succeed({
-          title: "Preview detached",
-          metadata: {},
-          output: JSON.stringify({ detached: true }, null, 2),
+        Effect.gen(function* () {
+          // Clear the mirrored window in the shared preview state so the panel and the
+          // main-process watcher both go back to the page view.
+          yield* Effect.promise(async () => {
+            const engine = await import("../pro-builder/engine")
+            const current = await engine.readPreviewState()
+            await engine.writePreviewState({ ...current, attachedWindow: null })
+          })
+          return {
+            title: "Preview detached",
+            metadata: {},
+            output: JSON.stringify({ detached: true }, null, 2),
+          }
         }),
     }
   }),

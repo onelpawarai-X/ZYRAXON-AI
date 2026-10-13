@@ -85,7 +85,6 @@ export function MonacoEditor(props: MonacoEditorProps) {
   const feedback = new CodeGuardianAIFeedback()
   let tokenBuffer = ""
   let streamingDebounce: ReturnType<typeof setTimeout> | null = null
-  let widgetDisposable: Monaco.editor.IEditorDecorationsCollection | null = null
   let inlineChatWidget: Monaco.editor.IContentWidget | null = null
   let inlineChatLine: number | null = null
   let mouseDownDisposable: Monaco.IDisposable | null = null
@@ -480,21 +479,23 @@ export function MonacoEditor(props: MonacoEditorProps) {
         try {
           // Flash the error in editor
           if (editor && monaco) {
-            const errorWidget = {
+            const ed = editor
+            const mc = monaco
+            const errorWidget: Monaco.editor.IContentWidget = {
               getId: () => `ai-error-${Date.now()}`,
               getDomNode: () => {
                 const node = document.createElement("div")
                 node.style.cssText = "width:420px;padding:12px 16px;background:#2d1b1b;border:1px solid #ff4444;border-radius:10px;color:#ff6b6b;font-size:12px;font-family:inherit;box-shadow:0 4px 20px rgba(255,0,0,0.3);line-height:1.5;"
                 node.innerHTML = `<b>AI Generation Failed</b><br/>${error.message || "Unknown error"}<br/><span style="font-size:10px;opacity:0.6">Check that opencode provider is configured and the model is available.</span>`
-                setTimeout(() => { try { editor.removeContentWidget(errorWidget) } catch {} }, 8000)
+                setTimeout(() => { try { ed.removeContentWidget(errorWidget) } catch {} }, 8000)
                 return node
               },
               getPosition: () => ({
-                position: { lineNumber: Math.min((editor.getModel()?.getLineCount() || 1) + 1, 999), column: 1 },
-                preference: [monaco.editor.ContentWidgetPositionPreference.BELOW],
+                position: { lineNumber: Math.min((ed.getModel()?.getLineCount() || 1) + 1, 999), column: 1 },
+                preference: [mc.editor.ContentWidgetPositionPreference.BELOW],
               }),
             }
-            editor.addContentWidget(errorWidget)
+            ed.addContentWidget(errorWidget)
           }
         } catch {}
       },
@@ -681,15 +682,15 @@ export function MonacoEditor(props: MonacoEditorProps) {
     mouseDownDisposable = editor.onMouseDown((e) => {
       if (aiGenerating()) return
       if (e.event.detail !== 2) return
+      const ed = editor!
       let lineNumber = e.target.position?.lineNumber
       if (!lineNumber) {
         try {
           const editorRect = containerRef!.getBoundingClientRect()
-          const mouseY = e.event.clientY - editorRect.top
-          const scrollTop = editor.getScrollTop()
-          const layoutInfo = editor.getLayoutInfo()
-          const lineHeight = editor.getOption(monaco!.editor.EditorOption.lineHeight) || 20
-          lineNumber = Math.floor((mouseY + scrollTop - layoutInfo.paddingTop) / lineHeight) + 1
+          const mouseY = e.event.browserEvent.clientY - editorRect.top
+          const scrollTop = ed.getScrollTop()
+          const lineHeight = ed.getOption(monaco!.editor.EditorOption.lineHeight) || 20
+          lineNumber = Math.floor((mouseY + scrollTop) / lineHeight) + 1
         } catch {}
       }
       if (lineNumber && lineNumber > 0) {
@@ -797,7 +798,6 @@ export function MonacoEditor(props: MonacoEditorProps) {
     if (scanDebounce) clearTimeout(scanDebounce)
     if (userEditDebounce) clearTimeout(userEditDebounce)
     if (streamingDebounce) clearTimeout(streamingDebounce)
-    widgetDisposable?.clear()
     mouseDownDisposable?.dispose()
     editor?.dispose()
   })

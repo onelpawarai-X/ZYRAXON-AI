@@ -55,7 +55,7 @@ export const SettingsStorageV2: Component<{ directory?: () => string | undefined
   const [window, setWindow] = createSignal("")
 
   const [usage, { refetch }] = createResource(async (): Promise<StorageUsage | undefined> => {
-    const result = await sdk().client.storage.usage({ directory: props.directory?.() })
+    const result = await sdk().client.v2.storage.usage({ location: { directory: props.directory?.() } })
     return result.data as StorageUsage | undefined
   })
 
@@ -76,9 +76,9 @@ export const SettingsStorageV2: Component<{ directory?: () => string | undefined
     try {
       const result =
         kind === "compact"
-          ? await sdk().client.storage.compact({ directory: props.directory?.() })
-          : await sdk().client.storage.purge({
-              directory: props.directory?.(),
+          ? await sdk().client.v2.storage.compact({ location: { directory: props.directory?.() } })
+          : await sdk().client.v2.storage.purge({
+              location: { directory: props.directory?.() },
               storagePurgeInput: { olderThan: cutoff() },
             })
       const freed = (result.data as StorageResult | undefined)?.bytesBefore ?? 0

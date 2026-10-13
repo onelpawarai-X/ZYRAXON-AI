@@ -2,7 +2,7 @@
 
 All official ZYRAXON AI packages published under the `@zyraxon-ai` npm scope.
 
-**Current Version**: 19.0.5  
+**Current Version**: 19.0.6  
 **License**: ZSL-X (Zyraxon Sovereign License — X Edition)  
 **npm Organization**: [zyraxon-ai](https://www.npmjs.com/org/zyraxon-ai)  
 **GitHub**: https://github.com/onelpawarai-X/ZYRAXON-AI
