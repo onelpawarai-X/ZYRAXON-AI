@@ -29,6 +29,33 @@
   font-style: normal;
 }
 
+/* Script coverage for locales Inter has no glyphs for. Without these the browser
+   falls back to whatever the OS happens to have — on Linux containers, nothing —
+   so Bengali, Devanagari and Arabic rendered as boxes or stray marks. */
+@font-face {
+  font-family: "Noto Sans Bengali";
+  src: url("/assets/NotoSansBengali.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans Devanagari";
+  src: url("/assets/NotoSansDevanagari.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans Arabic";
+  src: url("/assets/NotoSansArabic.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @media (display-mode: standalone) {
   /* WebKit excludes safe-area insets from dvh in installed apps. */
   #root {

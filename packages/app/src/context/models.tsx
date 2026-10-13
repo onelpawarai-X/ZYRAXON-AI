@@ -7,6 +7,8 @@ import { filter, firstBy, flat, groupBy, mapValues, pipe, uniqueBy, values } fro
 import { createSimpleContext } from "@zyraxon-ai/ui/context"
 import { useProviders } from "@/hooks/use-providers"
 import { Persist, persisted } from "@/utils/persist"
+import { createSdkForServer } from "@/utils/server"
+import { useServer } from "./server"
 
 export type LocalPinnedModel = {
   id: string; name: string; family: string; contextLength: number;
@@ -80,6 +82,61 @@ export const { use: useModels, provider: ModelsProvider } = createSimpleContext(
   gate: false,
   init: (props: { directory?: Accessor<string | undefined> } = {}) => {
     const providers = useProviders(props.directory)
+    const server = useServer()
+    const serverUrl = () => server.current?.http?.url
+
+    // Models actually present on disk. The server scans the model directory, so
+    // this is the source of truth for "downloaded" — localStorage is only a
+    // cache for the brief window before the first scan returns.
+    const [serverModels, { refetch: refetchServerModels }] = createResource(serverUrl, async (url) => {
+      if (!url) return [] as string[]
+      try {
+        const res = await fetch(`${url}/local/models`)
+        if (!res.ok) return [] as string[]
+        const data = (await res.json()) as Array<{ id: string }>
+        return data.map((m) => m.id)
+      } catch {
+        return [] as string[]
+      }
+    })
+
+    const downloadedIds = createMemo(() => {
+      const set = getDownloadedModels()
+      for (const id of serverModels() ?? []) set.add(id)
+      return set
+    })
+    const isDownloaded = (modelId: string) => downloadedIds().has(modelId)
+
+    const downloadModel = async (input: { repo: string; file: string }) => {
+      const url = serverUrl()
+      if (!url) return { success: false, error: "No server connection" }
+      try {
+        const res = await fetch(`${url}/local/download`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(input),
+        })
+        if (!res.ok) return { success: false, error: await res.text() }
+        const model = (await res.json()) as { id: string }
+        markModelDownloaded(model.id)
+        void refetchServerModels()
+        return { success: true, model }
+      } catch (err: any) {
+        return { success: false, error: err?.message ?? "Download failed" }
+      }
+    }
+
+    const searchLocalModels = async (query: string) => {
+      const url = serverUrl()
+      if (!url) return []
+      try {
+        const res = await fetch(`${url}/local/search?q=${encodeURIComponent(query)}`)
+        if (!res.ok) return []
+        return (await res.json()) as Array<{ id: string; downloads: number; likes: number; kind: string }>
+      } catch {
+        return []
+      }
+    }
 
     const [store, setStore, _, ready] = persisted(
       Persist.global("model", ["model.v1"]),
@@ -252,8 +309,10 @@ export const { use: useModels, provider: ModelsProvider } = createSimpleContext(
         set: setVariant,
       },
       localPinned: LOCAL_PINNED,
-      isDownloaded: isModelDownloaded,
+      isDownloaded,
       markDownloaded: markModelDownloaded,
+      downloadModel,
+      searchLocalModels,
     }
   },
 })

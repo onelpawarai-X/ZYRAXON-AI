@@ -13,6 +13,21 @@ import { HttpApiBuilder } from "effect/unstable/httpapi"
 import { InstanceHttpApi } from "../api"
 import { ProviderAuthApiError } from "../groups/provider"
 import { ProviderV2 } from "@zyraxon-ai/core/provider"
+import * as Local from "@/local/local"
+
+/**
+ * Origin the server is listening on, used as the base URL for the local model
+ * proxy. The AI SDK runs inside this same process, so loopback always reaches it.
+ */
+async function selfOrigin(): Promise<string> {
+  try {
+    const { Server } = await import("@/server/server")
+    if (Server.url) return Server.url.origin
+  } catch {
+    /* not listening yet — fall through */
+  }
+  return process.env.ZYRAXON_SERVER_URL ?? `http://127.0.0.1:${process.env.PORT ?? 4096}`
+}
 
 function mapProviderAuthError<A, R>(self: Effect.Effect<A, ProviderAuth.Error, R>) {
   return self.pipe(
@@ -55,10 +70,17 @@ export const providerHandlers = HttpApiBuilder.group(InstanceHttpApi, "provider"
         mapValues(filtered, (item) => Provider.fromCatalogProvider(item)),
         connected,
       )
+      // The local models are discovered at request time, so they are merged in
+      // here rather than registered in the catalog. They are always "connected":
+      // the only requirement is that the GGUF is on disk.
+      const origin = yield* Effect.promise(() => selfOrigin())
+      const localProvider = Local.buildLocalProvider(`${origin}/local/v1`, Local.modelDir())
+      const localConnected = Object.keys(localProvider.models).length > 0
+      const allProviders = [...Object.values(providers).map(Provider.toPublicInfo), Provider.toPublicInfo(localProvider as never)]
       return {
-        all: Object.values(providers).map(Provider.toPublicInfo),
+        all: allProviders,
         default: Provider.defaultModelIDs(providers),
-        connected: Object.keys(providers).filter((id) => id in connected || credentials[id]),
+        connected: [...Object.keys(providers).filter((id) => id in connected || credentials[id]), ...(localConnected ? ["local"] : [])],
       }
     })
 

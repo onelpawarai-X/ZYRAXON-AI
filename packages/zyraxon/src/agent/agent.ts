@@ -3,6 +3,7 @@
 import { LayerNode } from "@zyraxon-ai/core/effect/layer-node"
 import { PermissionV1 } from "@zyraxon-ai/core/v1/permission"
 import { Config } from "@/config/config"
+import { ConfigV1 } from "@zyraxon-ai/core/v1/config/config"
 import { serviceUse } from "@zyraxon-ai/core/effect/service-use"
 import { Provider } from "@/provider/provider"
 
@@ -148,7 +149,7 @@ const layer = Layer.effect(
 
         const user = Permission.fromConfig(cfg.permission ?? {})
 
-        const agents: Record<string, Info> = {
+        const builtinAgents: Record<string, Info> = {
           auto: {
             name: "auto",
             description: "AUTO ORCHESTRATOR — Analyzes tasks, delegates to the right agents (build, plan, beast, pro, apex, dark-emperor, pro-builder, vision), coordinates their work, and delivers unified results. Launches agents in parallel for maximum speed. Has full task delegation and subagent spawning capabilities.",
@@ -471,49 +472,64 @@ const layer = Layer.effect(
           },
         }
 
-        for (const [key, value] of Object.entries(cfg.agent ?? {})) {
-          if (value.disable) {
-            delete agents[key]
-            continue
-          }
-          let item = agents[key]
-          if (!item)
-            item = agents[key] = {
-              name: key,
-              mode: "all",
-              permission: Permission.merge(defaults, user),
-              options: {},
-              native: false,
-            }
-          if (value.model) item.model = Provider.parseModel(value.model)
-          item.variant = value.variant ?? item.variant
-          item.prompt = value.prompt ?? item.prompt
-          item.description = value.description ?? item.description
-          item.temperature = value.temperature ?? item.temperature
-          item.topP = value.top_p ?? item.topP
-          item.mode = value.mode ?? item.mode
-          item.color = value.color ?? item.color
-          item.hidden = value.hidden ?? item.hidden
-          item.name = value.name ?? item.name
-          item.steps = value.steps ?? item.steps
-          item.options = mergeDeep(item.options, value.options ?? {})
-          item.permission = Permission.merge(item.permission, Permission.fromConfig(value.permission ?? {}))
-        }
-
-        // Ensure Truncate.GLOB is allowed unless explicitly configured
-        for (const name in agents) {
-          const agent = agents[name]
-          const explicit = agent.permission.some((r) => {
-            if (r.permission !== "external_directory") return false
-            if (r.action !== "deny") return false
-            return r.pattern === Truncate.GLOB
-          })
-          if (explicit) continue
-
-          agents[name].permission = Permission.merge(
-            agents[name].permission,
-            Permission.fromConfig({ external_directory: { [Truncate.GLOB]: "allow" } }),
+        // Agents are resolved from the current config on every read. Config-created
+        // agents (Settings → Agents writes `agent.<name>`) must appear in the mode
+        // selector without a restart, and the instance state that owns this closure
+        // is built once and cached, so a map captured here would never see them.
+        function resolveAgents(cfg: ConfigV1.Info): Record<string, Info> {
+          const agents: Record<string, Info> = Object.fromEntries(
+            Object.entries(builtinAgents).map(([name, agent]) => [
+              name,
+              { ...agent, permission: [...agent.permission], options: { ...agent.options } },
+            ]),
           )
+
+          for (const [key, value] of Object.entries(cfg.agent ?? {})) {
+            if (value.disable) {
+              delete agents[key]
+              continue
+            }
+            let item = agents[key]
+            if (!item)
+              item = agents[key] = {
+                name: key,
+                mode: "all",
+                permission: Permission.merge(defaults, user),
+                options: {},
+                native: false,
+              }
+            if (value.model) item.model = Provider.parseModel(value.model)
+            item.variant = value.variant ?? item.variant
+            item.prompt = value.prompt ?? item.prompt
+            item.description = value.description ?? item.description
+            item.temperature = value.temperature ?? item.temperature
+            item.topP = value.top_p ?? item.topP
+            item.mode = value.mode ?? item.mode
+            item.color = value.color ?? item.color
+            item.hidden = value.hidden ?? item.hidden
+            item.name = value.name ?? item.name
+            item.steps = value.steps ?? item.steps
+            item.options = mergeDeep(item.options, value.options ?? {})
+            item.permission = Permission.merge(item.permission, Permission.fromConfig(value.permission ?? {}))
+          }
+
+          // Ensure Truncate.GLOB is allowed unless explicitly configured
+          for (const name in agents) {
+            const agent = agents[name]
+            const explicit = agent.permission.some((r) => {
+              if (r.permission !== "external_directory") return false
+              if (r.action !== "deny") return false
+              return r.pattern === Truncate.GLOB
+            })
+            if (explicit) continue
+
+            agents[name].permission = Permission.merge(
+              agents[name].permission,
+              Permission.fromConfig({ external_directory: { [Truncate.GLOB]: "allow" } }),
+            )
+          }
+
+          return agents
         }
 
         const get = Effect.fnUntraced(function* (agent: string) {
@@ -539,13 +555,14 @@ const layer = Layer.effect(
               } catch {}
             })
           }
-          return agents[agent]
+          const cfg = yield* config.get()
+          return resolveAgents(cfg)[agent]
         })
 
         const list = Effect.fnUntraced(function* () {
           const cfg = yield* config.get()
           return pipe(
-            agents,
+            resolveAgents(cfg),
             values(),
             sortBy(
               [(x) => (cfg.default_agent ? x.name === cfg.default_agent : x.name === "build"), "desc"],
@@ -556,6 +573,7 @@ const layer = Layer.effect(
 
         const defaultInfo = Effect.fnUntraced(function* () {
           const c = yield* config.get()
+          const agents = resolveAgents(c)
           if (c.default_agent) {
             const agent = agents[c.default_agent]
             if (!agent) throw new Error(`default agent "${c.default_agent}" not found`)

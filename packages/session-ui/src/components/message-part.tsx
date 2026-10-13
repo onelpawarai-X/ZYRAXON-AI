@@ -1366,10 +1366,24 @@ export function UserMessageDisplay(props: {
                     <Show
                       when={type === "image"}
                       fallback={
-                        <div data-slot="user-message-attachment-file">
-                          <FileIcon node={{ path: name, type: "file" }} />
-                          <span data-slot="user-message-attachment-name">{name}</span>
-                        </div>
+                        <Show
+                          when={type === "video"}
+                          fallback={
+                            <Show
+                              when={type === "audio"}
+                              fallback={
+                                <div data-slot="user-message-attachment-file">
+                                  <FileIcon node={{ path: name, type: "file" }} />
+                                  <span data-slot="user-message-attachment-name">{name}</span>
+                                </div>
+                              }
+                            >
+                              <audio data-slot="user-message-attachment-audio" src={file.url} controls />
+                            </Show>
+                          }
+                        >
+                          <video data-slot="user-message-attachment-video" src={file.url} controls />
+                        </Show>
                       }
                     >
                       <img data-slot="user-message-attachment-image" src={file.url} alt={name} />

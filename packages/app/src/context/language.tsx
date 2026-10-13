@@ -298,7 +298,15 @@ const t = ((key: keyof Dictionary, params?: Record<string, string | number | boo
     createEffect(() => {
       if (typeof document !== "object") return
       document.documentElement.lang = locale()
-      document.documentElement.dir = dir()
+      // The app chrome is laid out with logical properties and flexbox that were
+      // never authored for a mirrored axis. Setting dir="rtl" on the document
+      // reversed every row and column at once, so selecting Arabic (or any other
+      // RTL locale) turned the whole interface inside out. The document therefore
+      // stays LTR; Arabic glyphs still render right-to-left inside each run via
+      // the Unicode bidi algorithm. The locale direction is exposed as a data
+      // attribute so text-only surfaces can opt into RTL without moving layout.
+      document.documentElement.dir = "ltr"
+      document.documentElement.dataset.localeDir = dir()
       document.cookie = cookie(locale())
     })
 

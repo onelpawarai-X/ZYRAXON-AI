@@ -96,6 +96,7 @@ import { mcpHandlers } from "./handlers/mcp"
 import { permissionHandlers } from "./handlers/permission"
 import { projectHandlers } from "./handlers/project"
 import { projectCopyHandlers } from "./handlers/project-copy"
+import { localHandlers } from "./handlers/local"
 import { providerHandlers } from "./handlers/provider"
 import { ptyConnectHandlers, ptyHandlers } from "./handlers/pty"
 import { questionHandlers } from "./handlers/question"
@@ -115,6 +116,7 @@ import { disposeMiddleware } from "./lifecycle"
 import { Automation } from "@/automation/service"
 import { AutomationSessionDispatch } from "@/automation/session-dispatch"
 import { routes as automationRoutes } from "@/automation/routes"
+import { routes as localModelRoutes } from "@/local/routes"
 import { memoMap } from "@zyraxon-ai/core/effect/memo-map"
 import { compressionLayer } from "./middleware/compression"
 import { corsVaryFix } from "./middleware/cors-vary"
@@ -169,6 +171,7 @@ const instanceApiRoutes = HttpApiBuilder.layer(InstanceHttpApi).pipe(
     ptyHandlers,
     questionHandlers,
     permissionHandlers,
+    localHandlers,
     providerHandlers,
     sessionHandlers,
     syncHandlers,
@@ -287,6 +290,7 @@ export function createRoutes(
     ptyConnectApiRoutes,
     instanceRoutes,
     serverRoutes,
+    localModelRoutes as Layer.Layer<never, never, RouteRequirements>,
     automationRoutes as Layer.Layer<never, never, RouteRequirements>,
     OpenAICompat.layer,
     docRoute,
