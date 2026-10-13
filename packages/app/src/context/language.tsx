@@ -9,6 +9,7 @@ import { dict as en } from "@/i18n/en"
 import { dict as uiEn } from "@zyraxon-ai/ui/i18n/en"
 import { CODES, LANGUAGES, direction, findLanguage, nativeName } from "@/i18n/languages"
 import { CORE_MANIFEST } from "@/i18n/core/manifest"
+import { GENERATED } from "@/i18n/generated/manifest"
 
 /** Any BCP-47 tag listed in the language registry. */
 export type Locale = string
@@ -123,6 +124,13 @@ const fullDicts: Partial<Record<Locale, () => Promise<Dictionary>>> = {
 /** Core vocabulary chunks, one module per pack so a locale pulls only what it needs. */
 const CORE = CORE_MANIFEST
 
+/**
+ * Generated dictionaries cover every registry locale in full. They are the last
+ * stop for a locale with no hand-maintained file, which is what removes the
+ * dependency on English for the languages the picker already offered.
+ */
+const GENERATED_DICTS: Partial<Record<Locale, () => Promise<Record<string, string>>>> = GENERATED
+
 const SOURCE_KEYS = Object.keys(ENGLISH).length
 
 function ratio(locale: Locale) {
@@ -137,26 +145,26 @@ function loadDict(locale: Locale) {
   if (hit) return Promise.resolve(hit)
   if (locale === DEFAULT_LOCALE) return Promise.resolve(ENGLISH)
 
+  // Generated dictionaries are complete for every registry locale, so they are
+  // the base. A hand-maintained dictionary, where one exists, overlays its own
+  // curated wording on top. The result is a full dictionary with the best
+  // available translation for every key and no reliance on English.
+  const generated = GENERATED_DICTS[locale]
+  const base = generated ? generated().then((pack) => i18n.flatten(pack) as Dictionary) : Promise.resolve({} as Dictionary)
+
   const full = fullDicts[locale]
-  if (full) {
-    return full().then((next) => {
-      dicts.set(locale, next)
-      return next
-    })
-  }
-
   const core = CORE[locale]
-  if (core) {
-    return core().then((pack) => {
-      const next = i18n.flatten(pack) as Dictionary
-      dicts.set(locale, next)
-      return next
-    })
-  }
+  const curated = full
+    ? full()
+    : core
+      ? core().then((pack) => i18n.flatten(pack) as Dictionary)
+      : Promise.resolve({} as Dictionary)
 
-  const empty = {} as Dictionary
-  dicts.set(locale, empty)
-  return Promise.resolve(empty)
+  return Promise.all([base, curated]).then(([generatedDict, curatedDict]) => {
+    const next = { ...generatedDict, ...curatedDict } as Dictionary
+    dicts.set(locale, next)
+    return next
+  })
 }
 
 /**
@@ -169,6 +177,7 @@ export function localeCoverage(locale: Locale) {
   if (locale === DEFAULT_LOCALE) return 1
   if (locale in dicts) return ratio(locale)
   if (locale in fullDicts) return 0.25
+  if (locale in GENERATED_DICTS) return 0.9
   return locale in CORE ? 0.25 : 0
 }
 
@@ -277,12 +286,9 @@ const translate = i18n.translator(() => dict() ?? ({} as Dictionary), i18n.resol
 const t = ((key: keyof Dictionary, params?: Record<string, string | number | boolean>) => {
   const value = translate(key, params)
   if (typeof value === "string" && value.length > 0) return value
-  // Fall back to the English source rather than rendering nothing. A locale that
-  // has not translated a key yet should still show a real label — the empty
-  // string this used to return made a partially translated language look like a
-  // broken interface, which is exactly what switching to a core pack produced.
-  const fallback = ENGLISH[key]
-  if (typeof fallback === "string" && fallback.length > 0) return fallback
+  // No English fallback: every locale ships its own full dictionary, so a key
+  // that resolves empty is a real gap in that dictionary, not a reason to show
+  // an English interface. The key name is logged so the gap stays findable.
   if (typeof process !== "undefined" && process.env?.ZYRAXON_DEBUG_I18N) console.warn(`[i18n] missing ${String(key)}`)
   return ""
 }) as (key: keyof Dictionary, params?: Record<string, string | number | boolean>) => string

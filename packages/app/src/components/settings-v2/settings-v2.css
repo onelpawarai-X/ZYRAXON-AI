@@ -1701,3 +1701,54 @@
   color: var(--v2-text-text-base, rgb(255 255 255 / 0.92));
   transform: rotate(90deg);
 }
+
+/* Message manager: a compact, scrollable checklist of a conversation's messages. */
+.zy-message-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--v2-border-border-muted, rgb(255 255 255 / 0.08));
+  border-radius: 10px;
+  margin: 8px 0;
+}
+
+.zy-message-row {
+  display: grid;
+  grid-template-columns: 20px 68px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--v2-border-border-muted, rgb(255 255 255 / 0.06));
+}
+
+.zy-message-row:last-child {
+  border-bottom: none;
+}
+
+.zy-message-row:hover {
+  background: var(--v2-overlay-simple-overlay-hover, rgb(255 255 255 / 0.04));
+}
+
+.zy-message-role {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--v2-text-text-muted, rgb(255 255 255 / 0.55));
+}
+
+.zy-message-preview {
+  font-size: 13px;
+  color: var(--v2-text-text-base, rgb(255 255 255 / 0.92));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zy-message-time {
+  font-size: 11px;
+  color: var(--v2-text-text-muted, rgb(255 255 255 / 0.45));
+  white-space: nowrap;
+}
+

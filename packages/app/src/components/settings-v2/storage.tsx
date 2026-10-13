@@ -7,6 +7,7 @@ import { useLanguage } from "@/context/language"
 import { useServerSDK } from "@/context/server-sdk"
 import { SettingsListV2 } from "./parts/list"
 import { SettingsRowV2 } from "./parts/row"
+import { StorageMessagesV2 } from "./storage-messages"
 import "./settings-v2.css"
 
 type StorageResult = {
@@ -167,6 +168,8 @@ export const SettingsStorageV2: Component<{ directory?: () => string | undefined
           </div>
         </SettingsRowV2>
       </SettingsListV2>
+
+      <StorageMessagesV2 directory={props.directory} />
     </div>
   )
 }

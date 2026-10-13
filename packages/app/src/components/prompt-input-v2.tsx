@@ -241,7 +241,10 @@ export function usePromptInputV2Controller(props: PromptInputV2ControllerProps):
       t: (key, params) => language.t(key as Parameters<typeof language.t>[0], params as never),
     }),
   )
-  const designPlaceholder = () => promptDesignPlaceholder(mode(), placeholder())
+  const designPlaceholder = () =>
+    promptDesignPlaceholder(mode(), placeholder(), (key, params) =>
+      language.t(key as Parameters<typeof language.t>[0], params as never),
+    )
 
   const agentDefFor = (name: string): ZyraxonAgentDef =>
     ZYRAXON_AGENTS.find((a) => a.id === name || a.name.toLowerCase() === name.toLowerCase()) ?? {
