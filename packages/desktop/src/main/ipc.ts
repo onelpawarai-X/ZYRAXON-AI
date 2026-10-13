@@ -19,6 +19,7 @@ import { getEditorPid, isEditorRunning, killEditor, launchZyraxonCode, launchZyr
 import type { UpdaterController } from "./updater-controller"
 import { createUpdaterSubscriptions } from "./updater-subscriptions"
 import { YouTubeStreamManager } from "./youtube-stream"
+import type { BackendType } from "./backend-manager"
 
 // Backend Manager — lazy-loaded
 let backendManager: typeof import("./backend-manager") | null = null
@@ -392,6 +393,10 @@ export function registerIpcHandlers(deps: Deps) {
     const id = getWindowID(win)
     if (!id) throw new Error("Window ID not found")
     return id
+  })
+
+  ipcMain.handle("get-window-fullscreen", (event: IpcMainInvokeEvent) => {
+    return BrowserWindow.fromWebContents(event.sender)?.isFullScreen() ?? false
   })
 
   ipcMain.handle("get-window-focused", (event: IpcMainInvokeEvent) => {
@@ -810,7 +815,7 @@ export function registerIpcHandlers(deps: Deps) {
     return { backends: bm.getAllBackendStatuses() }
   })
 
-  ipcMain.handle("backend-start", async (_event: IpcMainInvokeEvent, config: { type: string; modelPath: string; serverFlags?: string[] }) => {
+  ipcMain.handle("backend-start", async (_event: IpcMainInvokeEvent, config: { type: BackendType; modelPath: string; serverFlags?: string[] }) => {
     const bm = getBackendManager()
     if (!bm) return { success: false, error: "Backend manager not available" }
     try {
@@ -821,7 +826,7 @@ export function registerIpcHandlers(deps: Deps) {
     }
   })
 
-  ipcMain.handle("backend-stop", (_event: IpcMainInvokeEvent, type: string) => {
+  ipcMain.handle("backend-stop", (_event: IpcMainInvokeEvent, type: BackendType) => {
     const bm = getBackendManager()
     if (bm) bm.stopBackend(type)
     return { success: true }
@@ -1039,16 +1044,7 @@ ipcMain.handle("cloud-agent:open", async () => {
     }
     return false
   })
-  cloudAgentWindow.webContents.session.setDevicePermissionHandler((details, callback) => {
-    if (details.deviceType === "microphone" || details.deviceType === "camera") {
-      const url = details.requestingUrl || details.origin
-      if (url.includes("zyraxon-pro-x.lovable.app") || url.includes("zyraxonai.lovable.app")) {
-        callback(true)
-        return
-      }
-    }
-    callback(false)
-  })
+  cloudAgentWindow.webContents.session.setDevicePermissionHandler(() => false)
   cloudAgentWindow.setMenu(null)
   await cloudAgentWindow.loadURL(CLOUD_AGENT_URL)
   cloudAgentWindow.on("closed", () => { cloudAgentWindow = null })

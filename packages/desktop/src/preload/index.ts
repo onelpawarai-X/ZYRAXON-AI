@@ -130,6 +130,12 @@ const api: ElectronAPI = {
     ipcRenderer.on("pinch-zoom-enabled-changed", handler)
     return () => ipcRenderer.removeListener("pinch-zoom-enabled-changed", handler)
   },
+  getWindowFullscreen: () => ipcRenderer.invoke("get-window-fullscreen"),
+  onWindowFullscreenChanged: (cb) => {
+    const handler = (_: unknown, fullscreen: boolean) => cb(fullscreen)
+    ipcRenderer.on("window-fullscreen-changed", handler)
+    return () => ipcRenderer.removeListener("window-fullscreen-changed", handler)
+  },
   onZoomFactorChanged: (cb) => {
     const handler = (_: unknown, factor: number) => cb(factor)
     ipcRenderer.on("zoom-factor-changed", handler)

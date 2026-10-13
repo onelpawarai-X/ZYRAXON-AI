@@ -557,7 +557,7 @@ const main = Effect.gen(function* () {
   void (async () => {
     try {
       const { registerJarvisBrowserIPC } = await import("./jarvis-browser-integration")
-      registerJarvisBrowserIPC(getLastFocusedWindow())
+      registerJarvisBrowserIPC(getLastFocusedWindow() ?? undefined)
       logger.info("Jarvis Browser integration registered")
     } catch (error) {
       logger.warn("failed to initialize Jarvis Browser", error)

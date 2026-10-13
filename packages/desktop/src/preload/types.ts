@@ -186,6 +186,8 @@ export type ElectronAPI = {
   getPinchZoomEnabled: () => Promise<boolean>
   setPinchZoomEnabled: (enabled: boolean) => Promise<void>
   onPinchZoomEnabledChanged: (cb: (enabled: boolean) => void) => () => void
+  getWindowFullscreen: () => Promise<boolean>
+  onWindowFullscreenChanged: (cb: (fullscreen: boolean) => void) => () => void
   onZoomFactorChanged: (cb: (factor: number) => void) => () => void
   setTitlebar: (theme: TitlebarTheme) => Promise<void>
   runDesktopMenuAction: (action: DesktopMenuAction) => Promise<void>
@@ -276,6 +278,11 @@ export type ElectronAPI = {
     fillForm: (selector: string, value: string) => Promise<{ success: boolean; error?: string }>
     getElement: (x: number, y: number) => Promise<{ success: boolean; element?: any; error?: string }>
     listProfiles: () => Promise<{ success: boolean; profiles?: any[]; error?: string }>
+    switchProfile: (profileDir: string) => Promise<{ success: boolean; error?: string }>
+    pinTab: (url: string, title?: string) => Promise<{ success: boolean; error?: string }>
+    listOpenTabs: () => Promise<{ success: boolean; tabs?: any[]; error?: string }>
+    switchTab: (targetId: string) => Promise<{ success: boolean; error?: string }>
+    clickCaptcha: () => Promise<{ success: boolean; error?: string }>
     destroy: () => Promise<{ success: boolean; error?: string }>
   }
 }

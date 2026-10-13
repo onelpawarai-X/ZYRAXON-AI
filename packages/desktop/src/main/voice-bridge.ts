@@ -104,6 +104,15 @@ export function clearVoiceTranscript() {
   pendingCommands.push({ type: "clear-transcript" })
 }
 
+// The mic button in the bridge is also a send button: pressing it submits the
+// transcript straight into the chat instead of waiting for the composer's Send.
+// It reaches the chat exactly like a recognized utterance, through the same
+// `send-to-chat` event the bridge raises on its own.
+export function sendVoiceTranscript(text: string) {
+  if (!text || !text.trim()) return
+  rendererCallback?.({ type: "voice-send", text: text.trim(), lang: currentLanguage, submit: true })
+}
+
 export function getCurrentLanguage() { return currentLanguage }
 export function getCurrentVoiceGender() { return currentVoiceGender }
 

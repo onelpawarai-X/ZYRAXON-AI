@@ -6,7 +6,7 @@ import type { DesktopTheme } from "@zyraxon-ai/ui/theme/types"
 import oc2ThemeJson from "../../../ui/src/theme/themes/oc-2.json"
 import { randomUUID } from "node:crypto"
 import { rmSync } from "node:fs"
-import { app, BrowserWindow, dialog, net, nativeImage, nativeTheme, protocol } from "electron"
+import { app, BrowserWindow, dialog, net, nativeImage, nativeTheme, protocol, webContents } from "electron"
 import { dirname, isAbsolute, join, relative, resolve } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 import type { TitlebarTheme } from "../preload/types"
@@ -261,6 +261,7 @@ export function createMainWindow(id: string = randomUUID()) {
   registerWindow(win, id)
   loadWindow(win, "index.html")
   wireZoom(win)
+  wireFullscreen(win)
   injectCloudAgentSpeechBridge(win)
 
   win.once("ready-to-show", () => {
@@ -504,26 +505,10 @@ function allowRendererPermissions(win: BrowserWindow) {
     return isTrustedRendererUrl(details.requestingUrl) || isTrustedRendererUrl(requestingOrigin) || isVoiceBridge
   })
 
-  // Device permission handler — grants microphone/camera access to iframes
-  // This is critical for Web Speech API (SpeechRecognition) in cross-origin iframes.
-  // Without this, permission is "granted" but the actual microphone device access
-  // is silently denied, allowing SpeechRecognition to produce output.
-  win.webContents.session.setDevicePermissionHandler((details, callback) => {
-    if (details.deviceType === "microphone" || details.deviceType === "camera") {
-      const url = details.requestingUrl || details.origin
-      if (
-        isTrustedRendererUrl(url) ||
-        isRendererUrl(url) ||
-        url.includes("zyraxon-pro-x.lovable.app") ||
-        url.includes("zyraxonai.lovable.app") ||
-        url.includes("127.0.0.1:19800")
-      ) {
-        callback(true)
-        return
-      }
-    }
-    callback(false)
-  })
+  // Microphone and camera access is granted through the permission request and
+  // check handlers above (media is in `rendererPermissions`). This handler only
+  // covers hid/serial/usb devices, which the renderer never needs.
+  win.webContents.session.setDevicePermissionHandler(() => false)
 }
 
 function isTrustedRendererUrl(value?: string) {
@@ -598,6 +583,15 @@ function updateZoom(win: BrowserWindow) {
   win.webContents.send("zoom-factor-changed", win.webContents.getZoomFactor())
 }
 
+// The renderer tracks window fullscreen so it can drop the titlebar padding and
+// let content fill the display. Electron exposes both transitions as events, so
+// forward them rather than polling.
+function wireFullscreen(win: BrowserWindow) {
+  const send = () => win.webContents.send("window-fullscreen-changed", win.isFullScreen())
+  win.on("enter-full-screen", send)
+  win.on("leave-full-screen", send)
+}
+
 function upsertKeyValue(obj: Record<string, any>, keyToChange: string, value: any) {
   const keyToChangeLower = keyToChange.toLowerCase()
   for (const key of Object.keys(obj)) {
@@ -622,7 +616,7 @@ export function injectCloudAgentSpeechBridge(win: BrowserWindow) {
 
   function findIframeWebContents(): Electron.WebContents | null {
     try {
-      const all = win.webContents.getAllWebContents()
+      const all = webContents.getAllWebContents()
       for (const wc of all) {
         if (wc.isDestroyed()) continue
         const url = wc.getURL()
