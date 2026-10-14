@@ -1625,6 +1625,7 @@ function ToolFileAccordion(props: { path: string; actions?: JSX.Element; childre
 PART_MAPPING["tool"] = function ToolPartDisplay(props) {
   const data = useData()
   const i18n = useI18n()
+  const dialog = useDialog()
   const part = () => props.part as ToolPart
   if (part().tool === "todowrite") return null
 
@@ -1638,6 +1639,20 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
   const input = () => part().state?.input ?? emptyInput
   // @ts-expect-error
   const partMetadata = () => part().state?.metadata ?? emptyMetadata
+
+  // Media a tool produced (media_generate, read on an image, ...). It is rendered
+  // here because a completed tool part is the only place the model's file output
+  // is ever carried; without this the generated image, video or music is written
+  // to disk and then never shown, so the reply claims something the user cannot see.
+  const attachments = createMemo(() => {
+    const state = part().state
+    if (state?.status !== "completed") return []
+    return state.attachments ?? []
+  })
+
+  const openImagePreview = (url: string, alt?: string) => {
+    dialog.show(() => <ImagePreview src={url} alt={alt} />)
+  }
   const taskId = createMemo(() => {
     if (part().tool !== "task") return
     const value = partMetadata().sessionId
@@ -1708,6 +1723,53 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
             />
           </Match>
         </Switch>
+        <Show when={attachments().length > 0}>
+          <div data-component="tool-media">
+            <For each={attachments()}>
+              {(file) => {
+                const type = kind(file)
+                const name = file.filename ?? i18n.t("ui.message.attachment.alt")
+                return (
+                  <div
+                    data-slot="user-message-attachment"
+                    data-type={type}
+                    data-clickable={type === "image" ? "true" : undefined}
+                    title={type === "file" ? name : undefined}
+                    onClick={() => {
+                      if (type === "image") openImagePreview(file.url, name)
+                    }}
+                  >
+                    <Show
+                      when={type === "image"}
+                      fallback={
+                        <Show
+                          when={type === "video"}
+                          fallback={
+                            <Show
+                              when={type === "audio"}
+                              fallback={
+                                <div data-slot="user-message-attachment-file">
+                                  <FileIcon node={{ path: name, type: "file" }} />
+                                  <span data-slot="user-message-attachment-name">{name}</span>
+                                </div>
+                              }
+                            >
+                              <audio data-slot="user-message-attachment-audio" src={file.url} controls />
+                            </Show>
+                          }
+                        >
+                          <video data-slot="user-message-attachment-video" src={file.url} controls />
+                        </Show>
+                      }
+                    >
+                      <img data-slot="user-message-attachment-image" src={file.url} alt={name} />
+                    </Show>
+                  </div>
+                )
+              }}
+            </For>
+          </div>
+        </Show>
       </div>
     </Show>
   )
