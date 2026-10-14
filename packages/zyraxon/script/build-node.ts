@@ -16,7 +16,7 @@ const dir = path.resolve(__dirname, "..")
 
 process.chdir(dir)
 
-const releaseVersion = "1.18.31"
+const releaseVersion = "1.19.0"
 const pendingVersion = Script.version
 const installVersion = pendingVersion.startsWith("0.0.0-") ? releaseVersion : pendingVersion
 const installChannel = pendingVersion.startsWith("0.0.0-") ? "latest" : Script.channel

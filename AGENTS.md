@@ -559,13 +559,13 @@ grants the full tier (every mode AND every tool in that tier).
 10. **AUTO** — Orchestrator mode: analyzes tasks, delegates to the right agents in parallel, coordinates and delivers unified results.
 
 #
-# ZYRAXON Tools — 887 Registered Tools / 63 Categories
+# ZYRAXON Tools — 888 Registered Tools / 63 Categories
 
-ZYRAXON has **887 registered tools across 63 categories** (single
+ZYRAXON has **888 registered tools across 63 categories** (single
 source of truth: `packages/zyraxon/src/subscription/tier-map.ts`).
-Runtime surface: 887 executable functions including built-ins and
-MCP servers. Canonical tier split: **184 free / 318 pro / 324 max /
-61 ultra** (cumulative: 502 free+pro, 826 free+pro+max, 887 total).
+Runtime surface: 888 executable functions including built-ins and
+MCP servers. Canonical tier split: **186 free / 317 pro / 324 max /
+61 ultra** (cumulative: 503 free+pro, 827 free+pro+max, 888 total).
 
 Every registered tool is a REAL executable function registered at
 runtime and injected into the session as real `tool_call`

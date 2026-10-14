@@ -33,6 +33,10 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
   let finalText = ""
   let removeVoiceListener: (() => void) | null = null
   let safetyTimeout: ReturnType<typeof setTimeout> | null = null
+  // Browser-only recogniser. Outside Electron there is no voice bridge to call,
+  // and the mic used to just report "not available" — a dead button in the plain
+  // web app. The platform's own SpeechRecognition is used instead.
+  let browserRecognition: any = null
 
   // Create the effect only when the component is created, not on every render.
   //
@@ -132,6 +136,62 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     })
   }
 
+  // Browser speech recognition fallback. Interim results stream into the chat box
+  // through onLiveText exactly like the bridge does, so the composer behaves the
+  // same whichever path is active. Returns false when the API is unavailable.
+  const startBrowserRecognition = (): boolean => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SR) return false
+    try {
+      const recognition = new SR()
+      recognition.continuous = true
+      recognition.interimResults = true
+      const lang = selectedLang()
+      recognition.lang = !lang || lang === "auto" ? navigator.language || "en-US" : lang
+      recognition.onresult = (event: any) => {
+        let interim = ""
+        let final = ""
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i]
+          if (result.isFinal) final += result[0].transcript
+          else interim += result[0].transcript
+        }
+        if (final) finalText = (finalText + " " + final).trim()
+        const shown = (finalText + (interim ? " " + interim : "")).trim()
+        if (shown) {
+          livePainted = true
+          props.onLiveText?.(shown)
+        }
+      }
+      recognition.onerror = (event: any) => {
+        if (event?.error === "not-allowed" || event?.error === "service-not-allowed") {
+          props.onError?.("Microphone permission was denied.")
+        }
+        stopBrowserRecognition()
+        setState("idle")
+      }
+      recognition.onend = () => {
+        // Fires on silence as well as on stop; only settle the draft here, never
+        // re-open the mic, or a paused user would be recorded again unexpectedly.
+        if (state() === "recording") finishWithText()
+      }
+      browserRecognition = recognition
+      recognition.start()
+      setState("recording")
+      return true
+    } catch {
+      browserRecognition = null
+      return false
+    }
+  }
+
+  const stopBrowserRecognition = () => {
+    if (!browserRecognition) return
+    const recognition = browserRecognition
+    browserRecognition = null
+    try { recognition.stop() } catch {}
+  }
+
   const startListening = async () => {
     finalText = ""
     // Re-opening the mic must never replay what was said in a previous session.
@@ -175,7 +235,10 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
 
     const api = (window as any).api
     if (!api) {
-      props.onError?.("Voice bridge not available.")
+      // No Electron bridge: fall back to the browser's own recogniser rather than
+      // failing the click outright.
+      if (startBrowserRecognition()) return
+      props.onError?.("Speech recognition is not available in this browser.")
       return
     }
 
@@ -216,6 +279,12 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
 
   const stopListening = async () => {
     clearSafetyTimeout()
+
+    if (browserRecognition) {
+      stopBrowserRecognition()
+      finishWithText()
+      return
+    }
 
     if (isInsideIframe) {
       setState("processing")
@@ -279,6 +348,7 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
   onCleanup(() => {
     clearSafetyTimeout()
     cleanupListener()
+    stopBrowserRecognition()
   })
 
   const langLabel = () =>

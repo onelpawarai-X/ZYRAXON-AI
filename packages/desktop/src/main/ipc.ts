@@ -627,6 +627,18 @@ export function registerIpcHandlers(deps: Deps) {
     return true
   })
 
+  // Realtime voice: the model is meant to speak through the live stream rather
+  // than the separate TTS voice. Nothing here synthesises audio — the renderer
+  // owns that — but the switch has to be honoured so the mic keeps working and
+  // the ordinary speaker stays off. Without this handler the toggle silently
+  // did nothing and turning it on killed all speech.
+  ipcMain.handle("voice-realtime-enabled", (_event: IpcMainInvokeEvent, enabled: boolean) => {
+    const vb = getVoiceBridgeModule()
+    // Realtime still needs the microphone, so listening must not be torn down.
+    if (vb && enabled) vb.setVoiceTTSActive(false)
+    return true
+  })
+
   ipcMain.handle("voice-set-gender", (_event: IpcMainInvokeEvent, gender: string) => {
     const vb = getVoiceBridgeModule()
     if (!vb) return false

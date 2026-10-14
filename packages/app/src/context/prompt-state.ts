@@ -42,7 +42,34 @@ export interface ImageAttachmentPart {
   dataUrl: string
 }
 
-export type ContentPart = TextPart | FileAttachmentPart | AgentPart | ImageAttachmentPart
+// Video and audio carry the same shape as an image part; only the renderer and
+// the media type differ. They are separate variants so the composer can pick a
+// <video>/<audio> player instead of an <img>.
+export interface VideoAttachmentPart {
+  type: "video"
+  id: string
+  filename: string
+  sourcePath?: string
+  mime: string
+  dataUrl: string
+}
+
+export interface AudioAttachmentPart {
+  type: "audio"
+  id: string
+  filename: string
+  sourcePath?: string
+  mime: string
+  dataUrl: string
+}
+
+export type MediaAttachmentPart = ImageAttachmentPart | VideoAttachmentPart | AudioAttachmentPart
+
+export function isMediaAttachmentPart(part: ContentPart): part is MediaAttachmentPart {
+  return part.type === "image" || part.type === "video" || part.type === "audio"
+}
+
+export type ContentPart = TextPart | FileAttachmentPart | AgentPart | MediaAttachmentPart
 export type Prompt = ContentPart[]
 
 export type PromptModel = {
@@ -123,6 +150,8 @@ function cloneSelection(selection?: FileSelection) {
 function clonePart(part: ContentPart): ContentPart {
   if (part.type === "text") return { ...part }
   if (part.type === "image") return { ...part }
+  if (part.type === "video") return { ...part }
+  if (part.type === "audio") return { ...part }
   if (part.type === "agent") return { ...part }
   return {
     ...part,

@@ -372,11 +372,14 @@ export function MessageTimeline(props: {
       ttsAbortController.abort()
       ttsAbortController = null
     }
+    if (ttsPrefetch) {
+      try { ttsPrefetch.controller.abort() } catch {}
+      ttsPrefetch = null
+    }
     // Tear the live stream down explicitly: aborting the fetch only unwinds the
     // reader, it does not silence an <audio> element that is already playing.
-    ttsStreamPlayer?.dispose()
-    ttsStreamPlayer = null
-    ttsDeferredBuffers.length = 0
+    ttsSinkConsumers = 0
+    releaseTTSSink(true)
     if (ttsActiveSource) {
       try { ttsActiveSource.onended = null; ttsActiveSource.stop() } catch {}
       ttsActiveSource = null
@@ -385,6 +388,10 @@ export function MessageTimeline(props: {
     ttsAudioQueue.length = 0
     ttsFetching = false
     ttsPendingText.length = 0
+    // The browser fallback is not part of the WebAudio graph, so aborting the
+    // fetch and tearing the sink down does not stop it — the platform queue keeps
+    // speaking a cancelled reply unless it is cleared explicitly.
+    try { window.speechSynthesis?.cancel() } catch {}
   }
 
   // Gapless WebAudio scheduler — every chunk is scheduled at the exact end of the
@@ -469,10 +476,22 @@ export function MessageTimeline(props: {
   }
 
   function playTTSBuffer(buffer: ArrayBuffer) {
-    // A streamed utterance owns the audio graph until it ends. Anything handed
-    // over in the meantime waits rather than talking over it.
-    if (ttsStreamPlayer) {
-      ttsDeferredBuffers.push(buffer)
+    // A whole-file buffer (an IPC clip or a buffered fallback) goes through the
+    // same sink when MediaSource is available, so it plays gaplessly with
+    // whatever is already queued instead of starting a second audio graph. The
+    // WebAudio queue remains the fallback for engines without MediaSource.
+    if (ttsCanStream()) {
+      const generation = ttsGeneration
+      const sink = getTTSSink(generation)
+      ttsSinkConsumers++
+      setRenderTTSActive(true)
+      void sink
+        .append(new Uint8Array(buffer))
+        .catch(() => {})
+        .finally(() => {
+          ttsSinkConsumers--
+          if (ttsSinkConsumers <= 0 && !ttsPendingText.length && !ttsPrefetch) void drainAndReleaseSink(generation)
+        })
       return
     }
     ttsAudioQueue.push(buffer)
@@ -484,45 +503,210 @@ export function MessageTimeline(props: {
   ;(window as any).__stopTTS = stopAllTTS
 
   // ---------------------------------------------------------------------------
-  // Streaming TTS playback
+  // Streaming TTS playback — one MediaSource for the whole session
   //
   // /speak is a chunked audio/mpeg response: Edge pushes MP3 frames as it makes
-  // them, the main-process shim pipes them straight through, and this layer
-  // appends each frame to a MediaSource SourceBuffer the moment it arrives.
-  // Playback therefore begins when the FIRST frame lands instead of after the
-  // whole reply has been synthesised.
+  // them and the main-process shim pipes them straight through. The earlier
+  // version opened a MediaSource per utterance, so the audio element's clock was
+  // reset at every chunk boundary — which is what made the voice stop and start
+  // between sentences, and could hang waiting for a chunk that never arrived.
   //
-  // MediaSource is the only browser primitive that can play a *growing* MP3 —
-  // decodeAudioData needs a whole file — so it is gated on
-  // MediaSource.isTypeSupported. Where it is unavailable the body is buffered and
-  // handed to the gapless queue above, which stays correct but has to wait for
-  // the last byte.
+  // A single long-lived sink removes the boundary entirely: every utterance's
+  // frames are appended to the same SourceBuffer in sequence order, so the
+  // element plays from the first frame to the last of the session without a seam
+  // and without ever being told the stream ended mid-reply.
   // ---------------------------------------------------------------------------
   const TTS_MIME = "audio/mpeg"
-  let ttsStreamPlayer: { dispose: () => void } | null = null
-  const ttsDeferredBuffers: ArrayBuffer[] = []
+  // Already-played audio is evicted past this size so a long session cannot grow
+  // the buffer without bound. Removal only ever happens strictly behind the
+  // playhead, so it can never cut off audio that is still to be heard.
+  const TTS_EVICT_ABOVE_BYTES = 12 * 1024 * 1024
 
   function ttsCanStream() {
     return typeof MediaSource !== "undefined" && MediaSource.isTypeSupported(TTS_MIME)
   }
 
-  // Already-played audio is evicted from the SourceBuffer past this size. Only a
-  // pathologically long single utterance reaches it, but it is what stops a runaway
-  // response from growing the buffer without bound.
-  const TTS_EVICT_ABOVE_BYTES = 8 * 1024 * 1024
+  type TTSSink = {
+    audio: HTMLAudioElement
+    sourceBuffer: SourceBuffer
+    append: (chunk: Uint8Array<ArrayBuffer>) => Promise<void>
+    dispose: () => void
+    broken: () => boolean
+  }
+  let ttsSink: TTSSink | null = null
+  let ttsSinkGeneration = -1
+  let ttsSinkConsumers = 0
 
-  // The stream must not start on top of a queue buffer that is already playing, or
-  // the two would overlap. Polling is fine here: the only caller is serialised
-  // behind ttsFetching, so nothing piles up waiting.
-  async function waitForTTSQueueIdle(generation: number) {
-    while (ttsGeneration === generation && (ttsAudioQueue.length > 0 || ttsActiveSource)) {
-      await new Promise((r) => setTimeout(r, 30))
+  // The sink is torn down only once nothing is speaking through it. `force` is
+  // used by stopAllTTS, where the whole reply is being abandoned anyway.
+  function releaseTTSSink(force = false) {
+    if (!ttsSink) return
+    if (!force && ttsSinkConsumers > 0) return
+    const sink = ttsSink
+    ttsSink = null
+    sink.dispose()
+  }
+
+  function createTTSSink(generation: number): TTSSink {
+    const ctx = getTTSContext()
+    const mediaSource = new MediaSource()
+    const objectUrl = URL.createObjectURL(mediaSource)
+    const audio = new Audio()
+    audio.src = objectUrl
+    audio.autoplay = true
+    audio.preload = "auto"
+    // Routed through the same AudioContext as everything else so the graph, the
+    // resume path and the teardown all stay in one place.
+    let sourceNode: MediaElementAudioSourceNode | null = null
+    try {
+      sourceNode = ctx.createMediaElementSource(audio)
+      sourceNode.connect(ctx.destination)
+    } catch {
+      sourceNode = null
+    }
+
+    let sourceBuffer: SourceBuffer | null = null
+    let opened = false
+    let disposed = false
+    let appendError: unknown = null
+    let appendedBytes = 0
+    let evicted = false
+    let played = false
+    const pending: Uint8Array<ArrayBuffer>[] = []
+    const appendWaiters: Array<() => void> = []
+    const settle = () => {
+      const waiters = appendWaiters.splice(0)
+      for (const w of waiters) w()
+    }
+
+    // Resolves once the SourceBuffer exists and has no append in flight. Every
+    // append awaits this, so chunks are always added in order.
+    const ready = new Promise<SourceBuffer>((resolve, reject) => {
+      mediaSource.addEventListener(
+        "sourceopen",
+        () => {
+          if (disposed) return
+          try {
+            const buffer = mediaSource.addSourceBuffer(TTS_MIME)
+            // MP3 has no clusters, so every appended byte plays exactly once and
+            // in order — this is what keeps a long session free of repeats.
+            buffer.mode = "sequence"
+            buffer.addEventListener("updateend", () => {
+              settle()
+              while (!buffer.updating && pending.length > 0 && !appendError) {
+                try {
+                  buffer.appendBuffer(pending.shift()!)
+                } catch (e) {
+                  appendError = e
+                  break
+                }
+              }
+              evictPlayed(buffer)
+            })
+            buffer.addEventListener("error", () => {
+              appendError = new Error("SourceBuffer append failed")
+              settle()
+            })
+            sourceBuffer = buffer
+            opened = true
+            resolve(buffer)
+          } catch (e) {
+            reject(e)
+          }
+        },
+        { once: true }
+      )
+      mediaSource.addEventListener("error", () => reject(new Error("MediaSource failed to open")), { once: true })
+    })
+
+    const evictPlayed = (buffer: SourceBuffer) => {
+      if (evicted || appendedBytes <= TTS_EVICT_ABOVE_BYTES || buffer.updating) return
+      const playhead = audio.currentTime
+      if (!Number.isFinite(playhead) || playhead <= 0) return
+      const buffered = buffer.buffered
+      if (!buffered.length) return
+      const upto = Math.min(playhead - 1, buffered.end(buffered.length - 1) - 1)
+      if (upto <= buffered.start(0)) return
+      try {
+        buffer.remove(buffered.start(0), upto)
+        evicted = true
+      } catch {}
+    }
+
+    const append = async (chunk: Uint8Array<ArrayBuffer>) => {
+      if (appendError || disposed) return
+      const buffer = await ready
+      if (disposed || appendError) return
+      appendedBytes += chunk.byteLength
+      if (buffer.updating || pending.length > 0) {
+        pending.push(chunk)
+        return
+      }
+      try {
+        buffer.appendBuffer(chunk)
+      } catch (e) {
+        appendError = e
+      }
+      // Begin playback on the first frame the element can actually play. From
+      // here on the element keeps running; later frames are simply appended to
+      // the buffer it is already reading from.
+      if (!played) {
+        played = true
+        void audio.play().catch(() => {})
+      }
+    }
+
+    const dispose = () => {
+      if (disposed) return
+      disposed = true
+      try { audio.pause() } catch {}
+      try { audio.removeAttribute("src") } catch {}
+      try { audio.load() } catch {}
+      try { sourceNode?.disconnect() } catch {}
+      URL.revokeObjectURL(objectUrl)
+      try {
+        if (mediaSource.readyState === "open") mediaSource.endOfStream()
+      } catch {}
+      if (ttsSinkGeneration === generation) ttsSinkGeneration = -1
+      if (ttsGeneration === generation) setRenderTTSActive(false)
+    }
+
+    // The element has to keep playing until the reply is finished, so a natural
+    // end does not tear the sink down — the next utterance appends after it and
+    // playback resumes from the same clock.
+    audio.addEventListener("ended", () => {
+      if (!disposed && ttsGeneration === generation) void audio.play().catch(() => {})
+    })
+    audio.addEventListener("error", () => {
+      appendError = appendError ?? new Error("audio element error")
+    })
+
+    return {
+      audio,
+      get sourceBuffer() {
+        return sourceBuffer as SourceBuffer
+      },
+      append,
+      dispose,
+      broken: () => !!appendError || disposed || !opened,
     }
   }
 
-  // Plays a /speak response body as it arrives. Returns false only when the stream
-  // failed before a single frame was played, so the caller may safely fall back to
-  // buffering; once any audio has been played the stream owns the utterance.
+  function getTTSSink(generation: number): TTSSink {
+    if (ttsSink && ttsSinkGeneration === generation && !ttsSink.broken()) return ttsSink
+    if (ttsSink) {
+      const stale = ttsSink
+      ttsSink = null
+      stale.dispose()
+    }
+    ttsSink = createTTSSink(generation)
+    ttsSinkGeneration = generation
+    return ttsSink
+  }
+
+  // Feeds one /speak response body into the shared sink. Returns false only when
+  // the stream failed before a single frame was appended, so the caller may
+  // safely retry by buffering; once a frame is in the buffer it owns the audio.
   async function playTTSStream(
     resp: Response,
     controller: AbortController,
@@ -530,7 +714,7 @@ export function MessageTimeline(props: {
   ): Promise<boolean> {
     const body = resp.body
     if (!body) return false
-    let played = false
+    let appendedAny = false
     let consumed = false
 
     const reader = body.getReader()
@@ -543,168 +727,77 @@ export function MessageTimeline(props: {
       }
     }
 
-    const mediaSource = new MediaSource()
-    const objectUrl = URL.createObjectURL(mediaSource)
-    const audio = new Audio()
-    audio.src = objectUrl
-    audio.autoplay = true
-    // Routed through the same AudioContext as everything else so the graph, the
-    // resume path and the teardown all stay in one place. If the context is
-    // already closed the element still plays straight to the output on its own,
-    // which beats dropping the utterance.
-    let sourceNode: MediaElementAudioSourceNode | null = null
-    try {
-      sourceNode = ctx.createMediaElementSource(audio)
-      sourceNode.connect(ctx.destination)
-    } catch {
-      sourceNode = null
-    }
-
-    let disposed = false
-    const dispose = () => {
-      if (disposed) return
-      disposed = true
-      try { void reader.cancel() } catch {}
-      try { audio.pause() } catch {}
-      try { audio.removeAttribute("src") } catch {}
-      try { audio.load() } catch {}
-      try { sourceNode?.disconnect() } catch {}
-      URL.revokeObjectURL(objectUrl)
-      if (ttsStreamPlayer?.dispose === dispose) ttsStreamPlayer = null
-      if (ttsGeneration !== generation) return
-      setRenderTTSActive(false)
-      // Buffers that arrived over IPC while this stream was speaking now have the
-      // audio graph to themselves.
-      const deferred = ttsDeferredBuffers.splice(0)
-      for (const buf of deferred) playTTSBuffer(buf)
-    }
-
-    ttsStreamPlayer = { dispose }
+    const sink = getTTSSink(generation)
+    ttsSinkConsumers++
     setRenderTTSActive(true)
-    const onNaturalEnd = () => dispose()
-    audio.addEventListener("ended", onNaturalEnd)
-    audio.addEventListener("error", onNaturalEnd)
 
     try {
-      await new Promise<void>((resolve, reject) => {
-        mediaSource.addEventListener("sourceopen", () => resolve(), { once: true })
-        mediaSource.addEventListener(
-          "error",
-          () => reject(new Error("MediaSource failed to open")),
-          { once: true }
-        )
-      })
-      if (ttsGeneration !== generation || controller.signal.aborted) {
-        dispose()
-        return true
-      }
-
-      const sourceBuffer = mediaSource.addSourceBuffer(TTS_MIME)
-      // MP3 has no clusters, so every appended byte is played exactly once and in
-      // order — this is what keeps a streamed reply free of repeats and overlaps.
-      sourceBuffer.mode = "sequence"
-
-      const pending: Uint8Array<ArrayBuffer>[] = []
-      const appendWaiters: Array<() => void> = []
-      let appendError: unknown = null
-      let appendedBytes = 0
-      let evicted = false
-      const settleAppends = () => {
-        const waiters = appendWaiters.splice(0)
-        for (const w of waiters) w()
-      }
-      // Resolves when the append that is currently in flight completes. Only ever
-      // awaited while an append really is in flight.
-      const nextAppendDone = () => new Promise<void>((r) => appendWaiters.push(r))
-      // Defensive bound on the SourceBuffer. Upstream every utterance is capped at
-      // 60–300 characters, so this only fires for a pathological single response;
-      // it runs at most once per stream so the removal can never move the time
-      // origin underneath the playhead and cause a repeat or a gap.
-      const evictPlayed = () => {
-        if (evicted || appendedBytes <= TTS_EVICT_ABOVE_BYTES || sourceBuffer.updating) return
-        const playhead = audio.currentTime
-        if (!Number.isFinite(playhead) || playhead <= 0) return
-        const buffered = sourceBuffer.buffered
-        if (!buffered.length) return
-        // Leave a second of audio behind the playhead so eviction can never catch
-        // up with playback.
-        const upto = Math.min(playhead - 1, buffered.end(buffered.length - 1) - 1)
-        if (upto <= buffered.start(0)) return
-        try {
-          sourceBuffer.remove(buffered.start(0), upto)
-          evicted = true
-        } catch {}
-      }
-      sourceBuffer.addEventListener("updateend", () => {
-        settleAppends()
-        while (!sourceBuffer.updating && pending.length > 0 && !appendError) {
-          try {
-            sourceBuffer.appendBuffer(pending.shift()!)
-          } catch (e) {
-            appendError = e
-            break
-          }
-        }
-        evictPlayed()
-      })
-      sourceBuffer.addEventListener("error", () => {
-        appendError = new Error("SourceBuffer append failed")
-        settleAppends()
-      })
-
       for (;;) {
         const { done, value } = await reader.read()
         consumed = true
         if (done) break
         if (controller.signal.aborted || ttsGeneration !== generation) break
-        if (!value || value.byteLength === 0 || appendError) continue
-        appendedBytes += value.byteLength
+        if (!value || value.byteLength === 0) continue
         // The DOM lib types a reader chunk as Uint8Array<ArrayBufferLike> while
         // appendBuffer only accepts a non-shared ArrayBuffer. Fetch never hands
-        // back a SharedArrayBuffer, so this is the one place that difference has to
-        // be papered over.
-        const chunk = value as Uint8Array<ArrayBuffer>
-        if (sourceBuffer.updating || pending.length > 0) pending.push(chunk)
-        else {
-          try {
-            sourceBuffer.appendBuffer(chunk)
-          } catch (e) {
-            appendError = e
-            break
-          }
-        }
-        // Start on the first frame that actually made it into the buffer. From
-        // here on playback is continuous, so nothing waits for the synthesis that
-        // is still in flight.
-        if (!played) {
-          await nextAppendDone()
-          if (appendError) break
-          played = true
-          void audio.play().catch(() => {})
-        }
+        // back a SharedArrayBuffer, so this is the one place that difference has
+        // to be papered over.
+        await sink.append(value as Uint8Array<ArrayBuffer>)
+        appendedAny = true
+        if (sink.broken()) break
       }
-
-      if (played && !appendError && !controller.signal.aborted && ttsGeneration === generation) {
-        while (sourceBuffer.updating || pending.length > 0) {
-          await nextAppendDone()
-          if (appendError) break
-        }
-        if (!appendError) {
-          try { mediaSource.endOfStream() } catch {}
-          void audio.play().catch(() => {})
-          return true
-        }
+      // The element is left running: this utterance simply stopped appending. If
+      // nothing else follows, the element drains its buffer and finishes on its
+      // own, and the sink is released when the reply is no longer active.
+      if (!appendedAny) {
+        // Nothing was ever appended, so a fallback to arrayBuffer() cannot replay
+        // anything — but only when the body is still untouched.
+        return consumed
       }
-      dispose()
-      // Once a single byte has been pulled off the body the caller must NOT retry
-      // with arrayBuffer(): that would replay the frames already spoken. Falling
-      // back is only safe while the body is untouched.
-      return consumed || played
+      return true
     } catch (e) {
       console.warn("[TTS] Stream playback failed:", e)
-      dispose()
-      return consumed || played
+      return consumed || appendedAny
+    } finally {
+      ttsSinkConsumers--
+      // When this was the last utterance of the reply, let the element finish the
+      // audio it already holds, then release the sink. Draining first is what
+      // stops the final sentence from being cut off.
+      if (ttsSinkConsumers <= 0 && !ttsPendingText.length && !ttsPrefetch) {
+        void drainAndReleaseSink(generation)
+      }
     }
+  }
+
+  // Waits for the sink's element to play out what it holds, then disposes it.
+  //
+  // A MediaSource never fires `ended` unless the stream was closed, and closing
+  // it would stop the sink accepting the next utterance — so drain is detected
+  // from the playhead reaching the end of everything appended instead.
+  async function drainAndReleaseSink(generation: number) {
+    const sink = ttsSink
+    if (!sink || ttsSinkGeneration !== generation) return
+    // Bounded so a wedged element can never keep the sink alive forever.
+    const deadline = Date.now() + 180000
+    while (ttsSink === sink && !sink.broken() && ttsGeneration === generation && Date.now() < deadline) {
+      if (ttsSinkConsumers > 0 || ttsPendingText.length || ttsPrefetch) return
+      const audio = sink.audio
+      // Nothing was ever played (silent reply or a failed fetch) — release now.
+      if (audio.ended || audio.paused) break
+      const buffered = sink.sourceBuffer?.buffered
+      if (buffered && buffered.length > 0) {
+        const end = buffered.end(buffered.length - 1)
+        // The playhead has caught up with the last appended frame: the reply has
+        // been heard in full, so the sink has nothing left to hold open.
+        if (Number.isFinite(end) && audio.currentTime >= end - 0.05) break
+      }
+      await new Promise((r) => setTimeout(r, 120))
+    }
+    if (ttsSink !== sink) return
+    if (ttsGeneration !== generation) return
+    if (ttsSinkConsumers > 0 || ttsPendingText.length || ttsPrefetch) return
+    setRenderTTSActive(false)
+    releaseTTSSink(true)
   }
 
   // Play TTS audio delivered over IPC (e.g. the Settings "Test Voice" button)
@@ -772,6 +865,10 @@ export function MessageTimeline(props: {
   function extractTTSText(msgId: string): string {
     const syncData = sync().data
     const parts = syncData.part[msgId] ?? []
+    // A reply that carries the model's own audio is already audible, so speaking
+    // its text too would play two voices over each other. Exactly one of the two
+    // owns the reply.
+    if (parts.some((part) => part.type === "file" && (part as any).mime?.startsWith("audio/"))) return ""
     let text = ""
     for (const part of parts) {
       // Only the answer gets spoken. Reasoning parts are the model's private
@@ -823,9 +920,61 @@ export function MessageTimeline(props: {
   // Send TTS to server — queue-based, NEVER drops text
   async function sendTTSText(text: string) {
     if (!text || text.trim().length === 0) return
+    // Outside Electron there is no local Edge TTS server to call, and the fetch
+    // below simply failed silently — the speaker looked enabled and said nothing.
+    // The platform's own speech synthesiser fills that gap so the reply is still
+    // read aloud in a plain browser.
+    if (!hasLocalTTSServer()) {
+      speakViaBrowser(text)
+      return
+    }
     ttsPendingText.push(text)
     if (ttsFetching) return
     flushTTSPending()
+  }
+
+  // The Edge Neural server is spawned by the Electron main process, so its
+  // presence is exactly the Electron preload bridge. Cached because it cannot
+  // change within a page load.
+  let localTTSServer: boolean | null = null
+  function hasLocalTTSServer(): boolean {
+    if (localTTSServer === null) localTTSServer = !!(window as any).electron?.ipcRenderer
+    return localTTSServer
+  }
+
+  // Browser speech synthesis fallback — one utterance at a time, stopped with the
+  // rest of the reply so a cancelled message cannot keep talking.
+  function speakViaBrowser(text: string) {
+    try {
+      const synth = window.speechSynthesis
+      if (!synth) return
+      const utterance = new SpeechSynthesisUtterance(text)
+      const voiceLang = settings.general.voiceLanguage?.() || "en-US"
+      utterance.lang = voiceLang === "auto" ? "en-US" : voiceLang
+      utterance.onstart = () => setRenderTTSActive(true)
+      utterance.onend = () => setRenderTTSActive(false)
+      utterance.onerror = () => setRenderTTSActive(false)
+      synth.speak(utterance)
+    } catch {}
+  }
+
+  // Prefetch slot: the NEXT chunk's synthesis is started while the current chunk
+  // is still being spoken. Fetching only after the previous audio had finished
+  // meant every chunk cost a full cloud round trip of silence on top of the
+  // audio, which is exactly what made the voice sound like it stopped and
+  // restarted between sentences instead of speaking continuously.
+  let ttsPrefetch: { promise: Promise<Response | null>; controller: AbortController } | null = null
+
+  function startTTSPrefetch(chunk: string) {
+    const gender = settings.general.voiceGender?.() === "male" ? "m" : "f"
+    const voiceLang = settings.general.voiceLanguage?.() || "en-US"
+    const lang = voiceLang.split("-")[0] || "en"
+    const url = `${TTS_SERVER}/speak?text=${encodeURIComponent(chunk)}&gender=${gender}&lang=${lang}`
+    const controller = new AbortController()
+    const promise = fetch(url, { signal: controller.signal })
+      .then((resp) => (resp.ok ? resp : null))
+      .catch(() => null)
+    return { promise, controller }
   }
 
   async function flushTTSPending() {
@@ -834,60 +983,59 @@ export function MessageTimeline(props: {
       console.warn("[TTS] Safety: ttsFetching stuck, force resetting")
       ttsFetching = false
     }
-    if (ttsPendingText.length === 0) { ttsFetching = false; return }
+    if (ttsFetching) return
     ttsFetching = true
     ttsLastFetchTime = Date.now()
 
-    while (ttsPendingText.length > 0) {
-      const chunk = ttsPendingText.shift()!
-      if (!chunk || chunk.trim().length === 0) continue
+    try {
+      while (ttsPendingText.length > 0 || ttsPrefetch) {
+        // Prefer the chunk that was already synthesising while the last one
+        // played; fall back to starting one now if the queue outran the prefetch.
+        const current = ttsPrefetch ?? (ttsPendingText.length > 0 ? startTTSPrefetch(ttsPendingText.shift()!) : null)
+        ttsPrefetch = null
+        if (!current) break
 
-      // Deliberately NOT waiting for the previous chunk to finish playing.
-      // Synthesis is a cloud round trip, so waiting here meant every chunk cost a
-      // dead gap plus a full fetch that only began once the previous audio had
-      // finished. Fetching ahead into the gapless audio queue keeps the speech
-      // buffer primed and removes the silence between chunks entirely.
+        // Start the following chunk immediately so its synthesis overlaps the
+        // playback below rather than waiting for it.
+        if (ttsPendingText.length > 0) ttsPrefetch = startTTSPrefetch(ttsPendingText.shift()!)
 
-      const gender = settings.general.voiceGender?.() === "male" ? "m" : "f"
-      const voiceLang = settings.general.voiceLanguage?.() || "en-US"
-      const lang = voiceLang.split("-")[0] || "en"
-      const url = `${TTS_SERVER}/speak?text=${encodeURIComponent(chunk)}&gender=${gender}&lang=${lang}`
+        ttsAbortController = current.controller
+        // The deadline only guards getting a response head. A long reply streams for
+        // longer than that, so it is dropped the moment the headers are in and the
+        // body is left to finish on its own rather than being cut off mid-sentence.
+        const deadline = setTimeout(() => current.controller.abort(), 30000)
 
-      const controller = new AbortController()
-      ttsAbortController = controller
-      // The deadline only guards getting a response head. A long reply streams for
-      // longer than that, so it is dropped the moment the headers are in and the
-      // body is left to finish on its own rather than being cut off mid-sentence.
-      const deadline = setTimeout(() => controller.abort(), 30000)
+        try {
+          const resp = await current.promise
+          clearTimeout(deadline)
+          if (!resp || current.controller.signal.aborted) continue
+          ttsLastFetchTime = Date.now()
 
-      try {
-        const resp = await fetch(url, { signal: controller.signal })
-        clearTimeout(deadline)
-        if (!resp.ok || controller.signal.aborted) continue
-        ttsLastFetchTime = Date.now()
+          // Play as the frames arrive, so the first word is audible while Edge is
+          // still synthesising the rest of it. No wait for the previous chunk:
+          // the shared sink serialises appends itself and its element keeps
+          // running across utterances, which is what makes the speech continuous.
+          if (ttsCanStream() && resp.body) {
+            const generation = ttsGeneration
+            if (ttsGeneration !== generation || current.controller.signal.aborted) continue
+            if (await playTTSStream(resp, current.controller, generation)) continue
+          }
 
-        // Play as the frames arrive, so the first word is audible while Edge is
-        // still synthesising the rest of it.
-        if (ttsCanStream() && resp.body) {
-          const generation = ttsGeneration
-          await waitForTTSQueueIdle(generation)
-          if (ttsGeneration !== generation || controller.signal.aborted) continue
-          if (await playTTSStream(resp, controller, generation)) continue
+          const buf = await resp.arrayBuffer()
+          if (buf && buf.byteLength > 100 && !current.controller.signal.aborted) {
+            playTTSBuffer(buf)
+          }
+        } catch (e: any) {
+          if (e?.name !== "AbortError") ttsServerHealthy = false
+        } finally {
+          clearTimeout(deadline)
+          ttsLastFetchTime = Date.now()
         }
-
-        const buf = await resp.arrayBuffer()
-        if (buf && buf.byteLength > 100 && !controller.signal.aborted) {
-          playTTSBuffer(buf)
-        }
-      } catch (e: any) {
-        if (e?.name !== "AbortError") ttsServerHealthy = false
-      } finally {
-        clearTimeout(deadline)
-        ttsLastFetchTime = Date.now()
       }
+    } finally {
+      ttsFetching = false
+      ttsLastFetchTime = Date.now()
     }
-    ttsFetching = false
-    ttsLastFetchTime = Date.now()
   }
 
   const mountedMessageIDs = new Set<string>()

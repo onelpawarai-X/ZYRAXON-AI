@@ -13,7 +13,7 @@ export function inline(part: FilePart) {
   return part.source?.text?.start !== undefined && part.source?.text?.end !== undefined
 }
 
-export function kind(part: FilePart) {
+export function kind(part: { mime: string }) {
   if (part.mime.startsWith("image/")) return "image"
   if (part.mime.startsWith("video/")) return "video"
   if (part.mime.startsWith("audio/")) return "audio"

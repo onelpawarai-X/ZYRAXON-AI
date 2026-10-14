@@ -182,8 +182,12 @@ export function detectBackends(): BackendInfo[] {
 /** Live Hub search. Uses the public API, which needs no access token. */
 export async function searchHf(query: string, limit = 24): Promise<HfModel[]> {
   const url = `${HF_API}/models?search=${encodeURIComponent(query)}&filter=gguf&sort=downloads&direction=-1&limit=${limit}`
-  const res = await fetch(url, { headers: { accept: "application/json" } })
-  if (!res.ok) throw new Error(`HuggingFace search failed: ${res.status}`)
+  const res = await fetchWithRetry(url, { headers: { accept: "application/json" } })
+  // The Hub's JSON search endpoint intermittently answers 5xx while the site's
+  // own full-text search stays up, so fall back to scraping that page rather
+  // than failing the panel. The rows carry no download counts, but the repo ids
+  // are the part the user needs to pick a model.
+  if (!res.ok) return searchHfFallback(query, limit)
   const rows = (await res.json()) as Array<{
     id: string
     downloads?: number
@@ -197,6 +201,37 @@ export async function searchHf(query: string, limit = 24): Promise<HfModel[]> {
     pipelineTag: r.pipeline_tag,
     kind: classify(r.id),
   }))
+}
+
+const HF_HTML_SEARCH = "https://huggingface.co/search/full-text"
+const NON_REPO_PATHS = new Set(["join", "inference", "api", "avatars", "blog", "docs", "pricing", "spaces", "datasets", "models", "search"])
+
+async function searchHfFallback(query: string, limit: number): Promise<HfModel[]> {
+  const res = await fetchWithRetry(`${HF_HTML_SEARCH}?q=${encodeURIComponent(`${query} gguf`)}&type=model`)
+  if (!res.ok) throw new Error(`HuggingFace search failed: ${res.status}`)
+  const html = await res.text()
+  const seen = new Set<string>()
+  const models: HfModel[] = []
+  for (const match of html.matchAll(/href="\/([A-Za-z0-9._-]+\/[A-Za-z0-9._-]+)"/g)) {
+    const id = match[1]
+    const owner = id.split("/")[0]
+    if (NON_REPO_PATHS.has(owner) || seen.has(id)) continue
+    seen.add(id)
+    models.push({ id, downloads: 0, likes: 0, kind: classify(id) })
+    if (models.length >= limit) break
+  }
+  return models
+}
+
+async function fetchWithRetry(url: string, init?: RequestInit, attempts = 3): Promise<Response> {
+  let last: Response | undefined
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    last = await fetch(url, init)
+    if (last.ok) return last
+    // 4xx other than 429 is a real answer, so only retry transient 5xx/429.
+    if (last.status < 500 && last.status !== 429) return last
+  }
+  return last!
 }
 
 /** List the GGUF files inside a Hub repo, with sizes. */
@@ -345,7 +380,10 @@ async function ensureServer(modelPath: string): Promise<ServerHandle> {
       "-m", modelPath,
       "--host", "127.0.0.1",
       "--port", String(port),
-      "--ctx-size", "8192",
+      // The session sends the whole tool catalog plus history. 8K truncates the
+      // prompt mid-schema, which makes small models emit garbage or loop; 32K
+      // leaves room for the schemas and a real conversation.
+      "--ctx-size", "32768",
       "--jinja",
       "--log-disable",
     ],
@@ -412,7 +450,7 @@ export function buildLocalProvider(baseURL: string, modelDirPath: string) {
         interleaved: false,
       },
       cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-      limit: { context: 8192, output: 2048 },
+      limit: { context: 32768, output: 4096 },
       status: "active",
       options: {},
       headers: {},
@@ -458,6 +496,11 @@ export async function proxy(modelName: string, pathname: string, method: string,
       ...(upstream.headers.get("cache-control") ? { "cache-control": upstream.headers.get("cache-control")! } : {}),
     },
   })
+}
+
+export async function speak(text: string, voice?: string) {
+  const media = await import("./media")
+  return media.speak(text, voice)
 }
 
 // llama-server rejects `tool_choice` outright ("Unsupported param") even though

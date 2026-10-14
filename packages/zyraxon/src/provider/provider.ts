@@ -11,7 +11,7 @@ import { Npm } from "@opencode-ai/core/npm"
 import { Hash } from "@opencode-ai/core/util/hash"
 import { Plugin } from "../plugin"
 import { serviceUse } from "@opencode-ai/core/effect/service-use"
-import { type LanguageModelV3 } from "@ai-sdk/provider"
+import { type LanguageModelV3, type SpeechModelV3 } from "@ai-sdk/provider"
 import { ProviderCatalog } from "@zyraxon-ai/core/provider-catalog"
 import { Auth } from "../auth"
 import { Env } from "../env"
@@ -1205,6 +1205,14 @@ export interface Interface {
   readonly getProvider: (providerID: ProviderV2.ID) => Effect.Effect<Info>
   readonly getModel: (providerID: ProviderV2.ID, modelID: ModelV2.ID) => Effect.Effect<Model, ModelNotFoundError>
   readonly getLanguage: (model: Model) => Effect.Effect<LanguageModelV3, ModelNotFoundError>
+  /**
+   * Resolve a speech model for a provider that ships one.
+   *
+   * Returns `undefined` when the provider's SDK has no `speech(...)` entry point,
+   * which is how the caller tells "this provider cannot speak" apart from "the
+   * speech call failed" without catching an error.
+   */
+  readonly getSpeech: (model: Model) => Effect.Effect<SpeechModelV3 | undefined, ModelNotFoundError>
   readonly closest: (
     providerID: ProviderV2.ID,
     query: string[],
@@ -1955,6 +1963,25 @@ const entries = yield* providerCatalog.get()
       )
     })
 
+    const getSpeech = Effect.fn("Provider.getSpeech")(function* (model: Model) {
+      // A local model never resolves to a provider speech model: it speaks
+      // through the bundled backend, which the caller reaches directly.
+      if (model.providerID === "local") return undefined
+      const s = yield* InstanceState.get(state)
+      const envs = yield* env.all()
+      return yield* EffectPromise.refineRejection(
+        async () => {
+          const sdk = (await resolveSDK(model, s, envs)) as { speech?: (id: string) => SpeechModelV3 }
+          if (typeof sdk.speech !== "function") return undefined
+          return sdk.speech(model.api.id)
+        },
+        (cause) =>
+          cause instanceof NoSuchModelError
+            ? new ModelNotFoundError({ modelID: model.id, providerID: model.providerID, cause })
+            : undefined,
+      )
+    })
+
     const closest = Effect.fn("Provider.closest")(function* (providerID: ProviderV2.ID, query: string[]) {
       const s = yield* InstanceState.get(state)
       const provider = s.providers[providerID]
@@ -2071,7 +2098,7 @@ const entries = yield* providerCatalog.get()
       }
     })
 
-    return Service.of({ list, getProvider, getModel, getLanguage, closest, getSmallModel, defaultModel })
+    return Service.of({ list, getProvider, getModel, getLanguage, getSpeech, closest, getSmallModel, defaultModel })
   }),
 )
 

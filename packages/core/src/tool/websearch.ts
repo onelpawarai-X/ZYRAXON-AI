@@ -239,7 +239,7 @@ const layer = Layer.effectDiscard(
                         // V2 invocation context does not safely expose the model yet.
                       },
                       {
-                        "User-Agent": `freeTierUserAgent()`,
+                        "User-Agent": `${freeTierUserAgent()}`,
                         ...(config.parallelApiKey ? { Authorization: `Bearer ${config.parallelApiKey}` } : {}),
                       },
                     )

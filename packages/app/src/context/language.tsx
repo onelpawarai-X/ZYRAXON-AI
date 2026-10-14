@@ -10,6 +10,7 @@ import { dict as uiEn } from "@zyraxon-ai/ui/i18n/en"
 import { CODES, LANGUAGES, direction, findLanguage, nativeName } from "@/i18n/languages"
 import { CORE_MANIFEST } from "@/i18n/core/manifest"
 import { GENERATED } from "@/i18n/generated/manifest"
+import { realTranslations } from "@/i18n/overlay"
 
 /** Any BCP-47 tag listed in the language registry. */
 export type Locale = string
@@ -161,7 +162,7 @@ function loadDict(locale: Locale) {
       : Promise.resolve({} as Dictionary)
 
   return Promise.all([base, curated]).then(([generatedDict, curatedDict]) => {
-    const next = { ...generatedDict, ...curatedDict } as Dictionary
+    const next = { ...generatedDict, ...realTranslations(curatedDict, ENGLISH) } as Dictionary
     dicts.set(locale, next)
     return next
   })

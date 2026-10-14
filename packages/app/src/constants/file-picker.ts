@@ -2,9 +2,27 @@
 
 export const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"]
 
-export const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime", "video/ogg"]
+export const ACCEPTED_VIDEO_TYPES = [
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+  "video/ogg",
+  "video/x-matroska",
+  "video/x-msvideo",
+]
 
-export const ACCEPTED_AUDIO_TYPES = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/webm", "audio/mp4"]
+export const ACCEPTED_AUDIO_TYPES = [
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/ogg",
+  "audio/opus",
+  "audio/webm",
+  "audio/mp4",
+  "audio/aac",
+  "audio/flac",
+]
 
 export const ACCEPTED_FILE_TYPES = [
   ...ACCEPTED_IMAGE_TYPES,
@@ -72,12 +90,18 @@ const MIME_EXT = new Map([
   ["video/webm", "webm"],
   ["video/quicktime", "mov"],
   ["video/ogg", "ogv"],
+  ["video/x-matroska", "mkv"],
+  ["video/x-msvideo", "avi"],
   ["audio/mpeg", "mp3"],
   ["audio/mp3", "mp3"],
   ["audio/wav", "wav"],
+  ["audio/x-wav", "wav"],
   ["audio/ogg", "ogg"],
+  ["audio/opus", "opus"],
   ["audio/webm", "weba"],
   ["audio/mp4", "m4a"],
+  ["audio/aac", "aac"],
+  ["audio/flac", "flac"],
   ["application/pdf", "pdf"],
   ["application/json", "json"],
   ["application/ld+json", "jsonld"],

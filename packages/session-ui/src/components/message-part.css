@@ -715,6 +715,98 @@
   width: 100%;
 }
 
+/* Media a tool produced, rendered under the tool row. The attachment slots it
+   reuses are scoped to the user-message component, so they are restated here
+   for the assistant side, where the media actually lands. */
+[data-component="tool-media"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: var(--tool-content-gap);
+  max-width: min(82%, 64ch);
+
+  [data-slot="user-message-attachment"] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--v2-background-bg-layer-02);
+    border: 0.5px solid var(--v2-border-border-base);
+    cursor: default;
+    transition:
+      border-color 0.15s ease,
+      opacity 0.3s ease;
+
+    &:hover {
+      border-color: var(--v2-border-border-strong);
+    }
+
+    &[data-clickable] {
+      cursor: pointer;
+    }
+
+    &[data-type="image"] {
+      position: relative;
+      width: 160px;
+      height: 120px;
+      border: none;
+
+      &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        box-shadow: inset 0 0 0 0.5px var(--v2-border-border-base);
+        pointer-events: none;
+      }
+    }
+
+    &[data-type="file"] {
+      width: min(220px, 100%);
+      height: 48px;
+      padding: 0 10px;
+    }
+  }
+
+  [data-slot="user-message-attachment-image"] {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  [data-slot="user-message-attachment-audio"],
+  [data-slot="user-message-attachment-video"] {
+    max-width: 100%;
+  }
+
+  [data-slot="user-message-attachment-file"] {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    [data-component="file-icon"] {
+      width: 20px;
+      height: 20px;
+      flex: none;
+    }
+  }
+
+  [data-slot="user-message-attachment-name"] {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--v2-text-text-muted);
+    font-size: var(--font-size-small);
+    line-height: var(--line-height-large);
+  }
+}
+
 [data-component="dock-prompt"][data-kind="permission"] {
   position: relative;
   display: flex;

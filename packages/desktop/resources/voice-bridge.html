@@ -46,6 +46,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#06060c;color:#e4e4e
 .bp{background:#3b82f6;color:#fff}.bp:disabled{background:rgba(255,255,255,.08);color:rgba(255,255,255,.2);cursor:not-allowed}
 .timer{font-size:14px;font-weight:600;color:#ff3b3b;font-variant-numeric:tabular-nums;min-width:50px;text-align:center}
 .status-msg{font-size:11px;color:rgba(255,255,255,.5);text-align:center;min-height:16px}
+/* The mic-level meter markup (.met/.metb/.metl) had no rules at all, so the
+   element collapsed to zero size and the level bar never showed — reading as a
+   dead microphone even while it was recording. */
+.met{width:70%;max-width:320px;height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.metb{height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,#00e87b,#3b82f6);transition:width .08s linear}
+.metl{font-size:8px;color:rgba(255,255,255,.25);text-align:center;margin-bottom:2px}
 </style>
 </head>
 <body>
@@ -165,8 +171,36 @@ var rearmAttempts = 0;
 var rearmTimer = null;
 var REARM_DELAYS = [200, 600, 1500, 3000];
 
+// A session that goes quiet without ever ending is the other half of "the mic
+// hangs after five or six seconds": Chrome keeps the socket open, fires no
+// onresult and no onend, and dictation appears frozen while the timer keeps
+// climbing. If no result has arrived for this long the session is abandoned and
+// rebuilt, which is the only way to recover a socket that is open but dead.
+var lastResultAt = 0;
+var stallTimer = null;
+var STALL_MS = 7000;
+
 function clearRearm() {
   if (rearmTimer) { clearTimeout(rearmTimer); rearmTimer = null; }
+}
+
+function clearStall() {
+  if (stallTimer) { clearTimeout(stallTimer); stallTimer = null; }
+}
+
+function armStallWatchdog() {
+  clearStall();
+  if (!isRecording) return;
+  lastResultAt = Date.now();
+  stallTimer = setInterval(function() {
+    if (!isRecording || !rec) { clearStall(); return; }
+    if (Date.now() - lastResultAt < STALL_MS) return;
+    // The recogniser is open but silent for too long. Tear the socket down so
+    // onend fires and rearm() rebuilds it; the transcript gathered so far is
+    // kept, so nothing the person already said is lost.
+    lastResultAt = Date.now();
+    try { rec.abort ? rec.abort() : rec.stop(); } catch (e) {}
+  }, 1500);
 }
 
 function rearm() {
@@ -351,6 +385,7 @@ function startRecording() {
   updateTimer();
   startMicMeter();
   startSpeechRecognition();
+  armStallWatchdog();
   send({ type: "mic-state", active: true });
 }
 
@@ -360,6 +395,11 @@ function stopRecording() {
 
   clearInterval(timerInterval);
   clearRearm();
+  clearStall();
+  // A stopped session must start its backoff from zero. Without this the attempt
+  // count from the previous run carried over, so the fourth restart in a chat
+  // gave up immediately and the mic looked permanently hung.
+  rearmAttempts = 0;
   $("timer").textContent = "";
   $("statusMsg").textContent = "";
 
@@ -398,10 +438,19 @@ function startSpeechRecognition() {
   if (!rec) { rec = new SR(); rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1; }
   applyRecLang();
 
-  rec.onstart = function() { clearRearm(); };
+  rec.onstart = function() {
+    clearRearm();
+    // A session that actually started is a healthy session, so the backoff resets
+    // here as well as on a result. Resetting only on onresult meant a reply that
+    // was quiet for its first few seconds burned through the retry budget and the
+    // mic gave up for good.
+    rearmAttempts = 0;
+    lastResultAt = Date.now();
+  };
   rec.onresult = function(ev) {
     // Results arriving means the session is healthy, so reset the backoff.
     rearmAttempts = 0;
+    lastResultAt = Date.now();
     interimText = "";
     for (var i = ev.resultIndex; i < ev.results.length; i++) {
       var t = ev.results[i][0].transcript;
@@ -427,12 +476,18 @@ function startSpeechRecognition() {
     if (e.error === "not-allowed" || e.error === "service-not-allowed") {
       isRecording = false;
       clearRearm();
+      clearStall();
       $("statusMsg").textContent = "Microphone access was blocked. Allow it in Chrome and try again.";
       return;
     }
     rearm();
   };
-  rec.onend = function() { rearm(); };
+  rec.onend = function() {
+    // The socket is gone, so the stall watchdog has nothing left to watch; rearm()
+    // is what rebuilds the session and it arms the watchdog again through onstart.
+    clearStall();
+    rearm();
+  };
   try { rec.start(); } catch(e) { rearm(); }
 }
 

@@ -91,7 +91,7 @@ function authHeaders() {
   return {
     "Content-Type": "application/x-www-form-urlencoded",
     Accept: "application/json",
-    "User-Agent": `freeTierUserAgent()`,
+    "User-Agent": `${freeTierUserAgent()}`,
   }
 }
 
@@ -544,7 +544,7 @@ export async function XaiAuthPlugin(input: PluginInput, options: XaiAuthPluginOp
               }
             }
             headers.set("authorization", `Bearer ${currentAuth.access}`)
-            headers.set("User-Agent", `freeTierUserAgent()`)
+            headers.set("User-Agent", `${freeTierUserAgent()}`)
 
             return fetch(requestInput, { ...init, headers })
           },

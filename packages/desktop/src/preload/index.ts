@@ -224,6 +224,7 @@ const api: ElectronAPI = {
     // Do NOT removeAllListeners — it destroys all components' audio playback
   },
   voiceSetGender: (gender: string) => ipcRenderer.invoke("voice-set-gender", gender),
+  voiceRealtimeEnabled: (enabled: boolean) => ipcRenderer.invoke("voice-realtime-enabled", enabled),
   voiceGetAccumulatedTranscript: () => ipcRenderer.invoke("voice-get-accumulated-transcript"),
   voiceClearAccumulatedTranscript: () => ipcRenderer.invoke("voice-clear-accumulated-transcript"),
   voiceGetTranscriptBuffer: () => ipcRenderer.invoke("voice-get-transcript-buffer"),

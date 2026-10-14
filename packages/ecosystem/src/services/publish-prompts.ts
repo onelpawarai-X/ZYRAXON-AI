@@ -28,7 +28,7 @@ export const PUBLISH_FIELD_DEFINITIONS = {
   description: {
     label: "Description",
     description: "What does it do? Why should someone use it? Be detailed and clear.",
-    examples: ["Full-featured AI desktop app with 887 tools and 108 MCP integrations, WebRTC calls, and ecosystem marketplace"],
+    examples: ["Full-featured AI desktop app with 888 tools and 108 MCP integrations, WebRTC calls, and ecosystem marketplace"],
     required: true,
   },
   category: {

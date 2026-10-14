@@ -174,7 +174,7 @@ async function listRouters(
     headers: {
       Authorization: `Bearer ${bearer}`,
       Accept: "application/json",
-      "User-Agent": `freeTierUserAgent()`,
+      "User-Agent": `${freeTierUserAgent()}`,
     },
     signal: AbortSignal.timeout(10_000),
   }).catch(() => undefined)

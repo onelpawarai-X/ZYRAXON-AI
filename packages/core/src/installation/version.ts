@@ -9,7 +9,7 @@ export const InstallationVersion = typeof ZYRAXON_VERSION === "string" ? ZYRAXON
 export const InstallationChannel = typeof ZYRAXON_CHANNEL === "string" ? ZYRAXON_CHANNEL : "local"
 export const InstallationLocal = InstallationChannel === "local"
 
-export const FREE_TIER_VERSION = "1.18.31"
+export const FREE_TIER_VERSION = "1.19.0"
 
 export function freeTierVersion() {
   return FREE_TIER_VERSION

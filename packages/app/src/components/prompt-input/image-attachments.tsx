@@ -8,14 +8,14 @@ import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
 import { AttachmentCardV2 } from "@zyraxon-ai/session-ui/v2/attachment-card-v2"
 import { CommentCardV2 } from "@zyraxon-ai/session-ui/v2/comment-card-v2"
 import { typeLabel } from "@zyraxon-ai/session-ui/message-file"
-import type { ContextItem, ImageAttachmentPart } from "@/context/prompt"
+import type { ContextItem, MediaAttachmentPart } from "@/context/prompt"
 import "./image-attachments.css"
 
 type PromptCommentItem = ContextItem & { key: string }
 
 type PromptImageAttachmentsProps = {
-  attachments: ImageAttachmentPart[]
-  onOpen: (attachment: ImageAttachmentPart) => void
+  attachments: MediaAttachmentPart[]
+  onOpen: (attachment: MediaAttachmentPart) => void
   onRemove: (id: string) => void
   removeLabel: string
   newLayoutDesigns: boolean
@@ -29,6 +29,9 @@ const fallbackClass = "size-16 rounded-md bg-surface-base flex items-center just
 const imageClass =
   "size-16 rounded-md object-cover border border-border-base hover:border-border-strong-base transition-colors"
 const imageClassV2 = "w-[58px] h-[46px] rounded-[6px] object-cover"
+// Video and audio keep the same footprint as an image so the strip stays tidy.
+const mediaClass = "size-16 rounded-md border border-border-base bg-black/40"
+const mediaClassV2 = "w-[58px] h-[46px] rounded-[6px] border border-border-base bg-black/40"
 // inset box-shadows do not paint over <img> content, so the hairline is a separate overlay
 const imageHairlineClassV2 =
   "absolute inset-0 rounded-[6px] shadow-[inset_0_0_0_0.5px_var(--v2-border-border-base)] pointer-events-none"
@@ -83,21 +86,51 @@ export const PromptImageAttachments: Component<PromptImageAttachmentsProps> = (p
           <For each={props.attachments}>
             {(attachment) => {
               const image = attachment.mime.startsWith("image/")
+              const video = attachment.mime.startsWith("video/")
+              const audio = attachment.mime.startsWith("audio/")
               const media = () => (
                 <Show
                   when={image}
                   fallback={
                     <Show
-                      when={props.newLayoutDesigns}
+                      when={video}
                       fallback={
-                        <div class={fallbackClass}>
-                          <Icon name="folder" class="size-6 text-text-weak" />
-                        </div>
+                        <Show
+                          when={audio}
+                          fallback={
+                            <Show
+                              when={props.newLayoutDesigns}
+                              fallback={
+                                <div class={fallbackClass}>
+                                  <Icon name="folder" class="size-6 text-text-weak" />
+                                </div>
+                              }
+                            >
+                              <AttachmentCardV2 title={attachment.filename}>
+                                {typeLabel(attachment.filename, attachment.mime)}
+                              </AttachmentCardV2>
+                            </Show>
+                          }
+                        >
+                          <div class={props.newLayoutDesigns ? mediaClassV2 : mediaClass}>
+                            <audio
+                              src={attachment.dataUrl}
+                              controls
+                              class="size-full"
+                              onClick={() => props.onOpen(attachment)}
+                            />
+                          </div>
+                        </Show>
                       }
                     >
-                      <AttachmentCardV2 title={attachment.filename}>
-                        {typeLabel(attachment.filename, attachment.mime)}
-                      </AttachmentCardV2>
+                      <div class={props.newLayoutDesigns ? mediaClassV2 : mediaClass}>
+                        <video
+                          src={attachment.dataUrl}
+                          controls
+                          class={props.newLayoutDesigns ? "w-[58px] h-[46px] rounded-[6px] object-cover" : "size-16 rounded-md object-cover"}
+                          onClick={() => props.onOpen(attachment)}
+                        />
+                      </div>
                     </Show>
                   }
                 >

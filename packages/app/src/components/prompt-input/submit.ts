@@ -12,7 +12,7 @@ import { useLanguage } from "@/context/language"
 import { useLayout } from "@/context/layout"
 import { useLocal, type ModelSelection } from "@/context/local"
 import { usePermission } from "@/context/permission"
-import { type ContextItem, type ImageAttachmentPart, type Prompt, type usePrompt } from "@/context/prompt"
+import { type ContextItem, type MediaAttachmentPart, type Prompt, type usePrompt } from "@/context/prompt"
 import { useSDK, type DirectorySDK } from "@/context/sdk"
 import { useSync, type DirectorySync } from "@/context/sync"
 import { useSettings } from "@/context/settings"
@@ -56,11 +56,14 @@ type FollowupSendInput = {
 
 const draftText = (prompt: Prompt) => prompt.map((part) => ("content" in part ? part.content : "")).join("")
 
-const draftImages = (prompt: Prompt) => prompt.filter((part): part is ImageAttachmentPart => part.type === "image")
+const isMediaAttachment = (part: Prompt[number]): part is MediaAttachmentPart =>
+  part.type === "image" || part.type === "video" || part.type === "audio"
+
+const draftMedia = (prompt: Prompt) => prompt.filter(isMediaAttachment)
 
 export async function sendFollowupDraft(input: FollowupSendInput) {
   const text = draftText(input.draft.prompt)
-  const images = draftImages(input.draft.prompt)
+  const images = draftMedia(input.draft.prompt)
   const setBusy = () => {
     if (!input.optimisticBusy) return
     input.serverSync.session.set("session_status", input.draft.sessionID, { type: "busy" })
@@ -183,7 +186,7 @@ export async function sendFollowupDraft(input: FollowupSendInput) {
 type PromptSubmitInput = {
   prompt: ReturnType<typeof usePrompt>
   info: Accessor<{ id: string } | undefined>
-  imageAttachments: Accessor<ImageAttachmentPart[]>
+  imageAttachments: Accessor<MediaAttachmentPart[]>
   commentCount: Accessor<number>
   autoAccept: Accessor<boolean>
   mode: Accessor<"normal" | "shell">

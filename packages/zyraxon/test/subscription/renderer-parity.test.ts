@@ -57,7 +57,13 @@ describe("renderer and backend tool tiers cannot drift", () => {
 })
 
 describe("renderer and backend agent mode tiers cannot drift", () => {
-  const collabSource = readFileSync(join(APP_SRC, "context", "collab.tsx"), "utf-8")
+  // The agent definitions moved out of collab.tsx into the JSX-free collab-agents
+  // module, and collab.tsx only re-exports them. Reading just collab.tsx found no
+  // ids or tiers at all, so every mode compared as undefined. Concatenating the
+  // two keeps the check pointed at wherever the data actually lives.
+  const collabSource =
+    readFileSync(join(APP_SRC, "context", "collab.tsx"), "utf-8") +
+    readFileSync(join(APP_SRC, "context", "collab-agents.ts"), "utf-8")
 
   test("agent lock badges use the same tiers the mode switch gate enforces", () => {
     const rendererTiers = parseAgentTiers(collabSource)

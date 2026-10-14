@@ -26,14 +26,28 @@ export function isVideoAttachment(mime: string) {
 // The advertised capability flag alone is not enough: an SDK with no encoder for
 // the type rejects the part at call time, and that rejection fails the whole
 // request rather than the single attachment.
+//
+// The list is read from what each installed SDK actually encodes, not from the
+// catalogue's capability flag. A model that advertises video input on an SDK with
+// no video encoder would otherwise be sent a part the SDK cannot serialize, and
+// the provider would reject the entire message instead of the one attachment.
 const MEDIA_CARRIERS: Record<"video" | "audio", readonly string[]> = {
-  video: ["@ai-sdk/google", "@ai-sdk/google-vertex", "@ai-sdk/google-vertex/anthropic", "@ai-sdk/amazon-bedrock"],
+  video: [
+    "@ai-sdk/google",
+    "@ai-sdk/google-vertex",
+    "@ai-sdk/google-vertex/anthropic",
+    "@openrouter/ai-sdk-provider",
+    // Patched to encode `video_url`; the unpatched release throws on video parts.
+    "@ai-sdk/openai-compatible",
+  ],
   audio: [
     "@ai-sdk/openai",
     "@ai-sdk/google",
     "@ai-sdk/google-vertex",
     "@ai-sdk/openai-compatible",
-    "@ai-sdk/amazon-bedrock",
+    "@openrouter/ai-sdk-provider",
+    "@ai-sdk/azure",
+    "@ai-sdk/groq",
   ],
 }
 
@@ -41,6 +55,25 @@ const MEDIA_CARRIERS: Record<"video" | "audio", readonly string[]> = {
 export function mediaCarrierAccepts(npm: string, mime: string) {
   if (mime.startsWith("video/")) return MEDIA_CARRIERS.video.includes(npm)
   if (mime.startsWith("audio/")) return MEDIA_CARRIERS.audio.includes(npm)
+  return true
+}
+
+/**
+ * Whether the catalogue's own capability flag agrees that a part can be carried.
+ *
+ * `mediaCarrierAccepts` answers "can this SDK encode it". This answers "does the
+ * model say it accepts it". Both must hold, and keeping them as two named
+ * predicates makes it obvious which one a mismatch came from.
+ */
+export function modelAcceptsInputModality(
+  input: { image?: boolean; audio?: boolean; video?: boolean; pdf?: boolean } | undefined,
+  mime: string,
+) {
+  if (!input) return false
+  if (mime.startsWith("image/")) return input.image === true
+  if (mime.startsWith("audio/")) return input.audio === true
+  if (mime.startsWith("video/")) return input.video === true
+  if (mime === "application/pdf") return input.pdf === true
   return true
 }
 
