@@ -81,7 +81,15 @@ export function createPromptInputV2Store(input: PromptInputV2StoreInput) {
       setStore()("prompt", (prompt) => [...prompt, attachment])
     },
     removeAttachment(id: string) {
-      setStore()("prompt", (parts) => parts.filter((part) => part.type !== "image" || part.id !== id))
+      // Match every media kind, not just "image": filtering on image alone left
+      // the close button dead for audio and video attachments.
+      setStore()("prompt", (parts) =>
+        parts.filter(
+          (part) =>
+            (part.type !== "image" && part.type !== "video" && part.type !== "audio") ||
+            (part as { id?: string }).id !== id,
+        ),
+      )
     },
   }
 }

@@ -24,6 +24,8 @@ import {
   Prompt,
   usePrompt,
   ImageAttachmentPart,
+  MediaAttachmentPart,
+  isMediaAttachmentPart,
   AgentPart,
   FileAttachmentPart,
 } from "@/context/prompt"
@@ -259,7 +261,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   const info = createMemo(() => (props.controls.session.id ? sync().session.get(props.controls.session.id) : undefined))
   const working = createMemo(() => sync().data.session_working(props.controls.session.id ?? ""))
   const imageAttachments = createMemo(() =>
-    prompt.current().filter((part): part is ImageAttachmentPart => part.type === "image"),
+    prompt.current().filter((part): part is MediaAttachmentPart => isMediaAttachmentPart(part)),
   )
 
   const [store, setStore] = createPromptInputTransientState(

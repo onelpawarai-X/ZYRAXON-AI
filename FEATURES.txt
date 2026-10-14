@@ -92,7 +92,7 @@ THE NINE MODES
   Plan            architecture and planning. Explore freely, change nothing.
   Beast           deep coding with aggressive file operations and auto-testing.
   PRO             professional mode. Strict quality, security scanning, docs.
-  APEX PREDATOR   maximum reach. 887 tools, self-healing, autonomous operation.
+  APEX PREDATOR   maximum reach. 888 tools, self-healing, autonomous operation.
   DARK EMPEROR    the heavy tier. Code generation, deployment, deep debugging.
   VISION          the agent's eyes. Live screen capture, scene analysis, memory.
   PRO BUILDER     describes a website in plain language and builds the whole thing.

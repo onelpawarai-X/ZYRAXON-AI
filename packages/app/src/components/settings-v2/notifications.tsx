@@ -97,11 +97,7 @@ function VoiceSection() {
           <div data-action="settings-voice-auto-speak">
             <Switch
               checked={settings.general.voiceAutoSpeak()}
-              disabled={settings.general.voiceRealtime()}
               onChange={(checked) => {
-                // The switch is unavailable while the model is talking live, so this only
-                // ever runs with realtime off — where it is meaningful.
-                if (settings.general.voiceRealtime()) return
                 settings.general.setVoiceAutoSpeak(checked)
                 try {
                   ;(window as any).api?.voiceTTSEnabled?.(checked)

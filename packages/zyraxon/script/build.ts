@@ -40,6 +40,10 @@ const createEmbeddedWebUIBundle = async () => {
   })
   const entries = files.map((file, i) => `  ${JSON.stringify(file)}: file_${i},`)
   return [
+    `// Copyright (c) 2026 onelpawarai. All rights reserved.`,
+    // The generated asset imports resolve to bunfs file references at runtime,
+    // which TypeScript cannot type; skip checking this build artifact.
+    `// @ts-nocheck`,
     `// Import all files as file_$i with type: "file"`,
     ...imports,
     `// Export with original mappings`,

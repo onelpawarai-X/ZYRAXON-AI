@@ -27,21 +27,25 @@ export {
   createPromptState,
   DEFAULT_PROMPT,
   isCommentItem,
+  isMediaAttachmentPart,
   isPromptEqual,
 } from "./prompt-state"
 export type {
   AgentPart,
+  AudioAttachmentPart,
   ContentPart,
   ContextItem,
   FileAttachmentPart,
   FileContextItem,
   ImageAttachmentPart,
+  MediaAttachmentPart,
   Prompt,
   PromptModel,
   PromptStore,
   PromptScope,
   PromptSession,
   TextPart,
+  VideoAttachmentPart,
 } from "./prompt-state"
 
 const WORKSPACE_KEY = "__workspace__"

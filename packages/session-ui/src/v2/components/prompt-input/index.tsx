@@ -181,9 +181,14 @@ export function PromptInputV2(props: PromptInputV2Props) {
             onInput={(event) => {
               const cursor = promptInputV2Cursor(event.currentTarget)
               const prompt = parsePromptInputV2Editor(event.currentTarget)
-              const images = props.controller.parts().filter((part) => part.type === "image")
+              // Every media attachment has to survive a keystroke. Filtering only
+              // `image` dropped audio and video the moment the user typed, because
+              // the rebuilt prompt then contained just the text parts.
+              const media = props.controller
+                .parts()
+                .filter((part) => part.type === "image" || part.type === "video" || part.type === "audio")
               localInput = true
-              props.controller.onInput(prompt.map((part) => part.content).join(""), [...prompt, ...images], cursor)
+              props.controller.onInput(prompt.map((part) => part.content).join(""), [...prompt, ...media], cursor)
             }}
             onKeyDown={(event) => {
               if (props.controller.onKeyDown(event)) return

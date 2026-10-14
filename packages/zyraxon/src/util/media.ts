@@ -36,15 +36,15 @@ const MEDIA_CARRIERS: Record<"video" | "audio", readonly string[]> = {
     "@ai-sdk/google",
     "@ai-sdk/google-vertex",
     "@ai-sdk/google-vertex/anthropic",
-    "@ai-sdk/xai",
     "@openrouter/ai-sdk-provider",
+    // Patched to encode `video_url`; the unpatched release throws on video parts.
+    "@ai-sdk/openai-compatible",
   ],
   audio: [
     "@ai-sdk/openai",
     "@ai-sdk/google",
     "@ai-sdk/google-vertex",
     "@ai-sdk/openai-compatible",
-    "@ai-sdk/xai",
     "@openrouter/ai-sdk-provider",
     "@ai-sdk/azure",
     "@ai-sdk/groq",

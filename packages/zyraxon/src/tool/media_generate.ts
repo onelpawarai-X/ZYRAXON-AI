@@ -128,10 +128,11 @@ export const MediaGenerateTool = Tool.define(
     return {
       description: DESCRIPTION,
       parameters: Parameters,
-      execute: (args: { action: string; prompt: string; durationSeconds?: number }) =>
+      execute: (args: { action: string; prompt: string; durationSeconds?: number }, ctx: Tool.Context) =>
         Effect.gen(function* () {
           const providers = yield* provider.list()
-          return yield* Effect.promise(() => run(args, providers))
+          const selected = ctx.extra?.model as Provider.Model | undefined
+          return yield* Effect.promise(() => run(args, providers, selected))
         }),
     }
   }),
@@ -141,6 +142,7 @@ export const MediaGenerateTool = Tool.define(
 async function run(
   args: { action: string; prompt: string; durationSeconds?: number },
   providers: Record<string, Provider.Info>,
+  selectedModel: Provider.Model | undefined,
 ): Promise<Tool.ExecuteResult> {
   const action = args.action.trim().toLowerCase()
   const prompt = args.prompt?.trim()
@@ -173,12 +175,19 @@ async function run(
   // Whatever is selected is the one that generates. No substitution, no silent fallback
   // to a different provider: the user chose that account and that is where the cost and
   // the output should land.
-  const selectedProvider = models[0]
-  const selected = Object.values(selectedProvider.models ?? {})[0]
-  if (!selected) {
+  //
+  // "Selected" means the model in the composer, which is the one the session is actually
+  // running on. Reading `Object.values(providers)[0]` instead would generate with whichever
+  // provider happens to be listed first, so a user on a second provider would be billed on
+  // the first one and get a file from a model they never picked.
+  const selectedProvider = selectedModel ? providers[selectedModel.providerID] : models[0]
+  const selected = selectedModel
+    ? selectedProvider?.models?.[selectedModel.id]
+    : Object.values(selectedProvider?.models ?? {})[0]
+  if (!selectedProvider || !selected) {
     return {
       title: "No model selected",
-      output: `${selectedProvider.name} has no models available. Pick another provider or model in the composer.`,
+      output: `${selectedProvider?.name ?? "The selected provider"} has no models available. Pick another provider or model in the composer.`,
       metadata: {},
     }
   }
@@ -270,7 +279,7 @@ async function callProvider(
  * returned image is an out-of-band field on the reply that they throw away. Losing the
  * bytes is worse than the extra twenty lines.
  */
-async function callGenerate(
+export async function callGenerate(
   provider: Provider.Info,
   model: Provider.Model,
   prompt: string,
@@ -301,13 +310,14 @@ async function callGenerate(
 }
 
 /** Video is an operation: submit, then poll, and only then is there a file. */
-async function runLongRunning(
+export async function runLongRunning(
   provider: Provider.Info,
   model: Provider.Model,
   prompt: string,
   seconds: number,
+  pollMs = 5_000,
 ): Promise<{ media?: Media; error?: string }> {
-  const base = providerUrl(provider, model)
+  const base = predictUrl(provider, model)
   const headers = await providerHeaders(provider, model)
 
   const submit = await fetch(base, {
@@ -336,7 +346,7 @@ async function runLongRunning(
   // Veo takes a minute or two. Polled patiently because a render that is still going is
   // not a failure, and giving up early would throw away a video that was about to exist.
   for (let attempt = 0; attempt < 60; attempt++) {
-    await new Promise((resolve) => setTimeout(resolve, 5_000))
+    await new Promise((resolve) => setTimeout(resolve, pollMs))
     const poll = await fetch(providerOrigin(provider, model) + "/" + operation, {
       headers,
       signal: AbortSignal.timeout(60_000),
@@ -353,8 +363,6 @@ async function runLongRunning(
 }
 
 function providerOrigin(provider: Provider.Info, model: Provider.Model) {
-  void provider
-  void model
   return baseOf(providerUrl(provider, model))
 }
 
@@ -362,26 +370,75 @@ function baseOf(url: string) {
   return url.replace(/\/models\/[^/]+:.*$/, "").replace(/\/$/, "")
 }
 
-function providerUrl(provider: Provider.Info, model: Provider.Model) {
+/**
+ * The endpoint to POST to, preferring the configured base URL and falling back to the
+ * catalogue's own `api.url`.
+ *
+ * `options.baseURL` is only populated when the user or a corporate config set it. For an
+ * ordinary signed-in provider it is empty and the address lives on the model's catalogue
+ * entry, so reading only `options.baseURL` made every ordinary provider look like it
+ * "does not publish a base URL" and generation failed before a request was ever sent.
+ */
+export function providerUrl(provider: Provider.Info, model: Provider.Model) {
   const configured = (provider.options?.baseURL as string | undefined) ?? ""
-  const base = configured.replace(/\/$/, "")
+  const base = (configured || model.api.url || "").replace(/\/$/, "")
   if (!base) throw new Error(`${provider.name} does not publish a base URL`)
-  if (base.includes("generativelanguage.googleapis.com")) {
-    return `${base}/models/${encodeURIComponent(model.id)}:generateContent`
-  }
-  return `${base}/models/${encodeURIComponent(model.id)}:generate`
+  return isGoogle(model) ? `${base}/models/${encodeURIComponent(model.id)}:generateContent` : `${base}/models/${encodeURIComponent(model.id)}:generate`
+}
+
+/**
+ * Whether this model speaks Google's generative protocol.
+ *
+ * Decided by the SDK the catalogue entry declares rather than by matching the host name in
+ * the URL. A corporate gateway or a proxy in front of Google keeps the Google protocol but
+ * has a URL that no longer contains `generativelanguage.googleapis.com`, and host matching
+ * would then send it the predict path and get a 404. The npm field is what the provider
+ * itself uses to pick a protocol, so it is the honest signal.
+ */
+export function isGoogle(model: Provider.Model) {
+  return model.api.npm.startsWith("@ai-sdk/google")
+}
+
+/**
+ * The video endpoint. Video is not generateContent — Google exposes it as a long-running
+ * operation on its own `:predictLongRunning` path, and posting the generateContent URL with
+ * the predict body is answered with a 400 rather than a render.
+ */
+export function predictUrl(provider: Provider.Info, model: Provider.Model) {
+  const configured = (provider.options?.baseURL as string | undefined) ?? ""
+  const base = (configured || model.api.url || "").replace(/\/$/, "")
+  if (!base) throw new Error(`${provider.name} does not publish a base URL`)
+  return `${base}/models/${encodeURIComponent(model.id)}:predictLongRunning`
 }
 
 /** The provider's own credentials, from whatever it stores them under. */
-async function providerHeaders(
+export async function providerHeaders(
   provider: Provider.Info,
   model: Provider.Model,
 ): Promise<Record<string, string>> {
   const headers: Record<string, string> = { "content-type": "application/json" }
-  const options = provider.options as { headers?: Record<string, string> } | undefined
+  const options = provider.options as { headers?: Record<string, string>; apiKey?: string } | undefined
   for (const [key, value] of Object.entries(options?.headers ?? {})) headers[key] = value
-  void model
+
+  // A plain HTTP call does not get the SDK's auth wiring for free, so the key has to be
+  // attached here or the request arrives anonymous and the provider rejects it. Google's
+  // generative endpoint takes the key in a header; everyone else takes a bearer token.
+  const key = provider.key ?? options?.apiKey
+  if (key && !hasAuth(headers)) {
+    if (isGoogle(model)) {
+      headers["x-goog-api-key"] = key
+    } else {
+      headers["authorization"] = `Bearer ${key}`
+    }
+  }
   return headers
+}
+
+function hasAuth(headers: Record<string, string>) {
+  return Object.keys(headers).some((name) => {
+    const lower = name.toLowerCase()
+    return lower === "authorization" || lower === "x-goog-api-key" || lower === "x-api-key"
+  })
 }
 
 /** Turn a provider's error shape into one sentence a user can act on. */

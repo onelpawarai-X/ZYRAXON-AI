@@ -388,6 +388,10 @@ export function MessageTimeline(props: {
     ttsAudioQueue.length = 0
     ttsFetching = false
     ttsPendingText.length = 0
+    // The browser fallback is not part of the WebAudio graph, so aborting the
+    // fetch and tearing the sink down does not stop it — the platform queue keeps
+    // speaking a cancelled reply unless it is cleared explicitly.
+    try { window.speechSynthesis?.cancel() } catch {}
   }
 
   // Gapless WebAudio scheduler — every chunk is scheduled at the exact end of the
@@ -861,6 +865,10 @@ export function MessageTimeline(props: {
   function extractTTSText(msgId: string): string {
     const syncData = sync().data
     const parts = syncData.part[msgId] ?? []
+    // A reply that carries the model's own audio is already audible, so speaking
+    // its text too would play two voices over each other. Exactly one of the two
+    // owns the reply.
+    if (parts.some((part) => part.type === "file" && (part as any).mime?.startsWith("audio/"))) return ""
     let text = ""
     for (const part of parts) {
       // Only the answer gets spoken. Reasoning parts are the model's private
@@ -912,9 +920,42 @@ export function MessageTimeline(props: {
   // Send TTS to server — queue-based, NEVER drops text
   async function sendTTSText(text: string) {
     if (!text || text.trim().length === 0) return
+    // Outside Electron there is no local Edge TTS server to call, and the fetch
+    // below simply failed silently — the speaker looked enabled and said nothing.
+    // The platform's own speech synthesiser fills that gap so the reply is still
+    // read aloud in a plain browser.
+    if (!hasLocalTTSServer()) {
+      speakViaBrowser(text)
+      return
+    }
     ttsPendingText.push(text)
     if (ttsFetching) return
     flushTTSPending()
+  }
+
+  // The Edge Neural server is spawned by the Electron main process, so its
+  // presence is exactly the Electron preload bridge. Cached because it cannot
+  // change within a page load.
+  let localTTSServer: boolean | null = null
+  function hasLocalTTSServer(): boolean {
+    if (localTTSServer === null) localTTSServer = !!(window as any).electron?.ipcRenderer
+    return localTTSServer
+  }
+
+  // Browser speech synthesis fallback — one utterance at a time, stopped with the
+  // rest of the reply so a cancelled message cannot keep talking.
+  function speakViaBrowser(text: string) {
+    try {
+      const synth = window.speechSynthesis
+      if (!synth) return
+      const utterance = new SpeechSynthesisUtterance(text)
+      const voiceLang = settings.general.voiceLanguage?.() || "en-US"
+      utterance.lang = voiceLang === "auto" ? "en-US" : voiceLang
+      utterance.onstart = () => setRenderTTSActive(true)
+      utterance.onend = () => setRenderTTSActive(false)
+      utterance.onerror = () => setRenderTTSActive(false)
+      synth.speak(utterance)
+    } catch {}
   }
 
   // Prefetch slot: the NEXT chunk's synthesis is started while the current chunk

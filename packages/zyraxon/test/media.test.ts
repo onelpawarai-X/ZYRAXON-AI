@@ -24,18 +24,20 @@ describe("media attachments", () => {
     expect(mediaCarrierAccepts("@ai-sdk/openai", "video/mp4")).toBe(false)
   })
 
-  test("openai-compatible carries audio but not video", () => {
+  test("openai-compatible carries both audio and video", () => {
+    // The installed 2.0.41 release throws on video parts, so it is patched in
+    // patches/@ai-sdk%2Fopenai-compatible@2.0.41.patch to emit `video_url`.
     expect(mediaCarrierAccepts("@ai-sdk/openai-compatible", "audio/mpeg")).toBe(true)
-    expect(mediaCarrierAccepts("@ai-sdk/openai-compatible", "video/mp4")).toBe(false)
+    expect(mediaCarrierAccepts("@ai-sdk/openai-compatible", "video/mp4")).toBe(true)
   })
 
   test("carries media on the SDKs that added encoders for it", () => {
-    // xai and openrouter convert both; azure and groq convert audio only.
-    expect(mediaCarrierAccepts("@ai-sdk/xai", "video/mp4")).toBe(true)
+    // openrouter and google convert both; azure and groq convert audio only.
     expect(mediaCarrierAccepts("@openrouter/ai-sdk-provider", "video/mp4")).toBe(true)
     expect(mediaCarrierAccepts("@ai-sdk/azure", "audio/wav")).toBe(true)
     expect(mediaCarrierAccepts("@ai-sdk/groq", "audio/wav")).toBe(true)
-    // Bedrock and anthropic still have no converter for either.
+    // xai, bedrock and anthropic have no inline converter for either.
+    expect(mediaCarrierAccepts("@ai-sdk/xai", "video/mp4")).toBe(false)
     expect(mediaCarrierAccepts("@ai-sdk/amazon-bedrock", "video/mp4")).toBe(false)
     expect(mediaCarrierAccepts("@ai-sdk/anthropic", "audio/wav")).toBe(false)
   })

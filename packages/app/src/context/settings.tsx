@@ -481,20 +481,19 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         },
         voiceRealtime: withFallback(() => store.general?.voiceRealtime, false),
         /**
-         * Turning realtime on turns the ordinary speaker off in the same breath.
+         * Realtime keeps the reply audible while the model is still writing it.
          *
-         * The two cannot both run: the model speaks through the live stream while the
-         * speech synthesiser reads the same reply a moment later, the two overlap, and the
-         * microphone picks up the output as if the user had said it. Doing this here rather
-         * than in the panel means it holds no matter where the switch was flipped, and
-         * neither switch can be left in a state the user did not ask for.
+         * This used to switch the ordinary speaker off the moment it was turned on,
+         * on the assumption that a live model would supply its own audio. No route
+         * in the app produces that audio, so the switch just made the assistant
+         * mute — the opposite of what it promises. The streaming speaker already
+         * speaks sentence-by-sentence as tokens arrive, which is the realtime
+         * behaviour, so it stays on. A reply that does carry the model's own audio
+         * is played by the timeline, and TTS skips exactly those messages, so the
+         * two can never overlap.
          */
         setVoiceRealtime(value: boolean) {
           setStore("general", "voiceRealtime", value)
-          setStore("general", "voiceAutoSpeak", !value)
-          try {
-            ;(window as any).api?.voiceTTSEnabled?.(!value)
-          } catch {}
           try {
             ;(window as any).api?.voiceRealtimeEnabled?.(value)
           } catch {}

@@ -83,7 +83,7 @@ function authHeaders() {
   return {
     "Content-Type": "application/x-www-form-urlencoded",
     Accept: "application/json",
-    "User-Agent": `freeTierUserAgent()`,
+    "User-Agent": `${freeTierUserAgent()}`,
   }
 }
 
@@ -383,7 +383,7 @@ export async function SnowflakeCortexAuthPlugin(_input: PluginInput): Promise<Ho
                 }
               }
               headers.set("authorization", `Bearer ${currentOauth.access}`)
-              headers.set("User-Agent", `freeTierUserAgent()`)
+              headers.set("User-Agent", `${freeTierUserAgent()}`)
 
               let body = init?.body
               if (body && typeof body === "string") {

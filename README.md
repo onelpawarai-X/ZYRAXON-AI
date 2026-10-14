@@ -16,7 +16,7 @@ Members receive the latest unlock codes from the community. Codes are **only** s
 
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=700&size=26&duration=4500&pause=1200&color=00D4FF&center=true&vCenter=true&width=820&lines=Not+just+talk.+Build%2C+code%2C+deploy%2C+think%2C+act.;A+coding+agent+that+drives+your+machine.;887+tools.+108+verified+MCP+integrations." alt="Typing" />
+<img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=700&size=26&duration=4500&pause=1200&color=00D4FF&center=true&vCenter=true&width=820&lines=Not+just+talk.+Build%2C+code%2C+deploy%2C+think%2C+act.;A+coding+agent+that+drives+your+machine.;888+tools.+108+verified+MCP+integrations." alt="Typing" />
 
 <br/>
 
@@ -72,7 +72,7 @@ Every number below is counted from the source tree, not estimated.
 
 | | Count | |
 |---|---:|---|
-| **Tools** | 887 | each one registered with a required tier |
+| **Tools** | 888 | each one registered with a required tier |
 | **MCP integrations** | 108 | every app probed by hand before being listed |
 | **Agent modes** | 11 | from scoped exploration to full autonomy |
 | **Tool categories** | 63 | aircraft, marine, finance, medical, robotics, and more |
@@ -86,8 +86,8 @@ is answerable without reading the whole registry.
 
 | Tier | Tools | Unlocks |
 |:--|--:|---|
-| `free` | 184 | Read, write, patch, bash, grep, glob, search, plan, MCP, memory |
-| `pro` | 318 | Browser control, document tooling, media analysis |
+| `free` | 186 | Read, write, patch, bash, grep, glob, search, plan, MCP, memory |
+| `pro` | 317 | Browser control, document tooling, media analysis |
 | `max` | 324 | Knowledge graph, causal reasoning, simulation |
 | `ultra` | 61 | OMNI-KERNEL, autonomous and self-extending operation |
 
@@ -97,12 +97,12 @@ active, and new means the tools that specific tier adds on top of the one below.
 
 | Unlock | Cumulative tools | New at this tier |
 |:--|--:|--:|
-| `free` | 184 | 184 |
-| `free + pro` | 502 | 318 |
-| `free + pro + max` | 826 | 324 |
-| `free + pro + max + ultra` | 887 | 61 |
+| `free` | 186 | 186 |
+| `free + pro` | 503 | 317 |
+| `free + pro + max` | 827 | 324 |
+| `free + pro + max + ultra` | 888 | 61 |
 
-The 887 tools span 63 categories. The largest are vehicles (56), ultra-x (34),
+The 888 tools span 63 categories. The largest are vehicles (56), ultra-x (34),
 security (26), aviation (25), space (22), drone (21), engineering (21),
 helicopter (19), daily-life (19) and builtin (19), followed by ground,
 industrial, infrastructure, agriculture, marine and construction at 15 each.
@@ -234,7 +234,7 @@ change from rippling into the UI.
 | :---------------------------- | :---------------------------------------------------------------------------------: | :------------: | :------------: | :-------------: | :-------------: | :----------: |
 | **Full Desktop Control**      |                   **● FULL**<br>Click · Type · Scroll · Open Apps                   |        —       |        —       | ◐ Cloud Browser |        —        |       —      |
 | **108 MCP Applications**     | **● CONNECTED ECOSYSTEM**<br>108 Applications · MCP Connectors · External Services |      ◐ MCP     |      ◐ MCP     |      ◐ MCP      |      ◐ MCP      |     ◐ MCP    |
-| **887 Control Tools**        |          **● NATIVE TOOL LAYER**<br>Automation · System · Browser · Control         |        —       |      ◐ MCP     |      ◐ MCP      |    ◐ Limited    |     ◐ MCP    |
+| **888 Control Tools**        |          **● NATIVE TOOL LAYER**<br>Automation · System · Browser · Control         |        —       |      ◐ MCP     |      ◐ MCP      |    ◐ Limited    |     ◐ MCP    |
 | **Vehicle & Machine Control** |        **● 56 TOOLS**<br>Aircraft · Cars · Drones · Boats · Rockets · Robots       |        —       |        —       |        —        |        —        |       —      |
 | **Autonomous Flight**         |                   **● FULL**<br>Autoland · GCAS · TCAS · Approach                   |        —       |        —       |        —        |        —        |       —      |
 | **Autonomous Driving**        |                  **● FULL**<br>Sensor Fusion · AEB · Lane · Parking                 |        —       |        —       |        —        |        —        |       —      |
@@ -258,7 +258,7 @@ change from rippling into the UI.
 ### ZYRAXON
 
 **108 MCP Applications**
-**887 Control Tools**
+**888 Control Tools**
 **25+ AI Providers**
 **50,000+ Persistent Memories**
 **11 Agent Modes**

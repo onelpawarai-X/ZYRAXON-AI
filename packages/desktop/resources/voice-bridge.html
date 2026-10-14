@@ -46,6 +46,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#06060c;color:#e4e4e
 .bp{background:#3b82f6;color:#fff}.bp:disabled{background:rgba(255,255,255,.08);color:rgba(255,255,255,.2);cursor:not-allowed}
 .timer{font-size:14px;font-weight:600;color:#ff3b3b;font-variant-numeric:tabular-nums;min-width:50px;text-align:center}
 .status-msg{font-size:11px;color:rgba(255,255,255,.5);text-align:center;min-height:16px}
+/* The mic-level meter markup (.met/.metb/.metl) had no rules at all, so the
+   element collapsed to zero size and the level bar never showed — reading as a
+   dead microphone even while it was recording. */
+.met{width:70%;max-width:320px;height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.metb{height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,#00e87b,#3b82f6);transition:width .08s linear}
+.metl{font-size:8px;color:rgba(255,255,255,.25);text-align:center;margin-bottom:2px}
 </style>
 </head>
 <body>

@@ -21,6 +21,13 @@ let transcriptBuffer: Array<{ text: string; lang: string; timestamp: number }> =
 let accumulatedTranscript = ""
 const MAX_BUFFER_SIZE = 100
 
+// Last time the bridge HTML actually polled. Chrome can stay alive with no
+// window (the user closed it), and then nothing ever drains the command queue —
+// the mic button looks pressed and silent forever. A stale timestamp is what
+// lets launchChrome() tell "running" apart from "running but disconnected".
+let lastPollAt = 0
+const POLL_STALE_MS = 5000
+
 // While TTS is playing, the mic hears the assistant voice back. Every transcript
 // from the bridge is echo, not user speech, so it must never reach the chat.
 let ttsSpeaking = false
@@ -230,6 +237,7 @@ function startHTTPServer(): Promise<void> {
       }
 
       if (req.method === "GET" && req.url === "/api/poll") {
+        lastPollAt = Date.now()
         const cmds = pendingCommands.splice(0)
         res.writeHead(200, { "Content-Type": "application/json" })
         res.end(JSON.stringify(cmds))
@@ -262,30 +270,45 @@ function startHTTPServer(): Promise<void> {
       resolve()
     }
 
-    httpServer.listen(PORT, "127.0.0.1", onListening)
+    // One retry after freeing a busy port, then give up and resolve. The old
+    // version re-listened without re-attaching the error handler, so a second
+    // failure had nothing to resolve the promise: the mic button awaited forever
+    // and the whole bridge looked hung. `attempt` bounds it and always settles.
+    let attempt = 0
+    const listen = () => {
+      httpServer!.listen(PORT, "127.0.0.1", onListening)
+    }
 
     httpServer.on("error", (e: any) => {
-      if (e.code === "EADDRINUSE") {
+      if (e.code === "EADDRINUSE" && attempt < 1) {
+        attempt++
         console.log(`[VoiceBridge] Port ${PORT} busy, killing...`)
         killPort(PORT)
-        setTimeout(() => {
-          try {
-            httpServer?.listen(PORT, "127.0.0.1", onListening)
-          } catch {}
-        }, 300)
+        setTimeout(listen, 300)
         return
       }
       console.log(`[VoiceBridge] HTTP server error:`, e?.message || e)
       httpServer = null
       resolve()
     })
+
+    listen()
   })
 }
 
 function launchChrome() {
   if (chromeProcess && !chromeProcess.killed) {
-    console.log("[VoiceBridge] Chrome already running — reusing")
-    return true
+    // "Process alive" is not "bridge reachable". If nothing has polled recently,
+    // the window was closed and the command queue is going nowhere, so the stale
+    // process is replaced instead of trusted — otherwise the mic stays dead until
+    // the whole app restarts.
+    if (Date.now() - lastPollAt < POLL_STALE_MS) {
+      console.log("[VoiceBridge] Chrome already running — reusing")
+      return true
+    }
+    console.log("[VoiceBridge] Chrome alive but not polling — relaunching")
+    try { chromeProcess.kill("SIGTERM") } catch {}
+    chromeProcess = null
   }
 
   const chromePath = findChromePath()
@@ -324,15 +347,18 @@ function launchChrome() {
     })
     console.log("[VoiceBridge] Chrome launched:", chromePath)
     setTimeout(() => {
+      // Spawned, never execSync. The blocking form froze the Electron main
+      // process for the whole powershell round trip — every IPC call and the
+      // bridge's own HTTP server stalled behind it, which is the "mic hangs on
+      // start" report. Nothing here needs the result, so it runs detached.
       try {
-        execSync(
+        const ps =
           `powershell -NoProfile -Command "` +
           `$p = Get-Process chrome -EA SilentlyContinue | Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero -and ($_.MainWindowTitle -match 'voice-bridge' -or $_.MainWindowTitle -match '127.0.0.1') } | Select-Object -First 1; ` +
           `if ($p) { Add-Type -MemberDefinition '[DllImport(\\"user32.dll\\")] public static extern bool ShowWindow(IntPtr h, int c);' -Name S -Namespace U; [U.S]::ShowWindow($p.MainWindowHandle, 6) }` +
-          `"`,
-          { timeout: 8000, windowsHide: true }
-        )
-        console.log("[VoiceBridge] Voice Chrome minimized to taskbar")
+          `"`
+        const child = spawn(ps, [], { stdio: "ignore", windowsHide: true, shell: true })
+        child.on("error", () => {})
       } catch {}
     }, 2500)
     return true

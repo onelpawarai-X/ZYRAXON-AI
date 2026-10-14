@@ -143,7 +143,8 @@ export const TOOL_TIER_MAP: Record<string, SubscriptionTier> = {
   // Interactive session primitives registered directly in the tool registry. They were
   // absent from this map, so getToolRequiredTier() fell back to "max" and locked them
   // for free users even though every other primitive of their kind is free.
-  media_generate: "pro", mcp_disconnect: "free",
+  media_generate: "free", mcp_disconnect: "free",
+  model_call: "free",
 
   // MULTI-SESSION CONTROL (free trial) — work across every session in parallel
   x_session_list: "free", x_session_open: "free", x_session_send: "free",
@@ -410,7 +411,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       "Basic Browser Automation",
       "Mode Switching (general/build/plan/explore/vision)",
     ],
-    toolCount: 184,
+    toolCount: 186,
     memoryOptimization: "Basic (100 entries, 10MB cache)",
     maxAgents: 1,
     maxProjects: "3",
@@ -439,7 +440,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       "Multi-Agent (up to 3 agents)",
       "Priority Processing",
     ],
-    toolCount: 502,
+    toolCount: 503,
     memoryOptimization: "Pro (500 entries, 50MB cache)",
     maxAgents: 3,
     maxProjects: "Unlimited",
@@ -475,7 +476,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       "Team Workspace (3 members)",
       "GitHub Integration",
     ],
-    toolCount: 826,
+    toolCount: 827,
     memoryOptimization: "Max (2000 entries, 200MB cache)",
     maxAgents: 8,
     maxProjects: "Unlimited + Team",
@@ -508,7 +509,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       "Early Access to New Features",
       "Memory (10000 entries, 1GB cache)",
     ],
-    toolCount: 887,
+    toolCount: 888,
     memoryOptimization: "Ultra (10000 entries, 1GB cache)",
     maxAgents: -1,
     maxProjects: "Unlimited + Team + Enterprise",
@@ -517,19 +518,19 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
 
 export const TIER_STATS: Record<SubscriptionTier, { totalTools: number; categories: string[] }> = {
   free: {
-    totalTools: 184,
+    totalTools: 186,
     categories: ["Core AI", "Math", "Science", "Finance", "Data Science", "Security Basics", "Daily Life", "Memory", "Documents", "Tasks", "Captcha", "Subscription", "Acid/Base", "Chemistry", "Biology", "Life Tools", "System Info", "Web Search", "Nuphus Desktop", "Touchpoint Desktop"],
   },
   pro: {
-    totalTools: 502,
+    totalTools: 503,
     categories: ["Everything in Free", "Aviation", "Ground Vehicles", "Drones", "Helicopters", "ML & Safety", "Common Sense & Ethics", "Creativity", "Data Science Advanced", "Finance Advanced", "Vehicle Systems", "Planning", "Media Processing", "OCR", "Code Analysis", "API Testing", "Screen Vision", "Self-Evolution", "Task Automation"],
   },
   max: {
-    totalTools: 826,
+    totalTools: 827,
     categories: ["Everything in Pro", "Space", "Industrial", "Infrastructure", "Security", "Survey", "Agriculture", "Marine", "Construction", "Physical Interface", "SDR", "Digital Twin", "Dashboard", "Alert", "Data Logger", "Remote Control", "Predictive Maintenance", "Decision Support", "Authorization", "Extended AI", "Engineering", "Advanced Security", "CDP Browser", "Computer Control", "Site Builder"],
   },
   ultra: {
-    totalTools: 887,
+    totalTools: 888,
     categories: ["Everything in Max", "Singularity", "Guardian", "Universal Command Engine", "Ultra Tools", "Self-Improvement"],
   },
 }

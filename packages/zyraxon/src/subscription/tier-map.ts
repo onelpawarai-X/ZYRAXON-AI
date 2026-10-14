@@ -28,7 +28,8 @@ export const TOOL_TIER_MAP: Record<string, Tier> = {
   // Interactive session primitives registered directly in the tool registry. They were
   // absent from this map, so getToolRequiredTier() fell back to "max" and locked them
   // for free users even though every other primitive of their kind is free.
-  media_generate: "pro", mcp_disconnect: "free",
+  media_generate: "free", mcp_disconnect: "free",
+  model_call: "free",
 
   // MULTI-SESSION CONTROL (free trial) — work across every session in parallel
   x_session_list: "free", x_session_open: "free", x_session_send: "free",

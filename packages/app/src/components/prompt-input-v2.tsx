@@ -24,7 +24,7 @@ import { useLanguage } from "@/context/language"
 import { useLayout } from "@/context/layout"
 import { usePermission } from "@/context/permission"
 import { useSubscription } from "@/context/subscription"
-import { type ImageAttachmentPart, usePrompt } from "@/context/prompt"
+import { type MediaAttachmentPart, isMediaAttachmentPart, usePrompt } from "@/context/prompt"
 import { usePlatform } from "@/context/platform"
 import { useSDK } from "@/context/sdk"
 import { useSettings } from "@/context/settings"
@@ -218,7 +218,7 @@ export function usePromptInputV2Controller(props: PromptInputV2ControllerProps):
   const info = createMemo(() => (props.controls.session.id ? sync().session.get(props.controls.session.id) : undefined))
   const working = createMemo(() => sync().data.session_working(props.controls.session.id ?? ""))
   const attachments = createMemo(() =>
-    prompt.current().filter((part): part is ImageAttachmentPart => part.type === "image"),
+    prompt.current().filter((part): part is MediaAttachmentPart => isMediaAttachmentPart(part)),
   )
   const commentCount = createMemo(() => {
     if (mode() === "shell") return 0

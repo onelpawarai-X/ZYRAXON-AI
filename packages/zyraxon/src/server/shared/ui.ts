@@ -8,7 +8,7 @@ import { ProxyUtil } from "../proxy-util"
 
 let embeddedUIPromise: Promise<Record<string, string> | null> | undefined
 
-export const UI_UPSTREAM = new URL("https://app.zyraxonai.lovable.app")
+export const UI_UPSTREAM = new URL("https://zyraxonai.lovable.app")
 
 // The app loads its display fonts from Google Fonts and embeds the Marketplace
 // hub in an iframe. Both are cross-origin, so a policy that only allowed `self`
@@ -56,8 +56,12 @@ export function upstreamURL(path: string) {
 export function embeddedUI(disableEmbeddedWebUi: boolean) {
   if (disableEmbeddedWebUi) return Promise.resolve(null)
   return (embeddedUIPromise ??=
-    // @ts-expect-error - generated file at build time
-    import("zyraxon-web-ui.gen.ts").then((module) => module.default as Record<string, string>).catch(() => null))
+    // The generated file lives at the package root, so a relative specifier is
+    // what resolves both from source (`bun run src/index.ts`) and from the
+    // compiled binary. A bare `zyraxon-web-ui.gen.ts` specifier only resolves in
+    // the bunfs-compiled binary and fails in dev, which silently fell through to
+    // the remote upstream proxy.
+    import("../../../zyraxon-web-ui.gen.ts").then((module) => module.default as unknown as Record<string, string>).catch(() => null))
 }
 
 function notFound() {

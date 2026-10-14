@@ -40,6 +40,7 @@ import { SitePublishTool } from "./site_publish"
 import { SiteUnpublishTool } from "./site_unpublish"
 import { MediaFetchTool } from "./media_fetch"
 import { MediaGenerateTool } from "./media_generate"
+import { ModelCallTool } from "./model_call"
 import { SvgGenerateTool } from "./svg_generate"
 import { SiteDomainTool } from "./site_domain"
 import { SitePreviewTool } from "./site_preview"
@@ -134,6 +135,7 @@ const LOCAL_TOOL_IDS = new Set<string>([
   "memory",
   "media_generate",
   "media_fetch",
+  "model_call",
   "site_preview",
   "plan_exit",
   "x_mode_switch",
@@ -200,6 +202,7 @@ const layer = Layer.effect(
     const siteUnpublishToolDef = yield* SiteUnpublishTool
     const mediaFetchToolDef = yield* MediaFetchTool
     const mediaGenerateToolDef = yield* MediaGenerateTool
+    const modelCallToolDef = yield* ModelCallTool
     const svgGenerateToolDef = yield* SvgGenerateTool
     const siteDomainToolDef = yield* SiteDomainTool
     const sitePreviewToolDef = yield* SitePreviewTool
@@ -474,6 +477,7 @@ const layer = Layer.effect(
           site_unpublish: Tool.init(siteUnpublishToolDef),
           media_fetch: Tool.init(mediaFetchToolDef),
           media_generate: Tool.init(mediaGenerateToolDef),
+          model_call: Tool.init(modelCallToolDef),
           svg_generate: Tool.init(svgGenerateToolDef),
           site_domain: Tool.init(siteDomainToolDef),
           site_preview: Tool.init(sitePreviewToolDef),
@@ -540,6 +544,7 @@ const layer = Layer.effect(
             tool.site_unpublish,
             tool.media_fetch,
             tool.media_generate,
+            tool.model_call,
             tool.svg_generate,
             tool.site_domain,
             tool.site_preview,

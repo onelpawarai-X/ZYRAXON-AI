@@ -332,6 +332,37 @@ function handleSpeak(req: IncomingMessage, res: ServerResponse) {
     res.once("close", onClientGone)
 
     try {
+      // A cached utterance is already complete, so it can be answered in one go.
+      if (cached) {
+        console.log(`[TTS] Cached ${cached.length} bytes`)
+        res.writeHead(200, {
+          "Content-Type": "audio/mpeg",
+          "Cache-Control": "no-store",
+          "Access-Control-Allow-Origin": "*",
+          Connection: "keep-alive",
+          "X-Accel-Buffering": "no",
+        })
+        res.end(cached)
+        return
+      }
+
+      // Synthesis is opened before the response head is written, so a total
+      // failure can be reported as an error status. This used to write 200 and
+      // then end an empty body, which the client cannot tell apart from a short
+      // utterance: the speaker looked like it was working and simply stayed
+      // silent. `openTTSStream` already waits for the first frame, so streaming
+      // is unaffected — the header still precedes the first byte on the wire.
+      live = await openTTSStream(text, voiceCandidates, key)
+      if (!live) {
+        console.error("[TTS] All voice candidates failed for lang:", lang)
+        res.writeHead(503, {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        })
+        res.end(JSON.stringify({ error: "speech synthesis unavailable", lang }))
+        return
+      }
+
       // No Content-Length anywhere: the body is chunked transfer encoding, so the
       // first frame is flushed to the client the moment it exists and playback can
       // start while Edge is still synthesising the rest of the sentence.
@@ -342,19 +373,6 @@ function handleSpeak(req: IncomingMessage, res: ServerResponse) {
         Connection: "keep-alive",
         "X-Accel-Buffering": "no",
       })
-
-      if (cached) {
-        console.log(`[TTS] Cached ${cached.length} bytes`)
-        res.end(cached)
-        return
-      }
-
-      live = await openTTSStream(text, voiceCandidates, key)
-      if (!live) {
-        console.error("[TTS] All voice candidates failed for lang:", lang)
-        res.end()
-        return
-      }
 
       const { stream, source, voice } = live
       // A synthesis that dies after the first byte is already on the wire cannot be
