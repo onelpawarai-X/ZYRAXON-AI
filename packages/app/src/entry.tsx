@@ -113,6 +113,10 @@ const getCurrentUrl = () => {
 }
 
 const getDefaultUrl = () => {
+  // A pinned build URL wins over whatever the browser remembers. A stale stored
+  // server (for example a localhost:4096 from an earlier session) would otherwise
+  // shadow the deployed backend and leave the app pointed at a dead server.
+  if (import.meta.env.VITE_ZYRAXON_SERVER_URL) return import.meta.env.VITE_ZYRAXON_SERVER_URL
   const lsDefault = readDefaultServerUrl()
   if (lsDefault) return lsDefault
   return getCurrentUrl()

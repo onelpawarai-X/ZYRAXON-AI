@@ -30,6 +30,7 @@ import { optional } from "@opencode-ai/core/schema"
 import { ProviderTransform } from "./transform"
 import { ProviderV2 } from "@opencode-ai/core/provider"
 import { ModelV2 } from "@opencode-ai/core/model"
+import * as Local from "@/local/local"
 import { ModelStatus } from "./model-status"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 import { ProviderError } from "./error"
@@ -1738,6 +1739,25 @@ const entries = yield* providerCatalog.get()
 
     const list = Effect.fn("Provider.list")(() => InstanceState.use(state, (s) => s.providers))
 
+    /**
+     * Refresh the `local` provider from the models on disk. It is intentionally
+     * not part of state construction: models can be downloaded while the server
+     * runs, and provider state is built once per instance. Mutating `providers`
+     * here keeps `provider.list` and model resolution in agreement.
+     */
+    function ensureLocalProvider(s: State) {
+      const provider = Local.buildLocalProvider(`${localOrigin()}/local/v1`, Local.modelDir())
+      if (Object.keys(provider.models).length === 0) {
+        delete s.providers["local" as ProviderV2.ID]
+        return
+      }
+      s.providers["local" as ProviderV2.ID] = provider as unknown as Info
+    }
+
+    function localOrigin() {
+      return process.env.ZYRAXON_SERVER_URL ?? `http://127.0.0.1:${process.env.PORT ?? 4096}`
+    }
+
     async function resolveSDK(model: Model, s: State, envs: Record<string, string | undefined>) {
       try {
         const provider = s.providers[model.providerID]
@@ -1872,12 +1892,15 @@ const entries = yield* providerCatalog.get()
       }
     }
 
-    const getProvider = Effect.fn("Provider.getProvider")((providerID: ProviderV2.ID) =>
-      InstanceState.use(state, (s) => s.providers[providerID]),
-    )
+    const getProvider = Effect.fn("Provider.getProvider")(function* (providerID: ProviderV2.ID) {
+      const s = yield* InstanceState.get(state)
+      if (providerID === "local") ensureLocalProvider(s)
+      return s.providers[providerID]
+    })
 
     const getModel = Effect.fn("Provider.getModel")(function* (providerID: ProviderV2.ID, modelID: ModelV2.ID) {
       const s = yield* InstanceState.get(state)
+      if (providerID === "local") ensureLocalProvider(s)
       const provider = s.providers[providerID]
       if (!provider) {
         const catalogProvider = s.catalog[providerID]
@@ -1902,6 +1925,7 @@ const entries = yield* providerCatalog.get()
 
     const getLanguage = Effect.fn("Provider.getLanguage")(function* (model: Model) {
       const s = yield* InstanceState.get(state)
+      if (model.providerID === "local") ensureLocalProvider(s)
       const envs = yield* env.all()
       const key = `${model.providerID}/${model.id}`
       if (s.models.has(key)) return s.models.get(key)!

@@ -596,9 +596,14 @@ const layer = Layer.effect(
           result.compaction = { ...result.compaction, prune: false }
         }
 
-        // Inject bundled default MCP config if no MCP servers are configured
-        // This ensures Jarvis Browser MCP works out of the box without user config
-        if (!result.mcp || Object.keys(result.mcp).length === 0) {
+        // Always merge the bundled default MCP config so the built-in servers
+        // (jarvis-browser, nuphus-desktop, touchpoint-mcp, desktop-commander)
+        // connect out of the box in every project. User entries still win, so an
+        // explicitly configured server overrides its bundled default. Gating this
+        // on an empty mcp block silently dropped all four as soon as the user had
+        // any unrelated server (e.g. a remote one), which made the built-ins
+        // vanish from the status bar.
+        {
           try {
             const fsSync = require("fs") as typeof import("fs")
             const pathMod = require("path") as typeof import("path")

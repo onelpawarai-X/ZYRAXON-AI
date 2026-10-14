@@ -147,12 +147,7 @@ function LocalModelActions(props: { model: ModelItem; modelsCtx: ReturnType<type
   const pinned = () => props.modelsCtx.localPinned.find((m) => m.id === props.model.id)
   const [downloading, setDownloading] = createSignal(false)
   const [progress, setProgress] = createSignal(0)
-  const [speed, setSpeed] = createSignal("")
   const [error, setError] = createSignal<string | null>(null)
-
-  let progressUnsub: (() => void) | undefined
-
-  onCleanup(() => { progressUnsub?.() })
 
   const startDownload = async (e: Event) => {
     e.stopPropagation()
@@ -164,52 +159,28 @@ function LocalModelActions(props: { model: ModelItem; modelsCtx: ReturnType<type
     setProgress(0)
     setError(null)
 
-    const api = (window as any).api
-    if (!api?.downloadModel) {
-      setError("Download not available")
-      setDownloading(false)
-      return
-    }
-
-    // Listen for progress updates
-    if (api.onDownloadModelProgress) {
-      progressUnsub = api.onDownloadModelProgress((prog: any) => {
-        if (prog.modelId === p.id) {
-          setProgress(prog.percent || 0)
-          if (prog.bytesDownloaded && prog.totalBytes) {
-            const mbDown = (prog.bytesDownloaded / 1024 / 1024).toFixed(1)
-            const mbTotal = (prog.totalBytes / 1024 / 1024).toFixed(0)
-            setSpeed(`${mbDown}/${mbTotal} MB`)
-          }
-        }
-      })
-    }
-
+    // Downloads run on the server (it owns the model directory), so this works
+    // in the web app as well as the desktop app.
+    const repo = p.hfUrl.replace("https://huggingface.co/", "")
     try {
-      const result = await api.downloadModel({
-        url: p.downloadUrl,
-        targetPath: `.zyraxon/models/${p.hfFile}`,
-        modelId: p.id,
-      })
-      if (result?.success) {
-        props.modelsCtx.markDownloaded(p.id)
+      const result = await props.modelsCtx.downloadModel({ repo, file: p.hfFile })
+      if (result.success) {
         setProgress(100)
       } else {
-        setError(result?.error || "Download failed")
+        setError(result.error || "Download failed")
       }
     } catch (err: any) {
       console.error("Download failed:", err)
       setError(err?.message || "Download failed")
     } finally {
       setDownloading(false)
-      progressUnsub?.()
     }
   }
 
   return (
     <span
       class="ml-auto shrink-0 cursor-pointer"
-      title={isDownloaded() ? "Model downloaded locally" : downloading() ? `Downloading ${progress().toFixed(0)}% - ${speed()}` : error() ? `Error: ${error()}` : pinned() ? `Download ${pinned()!.hfSizeGB}GB` : "Download"}
+      title={isDownloaded() ? "Model downloaded locally" : downloading() ? `Downloading ${progress().toFixed(0)}%` : error() ? `Error: ${error()}` : pinned() ? `Download ${pinned()!.hfSizeGB}GB` : "Download"}
       onClick={(e) => {
         if (isDownloaded()) {
           e.stopPropagation()
