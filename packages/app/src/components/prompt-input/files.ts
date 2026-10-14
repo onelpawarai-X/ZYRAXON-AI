@@ -1,6 +1,9 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-import { ACCEPTED_FILE_TYPES, ACCEPTED_IMAGE_TYPES } from "@/constants/file-picker"
+import {
+  ACCEPTED_FILE_TYPES,
+  ACCEPTED_IMAGE_TYPES,
+} from "@/constants/file-picker"
 
 export { ACCEPTED_FILE_TYPES }
 
@@ -44,6 +47,25 @@ const IMAGE_EXTS = new Map([
   ["png", "image/png"],
   ["webp", "image/webp"],
 ])
+// Video/audio extensions resolve to a real MIME when the browser reports none or
+// `application/octet-stream`, which is common for `.mkv`, `.m4a` and friends.
+const MEDIA_EXTS = new Map([
+  ["mp4", "video/mp4"],
+  ["m4v", "video/mp4"],
+  ["mov", "video/quicktime"],
+  ["webm", "video/webm"],
+  ["ogv", "video/ogg"],
+  ["mkv", "video/x-matroska"],
+  ["avi", "video/x-msvideo"],
+  ["mp3", "audio/mpeg"],
+  ["m4a", "audio/mp4"],
+  ["wav", "audio/wav"],
+  ["ogg", "audio/ogg"],
+  ["oga", "audio/ogg"],
+  ["opus", "audio/opus"],
+  ["flac", "audio/flac"],
+  ["aac", "audio/aac"],
+])
 const TEXT_MIMES = new Set([
   "application/json",
   "application/ld+json",
@@ -86,12 +108,26 @@ function textBytes(bytes: Uint8Array) {
 
 export async function attachmentMime(file: File) {
   const type = kind(file.type)
+  const suffix = ext(file.name)
   if (IMAGE_MIMES.has(type)) return type
   if (type === "application/pdf") return type
 
-  const suffix = ext(file.name)
+  // A browser-reported video/audio type is trusted as-is, which covers container
+  // types outside the accepted list (video/x-matroska, audio/opus, ...).
+  // `application/octet-stream` and a missing type are not trustworthy, so those
+  // fall through to the extension table below.
+  if (type.startsWith("video/") || type.startsWith("audio/")) return type
+
   const fallback = IMAGE_EXTS.get(suffix) ?? (suffix === "pdf" ? "application/pdf" : undefined)
   if ((!type || type === "application/octet-stream") && fallback) return fallback
+
+  // Video and audio never read as text, so the byte sniff at the bottom would reject
+  // them. Resolve them from the extension instead, which is what makes a video clip
+  // reachable from the composer at all.
+  if (!type || type === "application/octet-stream") {
+    const media = MEDIA_EXTS.get(suffix)
+    if (media) return media
+  }
 
   if (textMime(type)) return "text/plain"
   const bytes = new Uint8Array(await file.slice(0, SAMPLE).arrayBuffer())

@@ -25,15 +25,22 @@ def install_deps():
         subprocess.check_call([sys.executable, "-m", "pip", "install", "fastapi", "uvicorn[standard]", "-q"])
     try:
         import torch
-        from audiocraft.models import MusicGen
     except ImportError:
         import subprocess
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "torch", "audiocraft", "-q"])
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "torch", "--index-url", "https://download.pytorch.org/whl/cpu", "-q"])
+    # MusicGen ships inside transformers now. The standalone `audiocraft` package
+    # only builds on older Python versions, so transformers is the portable path.
+    try:
+        from transformers import MusicgenForConditionalGeneration  # noqa: F401
+    except ImportError:
+        import subprocess
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "transformers", "numpy", "scipy", "-q"])
 
 install_deps()
 
+import numpy as np
 import torch
-from audiocraft.models import MusicGen
+from transformers import AutoProcessor, MusicgenForConditionalGeneration
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 import uvicorn
@@ -62,26 +69,32 @@ async def generate_music(request: dict):
         if model is None:
             load_model()
 
-        model.set_generation_params(
-            duration=min(duration, 30),
-            temperature=temperature,
-            top_k=top_k,
-            top_p=top_p if top_p > 0 else None,
-        )
+        inputs = processor(text=[prompt], return_tensors="pt").to(DEVICE)
+        # MusicGen decodes ~50 frames per second of audio, so the requested
+        # duration maps directly onto the token budget.
+        max_new_tokens = max(32, min(int(duration) * 50, 1500))
+        with torch.no_grad():
+            audio = model.generate(
+                **inputs,
+                max_new_tokens=max_new_tokens,
+                do_sample=True,
+                temperature=temperature,
+                top_k=top_k,
+                top_p=top_p if top_p > 0 else 1.0,
+            )
 
-        wav = model.generate([prompt])
+        wav = audio[0, 0].cpu().numpy().astype(np.float32)
+        sample_rate = model.config.audio_encoder.sampling_rate
 
         # Save as WAV
         audio_dir = os.path.join(tempfile.gettempdir(), "zyraxon", "audio")
         os.makedirs(audio_dir, exist_ok=True)
         audio_path = os.path.join(audio_dir, f"music_{int(time.time()*1000)}.wav")
-
-        import torchaudio
-        torchaudio.save(audio_path, wav[0].cpu(), sample_rate=32000)
+        write_wav(audio_path, sample_rate, wav)
 
         # Also return base64
         buf = io.BytesIO()
-        torchaudio.save(buf, wav[0].cpu(), sample_rate=32000, format="wav")
+        write_wav(buf, sample_rate, wav)
         b64 = base64.b64encode(buf.getvalue()).decode()
 
         elapsed = (time.time() - start) * 1000
@@ -89,21 +102,38 @@ async def generate_music(request: dict):
             "success": True,
             "audio_path": audio_path,
             "audio_base64": b64,
-            "sample_rate": 32000,
-            "duration_seconds": duration,
+            "sample_rate": sample_rate,
+            "duration_seconds": len(wav) / sample_rate,
             "elapsed_ms": elapsed,
         }
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
 
+def write_wav(target, sample_rate: int, wav):
+    """Write 16-bit PCM without pulling in torchaudio."""
+    import wave
+
+    pcm = np.clip(wav, -1.0, 1.0)
+    pcm = (pcm * 32767.0).astype("<i2")
+    handle = wave.open(target, "wb")
+    try:
+        handle.setnchannels(1)
+        handle.setsampwidth(2)
+        handle.setframerate(sample_rate)
+        handle.writeframes(pcm.tobytes())
+    finally:
+        handle.close()
+
 def load_model():
-    global model, DEVICE
+    global model, processor, DEVICE
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Loading MusicGen model ({model_name})...", flush=True)
-    model = MusicGen.get_pretrained(model_name, device=str(DEVICE))
+    processor = AutoProcessor.from_pretrained(model_name)
+    model = MusicgenForConditionalGeneration.from_pretrained(model_name).to(DEVICE)
     print("MusicGen model loaded!", flush=True)
 
 DEVICE = "cpu"
+processor = None
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

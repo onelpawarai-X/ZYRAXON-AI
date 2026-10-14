@@ -107,6 +107,38 @@ export function webSearchEnabled(providerID: ProviderV2.ID, flags = { exa: false
   return providerID === ProviderV2.ID.zyraxon || flags.exa || flags.parallel
 }
 
+/**
+ * The definitions a local model is given.
+ *
+ * A local model runs on the user's own machine, often on CPU with a small
+ * context window. Handing it the full catalog (roughly 23k tokens of schemas)
+ * overflows that window and takes minutes to prefill, so it gets the tools that
+ * carry a coding session and nothing else. Everything outside this set is still
+ * registered and still runs when a hosted model is selected.
+ */
+const LOCAL_TOOL_IDS = new Set<string>([
+  "read",
+  "write",
+  "edit",
+  "apply_patch",
+  "bash",
+  "glob",
+  "grep",
+  "lsp",
+  "webfetch",
+  "websearch",
+  "task",
+  "skill",
+  "todowrite",
+  "question",
+  "memory",
+  "media_generate",
+  "media_fetch",
+  "site_preview",
+  "plan_exit",
+  "x_mode_switch",
+])
+
 type TaskDef = Tool.InferDef<typeof TaskTool>
 type ReadDef = Tool.InferDef<typeof ReadTool>
 
@@ -613,6 +645,13 @@ const layer = Layer.effect(
       // without undercounting, and would refuse work it actually owned a tool for.
       // The gate moved to execution time (see SessionTools.resolve), where a locked
       // tool answers with a clear upgrade message instead of silently not existing.
+      // A local model is the one case where the full catalog does not fit. The
+      // whole surface is ~23k tokens, which overflows an 8k context window and
+      // takes minutes to prefill on CPU. Hosted models have both the window and
+      // the compute, so they keep every definition; a local model gets the core
+      // set below and the tier gate still governs what may actually run.
+      const localOnly = input.providerID === "local"
+
       const filtered = (yield* all()).filter((tool) => {
         if (tool.id === WebSearchTool.id) {
           return webSearchEnabled(input.providerID, { exa: flags.enableExa, parallel: flags.enableParallel })
@@ -622,6 +661,8 @@ const layer = Layer.effect(
           input.modelID.includes("gpt-") && !input.modelID.includes("oss") && !input.modelID.includes("gpt-4")
         if (tool.id === ApplyPatchTool.id) return usePatch
         if (tool.id === EditTool.id || tool.id === WriteTool.id) return !usePatch
+
+        if (localOnly && !LOCAL_TOOL_IDS.has(tool.id)) return false
 
         return true
       })

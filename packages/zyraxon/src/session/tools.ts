@@ -34,6 +34,29 @@ const MCP_RESOURCE_TOOLS = {
   read: "read_mcp_resource",
 } as const
 const MAX_MCP_RESOURCE_BLOB_BYTES = 10 * 1024 * 1024
+
+// A local llama.cpp model runs behind a small context window and cannot ingest
+// the full 800+ entry tool catalog: the JSON schema alone overflows the context
+// and the server spins instead of answering. Local models receive the free tier
+// catalog only, so they can still search, fetch, read, edit, run commands, and
+// delegate. Every hosted provider keeps the complete catalog.
+function isLocalModel(model: Provider.Model): boolean {
+  return model.providerID === "local"
+}
+
+/**
+ * The tier map is the single source of truth for what a local model may see.
+ *
+ * The cutoff is the user's own tier, not a fixed one. Gating a local model at
+ * `free` would drop the tools a paid user actually owns — `media_generate` is
+ * `pro`, `execute` and `lsp` are `max` — so a local media request would be told
+ * it has no way to run. A local model gets exactly the tools the account is
+ * entitled to, and nothing more.
+ */
+function isLocalVisibleTool(model: Provider.Model, toolID: string): boolean {
+  if (!isLocalModel(model)) return true
+  return hasAccess(getCurrentTier(), getToolRequiredTier(toolID))
+}
 const SUPPORTED_MCP_RESOURCE_ATTACHMENT_MIMES = new Set([
   "application/pdf",
   "image/gif",
@@ -95,12 +118,12 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
   })
 
   const _tRegTools = Date.now()
-  const registryTools = yield* registry.tools({
+  const registryTools = (yield* registry.tools({
     modelID: ModelV2.ID.make(input.model.api.id),
     providerID: input.model.providerID,
     agent: input.agent,
     permission: input.session.permission,
-  })
+  })).filter((item) => isLocalVisibleTool(input.model, item.id))
   console.log(`[SessionTools.resolve] registry.tools: ${registryTools.length} tools in ${Date.now() - _tRegTools}ms`)
   for (const item of registryTools) {
     const schema = ProviderTransform.schema(input.model, ToolJsonSchema.fromTool(item))
@@ -159,7 +182,7 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
 
             // OMNI-KERNEL: processAfterToolCall — memory + learning + repair
             const toolLatency = Date.now() - toolStartTime
-            const success = !output.error
+            const success = !(result as { error?: unknown }).error
             yield* Effect.promise(() =>
               omniAfterToolCall(item.id, output, success, toolLatency, ctx.sessionID),
             )
@@ -177,6 +200,14 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
         )
       },
     })
+  }
+
+  // A local model cannot carry the extra MCP schemas either. Stop at the core
+  // catalog and let it reach MCP servers through the built-in catalog/connect
+  // tools when it actually needs one.
+  if (isLocalModel(input.model)) {
+    console.log(`[SessionTools.resolve] DONE: ${Object.keys(tools).length} tools (local core) in ${Date.now() - _tToolsStart}ms`)
+    return tools
   }
 
   const hasMcpResourceServer = Object.values(yield* mcp.clients()).some(

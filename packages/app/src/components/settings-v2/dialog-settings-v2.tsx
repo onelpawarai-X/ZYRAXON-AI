@@ -10,6 +10,7 @@ import { SettingsGeneralV2 } from "./general"
 import { SettingsKeybinds } from "../settings-keybinds"
 import { SettingsProvidersV2 } from "./providers"
 import { SettingsModelsV2 } from "./models"
+import { SettingsLocalV2 } from "./local"
 import "./settings-v2.css"
 import { SettingsServersV2 } from "./servers"
 import { SettingsSubscription } from "./settings-subscription"
@@ -41,6 +42,7 @@ type Section =
   | "servers"
   | "providers"
   | "models"
+  | "local"
   | "extensions"
   | "storage"
   | "security"
@@ -70,6 +72,7 @@ const GROUPS: readonly { title: string; items: readonly { section: Section; icon
       { section: "servers", icon: "zy-servers" },
       { section: "providers", icon: "zy-providers" },
       { section: "models", icon: "zy-models" },
+      { section: "local", icon: "zy-models" },
     ],
   },
   {
@@ -198,6 +201,9 @@ export const DialogSettings: Component<{
         </TabsV2.Content>
         <TabsV2.Content value="models" class="settings-v2-panel">
           <SettingsModelsV2 />
+        </TabsV2.Content>
+        <TabsV2.Content value="local" class="settings-v2-panel">
+          <SettingsLocalV2 />
         </TabsV2.Content>
         <TabsV2.Content value="extensions" class="settings-v2-panel">
           <SettingsExtensionsV2 />

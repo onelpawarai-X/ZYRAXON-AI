@@ -121,77 +121,95 @@ function extensionFor(mime: string): string {
   return "bin"
 }
 
-export const MediaGenerateTool = Tool.define<typeof Parameters>(
+export const MediaGenerateTool = Tool.define(
   "media_generate",
   Effect.gen(function* () {
+    const provider = yield* Provider.Service
     return {
       description: DESCRIPTION,
       parameters: Parameters,
-      execute: (args) =>
+      execute: (args: { action: string; prompt: string; durationSeconds?: number }) =>
         Effect.gen(function* () {
-          return yield* Effect.promise(() => run(args))
+          const providers = yield* provider.list()
+          return yield* Effect.promise(() => run(args, providers))
         }),
     }
   }),
 )
 
 /** The body, kept out of the definition so the Effect wrapper above stays readable. */
-async function run(args: { action: string; prompt: string; durationSeconds?: number }) {
-  {
-    const action = args.action.trim().toLowerCase()
-    const prompt = args.prompt?.trim()
-    if (!prompt) return { title: "Prompt required", output: "Describe what to generate.", metadata: {} }
-    if (action !== "image" && action !== "video" && action !== "music") {
-      return {
-        title: "Unknown action",
-        output: `action must be image, video or music — got "${args.action}"`,
-        metadata: {},
-      }
-    }
-
-    // The user's own selection, read from the live model list rather than from a table here.
-    const models = await Effect.runPromise(Provider.list()).catch(() => [])
-    if (models.length === 0) {
-      return {
-        title: "No provider selected",
-        output: "No model is selected, so there is nothing to generate with. Pick a model in the composer first.",
-        metadata: {},
-      }
-    }
-
-    // Whatever is selected is the one that generates. No substitution, no silent fallback
-    // to a different provider: the user chose that account and that is where the cost and
-    // the output should land.
-    const selected = models[0]
-    const label = `${selected.providerID}/${selected.id}`
-
-    const call = await callProvider(selected, action, prompt, args.durationSeconds)
-
-    if (call.error) {
-      return {
-        title: `Could not generate the ${action}`,
-        output: `${label} refused the request: ${call.error}`,
-        metadata: { provider: selected.providerID, model: selected.id },
-      }
-    }
-    if (!call.media) {
-      return {
-        title: `No ${action} came back`,
-        output:
-          `${label} accepted the request but returned no file. ` +
-          `That model may not do ${action}. Say so plainly — do not describe an image you were not given.`,
-        metadata: { provider: selected.providerID, model: selected.id },
-      }
-    }
-
-    const written = await persist(call.media, action)
+async function run(
+  args: { action: string; prompt: string; durationSeconds?: number },
+  providers: Record<string, Provider.Info>,
+): Promise<Tool.ExecuteResult> {
+  const action = args.action.trim().toLowerCase()
+  const prompt = args.prompt?.trim()
+  if (!prompt) return { title: "Prompt required", output: "Describe what to generate.", metadata: {} }
+  if (action !== "image" && action !== "video" && action !== "music") {
     return {
-      title: `${action[0].toUpperCase()}${action.slice(1)} generated`,
-      output:
-        `Generated with ${label} and saved to ${written.path}. ` +
-        `It is on screen in the app now${action === "video" ? " with a player" : action === "music" ? " with an audio player" : ""}.`,
-      metadata: { provider: selected.providerID, model: selected.id, path: written.path, mime: call.media.mime },
+      title: "Unknown action",
+      output: `action must be image, video or music — got "${args.action}"`,
+      metadata: {},
     }
+  }
+
+  // Local models own this first. When the local provider is installed the
+  // user chose to run offline, so the bundled Python backends generate the
+  // file and nothing leaves the machine.
+  const local = providers["local"]
+  if (local && Object.keys(local.models ?? {}).length > 0) {
+    return runLocal(action as "image" | "video" | "music", prompt, args.durationSeconds)
+  }
+
+  const models = Object.values(providers)
+  if (models.length === 0) {
+    return {
+      title: "No provider selected",
+      output: "No model is selected, so there is nothing to generate with. Pick a model in the composer first.",
+      metadata: {},
+    }
+  }
+
+  // Whatever is selected is the one that generates. No substitution, no silent fallback
+  // to a different provider: the user chose that account and that is where the cost and
+  // the output should land.
+  const selectedProvider = models[0]
+  const selected = Object.values(selectedProvider.models ?? {})[0]
+  if (!selected) {
+    return {
+      title: "No model selected",
+      output: `${selectedProvider.name} has no models available. Pick another provider or model in the composer.`,
+      metadata: {},
+    }
+  }
+  const label = `${selectedProvider.id}/${selected.id}`
+
+  const call = await callProvider(selectedProvider, selected, action, prompt, args.durationSeconds)
+
+  if (call.error) {
+    return {
+      title: `Could not generate the ${action}`,
+      output: `${label} refused the request: ${call.error}`,
+      metadata: { provider: selectedProvider.id, model: selected.id },
+    }
+  }
+  if (!call.media) {
+    return {
+      title: `No ${action} came back`,
+      output:
+        `${label} accepted the request but returned no file. ` +
+        `That model may not do ${action}. Say so plainly — do not describe an image you were not given.`,
+      metadata: { provider: selectedProvider.id, model: selected.id },
+    }
+  }
+
+  const written = await persist(call.media, action)
+  return {
+    title: `${action[0].toUpperCase()}${action.slice(1)} generated`,
+    output:
+      `Generated with ${label} and saved to ${written.path}. ` +
+      `It is on screen in the app now${action === "video" ? " with a player" : action === "music" ? " with an audio player" : ""}.`,
+    metadata: { provider: selectedProvider.id, model: selected.id, path: written.path, mime: call.media.mime },
   }
 }
 
@@ -203,13 +221,12 @@ async function run(args: { action: string; prompt: string; durationSeconds?: num
  * is only tried last, because it is the slow one and it needs a poll afterwards.
  */
 async function callProvider(
+  provider: Provider.Info,
   model: Provider.Model,
   action: "image" | "video" | "music",
   prompt: string,
   durationSeconds: number | undefined,
 ): Promise<{ media?: Media; error?: string }> {
-  const provider = Provider.getProvider(model.providerID)
-  if (!provider) return { error: `no provider named ${model.providerID}` }
 
   if (action === "video") {
     const seconds = durationSeconds ?? 4
@@ -253,7 +270,7 @@ async function callProvider(
  * bytes is worse than the extra twenty lines.
  */
 async function callGenerate(
-  provider: NonNullable<ReturnType<typeof Provider.getProvider>>,
+  provider: Provider.Info,
   model: Provider.Model,
   prompt: string,
   generationConfig: Record<string, unknown>,
@@ -284,7 +301,7 @@ async function callGenerate(
 
 /** Video is an operation: submit, then poll, and only then is there a file. */
 async function runLongRunning(
-  provider: NonNullable<ReturnType<typeof Provider.getProvider>>,
+  provider: Provider.Info,
   model: Provider.Model,
   prompt: string,
   seconds: number,
@@ -334,7 +351,7 @@ async function runLongRunning(
   return { error: `still rendering after ${Math.round(60 * 5 / 60)} minutes` }
 }
 
-function providerOrigin(provider: NonNullable<ReturnType<typeof Provider.getProvider>>, model: Provider.Model) {
+function providerOrigin(provider: Provider.Info, model: Provider.Model) {
   void provider
   void model
   return baseOf(providerUrl(provider, model))
@@ -344,7 +361,7 @@ function baseOf(url: string) {
   return url.replace(/\/models\/[^/]+:.*$/, "").replace(/\/$/, "")
 }
 
-function providerUrl(provider: NonNullable<ReturnType<typeof Provider.getProvider>>, model: Provider.Model) {
+function providerUrl(provider: Provider.Info, model: Provider.Model) {
   const configured = (provider.options?.baseURL as string | undefined) ?? ""
   const base = configured.replace(/\/$/, "")
   if (!base) throw new Error(`${provider.name} does not publish a base URL`)
@@ -356,7 +373,7 @@ function providerUrl(provider: NonNullable<ReturnType<typeof Provider.getProvide
 
 /** The provider's own credentials, from whatever it stores them under. */
 async function providerHeaders(
-  provider: NonNullable<ReturnType<typeof Provider.getProvider>>,
+  provider: Provider.Info,
   model: Provider.Model,
 ): Promise<Record<string, string>> {
   const headers: Record<string, string> = { "content-type": "application/json" }
@@ -390,7 +407,44 @@ function describeError(body: unknown, status: number): string {
  */
 async function persist(media: Media, action: "image" | "video" | "music") {
   const folder = `${Global.Path.data}/media/${action}`
+  await Bun.write(`${folder}/.keep`, "")
   const path = `${folder}/${Date.now()}.${extensionFor(media.mime)}`
   await Bun.write(path, media.bytes)
   return { path }
+}
+
+/**
+ * Generate with the bundled Python backends, for a user who selected a local
+ * model. Nothing is sent anywhere; the file is produced on this machine.
+ */
+async function runLocal(action: "image" | "video" | "music", prompt: string, durationSeconds: number | undefined) {
+  const local = await import("../local/media")
+  const backends = local.detectMediaBackends()
+  if (!backends.some((backend) => backend.available)) {
+    return {
+      title: "Local media backend missing",
+      output:
+        "A local model is selected, but the Python media backends are not available. " +
+        "They ship with the desktop app under resources/python-backends. Install one, or select a hosted model that supports " +
+        `${action} generation.`,
+      metadata: {},
+    }
+  }
+  try {
+    const generated = await local.generate(action, prompt, { durationSeconds })
+    const written = await persist({ mime: generated.mime, bytes: generated.bytes }, action)
+    return {
+      title: `${action[0].toUpperCase()}${action.slice(1)} generated locally`,
+      output:
+        `Generated on this machine and saved to ${written.path}. ` +
+        `It is on screen in the app now${action === "video" ? " with a player" : action === "music" ? " with an audio player" : ""}.`,
+      metadata: { provider: "local", path: written.path, mime: generated.mime },
+    }
+  } catch (error) {
+    return {
+      title: `Could not generate the ${action}`,
+      output: `The local ${action} backend failed: ${error instanceof Error ? error.message : String(error)}`,
+      metadata: { provider: "local" },
+    }
+  }
 }
