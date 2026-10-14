@@ -57,6 +57,11 @@ export const LocalChatPayload = Schema.Struct({
 })
 export const LocalChatResult = Schema.Struct({ text: Schema.String }).annotate({ identifier: "LocalChatResult" })
 
+export const LocalSpeakPayload = Schema.Struct({ text: Schema.String, voice: Schema.optional(Schema.String) })
+export const LocalSpeakResult = Schema.Struct({ mime: Schema.String, audio: Schema.String }).annotate({
+  identifier: "LocalSpeakResult",
+})
+
 export const LocalApi = HttpApi.make("local")
   .add(
     HttpApiGroup.make("local")
@@ -91,6 +96,11 @@ export const LocalApi = HttpApi.make("local")
           payload: LocalChatPayload,
           success: described(LocalChatResult, "Local model reply"),
         }).annotateMerge(OpenApi.annotations({ identifier: "local.chat", summary: "Chat with a local model" })),
+        HttpApiEndpoint.post("speak", `${root}/speak`, {
+          query: WorkspaceRoutingQuery,
+          payload: LocalSpeakPayload,
+          success: described(LocalSpeakResult, "Synthesised speech as base64 audio"),
+        }).annotateMerge(OpenApi.annotations({ identifier: "local.speak", summary: "Synthesise speech with the bundled backend" })),
       )
       .annotateMerge(OpenApi.annotations({ title: "local", description: "Local model routes." }))
       .middleware(InstanceContextMiddleware)

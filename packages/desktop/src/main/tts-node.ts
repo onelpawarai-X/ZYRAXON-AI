@@ -139,24 +139,40 @@ function acquireTTSLock(): Promise<() => void> {
 // streaming response, so only one synthesis is ever in flight per process.
 const ttsClients = new Map<string, MsEdgeTTS>()
 
+// In-flight handshakes, keyed by voice. Two callers asking for the same voice at
+// the same time — which happens the moment the pre-warm overlaps the first
+// request, or two chunks are flushed back to back — used to each drive their own
+// setMetadata() and open their own WebSocket. The second handshake is what Edge
+// rejects with "Expected 101 status code", and the rejection then cascaded to the
+// fallback voice and failed the whole utterance. Routing every caller through one
+// promise per voice means one handshake, whichever branch it takes.
+const ttsClientPromises = new Map<string, Promise<MsEdgeTTS>>()
+
 // The empty metadata options argument is not optional in practice. setMetadata
 // dereferences `metadataOptions.voiceLocale` once voiceLocale is already set, so
 // omitting the argument makes the SECOND call on a cached client throw. That threw
 // the client away and forced a fresh TLS + WSS handshake — plus, for `gender=f`,
 // silently answered the first request with the fallback voice. Passing `{}` is
 // behaviourally identical to omitting it and never throws.
-async function ttsForVoice(voice: string) {
-  const existing = ttsClients.get(voice)
-  if (existing) {
-    // Returns almost immediately when the socket is healthy, and transparently
-    // reconnects when the server dropped it since the last use.
-    await existing.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3, {})
-    return existing
-  }
-  const tts = new MsEdgeTTS()
-  await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3, {})
-  ttsClients.set(voice, tts)
-  return tts
+function ttsForVoice(voice: string): Promise<MsEdgeTTS> {
+  const pending = ttsClientPromises.get(voice)
+  if (pending) return pending
+  const created = (async () => {
+    const existing = ttsClients.get(voice)
+    if (existing) {
+      // Returns almost immediately when the socket is healthy, and transparently
+      // reconnects when the server dropped it since the last use.
+      await existing.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3, {})
+      return existing
+    }
+    const tts = new MsEdgeTTS()
+    await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3, {})
+    ttsClients.set(voice, tts)
+    return tts
+  })()
+  ttsClientPromises.set(voice, created)
+  void created.catch(() => {}).finally(() => ttsClientPromises.delete(voice))
+  return created
 }
 
 // Opens the socket for the default voice ahead of the first request so the very

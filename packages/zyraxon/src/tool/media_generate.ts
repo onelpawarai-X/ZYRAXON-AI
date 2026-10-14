@@ -210,6 +210,7 @@ async function run(
       `Generated with ${label} and saved to ${written.path}. ` +
       `It is on screen in the app now${action === "video" ? " with a player" : action === "music" ? " with an audio player" : ""}.`,
     metadata: { provider: selectedProvider.id, model: selected.id, path: written.path, mime: call.media.mime },
+    attachments: [{ type: "file" as const, mime: call.media.mime, url: written.url, filename: written.path.split("/").pop() }],
   }
 }
 
@@ -398,19 +399,25 @@ function describeError(body: unknown, status: number): string {
 }
 
 /**
- * Put the file where the app can show it, and return the path to quote.
+ * Put the file where the app can show it, and return the path to quote plus a
+ * data URL the renderer can play directly.
  *
- * Written to the session's own working directory rather than to an app-internal media
- * folder, so the file is somewhere the user can open, and so it appears in their file
- * tree like anything else they asked for. The timestamp keeps two generations of the same
- * filename from colliding.
+ * Written to the session's own working directory rather than to an app-internal
+ * media folder, so the file is somewhere the user can open, and so it appears in
+ * their file tree like anything else they asked for. The timestamp keeps two
+ * generations of the same filename from colliding.
+ *
+ * The data URL is what actually makes the result visible: the app renders
+ * attachments straight from the part's url, and there is no route that serves
+ * `Global.Path.data`, so a path alone would leave the file invisible. The path is
+ * still returned in the metadata so the reply can name a file the user can open.
  */
 async function persist(media: Media, action: "image" | "video" | "music") {
   const folder = `${Global.Path.data}/media/${action}`
   await Bun.write(`${folder}/.keep`, "")
   const path = `${folder}/${Date.now()}.${extensionFor(media.mime)}`
   await Bun.write(path, media.bytes)
-  return { path }
+  return { path, url: `data:${media.mime};base64,${Buffer.from(media.bytes).toString("base64")}` }
 }
 
 /**
@@ -439,6 +446,7 @@ async function runLocal(action: "image" | "video" | "music", prompt: string, dur
         `Generated on this machine and saved to ${written.path}. ` +
         `It is on screen in the app now${action === "video" ? " with a player" : action === "music" ? " with an audio player" : ""}.`,
       metadata: { provider: "local", path: written.path, mime: generated.mime },
+      attachments: [{ type: "file" as const, mime: generated.mime, url: written.url, filename: written.path.split("/").pop() }],
     }
   } catch (error) {
     return {

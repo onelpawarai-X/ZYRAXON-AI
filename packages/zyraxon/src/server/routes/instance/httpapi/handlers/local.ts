@@ -48,6 +48,13 @@ export const localHandlers = HttpApiBuilder.group(InstanceHttpApi, "local", (han
       return { text }
     })
 
+    const speak = Effect.fn("LocalHttpApi.speak")(function* (ctx: {
+      payload: { readonly text: string; readonly voice?: string }
+    }) {
+      const result = yield* Effect.promise(() => Local.speak(ctx.payload.text, ctx.payload.voice))
+      return { mime: result.mime, audio: Buffer.from(result.bytes).toString("base64") }
+    })
+
     return handlers
       .handle("models", models)
       .handle("backends", backends)
@@ -56,5 +63,6 @@ export const localHandlers = HttpApiBuilder.group(InstanceHttpApi, "local", (han
       .handle("download", download)
       .handle("downloads", downloads)
       .handle("chat", chat)
+      .handle("speak", speak)
   }),
 )

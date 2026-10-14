@@ -6,6 +6,7 @@ import {
   isMedia,
   isVideoAttachment,
   mediaCarrierAccepts,
+  modelAcceptsInputModality,
   sniffAttachmentMime,
 } from "../src/util/media"
 
@@ -26,6 +27,28 @@ describe("media attachments", () => {
   test("openai-compatible carries audio but not video", () => {
     expect(mediaCarrierAccepts("@ai-sdk/openai-compatible", "audio/mpeg")).toBe(true)
     expect(mediaCarrierAccepts("@ai-sdk/openai-compatible", "video/mp4")).toBe(false)
+  })
+
+  test("carries media on the SDKs that added encoders for it", () => {
+    // xai and openrouter convert both; azure and groq convert audio only.
+    expect(mediaCarrierAccepts("@ai-sdk/xai", "video/mp4")).toBe(true)
+    expect(mediaCarrierAccepts("@openrouter/ai-sdk-provider", "video/mp4")).toBe(true)
+    expect(mediaCarrierAccepts("@ai-sdk/azure", "audio/wav")).toBe(true)
+    expect(mediaCarrierAccepts("@ai-sdk/groq", "audio/wav")).toBe(true)
+    // Bedrock and anthropic still have no converter for either.
+    expect(mediaCarrierAccepts("@ai-sdk/amazon-bedrock", "video/mp4")).toBe(false)
+    expect(mediaCarrierAccepts("@ai-sdk/anthropic", "audio/wav")).toBe(false)
+  })
+
+  test("agrees with the model's declared input modalities", () => {
+    const input = { image: true, audio: false, video: true, pdf: false }
+    expect(modelAcceptsInputModality(input, "image/png")).toBe(true)
+    expect(modelAcceptsInputModality(input, "video/mp4")).toBe(true)
+    expect(modelAcceptsInputModality(input, "audio/wav")).toBe(false)
+    expect(modelAcceptsInputModality(input, "application/pdf")).toBe(false)
+    expect(modelAcceptsInputModality(undefined, "image/png")).toBe(false)
+    // A type the catalogue does not track is not blocked here.
+    expect(modelAcceptsInputModality(input, "text/plain")).toBe(true)
   })
 
   test("sniffs a real mp4 header as video", () => {

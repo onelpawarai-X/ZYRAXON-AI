@@ -498,6 +498,11 @@ export async function proxy(modelName: string, pathname: string, method: string,
   })
 }
 
+export async function speak(text: string, voice?: string) {
+  const media = await import("./media")
+  return media.speak(text, voice)
+}
+
 // llama-server rejects `tool_choice` outright ("Unsupported param") even though
 // the OpenAI client always sends it. Its grammar constrains tool use by presence
 // alone, so dropping the field keeps tool calling working.

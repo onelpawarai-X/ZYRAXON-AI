@@ -39,6 +39,17 @@ const SPECS: Record<MediaKind, BackendSpec> = {
   music: { name: "audiocraft", script: "audiocraft_server.py", port: 11560, modelName: "music", args: [] },
 }
 
+// Bark is the bundled speech synthesiser. It is the fallback voice for a local
+// model that cannot synthesise speech itself: the model's own audio is preferred
+// when it has one, and Bark is what runs when it does not.
+const SPEECH: BackendSpec = {
+  name: "bark",
+  script: "bark_server.py",
+  port: 11570,
+  modelName: "speech",
+  args: [],
+}
+
 interface Running {
   proc: child_process.ChildProcess
   port: number
@@ -74,7 +85,8 @@ function pythonBin(): string | null {
 export function detectMediaBackends(): MediaBackendInfo[] {
   const dir = backendsDir()
   const python = pythonBin()
-  return Object.values(SPECS)
+  const specs = [...Object.values(SPECS), SPEECH]
+  return specs
     .filter((spec, index, all) => all.findIndex((other) => other.script === spec.script) === index)
     .map((spec) => ({
       name: spec.name,
@@ -239,4 +251,56 @@ export function stopBackends(): void {
     handle.proc.kill("SIGTERM")
     running.delete(name)
   }
+}
+
+export interface GeneratedSpeech {
+  mime: string
+  bytes: Uint8Array
+}
+
+/**
+ * Synthesise speech with the bundled Bark backend.
+ *
+ * Used only when the selected model cannot speak for itself. A model whose own
+ * output includes audio is asked directly instead; this is the offline voice that
+ * makes a local chat model audible at all.
+ */
+async function ensureSpeechBackend(): Promise<Running> {
+  const existing = running.get(SPEECH.name)
+  if (existing && !existing.proc.killed) return existing
+
+  const dir = backendsDir()
+  if (!dir) throw new Error("python-backends directory not found")
+  const python = pythonBin()
+  if (!python) throw new Error("python3 not found on PATH")
+  const script = path.join(dir, SPEECH.script)
+  if (!fs.existsSync(script)) throw new Error(`${SPEECH.script} not found`)
+
+  const port = await nextFreePort(SPEECH.port)
+  const proc = child_process.spawn(python, [script, "--port", String(port), ...SPEECH.args], { stdio: "ignore", cwd: dir })
+  const handle: Running = { proc, port }
+  running.set(SPEECH.name, handle)
+  proc.on("exit", () => running.delete(SPEECH.name))
+  await waitHealthy(port, 900_000)
+  return handle
+}
+
+export async function speak(text: string, voice?: string): Promise<GeneratedSpeech> {
+  const trimmed = text?.trim()
+  if (!trimmed) throw new Error("no text to speak")
+  const handle = await ensureSpeechBackend()
+  const res = await fetch(`http://127.0.0.1:${handle.port}/tts`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ text: trimmed, voice_preset: voice ?? "v2/en_speaker_0" }),
+    signal: AbortSignal.timeout(600_000),
+  })
+  const body = (await res.json().catch(() => ({}))) as {
+    success?: boolean
+    error?: string
+    audio_base64?: string
+  }
+  if (!res.ok || body.success === false) throw new Error(body.error ?? `speech backend replied ${res.status}`)
+  if (!body.audio_base64) throw new Error("speech backend returned no audio")
+  return { mime: "audio/wav", bytes: Uint8Array.from(Buffer.from(body.audio_base64, "base64")) }
 }
