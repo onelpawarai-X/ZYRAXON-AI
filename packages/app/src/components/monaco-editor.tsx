@@ -4,6 +4,10 @@ import { createEffect, createSignal, onCleanup, onMount, Show } from "solid-js"
 import type * as Monaco from "monaco-editor"
 import { useTheme } from "@zyraxon-ai/ui/theme/context"
 import { useSettings } from "@/context/settings"
+import { useServer } from "@/context/server"
+import { useModels } from "@/context/models"
+import { useSubscription } from "@/context/subscription"
+import { useProviders } from "@/hooks/use-providers"
 import { CodeGuardianScanner, CodeGuardianAIFeedback, type CodeIssue } from "./code-guardian"
 import {
   MonacoAIAssistant,
@@ -67,6 +71,10 @@ export interface MonacoEditorProps {
 export function MonacoEditor(props: MonacoEditorProps) {
   const theme = useTheme()
   const settings = useSettings()
+  const server = useServer()
+  const models = useModels()
+  const subscription = useSubscription()
+  const providers = useProviders()
   let containerRef: HTMLDivElement | undefined
   let editor: Monaco.editor.IStandaloneCodeEditor | undefined
   let monaco: typeof import("monaco-editor") | undefined
@@ -79,7 +87,7 @@ export function MonacoEditor(props: MonacoEditorProps) {
   const [aiGenerating, setAiGenerating] = createSignal(false)
   const [activePrompt, setActivePrompt] = createSignal<string | null>(null)
 
-  const aiAssistant = new MonacoAIAssistant()
+  const aiAssistant = new MonacoAIAssistant({ resolveUrl: () => server.current?.http?.url })
   const scanningAnimator = new ScanningAnimator()
   const guardian = new CodeGuardianScanner()
   const feedback = new CodeGuardianAIFeedback()
@@ -87,6 +95,7 @@ export function MonacoEditor(props: MonacoEditorProps) {
   let streamingDebounce: ReturnType<typeof setTimeout> | null = null
   let inlineChatWidget: Monaco.editor.IContentWidget | null = null
   let inlineChatLine: number | null = null
+  let inlineVoiceCleanup: (() => void) | null = null
   let mouseDownDisposable: Monaco.IDisposable | null = null
 
 
@@ -96,6 +105,41 @@ export function MonacoEditor(props: MonacoEditorProps) {
       return document.documentElement.dataset.colorScheme === "dark" ? "zyraxon-dark" : "zyraxon-light"
     }
     return "zyraxon-dark"
+  }
+
+  // Free-tier model predicate, copied verbatim from the composer's unpaid
+  // selector (`dialog-select-model-unpaid-v2.tsx`). The opencode/zyraxon
+  // gateways expose free models at zero cost; paid models only appear once a
+  // paid provider is connected.
+  const isFreeModel = (providerID: string, cost?: { input: number }) =>
+    (providerID === "opencode" || providerID === "zyraxon") && (!cost || cost.input === 0)
+
+  // Populate the AI Generate model `<select>` from the shared model catalog so
+  // it matches the composer exactly. Option values are `providerID/modelID`,
+  // the form the `/v1/chat/completions` bridge accepts.
+  const populateModelSelect = (select: HTMLSelectElement) => {
+    const previous = select.value
+    const paid = providers.paid().length > 0
+    const offered = paid ? models.list() : models.list().filter((m) => isFreeModel(m.provider.id, m.cost))
+
+    select.innerHTML = ""
+    const auto = document.createElement("option")
+    // Auto resolves to the first offered model so the backend always receives a
+    // concrete, valid id — never a bare "auto" it cannot route.
+    auto.value = offered[0] ? `${offered[0].provider.id}/${offered[0].id}` : "auto"
+    auto.textContent = `Auto (Free — ${offered.length} model${offered.length === 1 ? "" : "s"})`
+    select.appendChild(auto)
+
+    for (const m of offered) {
+      const opt = document.createElement("option")
+      opt.value = `${m.provider.id}/${m.id}`
+      opt.textContent = m.name
+      opt.title = opt.value
+      select.appendChild(opt)
+    }
+
+    if (previous && Array.from(select.options).some((o) => o.value === previous)) select.value = previous
+    console.log("[Monaco] AI Generate models:", offered.length, paid ? "(paid)" : "(free)")
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -118,138 +162,146 @@ export function MonacoEditor(props: MonacoEditorProps) {
     const currentVoiceLang = settings.general.voiceLanguage() || "en-US"
 
     const domNode = document.createElement("div")
-    domNode.style.cssText = `
-      width: 460px; padding: 10px 12px;
-      background: ${bg}; border: 1px solid ${border};
-      border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-      z-index: 20; display: flex; flex-direction: column; gap: 8px;
-      animation: slideDown 0.2s ease-out;
-    `
+    domNode.style.cssText = `z-index: 20; animation: slideDown 0.2s ease-out;`
     domNode.innerHTML = `
       <style>
         @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-        .aic-row { display: flex; align-items: center; gap: 6px; }
-        .aic-icon { width: 16px; height: 16px; flex-shrink: 0; }
-        .aic-label { color: ${accent}; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }
-        .aic-select { padding: 4px 8px; border-radius: 6px; border: 1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"};
-          background: ${inputBg}; color: ${text}; font-size: 11px; outline: none; cursor: pointer;
-          font-family: inherit; appearance: none; -webkit-appearance: none; min-width: 110px;
+        @keyframes micPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(0,255,136,0.45); } 50% { box-shadow: 0 0 0 6px rgba(0,255,136,0); } }
+        .aic-card { width: 520px; max-width: min(92vw, 520px); padding: 12px 14px; background: ${bg};
+          border: 1px solid ${border}; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+          display: flex; flex-direction: column; gap: 10px; }
+        .aic-head { display: flex; align-items: center; gap: 8px; }
+        .aic-badge { display: flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px;
+          background: linear-gradient(135deg, rgba(0,255,136,0.14), rgba(0,204,255,0.14));
+          border: 1px solid ${border}; }
+        .aic-label { color: ${accent}; font-size: 11px; font-weight: 700; letter-spacing: 0.6px; }
+        .aic-spacer { flex: 1; }
+        .aic-x { width: 24px; height: 24px; border-radius: 7px; border: 1px solid transparent; background: transparent;
+          color: ${text2}; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .18s; }
+        .aic-x:hover { color: #ff6b6b; border-color: rgba(255,107,107,0.4); background: rgba(255,107,107,0.08); }
+        .aic-x svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 1.8; fill: none; }
+        .aic-controls { display: flex; align-items: center; gap: 8px; }
+        .aic-field { position: relative; display: flex; align-items: center; }
+        .aic-field svg.lead { position: absolute; left: 8px; width: 12px; height: 12px; stroke: ${text2}; fill: none; stroke-width: 1.7; pointer-events: none; }
+        .aic-select { padding: 6px 26px 6px 26px; border-radius: 9px; border: 1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"};
+          background: ${inputBg}; color: ${text}; font-size: 11.5px; outline: none; cursor: pointer;
+          font-family: inherit; appearance: none; -webkit-appearance: none; max-width: 210px;
           background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6' fill='none' stroke='${encodeURIComponent(text2)}' stroke-width='1.5'/%3E%3C/svg%3E");
-          background-repeat: no-repeat; background-position: right 6px center; padding-right: 22px; }
-        .aic-btn { padding: 5px 8px; border-radius: 6px; border: 1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"};
-          background: transparent; color: ${text2}; cursor: pointer; transition: all 0.2s;
-          display: flex; align-items: center; justify-content: center; }
-        .aic-btn:hover { border-color: ${accent}; color: ${accent}; background: rgba(0,255,136,0.05); }
-        .aic-btn svg { width: 14px; height: 14px; fill: currentColor; }
-        .aic-input { flex: 1; padding: 7px 10px; border-radius: 8px; border: 1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"};
-          background: ${inputBg}; color: ${text}; font-size: 12px; outline: none; font-family: inherit; }
-        .aic-input:focus { border-color: ${accent}; box-shadow: 0 0 0 2px rgba(0,255,136,0.1); }
-        .aic-send { padding: 6px 16px; border-radius: 8px; border: none;
-          background: linear-gradient(135deg,${accent},${accent2}); color: #000; font-size: 11px;
-          font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-        .aic-send:hover { transform: scale(1.03); box-shadow: 0 2px 12px rgba(0,255,136,0.3); }
-        .aic-send:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-        .aic-cancel { padding: 6px 12px; border-radius: 8px; border: 1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"};
-          background: transparent; color: ${text2}; font-size: 11px; cursor: pointer; }
-        .aic-cancel:hover { border-color: #ef4444; color: #ef4444; }
-        .aic-err { font-size: 11px; color: #ff6b6b; padding: 4px 0; }
+          background-repeat: no-repeat; background-position: right 8px center; transition: border-color .18s, box-shadow .18s; }
+        .aic-select:hover { border-color: ${accent}; }
+        .aic-select:focus { border-color: ${accent}; box-shadow: 0 0 0 2px rgba(0,255,136,0.12); }
+        .aic-input { flex: 1; padding: 9px 12px; border-radius: 10px; border: 1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"};
+          background: ${inputBg}; color: ${text}; font-size: 12.5px; outline: none; font-family: inherit; transition: border-color .18s, box-shadow .18s; }
+        .aic-input::placeholder { color: ${text2}; }
+        .aic-input:focus { border-color: ${accent}; box-shadow: 0 0 0 3px rgba(0,255,136,0.12); }
+        .aic-btn { width: 34px; height: 34px; border-radius: 10px; border: 1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"};
+          background: transparent; color: ${text2}; cursor: pointer; transition: all .18s;
+          display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .aic-btn:hover { border-color: ${accent}; color: ${accent}; background: rgba(0,255,136,0.06); }
+        .aic-btn svg { width: 16px; height: 16px; fill: currentColor; }
+        .aic-btn.rec { color: ${accent}; border-color: ${accent}; animation: micPulse 1.2s infinite; }
+        .aic-send { height: 34px; padding: 0 16px; border-radius: 10px; border: none; display: inline-flex; align-items: center; gap: 6px;
+          background: linear-gradient(135deg,${accent},${accent2}); color: #04140c; font-size: 11.5px;
+          font-weight: 700; cursor: pointer; transition: transform .18s, box-shadow .18s; white-space: nowrap; }
+        .aic-send svg { width: 13px; height: 13px; stroke: #04140c; fill: none; stroke-width: 2; }
+        .aic-send:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,255,136,0.35); }
+        .aic-send:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+        .aic-hint { font-size: 10px; color: ${text2}; display: flex; align-items: center; gap: 5px; }
+        .aic-hint kbd { padding: 1px 5px; border-radius: 4px; border: 1px solid ${isDark ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.14)"}; font-family: inherit; }
+        .aic-err { font-size: 11px; color: #ff6b6b; padding: 3px 2px; }
       </style>
-      <div class="aic-row">
-        <svg class="aic-icon" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="2">
-          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-        </svg>
-        <span class="aic-label">AI GENERATE</span>
-        <div style="flex:1"></div>
-        <select class="aic-select" id="aic-model"><option value="auto">Loading models...</option></select>
-        <select class="aic-select" id="aic-lang">
-          <option value="auto" ${currentVoiceLang === "auto" ? "selected" : ""}>Auto Detect</option>
-          <option value="en-US" ${currentVoiceLang === "en-US" ? "selected" : ""}>English</option>
-          <option value="bn-BD" ${currentVoiceLang === "bn-BD" ? "selected" : ""}>Bengali</option>
-          <option value="hi-IN" ${currentVoiceLang === "hi-IN" ? "selected" : ""}>Hindi</option>
-          <option value="ar-SA" ${currentVoiceLang === "ar-SA" ? "selected" : ""}>Arabic</option>
-          <option value="fr-FR" ${currentVoiceLang === "fr-FR" ? "selected" : ""}>French</option>
-          <option value="de-DE" ${currentVoiceLang === "de-DE" ? "selected" : ""}>German</option>
-          <option value="es-ES" ${currentVoiceLang === "es-ES" ? "selected" : ""}>Spanish</option>
-          <option value="ru-RU" ${currentVoiceLang === "ru-RU" ? "selected" : ""}>Russian</option>
-          <option value="ja-JP" ${currentVoiceLang === "ja-JP" ? "selected" : ""}>Japanese</option>
-          <option value="ko-KR" ${currentVoiceLang === "ko-KR" ? "selected" : ""}>Korean</option>
-          <option value="zh-CN" ${currentVoiceLang === "zh-CN" ? "selected" : ""}>Chinese</option>
-          <option value="pt-BR" ${currentVoiceLang === "pt-BR" ? "selected" : ""}>Portuguese</option>
-          <option value="it-IT" ${currentVoiceLang === "it-IT" ? "selected" : ""}>Italian</option>
-          <option value="tr-TR" ${currentVoiceLang === "tr-TR" ? "selected" : ""}>Turkish</option>
-          <option value="th-TH" ${currentVoiceLang === "th-TH" ? "selected" : ""}>Thai</option>
-          <option value="pl-PL" ${currentVoiceLang === "pl-PL" ? "selected" : ""}>Polish</option>
-          <option value="nl-NL" ${currentVoiceLang === "nl-NL" ? "selected" : ""}>Dutch</option>
-          <option value="vi-VN" ${currentVoiceLang === "vi-VN" ? "selected" : ""}>Vietnamese</option>
-          <option value="uk-UA" ${currentVoiceLang === "uk-UA" ? "selected" : ""}>Ukrainian</option>
-          <option value="sv-SE" ${currentVoiceLang === "sv-SE" ? "selected" : ""}>Swedish</option>
-          <option value="da-DK" ${currentVoiceLang === "da-DK" ? "selected" : ""}>Danish</option>
-          <option value="fi-FI" ${currentVoiceLang === "fi-FI" ? "selected" : ""}>Finnish</option>
-          <option value="nb-NO" ${currentVoiceLang === "nb-NO" ? "selected" : ""}>Norwegian</option>
-          <option value="cs-CZ" ${currentVoiceLang === "cs-CZ" ? "selected" : ""}>Czech</option>
-          <option value="ro-RO" ${currentVoiceLang === "ro-RO" ? "selected" : ""}>Romanian</option>
-          <option value="el-GR" ${currentVoiceLang === "el-GR" ? "selected" : ""}>Greek</option>
-          <option value="he-IL" ${currentVoiceLang === "he-IL" ? "selected" : ""}>Hebrew</option>
-          <option value="hu-HU" ${currentVoiceLang === "hu-HU" ? "selected" : ""}>Hungarian</option>
-          <option value="id-ID" ${currentVoiceLang === "id-ID" ? "selected" : ""}>Indonesian</option>
-          <option value="ms-MY" ${currentVoiceLang === "ms-MY" ? "selected" : ""}>Malay</option>
-          <option value="ta-IN" ${currentVoiceLang === "ta-IN" ? "selected" : ""}>Tamil</option>
-          <option value="te-IN" ${currentVoiceLang === "te-IN" ? "selected" : ""}>Telugu</option>
-          <option value="mr-IN" ${currentVoiceLang === "mr-IN" ? "selected" : ""}>Marathi</option>
-          <option value="gu-IN" ${currentVoiceLang === "gu-IN" ? "selected" : ""}>Gujarati</option>
-          <option value="kn-IN" ${currentVoiceLang === "kn-IN" ? "selected" : ""}>Kannada</option>
-          <option value="ml-IN" ${currentVoiceLang === "ml-IN" ? "selected" : ""}>Malayalam</option>
-          <option value="ur-PK" ${currentVoiceLang === "ur-PK" ? "selected" : ""}>Urdu</option>
-          <option value="fa-IR" ${currentVoiceLang === "fa-IR" ? "selected" : ""}>Persian</option>
-          <option value="sw-KE" ${currentVoiceLang === "sw-KE" ? "selected" : ""}>Swahili</option>
-          <option value="af-ZA" ${currentVoiceLang === "af-ZA" ? "selected" : ""}>Afrikaans</option>
-        </select>
-      </div>
-      <div class="aic-row">
-        <input type="text" class="aic-input" id="aic-input" placeholder="Type what AI should do..." />
-        <button class="aic-btn" id="aic-mic" title="Voice input">
-          <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+      <div class="aic-card">
+      <div class="aic-head">
+        <div class="aic-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+          </svg>
+          <span class="aic-label">AI GENERATE</span>
+        </div>
+        <div class="aic-spacer"></div>
+        <button class="aic-x" id="aic-close" title="Close (Esc)" aria-label="Close">
+          <svg viewBox="0 0 16 16"><path d="M12.4 3.6 3.6 12.4M3.6 3.6l8.8 8.8"/></svg>
         </button>
       </div>
-      <div class="aic-row" style="justify-content:flex-end;gap:6px;">
-        <button class="aic-cancel" id="aic-cancel">Esc</button>
-        <button class="aic-send" id="aic-send">Generate</button>
+      <div class="aic-controls">
+        <div class="aic-field">
+          <svg class="lead" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>
+          <select class="aic-select" id="aic-model" title="Model"><option value="auto">Loading models…</option></select>
+        </div>
+        <div class="aic-field">
+          <svg class="lead" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/></svg>
+          <select class="aic-select" id="aic-lang" title="Voice language">
+            <option value="auto" ${currentVoiceLang === "auto" ? "selected" : ""}>Auto Detect</option>
+            <option value="en-US" ${currentVoiceLang === "en-US" ? "selected" : ""}>English</option>
+            <option value="bn-BD" ${currentVoiceLang === "bn-BD" ? "selected" : ""}>Bengali</option>
+            <option value="hi-IN" ${currentVoiceLang === "hi-IN" ? "selected" : ""}>Hindi</option>
+            <option value="ar-SA" ${currentVoiceLang === "ar-SA" ? "selected" : ""}>Arabic</option>
+            <option value="fr-FR" ${currentVoiceLang === "fr-FR" ? "selected" : ""}>French</option>
+            <option value="de-DE" ${currentVoiceLang === "de-DE" ? "selected" : ""}>German</option>
+            <option value="es-ES" ${currentVoiceLang === "es-ES" ? "selected" : ""}>Spanish</option>
+            <option value="ru-RU" ${currentVoiceLang === "ru-RU" ? "selected" : ""}>Russian</option>
+            <option value="ja-JP" ${currentVoiceLang === "ja-JP" ? "selected" : ""}>Japanese</option>
+            <option value="ko-KR" ${currentVoiceLang === "ko-KR" ? "selected" : ""}>Korean</option>
+            <option value="zh-CN" ${currentVoiceLang === "zh-CN" ? "selected" : ""}>Chinese</option>
+            <option value="pt-BR" ${currentVoiceLang === "pt-BR" ? "selected" : ""}>Portuguese</option>
+            <option value="it-IT" ${currentVoiceLang === "it-IT" ? "selected" : ""}>Italian</option>
+            <option value="tr-TR" ${currentVoiceLang === "tr-TR" ? "selected" : ""}>Turkish</option>
+            <option value="th-TH" ${currentVoiceLang === "th-TH" ? "selected" : ""}>Thai</option>
+            <option value="pl-PL" ${currentVoiceLang === "pl-PL" ? "selected" : ""}>Polish</option>
+            <option value="nl-NL" ${currentVoiceLang === "nl-NL" ? "selected" : ""}>Dutch</option>
+            <option value="vi-VN" ${currentVoiceLang === "vi-VN" ? "selected" : ""}>Vietnamese</option>
+            <option value="uk-UA" ${currentVoiceLang === "uk-UA" ? "selected" : ""}>Ukrainian</option>
+            <option value="sv-SE" ${currentVoiceLang === "sv-SE" ? "selected" : ""}>Swedish</option>
+            <option value="da-DK" ${currentVoiceLang === "da-DK" ? "selected" : ""}>Danish</option>
+            <option value="fi-FI" ${currentVoiceLang === "fi-FI" ? "selected" : ""}>Finnish</option>
+            <option value="nb-NO" ${currentVoiceLang === "nb-NO" ? "selected" : ""}>Norwegian</option>
+            <option value="cs-CZ" ${currentVoiceLang === "cs-CZ" ? "selected" : ""}>Czech</option>
+            <option value="ro-RO" ${currentVoiceLang === "ro-RO" ? "selected" : ""}>Romanian</option>
+            <option value="el-GR" ${currentVoiceLang === "el-GR" ? "selected" : ""}>Greek</option>
+            <option value="he-IL" ${currentVoiceLang === "he-IL" ? "selected" : ""}>Hebrew</option>
+            <option value="hu-HU" ${currentVoiceLang === "hu-HU" ? "selected" : ""}>Hungarian</option>
+            <option value="id-ID" ${currentVoiceLang === "id-ID" ? "selected" : ""}>Indonesian</option>
+            <option value="ms-MY" ${currentVoiceLang === "ms-MY" ? "selected" : ""}>Malay</option>
+            <option value="ta-IN" ${currentVoiceLang === "ta-IN" ? "selected" : ""}>Tamil</option>
+            <option value="te-IN" ${currentVoiceLang === "te-IN" ? "selected" : ""}>Telugu</option>
+            <option value="mr-IN" ${currentVoiceLang === "mr-IN" ? "selected" : ""}>Marathi</option>
+            <option value="gu-IN" ${currentVoiceLang === "gu-IN" ? "selected" : ""}>Gujarati</option>
+            <option value="kn-IN" ${currentVoiceLang === "kn-IN" ? "selected" : ""}>Kannada</option>
+            <option value="ml-IN" ${currentVoiceLang === "ml-IN" ? "selected" : ""}>Malayalam</option>
+            <option value="ur-PK" ${currentVoiceLang === "ur-PK" ? "selected" : ""}>Urdu</option>
+            <option value="fa-IR" ${currentVoiceLang === "fa-IR" ? "selected" : ""}>Persian</option>
+            <option value="sw-KE" ${currentVoiceLang === "sw-KE" ? "selected" : ""}>Swahili</option>
+            <option value="af-ZA" ${currentVoiceLang === "af-ZA" ? "selected" : ""}>Afrikaans</option>
+          </select>
+        </div>
+      </div>
+      <div class="aic-controls">
+        <input type="text" class="aic-input" id="aic-input" placeholder="Describe what the AI should generate or fix…" autofocus />
+        <button class="aic-btn" id="aic-mic" title="Voice input" aria-label="Voice input">
+          <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+        </button>
+        <button class="aic-send" id="aic-send">
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          Generate
+        </button>
+      </div>
+      <div class="aic-hint"><kbd>Enter</kbd> generate · <kbd>Esc</kbd> close</div>
       </div>
     `
 
     const input = domNode.querySelector("#aic-input") as HTMLInputElement
-    const cancelBtn = domNode.querySelector("#aic-cancel") as HTMLButtonElement
+    const closeBtn = domNode.querySelector("#aic-close") as HTMLButtonElement
     const sendBtn = domNode.querySelector("#aic-send") as HTMLButtonElement
     const micBtn = domNode.querySelector("#aic-mic") as HTMLButtonElement
     const modelSelect = domNode.querySelector("#aic-model") as HTMLSelectElement
     const langSelect = domNode.querySelector("#aic-lang") as HTMLSelectElement
 
-    // ── Dynamic model loading: fetch free models from opencode provider directly ──
-    aiAssistant.listAvailableModels().then((models) => {
-      modelSelect.innerHTML = ""
-      const autoOpt = document.createElement("option")
-      autoOpt.value = "auto"
-      autoOpt.textContent = `Auto (Free — ${models.length} models)`
-      modelSelect.appendChild(autoOpt)
-      for (const m of models) {
-        const opt = document.createElement("option")
-        opt.value = m.id
-        // Show short name: "opencode/big-pickle" → "Big Pickle"
-        const shortName = m.id.includes("/") ? m.id.split("/").pop()! : m.id
-        opt.textContent = shortName
-        opt.title = m.id
-        modelSelect.appendChild(opt)
-      }
-      console.log("[Monaco] Loaded", models.length, "free models from opencode provider")
-    }).catch((err) => {
-      console.error("[Monaco] Failed to load models from provider:", err)
-      modelSelect.innerHTML = '<option value="auto">Auto (Free)</option>'
-      const errDiv = document.createElement("div")
-      errDiv.className = "aic-err"
-      errDiv.textContent = `Models unavailable: ${err.message || err}`
-      domNode.appendChild(errDiv)
-      setTimeout(() => errDiv.remove(), 5000)
-    })
+    // ── Model list: the SAME catalog the main session composer uses ──
+    // The chat box must never invent its own list. `useModels()` already
+    // free-gates the opencode provider (paid models only appear once a key is
+    // connected) and hides models the user disabled, so AI Generate and the
+    // composer always offer an identical set.
+    populateModelSelect(modelSelect)
 
     // Stop ALL events from propagating to Monaco editor (bubble phase — allows buttons/selects to work)
     const stopAll = (e: Event) => { e.stopPropagation() }
@@ -262,78 +314,86 @@ export function MonacoEditor(props: MonacoEditorProps) {
     domNode.addEventListener("keypress", stopAll)
     domNode.addEventListener("contextmenu", stopAll)
 
-    let mediaRecorder: MediaRecorder | null = null
-    let audioChunks: Blob[] = []
-    let audioStream: MediaStream | null = null
+    // Voice input goes through the same Chrome speech bridge the main chat box
+    // uses (voiceStartListening / voiceStopListening + voice-event). The old
+    // MediaRecorder → transcribeAudio path is dead: the IPC handler throws and
+    // the button never produced text.
     let micRecordingActive = false
     let micRecordingTimer: ReturnType<typeof setInterval> | null = null
     let micRecordingSeconds = 0
-    const cleanupMediaRecorder = () => {
+    let removeVoiceListener: (() => void) | null = null
+    let voiceBuffer = ""
+    const api = (window as any).api
+
+    const cleanupVoice = () => {
       if (micRecordingTimer) { clearInterval(micRecordingTimer); micRecordingTimer = null }
-      if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null }
-      mediaRecorder = null; audioChunks = []; micRecordingActive = false; micRecordingSeconds = 0
+      if (removeVoiceListener) { removeVoiceListener(); removeVoiceListener = null }
+      micRecordingActive = false
+      micRecordingSeconds = 0
     }
     const stopAllMic = () => {
-      if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        try { mediaRecorder.stop() } catch {}
+      if (micRecordingActive && api?.voiceStopListening) {
+        try { void api.voiceStopListening() } catch {}
       }
-      cleanupMediaRecorder()
-      micBtn.style.color = ""
+      const finalText = voiceBuffer.trim()
+      voiceBuffer = ""
+      if (finalText) input.value = finalText
+      cleanupVoice()
+      micBtn.classList.remove("rec")
       micBtn.title = "Voice input"
     }
-    const blobToBase64 = (blob: Blob): Promise<string> => new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve((reader.result as string).split(",")[1])
-      reader.onerror = reject
-      reader.readAsDataURL(blob)
-    })
     micBtn.addEventListener("click", (e) => {
       e.stopPropagation()
       if (micRecordingActive) {
         stopAllMic()
         return
       }
-      navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 16000 } }).then(stream => {
-        audioStream = stream
-        audioChunks = []
-        const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/wav"
-        mediaRecorder = new MediaRecorder(stream, { mimeType })
-        mediaRecorder.ondataavailable = (ev) => { if (ev.data.size > 0) audioChunks.push(ev.data) }
-        mediaRecorder.onstop = async () => {
-          try {
-            const blob = new Blob(audioChunks, { type: mimeType })
-            const base64 = await blobToBase64(blob)
-            const api = (window as any).api
-            if (api?.transcribeAudio) {
-              const text = await api.transcribeAudio(base64, mimeType)
-              if (text && text.trim()) input.value = text.trim()
-            }
-          } catch (err: any) {
-            console.error("[Monaco Mic] Transcription error:", err)
-            const warn = document.createElement("div")
-            warn.className = "aic-err"
-            warn.textContent = `Mic error: ${err.message || "transcription failed"}`
-            domNode.appendChild(warn)
-            setTimeout(() => warn.remove(), 3000)
-          } finally {
-            cleanupMediaRecorder()
-            micBtn.style.color = ""
-            micBtn.title = "Voice input"
-          }
-        }
-        mediaRecorder.onerror = () => { cleanupMediaRecorder(); micBtn.style.color = ""; micBtn.title = "Voice input" }
-        mediaRecorder.start(250)
-        micRecordingActive = true
-        micBtn.style.color = accent
-        micBtn.title = "Click to stop recording"
-        micRecordingSeconds = 0
-        micRecordingTimer = setInterval(() => { micRecordingSeconds++; micBtn.title = `Recording ${micRecordingSeconds}s — Click to stop` }, 1000)
-      }).catch((err: any) => {
+      if (!api?.voiceStartListening) {
         const warn = document.createElement("div")
         warn.className = "aic-err"
-        warn.textContent = err.name === "NotAllowedError" ? "Mic access denied" : `Mic failed: ${err.message || err}`
+        warn.textContent = "Voice input needs the desktop app."
         domNode.appendChild(warn)
         setTimeout(() => warn.remove(), 3000)
+        return
+      }
+      voiceBuffer = ""
+      removeVoiceListener = api.onVoiceEvent?.((event: any) => {
+        if (event?.type === "voice-transcript") {
+          const text = (event.fullText || event.text || "").trim()
+          if (text) { voiceBuffer = text; input.value = text }
+        } else if (event?.type === "voice-mic-state" && event.active === false) {
+          stopAllMic()
+        }
+      }) ?? null
+      inlineVoiceCleanup = () => {
+        try { api.voiceStopListening?.() } catch {}
+        try { removeVoiceListener?.() } catch {}
+      }
+      try { api.voiceSetLanguage?.(langSelect.value || "auto") } catch {}
+      try { api.voiceClearAccumulatedTranscript?.() } catch {}
+      Promise.resolve(api.voiceStartListening()).then((result: any) => {
+        if (result === false) {
+          cleanupVoice()
+          micBtn.classList.remove("rec")
+          const warn = document.createElement("div")
+          warn.className = "aic-err"
+          warn.textContent = "Voice bridge not ready. Restart the app."
+          domNode.appendChild(warn)
+          setTimeout(() => warn.remove(), 3000)
+          return
+        }
+        micRecordingActive = true
+        micBtn.classList.add("rec")
+        micBtn.title = "Click to stop recording"
+        micRecordingSeconds = 0
+        micRecordingTimer = setInterval(() => {
+          micRecordingSeconds++
+          micBtn.title = `Recording ${micRecordingSeconds}s — Click to stop`
+        }, 1000)
+      }).catch(() => {
+        cleanupVoice()
+        micBtn.classList.remove("rec")
+        micBtn.title = "Voice input"
       })
     })
 
@@ -351,7 +411,7 @@ export function MonacoEditor(props: MonacoEditorProps) {
     })
     input.addEventListener("mousedown", (e) => e.stopPropagation())
     input.addEventListener("focus", (e) => e.stopPropagation())
-    cancelBtn.addEventListener("click", (e) => {
+    closeBtn.addEventListener("click", (e) => {
       e.stopPropagation()
       stopAllMic()
       removeInlineChat(); editor!.focus()
@@ -375,6 +435,10 @@ export function MonacoEditor(props: MonacoEditorProps) {
   }
 
   const removeInlineChat = () => {
+    if (inlineVoiceCleanup) {
+      inlineVoiceCleanup()
+      inlineVoiceCleanup = null
+    }
     if (editor && inlineChatWidget) {
       editor.removeContentWidget(inlineChatWidget)
       inlineChatWidget = null

@@ -90,6 +90,22 @@ import type {
   GlobalUpgradeResponses,
   InstanceDisposeErrors,
   InstanceDisposeResponses,
+  LocalBackendsErrors,
+  LocalBackendsResponses,
+  LocalChatErrors,
+  LocalChatResponses,
+  LocalDownloadErrors,
+  LocalDownloadResponses,
+  LocalDownloadsErrors,
+  LocalDownloadsResponses,
+  LocalFilesErrors,
+  LocalFilesResponses,
+  LocalModelsErrors,
+  LocalModelsResponses,
+  LocalSearchErrors,
+  LocalSearchResponses,
+  LocalSpeakErrors,
+  LocalSpeakResponses,
   LocationRef,
   LspStatusErrors,
   LspStatusResponses,
@@ -392,6 +408,8 @@ import type {
   V2SkillListResponses,
   V2StorageCompactErrors,
   V2StorageCompactResponses,
+  V2StorageLocationsErrors,
+  V2StorageLocationsResponses,
   V2StoragePurgeErrors,
   V2StoragePurgeResponses,
   V2StorageUsageErrors,
@@ -2259,6 +2277,266 @@ export class Formatter extends HeyApiClient {
       url: "/formatter",
       ...options,
       ...params,
+    })
+  }
+}
+
+export class Local extends HeyApiClient {
+  /**
+   * Scan local GGUF models
+   */
+  public models<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<LocalModelsResponses, LocalModelsErrors, ThrowOnError>({
+      url: "/local/models",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Detect local backends
+   */
+  public backends<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<LocalBackendsResponses, LocalBackendsErrors, ThrowOnError>({
+      url: "/local/backends",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Search HuggingFace
+   */
+  public search<ThrowOnError extends boolean = false>(
+    parameters: {
+      q: string
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "q" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<LocalSearchResponses, LocalSearchErrors, ThrowOnError>({
+      url: "/local/search",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * List Hub repo GGUF files
+   */
+  public files<ThrowOnError extends boolean = false>(
+    parameters: {
+      repo: string
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "repo" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<LocalFilesResponses, LocalFilesErrors, ThrowOnError>({
+      url: "/local/files",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Download a Hub GGUF
+   */
+  public download<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+      repo?: string
+      file?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "repo" },
+            { in: "body", key: "file" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<LocalDownloadResponses, LocalDownloadErrors, ThrowOnError>({
+      url: "/local/download",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+
+  /**
+   * Download progress
+   */
+  public downloads<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<LocalDownloadsResponses, LocalDownloadsErrors, ThrowOnError>({
+      url: "/local/downloads",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Chat with a local model
+   */
+  public chat<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+      model?: string
+      messages?: Array<{
+        role: string
+        content: string
+      }>
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "model" },
+            { in: "body", key: "messages" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<LocalChatResponses, LocalChatErrors, ThrowOnError>({
+      url: "/local/chat",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+
+  /**
+   * Synthesise speech with the bundled backend
+   */
+  public speak<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+      text?: string
+      voice?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "text" },
+            { in: "body", key: "voice" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<LocalSpeakResponses, LocalSpeakErrors, ThrowOnError>({
+      url: "/local/speak",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
     })
   }
 }
@@ -7155,6 +7433,28 @@ export class Storage extends HeyApiClient {
       },
     })
   }
+
+  /**
+   * Discover on-disk storage locations
+   *
+   * Scan the data directory for databases and the resource tree for MCP files, returning every location with its real existence and size so the settings panel can reveal it. Nothing is hardcoded.
+   */
+  public locations<ThrowOnError extends boolean = false>(
+    parameters?: {
+      location?: {
+        directory?: string
+        workspace?: string
+      }
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "location" }] }])
+    return (options?.client ?? this.client).get<V2StorageLocationsResponses, V2StorageLocationsErrors, ThrowOnError>({
+      url: "/api/storage/locations",
+      ...options,
+      ...params,
+    })
+  }
 }
 
 export class V2 extends HeyApiClient {
@@ -7335,6 +7635,11 @@ export class ZyraxonClient extends HeyApiClient {
   private _formatter?: Formatter
   get formatter(): Formatter {
     return (this._formatter ??= new Formatter({ client: this.client }))
+  }
+
+  private _local?: Local
+  get local(): Local {
+    return (this._local ??= new Local({ client: this.client }))
   }
 
   private _mcp?: Mcp

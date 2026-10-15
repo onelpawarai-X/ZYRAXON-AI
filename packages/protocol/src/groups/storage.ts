@@ -25,6 +25,27 @@ export const StorageResult = Schema.Struct({
   bytesAfter: Schema.Number,
 }).annotate({ identifier: "StorageResult" })
 
+/**
+ * One on-disk location the settings panel can reveal. Everything here is
+ * discovered at request time — the databases are found by scanning the data
+ * directory, and the MCP files by walking the resource tree — so nothing is
+ * hardcoded and a path appears the moment it exists on disk.
+ */
+export const StorageLocation = Schema.Struct({
+  id: Schema.String,
+  label: Schema.String,
+  kind: Schema.Literals(["database", "directory", "config", "mcp"]),
+  path: Schema.String,
+  exists: Schema.Boolean,
+  bytes: Schema.Number,
+  /** Deletable + auto-regenerating locations (databases) expose this. */
+  deletable: Schema.Boolean,
+}).annotate({ identifier: "StorageLocation" })
+
+export const StorageLocations = Schema.Struct({
+  locations: Schema.Array(StorageLocation),
+}).annotate({ identifier: "StorageLocations" })
+
 const PurgeInput = Schema.Struct({
   sessionIDs: Schema.optional(Schema.Array(Schema.String)),
   olderThan: Schema.optional(Schema.String),
@@ -71,6 +92,19 @@ export const StorageGroup = HttpApiGroup.make("server.storage")
           summary: "Permanently delete stored sessions",
           description:
             "Delete sessions by id, or every session older than a timestamp. Messages and parts go with them, and the freed pages are handed back in the same call.",
+        }),
+      ),
+    HttpApiEndpoint.get("storage.locations", "/api/storage/locations", {
+      query: LocationQuery,
+      success: Location.response(StorageLocations),
+    })
+      .annotateMerge(locationQueryOpenApi)
+      .annotateMerge(
+        OpenApi.annotations({
+          identifier: "v2.storage.locations",
+          summary: "Discover on-disk storage locations",
+          description:
+            "Scan the data directory for databases and the resource tree for MCP files, returning every location with its real existence and size so the settings panel can reveal it. Nothing is hardcoded.",
         }),
       ),
   )

@@ -7,6 +7,7 @@ import { useLanguage } from "@/context/language"
 import { useServerSDK } from "@/context/server-sdk"
 import { SettingsListV2 } from "./parts/list"
 import { SettingsRowV2 } from "./parts/row"
+import { SettingsLocationsV2 } from "./storage-locations"
 import { StorageMessagesV2 } from "./storage-messages"
 import "./settings-v2.css"
 
@@ -168,6 +169,13 @@ export const SettingsStorageV2: Component<{ directory?: () => string | undefined
           </div>
         </SettingsRowV2>
       </SettingsListV2>
+
+      <SettingsLocationsV2
+        directory={props.directory}
+        kinds={["database"]}
+        title={language.t("settings.storage.locations.title")}
+        description={language.t("settings.storage.locations.description")}
+      />
 
       <StorageMessagesV2 directory={props.directory} />
     </div>

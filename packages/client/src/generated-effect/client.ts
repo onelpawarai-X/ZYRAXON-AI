@@ -703,10 +703,16 @@ const Endpoint18_2 = (raw: RawClient["server.storage"]) => (input?: Endpoint18_2
     payload: { sessionIDs: input?.["sessionIDs"], olderThan: input?.["olderThan"] },
   }).pipe(Effect.mapError(mapClientError))
 
+type Endpoint18_3Request = Parameters<RawClient["server.storage"]["storage.locations"]>[0]
+type Endpoint18_3Input = { readonly location?: Endpoint18_3Request["query"]["location"] }
+const Endpoint18_3 = (raw: RawClient["server.storage"]) => (input?: Endpoint18_3Input) =>
+  raw["storage.locations"]({ query: { location: input?.["location"] } }).pipe(Effect.mapError(mapClientError))
+
 const adaptGroup18 = (raw: RawClient["server.storage"]) => ({
   usage: Endpoint18_0(raw),
   compact: Endpoint18_1(raw),
   purge: Endpoint18_2(raw),
+  locations: Endpoint18_3(raw),
 })
 
 const adaptClient = (raw: RawClient) => ({

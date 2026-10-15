@@ -1645,6 +1645,68 @@
    is a flex row that pushes the panel flush to the trailing edge with no scrim,
    so the app behind stays visible and fully usable. The panel mirrors the app's
    own zoom and keeps a real close button, so it reads as part of the app. */
+[data-dialog-docked] {
+  padding: 0;
+}
+
+[data-dialog-docked] [data-component="dialog-v2"] {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  pointer-events: none;
+}
+
+[data-dialog-docked] [data-slot="dialog-container"] {
+  width: min(calc(100vw - 24px), 980px);
+  height: 100%;
+  max-height: 100%;
+  border-radius: 12px 0 0 12px;
+  border-right: 0;
+  border-left: 1px solid var(--v2-border-border-weaker, rgb(255 255 255 / 0.06));
+  box-shadow: -18px 0 48px rgb(0 0 0 / 0.35);
+  pointer-events: auto;
+  animation: zy-settings-dock-in 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes zy-settings-dock-in {
+  from {
+    transform: translateX(28px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-dialog-docked] [data-slot="dialog-container"] {
+    animation: none;
+  }
+}
+
+[data-dialog-docked] [data-slot="dialog-close-button"] {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  color: var(--v2-icon-icon-muted, rgb(255 255 255 / 0.6));
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+[data-dialog-docked] [data-slot="dialog-close-button"]:hover {
+  background: var(--v2-overlay-simple-overlay-hover, rgb(255 255 255 / 0.08));
+  color: var(--v2-text-text-base, rgb(255 255 255 / 0.92));
+  transform: rotate(90deg);
+}
+
+/* ─── Docked settings ────────────────────────────────────────────────────────
+   Settings is docked to the app edge instead of floating over it. The host layer
+   is a flex row that pushes the panel flush to the trailing edge with no scrim,
+   so the app behind stays visible and fully usable. The panel mirrors the app's
+   own zoom and keeps a real close button, so it reads as part of the app. */
 [data-dialog-docked][data-dialog-layer] {
   padding: 0;
 }
@@ -1752,3 +1814,239 @@
   white-space: nowrap;
 }
 
+/* ─── Full-screen settings close ──────────────────────────────────────────────
+   Settings now fills the whole viewport, so the close control floats in the
+   top-right corner of the panel as a round, high-contrast button instead of the
+   small inline header glyph. It sits above the rail and panels and turns red on
+   hover so leaving is unmistakable. */
+[data-slot="dialog-content"].settings-v2-dialog {
+  position: relative;
+}
+
+.settings-v2-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 30;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--v2-border-border-muted, rgb(255 255 255 / 0.1));
+  background: var(--v2-background-bg-layer-01, rgb(20 20 28 / 0.9));
+  color: var(--v2-icon-icon-muted, rgb(255 255 255 / 0.65));
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+
+.settings-v2-close:hover {
+  color: #ff6b6b;
+  border-color: rgb(255 107 107 / 0.5);
+  background: rgb(255 107 107 / 0.12);
+  transform: rotate(90deg);
+}
+
+.settings-v2-close:active {
+  transform: rotate(90deg) scale(0.94);
+}
+
+/* Full-screen layout: let the panel scroll inside the viewport. */
+[data-slot="dialog-content"].settings-v2-dialog .settings-v2 {
+  height: 100vh;
+}
+
+[data-slot="dialog-content"].settings-v2-dialog .settings-v2-panel {
+  max-height: 100vh;
+  overflow-y: auto;
+  padding-top: 12px;
+  padding-bottom: 40px;
+}
+
+/* The docked layout normally pins settings to the trailing edge at ~980px. A
+   full-size settings sheet overrides that so the panel covers the whole window;
+   the more specific docked selector is matched here on purpose. */
+[data-dialog-docked][data-dialog-layer] [data-component="dialog-v2"][data-size="full"] [data-slot="dialog-container"] {
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+}
+
+/* ─── Clickable storage locations ─────────────────────────────────────────────
+   Discovered live from the backend, so a database or MCP file appears the moment
+   it exists. Each row is a button that reveals the path in the file manager. */
+.settings-v2-locations {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.settings-v2-locations-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-v2-locations-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--v2-text-text-base, rgb(255 255 255 / 0.92));
+}
+
+.settings-v2-locations-sub {
+  font-size: 11px;
+  color: var(--v2-text-text-muted, rgb(255 255 255 / 0.5));
+}
+
+.settings-v2-locations-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-v2-location-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--v2-border-border-weaker, rgb(255 255 255 / 0.06));
+  background: var(--v2-background-bg-layer-02, rgb(255 255 255 / 0.02));
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
+}
+
+.settings-v2-location-row:hover {
+  border-color: var(--v2-border-border-base, rgb(0 255 136 / 0.4));
+  background: rgb(0 255 136 / 0.06);
+  transform: translateX(2px);
+}
+
+.settings-v2-location-row[data-missing] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.settings-v2-location-row[data-missing]:hover {
+  border-color: var(--v2-border-border-weaker, rgb(255 255 255 / 0.06));
+  background: var(--v2-background-bg-layer-02, rgb(255 255 255 / 0.02));
+  transform: none;
+}
+
+.settings-v2-location-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.settings-v2-location-label {
+  font-size: 12px;
+  color: var(--v2-text-text-base, rgb(255 255 255 / 0.92));
+}
+
+.settings-v2-location-path {
+  font-family: var(--v2-font-mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  color: var(--v2-text-text-muted, rgb(255 255 255 / 0.45));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-v2-location-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--v2-text-text-muted, rgb(255 255 255 / 0.5));
+  flex-shrink: 0;
+}
+
+.settings-v2-location-missing {
+  color: #ff9f43;
+  font-size: 10.5px;
+}
+
+.settings-v2-location-open {
+  display: flex;
+  align-items: center;
+  color: var(--v2-text-text-muted, rgb(255 255 255 / 0.4));
+}
+
+.settings-v2-location-row:hover .settings-v2-location-open {
+  color: #00ff88;
+}
+
+.settings-v2-locations-empty {
+  font-size: 11.5px;
+  color: var(--v2-text-text-muted, rgb(255 255 255 / 0.45));
+  padding: 10px;
+  border: 1px dashed var(--v2-border-border-weaker, rgb(255 255 255 / 0.08));
+  border-radius: 9px;
+}
+
+
+/* ─── Full-screen settings close ──────────────────────────────────────────────
+   Settings now fills the whole viewport, so the close control floats in the
+   top-right corner of the panel as a round, high-contrast button instead of the
+   small inline header glyph. It sits above the rail and panels and turns red on
+   hover so leaving is unmistakable. */
+[data-slot="dialog-content"].settings-v2-dialog {
+  position: relative;
+}
+
+.settings-v2-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 30;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--v2-border-border-muted, rgb(255 255 255 / 0.1));
+  background: var(--v2-background-bg-layer-01, rgb(20 20 28 / 0.9));
+  color: var(--v2-icon-icon-muted, rgb(255 255 255 / 0.65));
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+
+.settings-v2-close:hover {
+  color: #ff6b6b;
+  border-color: rgb(255 107 107 / 0.5);
+  background: rgb(255 107 107 / 0.12);
+  transform: rotate(90deg);
+}
+
+.settings-v2-close:active {
+  transform: rotate(90deg) scale(0.94);
+}
+
+/* Full-screen layout: give the rail a stable width and let the panel scroll. */
+[data-slot="dialog-content"].settings-v2-dialog .settings-v2 {
+  height: 100vh;
+}
+
+[data-slot="dialog-content"].settings-v2-dialog .settings-v2-panel {
+  max-height: 100vh;
+  overflow-y: auto;
+  padding-top: 12px;
+  padding-bottom: 40px;
+}

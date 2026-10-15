@@ -6,6 +6,10 @@ export interface AIAssistantConfig {
   provider: "opencode"
   baseUrl: string
   apiKey?: string
+  // Live server URL from the app's server context. Preferred over IPC and the
+  // port probe below, because in the browser build the IPC bridge is absent and
+  // the probe only knows a fixed set of ports.
+  resolveUrl?: () => string | undefined
 }
 
 export interface GenerateOptions {
@@ -46,6 +50,10 @@ const INSTRUCTION_PROMPTS: Record<string, string> = {
   improve: "Improve this code: better performance, readability, error handling. Output the improved code ONLY.",
 }
 
+// Mode prefixes the backend stamps onto every model id, in the order the chat
+// box prefers them when collapsing the duplicated catalog.
+const PREFERRED_MODES = ["build", "pro", "auto", "beast", "apex", "dark-emperor", "pro-builder", "plan", "vision"]
+
 export class MonacoAIAssistant {
   private abortController: AbortController | null = null
   private isGenerating = false
@@ -60,6 +68,7 @@ export class MonacoAIAssistant {
       provider: "opencode",
       baseUrl: config?.baseUrl || "http://127.0.0.1:3000/v1",
       apiKey: config?.apiKey,
+      resolveUrl: config?.resolveUrl,
     }
     if (typeof window !== "undefined" && (window as any).api?.getDefaultServerUrl) {
       this.urlPromise = (window as any).api.getDefaultServerUrl() as Promise<string | null>
@@ -76,6 +85,17 @@ export class MonacoAIAssistant {
   }
 
   private async resolveBaseUrl(): Promise<string> {
+    // Live URL from the app's server context wins — it is always correct for the
+    // server the UI is actually connected to, in both browser and desktop builds.
+    if (this.config.resolveUrl) {
+      const live = this.config.resolveUrl()
+      if (live) {
+        this.resolvedUrl = live
+        this.config.baseUrl = live.replace(/\/+$/, "") + "/v1"
+        return this.config.baseUrl
+      }
+    }
+
     // Try to get from IPC with retry — server may not be ready yet
     if (typeof window !== "undefined" && (window as any).api?.getDefaultServerUrl) {
       for (let i = 0; i < 20; i++) {
@@ -100,8 +120,8 @@ export class MonacoAIAssistant {
       return this.config.baseUrl
     }
 
-    // Fallback: try common ports
-    const fallbackPorts = [3000, 3001, 4000, 5000, 8080, 8888]
+    // Fallback: try common ports (4096 is the ZYRAXON server default)
+    const fallbackPorts = [4096, 3000, 3001, 4000, 5000, 8080, 8888]
     for (const port of fallbackPorts) {
       try {
         const res = await fetch(`http://127.0.0.1:${port}/global/health`, {
@@ -123,6 +143,49 @@ export class MonacoAIAssistant {
     return this.config.baseUrl
   }
 
+  /**
+   * `/v1/models` returns every catalog model once per primary mode prefix
+   * (`build/opencode/x`, `apex/opencode/x`, ...), which is tens of thousands of
+   * rows for a few hundred real models. Collapse them to one row per
+   * `provider/model`, keeping the mode prefix of the first (preferred) mode so
+   * the chat box offers a short, unique list instead of repeating the same
+   * model under every mode.
+   */
+  private dedupeModels(
+    all: Array<{ id: string; owned_by?: string; name?: string }>,
+    preferredModes: string[],
+  ): Array<{ id: string; name: string }> {
+    const byModel = new Map<string, { id: string; name: string; mode: string }>()
+    for (const model of all) {
+      const parts = model.id.split("/")
+      // Mode-prefixed ids look like `mode/provider/model` (provider may itself
+      // contain slashes, e.g. `cloudflare-workers-ai/@cf/...`). Fall back to the
+      // raw id when the shape does not match.
+      const mode = parts.length >= 3 ? parts[0]! : ""
+      const rest = parts.length >= 3 ? parts.slice(1).join("/") : model.id
+      const rank = mode ? preferredModes.indexOf(mode) : -1
+      const existing = byModel.get(rest)
+      const shortName = rest.split("/").pop() || rest
+      if (!existing) {
+        byModel.set(rest, { id: model.id, name: model.name || shortName, mode })
+        continue
+      }
+      const existingRank = preferredModes.indexOf(existing.mode)
+      if (rank >= 0 && (existingRank < 0 || rank < existingRank)) {
+        byModel.set(rest, { id: model.id, name: model.name || shortName, mode })
+      }
+    }
+    const list = Array.from(byModel.values())
+    // Free-tier opencode models first, then everything else alphabetically.
+    list.sort((a, b) => {
+      const aFree = a.id.includes("opencode/") ? 0 : 1
+      const bFree = b.id.includes("opencode/") ? 0 : 1
+      if (aFree !== bFree) return aFree - bFree
+      return a.name.localeCompare(b.name)
+    })
+    return list.map((entry) => ({ id: entry.id, name: entry.name }))
+  }
+
   /** Fetch available free models — deduplicated, curated list */
   async listAvailableModels(): Promise<Array<{ id: string; name: string }>> {
     const baseUrl = await this.resolveBaseUrl()
@@ -137,23 +200,8 @@ export class MonacoAIAssistant {
     const allModels = data?.data ?? []
     console.log("[MonacoAI] All models from provider:", allModels.length)
 
-    // Deduplicate by ID, prioritize opencode-prefixed models
-    const seen = new Set<string>()
-    const unique: Array<{ id: string; name: string; priority: number }> = []
-    for (const m of allModels) {
-      if (seen.has(m.id)) continue
-      seen.add(m.id)
-      // Priority: opencode/ > openrouter/ > others
-      const priority = m.id.startsWith("opencode/") ? 2 : m.id.startsWith("openrouter/") ? 1 : 0
-      const name = m.name || m.id.split("/").pop() || m.id
-      unique.push({ id: m.id, name, priority })
-    }
-
-    // Sort: opencode first, then openrouter, then others
-    unique.sort((a, b) => b.priority - a.priority)
-
-    const list = unique.slice(0, 40).map(m => ({ id: m.id, name: m.name }))
-    console.log("[MonacoAI] Filtered models:", list.length, "from", allModels.length, "total")
+    const list = this.dedupeModels(allModels, PREFERRED_MODES).slice(0, 60)
+    console.log("[MonacoAI] Deduplicated models:", list.length, "from", allModels.length, "total")
     return list
   }
 
@@ -166,6 +214,9 @@ export class MonacoAIAssistant {
       console.log("[MonacoAI] Using cached model:", this.cachedModel)
       return this.cachedModel
     }
+    // Auto fallback: ask the same catalog the selector uses, collapse the
+    // mode-prefixed rows to plain `provider/model` ids, and pick the first free
+    // entry. This keeps Auto working even if the selector had no options yet.
     const baseUrl = await this.resolveBaseUrl()
     const url = `${baseUrl}/models`
     console.log("[MonacoAI] Auto: fetching models:", url)
@@ -178,21 +229,14 @@ export class MonacoAIAssistant {
     const allModels = data?.data ?? []
     if (allModels.length === 0) throw new Error("No models available from backend. Check server is running.")
 
-    // Deduplicate — prefer opencode-prefixed models
-    const seen = new Set<string>()
-    const opencodeModels: string[] = []
-    for (const m of allModels) {
-      if (seen.has(m.id)) continue
-      seen.add(m.id)
-      if (m.id.startsWith("opencode/") || m.id.startsWith("openrouter/")) {
-        opencodeModels.push(m.id)
-      }
-    }
-    const pool = opencodeModels.length > 0 ? opencodeModels : allModels.map(m => m.id)
-    const modelId = pool[0]!
-    console.log("[MonacoAI] Auto-selected model:", modelId)
-    this.cachedModel = modelId
-    return modelId
+    const unique = this.dedupeModels(allModels, PREFERRED_MODES)
+    // The bridge expects `providerID/modelID`; the catalog advertises
+    // `mode/providerID/modelID`, so strip the leading mode segment.
+    const modelId = unique[0]?.id ?? allModels[0]!.id
+    const concrete = modelId.split("/").length >= 3 ? modelId.split("/").slice(1).join("/") : modelId
+    console.log("[MonacoAI] Auto-selected model:", concrete)
+    this.cachedModel = concrete
+    return concrete
   }
 
   async generateCode(

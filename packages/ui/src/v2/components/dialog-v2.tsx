@@ -5,7 +5,7 @@ import { type ComponentProps, type JSXElement, type ParentProps, Show, children,
 import "./dialog-v2.css"
 
 export interface DialogProps extends ParentProps {
-  size?: "normal" | "large" | "x-large"
+  size?: "normal" | "large" | "x-large" | "full"
   variant?: "default" | "settings"
   class?: ComponentProps<"div">["class"]
   containerClass?: ComponentProps<"div">["class"]

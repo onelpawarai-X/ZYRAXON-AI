@@ -2381,6 +2381,53 @@ export type FormatterStatus = {
   enabled: boolean
 }
 
+export type LocalModelInfo = {
+  id: string
+  name: string
+  path: string
+  sizeBytes: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  quantization?: string
+  family?: string
+  kind: string
+}
+
+export type LocalBackendInfo = {
+  name: string
+  available: boolean
+  path?: string
+}
+
+export type LocalHfModel = {
+  id: string
+  downloads: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  likes: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  pipelineTag?: string
+  kind: string
+}
+
+export type LocalHfFile = {
+  name: string
+  sizeBytes: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+}
+
+export type LocalDownloadProgress = {
+  id: string
+  filename: string
+  receivedBytes: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  totalBytes: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  done: boolean
+  error?: string
+}
+
+export type LocalChatResult = {
+  text: string
+}
+
+export type LocalSpeakResult = {
+  mime: string
+  audio: string
+}
+
 export type McpStatusConnected = {
   status: "connected"
 }
@@ -2978,6 +3025,20 @@ export type StorageResult = {
 export type StoragePurgeInput = {
   sessionIDs?: Array<string>
   olderThan?: string
+}
+
+export type StorageLocation = {
+  id: string
+  label: string
+  kind: "database" | "directory" | "config" | "mcp"
+  path: string
+  exists: boolean
+  bytes: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  deletable: boolean
+}
+
+export type StorageLocations = {
+  locations: Array<StorageLocation>
 }
 
 export type EffectHttpApiErrorForbidden = {
@@ -8452,6 +8513,244 @@ export type FormatterStatusResponses = {
 
 export type FormatterStatusResponse = FormatterStatusResponses[keyof FormatterStatusResponses]
 
+export type LocalModelsData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/local/models"
+}
+
+export type LocalModelsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type LocalModelsError = LocalModelsErrors[keyof LocalModelsErrors]
+
+export type LocalModelsResponses = {
+  /**
+   * Models already present on disk
+   */
+  200: Array<LocalModelInfo>
+}
+
+export type LocalModelsResponse = LocalModelsResponses[keyof LocalModelsResponses]
+
+export type LocalBackendsData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/local/backends"
+}
+
+export type LocalBackendsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type LocalBackendsError = LocalBackendsErrors[keyof LocalBackendsErrors]
+
+export type LocalBackendsResponses = {
+  /**
+   * Available local inference backends
+   */
+  200: Array<LocalBackendInfo>
+}
+
+export type LocalBackendsResponse = LocalBackendsResponses[keyof LocalBackendsResponses]
+
+export type LocalSearchData = {
+  body?: never
+  path?: never
+  query: {
+    q: string
+    directory?: string
+    workspace?: string
+  }
+  url: "/local/search"
+}
+
+export type LocalSearchErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type LocalSearchError = LocalSearchErrors[keyof LocalSearchErrors]
+
+export type LocalSearchResponses = {
+  /**
+   * HuggingFace search results
+   */
+  200: Array<LocalHfModel>
+}
+
+export type LocalSearchResponse = LocalSearchResponses[keyof LocalSearchResponses]
+
+export type LocalFilesData = {
+  body?: never
+  path?: never
+  query: {
+    repo: string
+    directory?: string
+    workspace?: string
+  }
+  url: "/local/files"
+}
+
+export type LocalFilesErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type LocalFilesError = LocalFilesErrors[keyof LocalFilesErrors]
+
+export type LocalFilesResponses = {
+  /**
+   * GGUF files in a Hub repo
+   */
+  200: Array<LocalHfFile>
+}
+
+export type LocalFilesResponse = LocalFilesResponses[keyof LocalFilesResponses]
+
+export type LocalDownloadData = {
+  body?: {
+    repo: string
+    file: string
+  }
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/local/download"
+}
+
+export type LocalDownloadErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type LocalDownloadError = LocalDownloadErrors[keyof LocalDownloadErrors]
+
+export type LocalDownloadResponses = {
+  /**
+   * Downloaded model
+   */
+  200: LocalModelInfo
+}
+
+export type LocalDownloadResponse = LocalDownloadResponses[keyof LocalDownloadResponses]
+
+export type LocalDownloadsData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/local/downloads"
+}
+
+export type LocalDownloadsErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type LocalDownloadsError = LocalDownloadsErrors[keyof LocalDownloadsErrors]
+
+export type LocalDownloadsResponses = {
+  /**
+   * Active downloads
+   */
+  200: Array<LocalDownloadProgress>
+}
+
+export type LocalDownloadsResponse = LocalDownloadsResponses[keyof LocalDownloadsResponses]
+
+export type LocalChatData = {
+  body?: {
+    model: string
+    messages: Array<{
+      role: string
+      content: string
+    }>
+  }
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/local/chat"
+}
+
+export type LocalChatErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type LocalChatError = LocalChatErrors[keyof LocalChatErrors]
+
+export type LocalChatResponses = {
+  /**
+   * Local model reply
+   */
+  200: LocalChatResult
+}
+
+export type LocalChatResponse = LocalChatResponses[keyof LocalChatResponses]
+
+export type LocalSpeakData = {
+  body?: {
+    text: string
+    voice?: string
+  }
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/local/speak"
+}
+
+export type LocalSpeakErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type LocalSpeakError = LocalSpeakErrors[keyof LocalSpeakErrors]
+
+export type LocalSpeakResponses = {
+  /**
+   * Synthesised speech as base64 audio
+   */
+  200: LocalSpeakResult
+}
+
+export type LocalSpeakResponse = LocalSpeakResponses[keyof LocalSpeakResponses]
+
 export type McpStatusData = {
   body?: never
   path?: never
@@ -13790,6 +14089,43 @@ export type V2StoragePurgeResponses = {
 }
 
 export type V2StoragePurgeResponse = V2StoragePurgeResponses[keyof V2StoragePurgeResponses]
+
+export type V2StorageLocationsData = {
+  body?: never
+  path?: never
+  query?: {
+    location?: {
+      directory?: string
+      workspace?: string
+    }
+  }
+  url: "/api/storage/locations"
+}
+
+export type V2StorageLocationsErrors = {
+  /**
+   * InvalidRequestError
+   */
+  400: InvalidRequestError
+  /**
+   * UnauthorizedError
+   */
+  401: UnauthorizedError
+}
+
+export type V2StorageLocationsError = V2StorageLocationsErrors[keyof V2StorageLocationsErrors]
+
+export type V2StorageLocationsResponses = {
+  /**
+   * Success
+   */
+  200: {
+    location: LocationInfo
+    data: StorageLocations
+  }
+}
+
+export type V2StorageLocationsResponse = V2StorageLocationsResponses[keyof V2StorageLocationsResponses]
 
 export type PtyConnectData = {
   body?: never

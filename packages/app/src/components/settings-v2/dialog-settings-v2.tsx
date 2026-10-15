@@ -127,7 +127,18 @@ export const DialogSettings: Component<{
   )
 
   return (
-    <Dialog size="x-large" variant="settings" class="settings-v2-dialog">
+    <Dialog size="full" variant="settings" class="settings-v2-dialog">
+      <button
+        type="button"
+        class="settings-v2-close"
+        aria-label={language.t("common.close") || "Close"}
+        data-action="settings-close"
+        onClick={() => dialog.close()}
+      >
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M12.4446 3.55469L3.55566 12.4436M3.55566 3.55469L12.4446 12.4436" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" />
+        </svg>
+      </button>
       <TabsV2
         orientation="vertical"
         variant="settings"

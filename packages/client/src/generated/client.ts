@@ -118,6 +118,8 @@ import type {
   ServerStorageCompactOutput,
   ServerStoragePurgeInput,
   ServerStoragePurgeOutput,
+  ServerStorageLocationsInput,
+  ServerStorageLocationsOutput,
 } from "./types"
 import { ClientError } from "./client-error"
 
@@ -1027,6 +1029,18 @@ export function make(options: ClientOptions) {
             body: { sessionIDs: input?.["sessionIDs"], olderThan: input?.["olderThan"] },
             successStatus: 200,
             declaredStatuses: [400, 401],
+            empty: false,
+          },
+          requestOptions,
+        ),
+      locations: (input?: ServerStorageLocationsInput, requestOptions?: RequestOptions) =>
+        request<ServerStorageLocationsOutput>(
+          {
+            method: "GET",
+            path: `/api/storage/locations`,
+            query: { location: input?.["location"] },
+            successStatus: 200,
+            declaredStatuses: [401, 400],
             empty: false,
           },
           requestOptions,
