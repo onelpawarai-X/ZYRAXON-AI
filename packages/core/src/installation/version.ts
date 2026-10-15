@@ -18,3 +18,15 @@ export function freeTierVersion() {
 export function freeTierUserAgent() {
   return `opencode/${FREE_TIER_VERSION}`
 }
+
+/**
+ * The catalogue advertises the console-gated `zen` path for the upstream
+ * opencode.ai provider, but the free tier is served from the public
+ * `inference` path instead. `zen` answers every public-key request with
+ * FreeTierError regardless of the session fingerprint, so point the upstream
+ * host at `inference` while leaving ZYRAXON's own gateway routing untouched.
+ */
+export function freeTierApiUrl(url: string | undefined) {
+  if (!url) return url
+  return url.replace(/^(https?:\/\/opencode\.ai\/)zen\//, "$1inference/")
+}

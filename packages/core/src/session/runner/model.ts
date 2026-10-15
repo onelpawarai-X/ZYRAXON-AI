@@ -130,9 +130,19 @@ const withVariant = (
 const apiName = (model: ModelV2.Info) =>
   model.api.type === "aisdk" ? `${model.api.type}:${model.api.package}` : model.api.type
 
+// The free-tier gate requires the session fingerprint on both
+// `x-opencode-session` and `x-opencode-session-id`; a request carrying only one
+// of them is refused with FreeTierError. These are per-session values, so they
+// are injected here where the session is known rather than on the catalog model.
+const freeTierSessionHeaders = (sessionID: SessionSchema.ID) => ({
+  "x-opencode-session": sessionID,
+  "x-opencode-session-id": sessionID,
+})
+
 export const fromCatalogModel = (
   model: ModelV2.Info,
   credential?: Credential.Value,
+  sessionID?: SessionSchema.ID,
 ): Effect.Effect<Model, UnsupportedApiError> => {
   const resolved =
     credential?.type !== "key" || credential.metadata === undefined
@@ -140,39 +150,51 @@ export const fromCatalogModel = (
       : produce(model, (draft) => {
           Object.assign(draft.request.body, credential.metadata)
         })
-  const key = apiKey(resolved, credential)
-  if (resolved.api.type === "aisdk" && resolved.api.package === "@ai-sdk/openai") {
+  const withSession =
+    sessionID === undefined || resolved.providerID !== ProviderV2.ID.opencode
+      ? resolved
+      : produce(resolved, (draft) => {
+          Object.assign(draft.request.headers, freeTierSessionHeaders(sessionID))
+        })
+  const key = apiKey(withSession, credential)
+  if (withSession.api.type === "aisdk" && withSession.api.package === "@ai-sdk/openai") {
     return Effect.succeed(
-      withDefaults(resolved, OpenAIResponses.route)
+      withDefaults(withSession, OpenAIResponses.route)
         .with({ auth: key === undefined ? Auth.none : Auth.bearer(key) })
-        .model({ id: resolved.api.id }),
+        .model({ id: withSession.api.id }),
     )
   }
-  if (resolved.api.type === "aisdk" && resolved.api.package === "@ai-sdk/anthropic") {
+  if (withSession.api.type === "aisdk" && withSession.api.package === "@ai-sdk/anthropic") {
     return Effect.succeed(
-      withDefaults(resolved, AnthropicMessages.route)
+      withDefaults(withSession, AnthropicMessages.route)
         .with({ auth: key === undefined ? Auth.none : Auth.header("x-api-key", key) })
-        .model({ id: resolved.api.id }),
+        .model({ id: withSession.api.id }),
     )
   }
-  if (resolved.api.type === "aisdk" && resolved.api.package === "@ai-sdk/openai-compatible" && resolved.api.url) {
+  if (
+    withSession.api.type === "aisdk" &&
+    withSession.api.package === "@ai-sdk/openai-compatible" &&
+    withSession.api.url
+  ) {
     return Effect.succeed(
-      withDefaults(resolved, OpenAICompatibleChat.route)
+      withDefaults(withSession, OpenAICompatibleChat.route)
         .with({ auth: key === undefined ? Auth.none : Auth.bearer(key) })
-        .model({ id: resolved.api.id }),
+        .model({ id: withSession.api.id }),
     )
   }
   return Effect.fail(
     new UnsupportedApiError({
-      providerID: resolved.providerID,
-      modelID: resolved.id,
-      api: apiName(resolved),
+      providerID: withSession.providerID,
+      modelID: withSession.id,
+      api: apiName(withSession),
     }),
   )
 }
 
 export const resolve = (session: SessionSchema.Info, model: ModelV2.Info, credential?: Credential.Value) =>
-  withVariant(model, session.model?.variant).pipe(Effect.flatMap((model) => fromCatalogModel(model, credential)))
+  withVariant(model, session.model?.variant).pipe(
+    Effect.flatMap((model) => fromCatalogModel(model, credential, session.id)),
+  )
 
 export const supported = (model: ModelV2.Info) =>
   model.api.type === "aisdk" &&

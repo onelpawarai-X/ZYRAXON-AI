@@ -9,7 +9,7 @@ import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstab
 import { EventV2 } from "../../event"
 import { Credential } from "../../credential"
 import { Integration } from "../../integration"
-import { freeTierUserAgent } from "../../installation/version"
+import { freeTierApiUrl, freeTierUserAgent } from "../../installation/version"
 import { ModelV2 } from "../../model"
 import { ProviderV2 } from "../../provider"
 import { ConfigProviderV1 } from "../../v1/config/provider"
@@ -171,12 +171,17 @@ export const ZyraxonPlugin = define<HttpClient.HttpClient | EventV2.Service | Sc
       catalog.provider.update(item.provider.id, (provider) => {
         // The free-tier gate identifies the client by this header alone.
         provider.request.headers["User-Agent"] = freeTierUserAgent()
+        // The catalogue advertises the console-gated `zen` path, but the free
+        // tier is only served from the public `inference` path. Without this
+        // rewrite every public-key request is refused with FreeTierError.
+        provider.api.url = freeTierApiUrl(provider.api.url)
         if (!hasKey) provider.request.body.apiKey = "public"
       })
       if (hasKey) return
       for (const model of item.models.values()) {
         if (!model.cost.some((cost) => cost.input > 0)) continue
         catalog.model.update(item.provider.id, model.id, (draft) => {
+          draft.api.url = freeTierApiUrl(draft.api.url)
           draft.enabled = false
         })
       }

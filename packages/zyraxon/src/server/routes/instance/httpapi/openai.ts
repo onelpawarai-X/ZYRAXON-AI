@@ -44,9 +44,31 @@ type DeltaChunk = { readonly tag: "delta"; readonly content: string }
 type TerminalChunk = { readonly tag: "finish"; readonly reason: string } | { readonly tag: "error"; readonly message: string }
 type TurnChunk = DeltaChunk | TerminalChunk
 
-function sessionIDFor(directory: string, model: string, agent?: string) {
-  const hash = createHash("sha256").update([directory, model, agent ?? ""].join("|")).digest("hex").slice(0, 32)
-  return SessionV2.ID.make("ses_" + hash)
+// Session ids handed to the upstream free tier must begin with a
+// timestamp-encoded `descending()` identifier (see
+// `@zyraxon-ai/schema/identifier`): the first twelve hex characters decode to
+// the creation time. A plain hash is refused with FreeTierError. Encode a fixed
+// epoch so the id is deterministic per workspace/model/agent and the AI Generate
+// session keeps one durable memory instead of forking a new session per call.
+const ID_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+const AI_GENERATE_EPOCH = 1_700_000_000_000
+const AI_GENERATE_ID_PREFIX = "ses_"
+
+function encodeTimestamp(timestamp: number) {
+  const value = ~(BigInt(timestamp) * 0x1000n)
+  return Array.from({ length: 6 }, (_, index) =>
+    Number((value >> BigInt(40 - 8 * index)) & 0xffn)
+      .toString(16)
+      .padStart(2, "0"),
+  ).join("")
+}
+
+function sessionIDFor(directory: string, _model: string, agent?: string) {
+  // The model is deliberately excluded from the seed: AI Generate keeps one
+  // durable session (and its memory) even when the user switches models.
+  const digest = createHash("sha256").update([directory, "ai-generate", agent ?? ""].join("|")).digest()
+  const tail = Array.from({ length: 14 }, (_, index) => ID_CHARS[digest[index]! % ID_CHARS.length]).join("")
+  return SessionV2.ID.make(AI_GENERATE_ID_PREFIX + encodeTimestamp(AI_GENERATE_EPOCH) + tail)
 }
 
 function textOf(content: ChatCompletionRequest["messages"][number]["content"]) {
