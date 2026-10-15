@@ -47,13 +47,17 @@ function providerIconsPlugin() {
 }
 
 async function fetchProviderIcons() {
-  const url = process.env.ZYRAXON_MODELS_URL || "https://models.dev"
-  const providers = await fetch(`${url}/api.json`)
+  // Provider metadata comes from ZYRAXON's own service, but provider logos are
+  // not served there. Keep the logo origin separate so the catalogue source and
+  // the icon source can change independently.
+  const providerUrl = process.env.ZYRAXON_MODELS_URL || "https://zyraxonal-provider.lovable.app"
+  const logoUrl = process.env.ZYRAXON_LOGO_URL || "https://models.dev"
+  const providers = await fetch(`${providerUrl}/api.json`)
     .then((res) => res.json())
     .then((json) => Object.keys(json))
   await Promise.all(
     providers.map((provider) =>
-      fetch(`${url}/logos/${provider}.svg`)
+      fetch(`${logoUrl}/logos/${provider}.svg`)
         .then((res) => res.text())
         .then((svg) => fs.writeFileSync(`./src/assets/icons/provider/${provider}.svg`, svg)),
     ),

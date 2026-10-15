@@ -2882,3 +2882,28 @@ export type ServerStoragePurgeOutput = {
     readonly bytesAfter: number | "Infinity" | "-Infinity" | "NaN"
   }
 }
+
+export type ServerStorageLocationsInput = {
+  readonly location?: {
+    readonly location?: { readonly directory?: string | undefined; readonly workspace?: string | undefined } | undefined
+  }["location"]
+}
+
+export type ServerStorageLocationsOutput = {
+  readonly location: {
+    readonly directory: string
+    readonly workspaceID?: string
+    readonly project: { readonly id: string; readonly directory: string }
+  }
+  readonly data: {
+    readonly locations: ReadonlyArray<{
+      readonly id: string
+      readonly label: string
+      readonly kind: "database" | "directory" | "config" | "mcp"
+      readonly path: string
+      readonly exists: boolean
+      readonly bytes: number | "Infinity" | "-Infinity" | "NaN"
+      readonly deletable: boolean
+    }>
+  }
+}

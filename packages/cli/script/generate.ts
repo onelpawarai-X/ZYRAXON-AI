@@ -1,9 +1,9 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-const modelsUrl = process.env.ZYRAXON_MODELS_URL || "https://models.dev"
+const modelsUrl = process.env.ZYRAXON_MODELS_URL || "https://zyraxonal-provider.lovable.app"
 
 export const modelsData = process.env.MODELS_DEV_API_JSON
   ? await Bun.file(process.env.MODELS_DEV_API_JSON).text()
   : await fetch(`${modelsUrl}/api.json`).then((response) => response.text())
 
-console.log("Loaded models.dev snapshot")
+console.log("Loaded ZYRAXON provider snapshot")

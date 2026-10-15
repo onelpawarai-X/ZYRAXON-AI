@@ -484,6 +484,96 @@ function webSearchProviderLabel(provider: unknown) {
   return "Web Search"
 }
 
+/**
+ * Every ZYRAXON tool needs a face. The core tools above are matched by name;
+ * everything else (the large X catalog, ultra tools, site tools, preview tools,
+ * MCP controls) falls through to `default`, which used to give them all the same
+ * generic icon. This maps each family to a distinct glyph so the timeline shows
+ * what actually ran instead of a wall of identical marks.
+ */
+const CORE_TOOL_ICONS: Record<string, IconProps["name"]> = {
+  plan: "checklist",
+  plan_exit: "checklist",
+  x_mode_switch: "selector",
+  memory: "brain",
+  media_generate: "photo",
+  media_fetch: "download",
+  model_call: "zy-models",
+  self_evolve: "arrow-undo-down",
+  screen_vision: "eye",
+  api_tester: "globe",
+  code_analyzer: "zy-review",
+  system_info: "server",
+  svg_generate: "photo",
+  github_connect: "github",
+  lsp: "code",
+  code_mode: "code",
+  external_directory: "folder",
+  "json-schema": "code-lines",
+  truncate: "archive",
+  session_list: "zy-sessions",
+  session_open: "zy-sessions",
+  session_send: "zy-sessions",
+  session_subagent: "subagent",
+  session_switch: "zy-sessions",
+  session_remove: "trash",
+  ui_button: "square-arrow-top-right",
+  site_preview: "window-cursor",
+  remote_desktop: "server",
+}
+
+const TOOL_ICONS: readonly { test: RegExp; icon: IconProps["name"] }[] = [
+  { test: /^x_astro_|_astro$|astronom|orbit|space|rocket|satellite/i, icon: "globe" },
+  { test: /^x_bio_|biology|genetic|dna|ecology|biochem/i, icon: "brain" },
+  { test: /^x_chem_|chemistry|acid|stoichi|gas_law/i, icon: "reset" },
+  { test: /^x_phys_|physics|mechanics|thermo|electro|relativity|wave/i, icon: "providers" },
+  { test: /^x_math_|math|calculus|matrix|statist|geometr|number_theory|combinator/i, icon: "zy-models" },
+  { test: /aviation|aircraft|atc|helicopter|drone|uav|flight/i, icon: "globe" },
+  { test: /marine|boat|hull|anchor|ballast|sonar|nav_chart/i, icon: "globe" },
+  { test: /vehicle|car_|engine|ecu|abs_|esc_/i, icon: "providers" },
+  { test: /robot|manipulator|ik_|slam|actuator/i, icon: "zy-ecosystem" },
+  { test: /medical|vital|patient|drug_|health/i, icon: "shield" },
+  { test: /security|auth|access_|policy|encrypt|certificate|intrusion|cyber/i, icon: "lock" },
+  { test: /sensor|lidar|camera|radar|imu_|thermal|pressure|accelerom/i, icon: "status" },
+  { test: /sdr|receiver|transmitter|wifi|bluetooth|lora|gps_|signal/i, icon: "globe" },
+  { test: /construction|excavator|crane|concrete|bulldozer/i, icon: "server" },
+  { test: /agricultur|soil|crop|irrigation|pest|harvest/i, icon: "zy-projects" },
+  { test: /survey|geodes|topograph|seismic|rtk/i, icon: "globe" },
+  { test: /industrial|plc|scada|cnc|conveyor/i, icon: "server" },
+  { test: /infrastructure|power_grid|water_treat|hvac|railway|fire_supp/i, icon: "server" },
+  { test: /finance|financial|economic/i, icon: "zy-subscription" },
+  { test: /data_science|data-logger|timeseries|analytics/i, icon: "zy-status" },
+  { test: /network|devops|database|blockchain|quantum/i, icon: "cloud-upload" },
+  { test: /dashboard|chart|widget|monitor_|stream_/i, icon: "zy-status" },
+  { test: /alert|notif|escalat|anomaly/i, icon: "zy-notifications" },
+  { test: /digital_twin|twin_|simulation|scenario|physics_engine/i, icon: "zy-models" },
+  { test: /ml_|classifier|prediction|reinforcement|nlp|vision_model/i, icon: "brain" },
+  { test: /decision|risk|tradeoff|causal|reasoning/i, icon: "brain" },
+  { test: /ethics|bias|fairness|transparency/i, icon: "shield" },
+  { test: /creativ|idea_|innovation|design_think|pattern_synth/i, icon: "zy-appearance" },
+  { test: /document|skill_creator|memory_/i, icon: "zy-files" },
+  { test: /remote|websocket|heartbeat|command_protocol/i, icon: "globe" },
+  { test: /predictive|maintenance|vibration|oil_|thermal_trend/i, icon: "zy-status" },
+  { test: /safety|fail_safe|watchdog|emergency|interlock|circuit_breaker|fmea/i, icon: "shield" },
+  { test: /linguist|language|music|game_mechanics|oceanograph|meteorolog|geolog|material/i, icon: "zy-language" },
+  { test: /^ultra_/i, icon: "zy-subscription" },
+  { test: /^site_/i, icon: "zy-ecosystem" },
+  { test: /^preview_/i, icon: "window-cursor" },
+  { test: /^desktop_/i, icon: "server" },
+  { test: /^mcp_/i, icon: "mcp" },
+  { test: /^x_/i, icon: "zy-ecosystem" },
+]
+
+function iconForTool(tool: string, category?: string): IconProps["name"] {
+  const exact = CORE_TOOL_ICONS[tool]
+  if (exact) return exact
+  const haystack = category ? `${tool} ${category}` : tool
+  for (const entry of TOOL_ICONS) {
+    if (entry.test.test(haystack)) return entry.icon
+  }
+  return "mcp"
+}
+
 export function getToolInfo(
   tool: string,
   input: any = {},
@@ -581,7 +671,7 @@ export function getToolInfo(
       }
     default:
       return {
-        icon: "mcp",
+        icon: iconForTool(tool, typeof metadata?.category === "string" ? metadata.category : undefined),
         title: tool,
       }
   }

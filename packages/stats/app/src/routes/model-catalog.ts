@@ -2,9 +2,14 @@
 
 import { query } from "@solidjs/router"
 
-export const modelCatalogSourceUrl = "https://models.dev/catalog.json"
-export const modelCatalogPricingUrl = "https://models.dev/api.json"
-export const modelCatalogLabSourceUrl = "https://models.dev/labs"
+// The catalogue is served by ZYRAXON's own provider service. `/api.json` uses
+// the same provider/model shape the runtime catalog consumes, so the stats site
+// and the agent always agree on what is available.
+const providerServiceUrl = "https://zyraxonal-provider.lovable.app"
+
+export const modelCatalogSourceUrl = `${providerServiceUrl}/api.json`
+export const modelCatalogPricingUrl = `${providerServiceUrl}/api.json`
+export const modelCatalogLabSourceUrl = `${providerServiceUrl}/labs`
 
 export type ModelCatalogCost = {
   input: number

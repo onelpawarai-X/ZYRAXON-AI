@@ -13,6 +13,7 @@ import { useServerSDK } from "@/context/server-sdk"
 import { useServerSync } from "@/context/server-sync"
 import type { DirectorySync } from "@/context/sync"
 import { useServiceStatus } from "@/components/sidebar/sidebar-status"
+import { SettingsLocationsV2 } from "./storage-locations"
 
 /**
  * The settings page is not directory scoped, so mirror the fallback chain the
@@ -248,6 +249,12 @@ export const SettingsExtensionsV2: Component = () => {
             <footer class="zy-ext-foot">
               {language.t("settings.extensions.config.hint")} <code>{CONFIG_PATHS.mcp}</code>
             </footer>
+
+            <SettingsLocationsV2
+              kinds={["mcp", "config"]}
+              title={language.t("settings.extensions.mcp.files.title")}
+              description={language.t("settings.extensions.mcp.files.description")}
+            />
           </section>
         </Show>
 
