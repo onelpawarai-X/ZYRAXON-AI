@@ -203,6 +203,10 @@ export const prepare = Effect.fn("LLMRequestPrep.prepare")(function* (input: Pre
         ? {
             ...(opencodeProjectID ? { "x-opencode-project": opencodeProjectID } : {}),
             "x-opencode-session": input.sessionID,
+            // The free-tier gate requires the session id on both the
+            // `x-opencode-session` and `x-opencode-session-id` headers; a
+            // request carrying only the former is refused with FreeTierError.
+            "x-opencode-session-id": input.sessionID,
             "x-opencode-request": input.user.id,
             "x-opencode-client": input.flags.client,
             "User-Agent": USER_AGENT,

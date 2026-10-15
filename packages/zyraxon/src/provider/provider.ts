@@ -1278,6 +1278,16 @@ function cloudflareGatewayNpm(providerID: string, modelID: string) {
   return undefined
 }
 
+// The catalogue advertises the console-gated `zen` path for the upstream
+// opencode.ai provider, but the free tier is served from the public
+// `inference` path instead. `zen` answers every public-key request with
+// FreeTierError regardless of the session fingerprint, so point the upstream
+// host at `inference` while leaving ZYRAXON's own gateway routing untouched.
+function freeTierApiUrl(url: string) {
+  if (!url) return url
+  return url.replace(/^(https?:\/\/opencode\.ai\/)zen\//, "$1inference/")
+}
+
 function fromCatalogModel(provider: ProviderCatalog.Provider, model: ProviderCatalog.Model): Model {
   const base: Model = {
     id: ModelV2.ID.make(model.id),
@@ -1286,7 +1296,7 @@ function fromCatalogModel(provider: ProviderCatalog.Provider, model: ProviderCat
     family: model.family,
     api: {
       id: model.id,
-      url: model.provider?.api ?? provider.api ?? "",
+      url: freeTierApiUrl(model.provider?.api ?? provider.api ?? ""),
       npm:
         cloudflareGatewayNpm(provider.id, model.id) ??
         model.provider?.npm ??
@@ -1528,7 +1538,9 @@ const entries = yield* providerCatalog.get()
               api: {
                 id: apiID,
                 npm: apiNpm,
-                url: model.provider?.api ?? provider?.api ?? existingModel?.api.url ?? entries[providerID]?.api ?? "",
+                url: freeTierApiUrl(
+                  model.provider?.api ?? provider?.api ?? existingModel?.api.url ?? entries[providerID]?.api ?? "",
+                ),
               },
               status: model.status ?? existingModel?.status ?? "active",
               name,

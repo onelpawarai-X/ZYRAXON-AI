@@ -23,12 +23,42 @@ import { SessionSummary } from "./summary"
 import type { Provider } from "@/provider/provider"
 import { Question } from "@/question"
 import { errorMessage } from "@/util/error"
+import { isMedia } from "@/util/media"
 import { isRecord } from "@/util/record"
 import { EventV2Bridge } from "@/event-v2-bridge"
 import { Database } from "@zyraxon-ai/core/database/database"
 import { Usage, type LLMEvent } from "@zyraxon-ai/llm"
 
 const DOOM_LOOP_THRESHOLD = 3
+
+// A free-tier upstream can refuse an otherwise valid request purely because it
+// carries a media file part, and it answers with a non-retryable 400 rather than
+// a capability error. The turn would otherwise fail outright, so we detect the
+// combination (media present + client rejection) and rerun once with the media
+// stripped, letting the model answer with a note instead of an error.
+function messagesHaveMedia(messages: LLM.StreamInput["messages"]) {
+  return messages.some(
+    (message) =>
+      Array.isArray(message.content) &&
+      message.content.some((part) => part.type === "file" && isMedia(String(part.mediaType ?? ""))),
+  )
+}
+
+function stripMediaFromMessages(messages: LLM.StreamInput["messages"]) {
+  return messages.map((message) => {
+    if (!Array.isArray(message.content)) return message
+    const content = message.content.flatMap((part) => {
+      if (part.type !== "file" || !isMedia(String(part.mediaType ?? ""))) return [part]
+      return [
+        {
+          type: "text" as const,
+          text: `[Attached ${part.mediaType}: ${part.filename ?? "file"} — this provider rejected the media, so it could not be read]`,
+        },
+      ]
+    })
+    return { ...message, content } as typeof message
+  })
+}
 export type Result = "compact" | "stop" | "continue"
 
 export interface Handle {
@@ -643,25 +673,62 @@ const layer = Layer.effect(
 
         // Track whether we received ANY events from the LLM stream.
         let receivedAnyEvent = false
+        // Set once a media-stripped rerun has been attempted, so a provider that
+        // rejects even the text-only rerun fails normally instead of looping.
+        let mediaFallbackUsed = false
 
         return yield* Effect.gen(function* () {
-          yield* Effect.gen(function* () {
-            ctx.currentText = undefined
-            ctx.reasoningMap = {}
-            yield* status.set(ctx.sessionID, { type: "busy" })
-            const _tStream = Date.now()
-            const stream = llm.stream(streamInput)
-            yield* Effect.logInfo("llm_timing", { "session.id": input.sessionID, op: "llm.stream.call", ms: Date.now() - _tStream })
+          const runStream = (activeInput: LLM.StreamInput) =>
+            Effect.gen(function* () {
+              ctx.currentText = undefined
+              ctx.reasoningMap = {}
+              yield* status.set(ctx.sessionID, { type: "busy" })
+              const _tStream = Date.now()
+              const stream = llm.stream(activeInput)
+              yield* Effect.logInfo("llm_timing", { "session.id": input.sessionID, op: "llm.stream.call", ms: Date.now() - _tStream })
 
-            yield* stream.pipe(
-              Stream.tap((event) => {
-                receivedAnyEvent = true
-                return handleEvent(event)
-              }),
-              Stream.takeUntil(() => ctx.needsCompaction),
-              Stream.runDrain,
-            )
-          }          ).pipe(
+              yield* stream.pipe(
+                Stream.tap((event) => {
+                  receivedAnyEvent = true
+                  return handleEvent(event)
+                }),
+                Stream.takeUntil(() => ctx.needsCompaction),
+                Stream.runDrain,
+              )
+            })
+
+          // A media part the upstream refuses must not fail the whole turn.
+          // Providers signal this two ways: an HTTP rejection (400/415/422) or a
+          // client-side UnsupportedFunctionalityError that carries no status. Rerun
+          // once with the media stripped and hand the model a textual note instead.
+          const mediaFallback = (e: unknown) =>
+            Effect.gen(function* () {
+              if (mediaFallbackUsed) return yield* Effect.fail(e)
+              if (!messagesHaveMedia(streamInput.messages)) return yield* Effect.fail(e)
+              const error = parse(e)
+              const apiError = SessionV1.APIError.isInstance(error) ? error.data : undefined
+              const status = apiError?.statusCode
+              const detail = apiError ? `${apiError.message ?? ""} ${apiError.responseBody ?? ""}` : errorMessage(e)
+              const rejected =
+                status === 400 ||
+                status === 415 ||
+                status === 422 ||
+                /functionality not supported|file part media type|unsupported (?:image|audio|video|media)|does not support (?:image|audio|video|media)/i.test(
+                  detail,
+                )
+              if (!rejected) return yield* Effect.fail(e)
+              mediaFallbackUsed = true
+              receivedAnyEvent = false
+              yield* Effect.logWarning("media rejected upstream; retrying without media", {
+                "session.id": input.sessionID,
+                modelID: input.model.id,
+                providerID: input.model.providerID,
+                status,
+              })
+              return yield* runStream({ ...streamInput, messages: stripMediaFromMessages(streamInput.messages) })
+            })
+
+          yield* runStream(streamInput).pipe(
             Effect.onInterrupt(() =>
               Effect.gen(function* () {
                 aborted = true
@@ -674,6 +741,9 @@ const layer = Layer.effect(
               (cause) => !Cause.hasInterruptsOnly(cause),
               (cause) => Effect.fail(Cause.squash(cause)),
             ),
+            // Media the upstream refuses (non-retryable 400) must not fail the
+            // turn; rerun once without the media before the retry policy sees it.
+            Effect.catch(mediaFallback),
             Effect.retry(
               SessionRetry.policy({
                 provider: input.model.providerID,
