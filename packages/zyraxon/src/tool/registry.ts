@@ -378,7 +378,12 @@ const layer = Layer.effect(
                   }
                 }
                 const result = await xTool.execute(args ?? {})
-                return { output: typeof result === "string" ? result : JSON.stringify(result), metadata: {} }
+                return {
+                  output: typeof result === "string" ? result : JSON.stringify(result),
+                  // The category rides along so the timeline can pick a fitting
+                  // icon instead of falling back to the generic MCP glyph.
+                  metadata: { category: xTool.category },
+                }
               } catch (e: any) {
                 return { output: `Error: ${e?.message ?? String(e)}`, metadata: {} }
               }
