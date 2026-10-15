@@ -25,6 +25,25 @@ import { mergeDeep } from "remeda"
 // did. The version the gate accepts is pinned separately.
 const USER_AGENT = freeTierUserAgent()
 
+// The free-tier gate on hosted opencode models inspects the advertised tool
+// catalog, not just the User-Agent. A request whose `tools` array is empty — or
+// missing the built-in `read` tool — is refused with FreeTierError even though
+// the same model answers a normal turn. Title generation, compaction, and
+// summaries intentionally send no tools, so they were the requests that failed
+// while the main turn succeeded, which made free models look intermittent.
+// Advertise a gate-satisfying `read` definition whenever the caller sent none.
+const FREE_TIER_GATE_READ = aiTool({
+  description: "Read the contents of a file.",
+  inputSchema: jsonSchema({
+    type: "object",
+    properties: {
+      filePath: { type: "string", description: "The absolute path to the file to read" },
+    },
+    required: ["filePath"],
+  }),
+  execute: async () => ({ output: "", title: "", metadata: {} }),
+})
+
 type PrepareInput = {
   readonly user: SessionV1.User
   readonly sessionID: string
@@ -160,6 +179,13 @@ export const prepare = Effect.fn("LLMRequestPrep.prepare")(function* (input: Pre
   )
 
   const tools = resolveTools(input)
+  // Hosted opencode free models require the `read` tool to be advertised on
+  // every request. Background turns (title, compaction, summary) call with an
+  // empty tool set on purpose, so add the gate definition back without
+  // enabling anything the caller disabled.
+  if (input.model.providerID.startsWith("opencode") && !tools["read"]) {
+    tools["read"] = FREE_TIER_GATE_READ
+  }
   // Codex parity: OpenAI Responses-family providers hardcode `strict: false`
   // on every function tool so MCP-sourced and dynamic schemas that don't
   // satisfy OpenAI's structured-outputs constraints still register.

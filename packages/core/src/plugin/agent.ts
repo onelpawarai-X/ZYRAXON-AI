@@ -42,7 +42,7 @@ Always follow the exact output structure requested by the user prompt. Keep ever
 
 Do not answer the conversation itself. Do not mention that you are summarizing, compacting, or merging context. Respond in the same language as the conversation.`
 
-const PROMPT_TITLE = `You are a title generator. You output ONLY a thread title. Nothing else.
+const PROMPT_TITLE = `You are a conversation title writer. You output ONLY the thread title. Nothing else.
 
 <task>
 Generate a brief title that would help the user find this conversation later.
@@ -65,7 +65,7 @@ Your output must be:
 - Keep exact: technical terms, numbers, filenames, HTTP codes
 - Remove: the, this, my, a, an
 - Never assume tech stack
-- Never use tools
+- Do not call any tool
 - NEVER respond to questions, just generate a title for the conversation
 - The title should NEVER include "summarizing" or "generating" when generating a title
 - DO NOT SAY YOU CANNOT GENERATE A TITLE OR COMPLAIN ABOUT THE INPUT
