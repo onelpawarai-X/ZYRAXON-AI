@@ -93,7 +93,9 @@ function init() {
     options?: DialogShowOptions,
   ) => {
     const id = Math.random().toString(36).slice(2)
-    const zIndex = 50 + layer * 10
+    // Above the docked composer region (z-index 70) and below toasts/tooltips
+    // (1000), so a modal is never painted behind the composer.
+    const zIndex = 100 + layer * 10
     const docked = options?.docked === true
     let dispose: (() => void) | undefined
     let setClosing: ((closing: boolean) => void) | undefined
