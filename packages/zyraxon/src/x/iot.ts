@@ -62,7 +62,7 @@ export class MQTTController {
     return true
   }
 
-  async publish(topic: string, payload: string, qos = 0, retain = false): Promise<boolean> {
+  async publish(topic: string, payload: string, qos: 0 | 1 | 2 = 0, retain = false): Promise<boolean> {
     if (!this.client) return false
     const tb = new TextEncoder().encode(topic)
     const pb = new TextEncoder().encode(payload)

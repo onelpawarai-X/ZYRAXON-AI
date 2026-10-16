@@ -163,6 +163,7 @@ export class ObjectTracker {
 
   acquireTarget(id: number): void { this.targetId = id; this.locked = true }
   releaseTarget(): void { this.targetId = null; this.locked = false }
+  isLocked(): boolean { return this.locked }
   setFollowParams(distance: number, altitude: number): void { this.followDistance = distance; this.followAltitude = altitude }
 
   track(targetPos: { x: number; y: number; z: number; vx: number; vy: number }, dronePos: { x: number; y: number; z: number }): R {
@@ -266,7 +267,7 @@ export class DroneAutonomy {
       battery: this.battery.checkStatus(),
       geofence: this.geofence.check(pos),
       rth: this.rth.getPhase(),
-      trackerLocked: this.tracker.locked,
+      trackerLocked: this.tracker.isLocked(),
     }
   }
 }

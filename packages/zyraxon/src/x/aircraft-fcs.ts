@@ -208,7 +208,7 @@ export class AircraftFCS {
         electrical: this.electrical.getOverallStatus(),
         fuel: this.fuel.getSummary(),
         pressurization: this.pressurization.getStatus(),
-        landingGear: this.landingGear.getStatus(),
+        landingGear: { gearDown: this.landingGear.isGearDown(), weightOnWheels: this.landingGear.isWeightOnWheels(), maxBrakeTemp: this.landingGear.getHighestBrakeTemp() },
         tcas: this.tcas.getAdvisory(),
         gpws: this.gpws.getStatus(),
         oxygen: this.oxygen.getStatus(),
@@ -686,17 +686,17 @@ export class RadioAltimeter {
   private decisionHeight = 200
   private minimums = 100
   private history: Array<{ height: number; time: number }> = []
-  private onDecision?: () => void
+  private decisionCallback?: () => void
 
   setDecisionHeight(feet: number): void { this.decisionHeight = feet }
   setMinimums(feet: number): void { this.minimums = feet }
-  onDecision(cb: () => void): void { this.onDecision = cb }
+  onDecision(cb: () => void): void { this.decisionCallback = cb }
 
   update(height: number): void {
     this.height = height
     this.history.push({ height, time: Date.now() })
     if (this.history.length > 5000) this.history.shift()
-    if (height <= this.decisionHeight) this.onDecision?.()
+    if (height <= this.decisionHeight) this.decisionCallback?.()
   }
 
   getHeight(): number { return this.height }

@@ -4,6 +4,8 @@ import * as fs from "node:fs/promises"
 import * as path from "node:path"
 import { decodePngToRgb, encodePng } from "./desktop-control"
 import { currentPlatform, describeMissing, haveCommand, run, runBinary, runCommand, tempPath } from "./process-utils"
+import { ensureFfmpeg, ffmpegPathEnv } from "../util/media-ffmpeg"
+import { Effect } from "effect"
 
 const FFMPEG_INSTALL = {
   windows: "Install with: winget install Gyan.FFmpeg",
@@ -24,7 +26,11 @@ export type MediaResult = { ok: boolean; data?: unknown; error?: string }
 type Rgb = { data: Buffer; width: number; height: number }
 
 async function requireFfmpeg(): Promise<void> {
-  if (!(await haveCommand("ffmpeg"))) throw new Error(describeMissing("ffmpeg", FFMPEG_INSTALL))
+  if (await haveCommand("ffmpeg")) return
+  // The app fetches a static build once instead of telling the user to install
+  // ffmpeg by hand. Only a genuine download failure surfaces the install hint.
+  const fetched = await ensureFfmpeg().pipe(Effect.runPromise)
+  if (!fetched || !(await haveCommand("ffmpeg"))) throw new Error(describeMissing("ffmpeg", FFMPEG_INSTALL))
 }
 
 async function probeSize(file: string): Promise<{ width: number; height: number }> {

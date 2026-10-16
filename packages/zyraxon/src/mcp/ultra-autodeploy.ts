@@ -1533,7 +1533,7 @@ class TrafficAnalyzer {
     }
 
     for (let i = 0; i < sampleSize; i++) {
-      const addr = this.selectTarget(ruleId, `10.0.${Math.floor(i / 256)}.${i % 256}`);
+      const addr = this.selectTarget(ruleId, `10.0.${Math.floor(i / 256)}.${i % 256}`).address;
       distribution.set(addr, (distribution.get(addr) || 0) + 1);
     }
 

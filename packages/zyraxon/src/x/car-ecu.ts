@@ -178,24 +178,24 @@ export class StabilityControl {
 }
 
 export class CruiseControl {
-  private active = false; private setSpeed = 0
+  private active = false; private _setSpeed = 0
   private mode: 'standard'|'adaptive'|'sport'|'limiter' = 'standard'
   private followDistance = 3 // seconds
   private limiterMax = 0
   private pid_kp = 0.5; private pid_ki = 0.1; private pid_kd = 0.2
   private integral = 0; private prevError = 0
 
-  activate(speed: number): void { this.active = true; this.setSpeed = Math.max(30, Math.min(200, speed)); this.integral = 0; this.prevError = 0 }
+  activate(speed: number): void { this.active = true; this._setSpeed = Math.max(30, Math.min(200, speed)); this.integral = 0; this.prevError = 0 }
   deactivate(): void { this.active = false; this.integral = 0 }
   isActive(): boolean { return this.active }
   setMode(m: typeof this.mode): void { this.mode = m }
-  setSpeed(s: number): void { this.setSpeed = Math.max(30, Math.min(200, s)) }
+  setSpeed(s: number): void { this._setSpeed = Math.max(30, Math.min(200, s)) }
   setFollowDistance(d: number): void { this.followDistance = Math.max(1, Math.min(5, d)) }
 
   compute(currentSpeed: number, leadVehicleSpeed: number | null, dt: number): { throttle: number; braking: number } {
     if (!this.active) return { throttle: 0, braking: 0 }
 
-    let targetSpeed = this.setSpeed
+    let targetSpeed = this._setSpeed
     if (this.mode === 'adaptive' && leadVehicleSpeed !== null) {
       const timeGap = this.followDistance
       targetSpeed = Math.min(targetSpeed, leadVehicleSpeed)
@@ -212,7 +212,7 @@ export class CruiseControl {
     return { throttle: 0, braking: Math.min(100, -output) }
   }
 
-  getStatus(): Record<string, any> { return { active: this.active, setSpeed: this.setSpeed, mode: this.mode, followDistance: this.followDistance } }
+  getStatus(): Record<string, any> { return { active: this.active, setSpeed: this._setSpeed, mode: this.mode, followDistance: this.followDistance } }
 }
 
 export class ADASSystem {

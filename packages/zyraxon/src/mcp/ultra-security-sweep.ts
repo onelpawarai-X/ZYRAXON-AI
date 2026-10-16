@@ -332,7 +332,7 @@ class SymmetricCipherAnalyzer {
     }
     const statistic = Math.abs(s) / Math.sqrt(data.length * 8)
     // P-value approx using erfc
-    const pValue = Math.erfc(statistic / Math.sqrt(2))
+    const pValue = (Math as any).erfc(statistic / Math.sqrt(2))
     return { statistic, passed: pValue > 0.01 }
   }
 
@@ -356,7 +356,7 @@ class SymmetricCipherAnalyzer {
     const expected = 2 * n * pi * (1 - pi)
     const variance = expected * (1 - 2 * pi * (1 - pi))
     const statistic = Math.abs(runs - expected) / Math.sqrt(variance || 1)
-    const pValue = Math.erfc(statistic / Math.sqrt(2))
+    const pValue = (Math as any).erfc(statistic / Math.sqrt(2))
 
     return { statistic, passed: pValue > 0.01 }
   }
@@ -529,9 +529,9 @@ class RSAAnalyzer {
     }
 
     // Continued fraction expansion of e/n
-    const cf = NumberTheory.continuedFraction(e, n)
+    const cf = RSAAnalyzer.continuedFraction(e, n)
     for (let i = 1; i < cf.length; i++) {
-      const [k, d] = NumberTheory.convergent(cf.slice(0, i + 1))
+      const [k, d] = RSAAnalyzer.convergent(cf.slice(0, i + 1))
       if (d === 0n) continue
       if ((e * d - 1n) % (n - 1n) !== 0n) continue
 
@@ -947,7 +947,7 @@ class NetworkSecurityAnalyzer {
     weakestLink: number
     recommendations: string[]
   } {
-    const strengths = chain.map(cert => {
+    const strengths: number[] = chain.map(cert => {
       const alg = cert.algorithm.toLowerCase()
       if (alg.includes("ecdsa") || alg.includes("ec")) return cert.keySize >= 256 ? 128 : 64
       if (alg.includes("rsa")) return cert.keySize >= 4096 ? 140 : cert.keySize >= 2048 ? 112 : 80
@@ -1071,7 +1071,7 @@ class TimingAttackAnalyzer {
 
     // Approximate p-value (two-tailed, using t-distribution approximation)
     const df = n1 + n2 - 2
-    const pValue = 2 * (1 - Math.min(1, 0.5 * (1 + Math.erf(Math.abs(tStatistic) / Math.sqrt(2)))))
+    const pValue = 2 * (1 - Math.min(1, 0.5 * (1 + (Math as any).erf(Math.abs(tStatistic) / Math.sqrt(2)))))
 
     return {
       tStatistic,

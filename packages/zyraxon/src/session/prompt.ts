@@ -4,6 +4,7 @@ import { LayerNode } from "@zyraxon-ai/core/effect/layer-node"
 import { PermissionV1 } from "@zyraxon-ai/core/v1/permission"
 import path from "path"
 import { SessionV1 } from "@zyraxon-ai/core/v1/session"
+import fs from "node:fs"
 import os from "os"
 import { SessionID, MessageID, PartID } from "./schema"
 import { MessageV2 } from "./message-v2"
@@ -43,6 +44,8 @@ import { FSUtil } from "@zyraxon-ai/core/fs-util"
 import { Truncate } from "@/tool/truncate"
 import { Image } from "@/image/image"
 import { decodeDataUrl } from "@/util/data-url"
+import { normalizeMedia } from "@/util/media-normalize"
+import { MAX_INLINE_MEDIA_DECODED_BYTES } from "@/util/media"
 import { Process } from "@/util/process"
 import { Cause, Effect, Exit, Latch, Layer, Option, Scope, Context, Schema, Types } from "effect"
 import { InstanceState } from "@/effect/instance-state"
@@ -104,6 +107,93 @@ function isOrphanedInterruptedTool(part: SessionV1.ToolPart) {
   // cleanup() marks abandoned tool_use blocks this way after retries/aborts.
   // They are not pending work and must not trigger an assistant-prefill request.
   return part.state.status === "error" && part.state.metadata?.interrupted === true
+}
+
+// A part before its id is assigned. The conditional distributes over the
+// SessionV1.Part union the same way the in-layer `Draft<T>` does, so
+// `mediaFileParts` produces exactly what `resolvePart` returns.
+type PromptDraftPart = SessionV1.Part extends infer P
+  ? P extends SessionV1.Part
+    ? Omit<P, "id"> & { id?: string }
+    : never
+  : never
+
+interface MediaPartFields {
+  messageID: SessionV1.Part["messageID"]
+  sessionID: SessionV1.Part["sessionID"]
+  id?: string
+  source?: SessionV1.FilePart["source"]
+}
+
+/**
+ * Turn every normalized part into saved file parts, noting anything that was
+ * re-encoded or split so the model knows how to treat each attachment.
+ *
+ * `normalizeMedia` returns one part for a file that fits and several ordered
+ * parts for an oversized audio recording, so the caller flat-maps the result.
+ */
+function mediaFileParts(
+  normalized: readonly import("@/util/media-normalize").NormalizedMedia[],
+  base: MediaPartFields,
+  sourceMime: string,
+  baseName: string | undefined,
+): { parts: PromptDraftPart[] }[] {
+  const split = normalized.length > 1
+  const total = normalized[0]?.chunkCount ?? normalized.length
+  return normalized.map((item, index) => {
+    const seconds = Math.round(item.sourceSeconds ?? 0)
+    const chunkNote = split ? ` (part ${item.chunkIndex ?? index + 1} of ${total})` : ""
+    const dropped =
+      item.action === "timelapse"
+        ? ` The source is a ${seconds}s video; it was compressed into a short timelapse that samples ${item.sampledFrames ?? 0} frames evenly across the whole timeline.`
+        : item.action === "audio-clip"
+          ? ` The source is ${seconds}s of audio re-encoded at a lower bitrate so the whole recording is preserved${split ? ` and split into ${total} ordered parts` : ""}; transcribe and describe all of it, it is not truncated.`
+          : item.action === "video-clip"
+            ? ` The source is a ${seconds}s clip re-encoded to fit the upload limit; the whole clip is preserved, not just the opening.`
+            : ""
+    // The guidance must match what actually happened. A re-encoded audio or short
+    // video clip keeps the whole recording, so telling the model it did not
+    // hear/see everything makes it wrongly refuse.
+    const guidance =
+      item.action === "timelapse"
+        ? " You are viewing sampled frames, not every frame; describe what is shown and say that the timeline was sampled."
+        : item.action === "audio-clip" || item.action === "video-clip"
+          ? " The entire recording is attached; listen to or watch all of it and describe the full content."
+          : ""
+    const name =
+      item.action === "timelapse"
+        ? `${baseName ?? "video"} (timelapse).mp4`
+        : item.action === "audio-clip"
+          ? `${baseName ?? "audio"}${split ? `.${item.chunkIndex ?? index + 1}` : ""}.mp3`
+          : item.action === "video-clip" && item.mime !== sourceMime
+            ? `${baseName ?? "media"}.mp4`
+            : baseName
+    return {
+      parts: [
+        {
+          ...(index === 0 && base.id ? { id: base.id } : {}),
+          messageID: base.messageID,
+          sessionID: base.sessionID,
+          type: "file" as const,
+          url: `data:${item.mime};base64,${item.data.toString("base64")}`,
+          mime: item.mime,
+          filename: name!,
+          source: base.source,
+        },
+        ...(dropped
+          ? [
+              {
+                messageID: base.messageID,
+                sessionID: base.sessionID,
+                type: "text" as const,
+                synthetic: true,
+                text: `${dropped}${chunkNote}${guidance}`,
+              },
+            ]
+          : []),
+      ],
+    }
+  })
 }
 
 export interface Interface {
@@ -658,6 +748,11 @@ const layer = Layer.effect(
       return yield* Effect.die(err)
     })
 
+    const defaultModelResolved = Effect.fnUntraced(function* () {
+      const def = yield* provider.defaultModel().pipe(Effect.orDie)
+      return yield* getModel(def.providerID, def.modelID, "" as SessionID)
+    })
+
     const currentModel = Effect.fnUntraced(function* (sessionID: SessionID) {
       const current = yield* db
         .select({ model: SessionTable.model })
@@ -852,6 +947,53 @@ const layer = Layer.effect(
                   { ...part, messageID: info.id, sessionID: input.sessionID },
                 ]
               }
+              // Media the UI attached arrives as an inline data URL. Large audio
+              // and video must be re-encoded (and split) here, exactly like a
+              // file-path attachment, or the raw bytes reach the gateway and it
+              // rejects the oversized body before the model ever hears anything.
+              if (part.mime.startsWith("audio/") || part.mime.startsWith("video/")) {
+                const comma = part.url.indexOf(",")
+                const head = comma === -1 ? "" : part.url.slice(0, comma)
+                const raw =
+                  head.includes(";base64") && comma !== -1
+                    ? Buffer.from(part.url.slice(comma + 1), "base64")
+                    : Buffer.from(decodeDataUrl(part.url))
+                if (raw.byteLength > MAX_INLINE_MEDIA_DECODED_BYTES) {
+                  // normalizeMedia re-encodes by reading the source from disk, so
+                  // spill the inline bytes to a temp file first. Passing the
+                  // filename (as before) made ffmpeg fail on a nonexistent path
+                  // and silently fall back to the oversized original.
+                  const scratchDir = fs.mkdtempSync(path.join(os.tmpdir(), "zyraxon-inline-"))
+                  const scratch = path.join(scratchDir, part.filename ?? "attachment")
+                  fs.writeFileSync(scratch, raw)
+                  const normalized = yield* normalizeMedia(scratch, part.mime, raw).pipe(
+                    Effect.ensuring(
+                      Effect.sync(() => {
+                        try {
+                          fs.rmSync(scratchDir, { recursive: true, force: true })
+                        } catch {}
+                      }),
+                    ),
+                  )
+                  const base = {
+                    id: part.id,
+                    messageID: info.id,
+                    sessionID: input.sessionID,
+                    source: part.source,
+                  }
+                  const expanded = mediaFileParts(normalized, base, part.mime, part.filename).flatMap((x) => x.parts)
+                  if (normalized.length > 1 || normalized[0]?.action !== "unchanged") {
+                    yield* Effect.logInfo("media normalized for inline upload", {
+                      filename: part.filename,
+                      mime: part.mime,
+                      parts: normalized.length,
+                      action: normalized[0]?.action,
+                      sourceBytes: raw.byteLength,
+                    })
+                  }
+                  return expanded
+                }
+              }
               break
             case "file:": {
               yield* Effect.logInfo("file", { mime: part.mime })
@@ -994,6 +1136,26 @@ const layer = Layer.effect(
                 ]
               }
 
+              const rawMedia = Buffer.from(yield* fsys.readFile(filepath).pipe(Effect.catch(Effect.die)))
+              const normalized = yield* normalizeMedia(filepath, mime, rawMedia)
+              if (normalized.length > 1 || normalized[0]?.action !== "unchanged") {
+                yield* Effect.logInfo("media normalized for inline upload", {
+                  filepath,
+                  mime,
+                  parts: normalized.length,
+                  action: normalized[0]?.action,
+                  outputMime: normalized[0]?.mime,
+                  sourceBytes: rawMedia.byteLength,
+                  sourceSeconds: normalized[0]?.sourceSeconds,
+                  sampledFrames: normalized[0]?.sampledFrames,
+                })
+              }
+              const fileBase = {
+                id: part.id,
+                messageID: info.id,
+                sessionID: input.sessionID,
+                source: part.source,
+              }
               return [
                 {
                   messageID: info.id,
@@ -1002,18 +1164,7 @@ const layer = Layer.effect(
                   synthetic: true,
                   text: `Called the Read tool with the following input: {"filePath":"${filepath}"}`,
                 },
-                {
-                  id: part.id,
-                  messageID: info.id,
-                  sessionID: input.sessionID,
-                  type: "file",
-                  url:
-                    `data:${mime};base64,` +
-                    Buffer.from(yield* fsys.readFile(filepath).pipe(Effect.catch(Effect.die))).toString("base64"),
-                  mime,
-                  filename: part.filename!,
-                  source: part.source,
-                },
+                ...mediaFileParts(normalized, fileBase, mime, part.filename).flatMap((x) => x.parts),
               ]
             }
           }
@@ -1182,7 +1333,7 @@ const layer = Layer.effect(
                 model: modelKey,
               })
               // Delete the error message so loop can continue with fallback model
-              yield* sessions.deleteMessage(lastAssistant.id)
+              yield* sessions.removeMessage({ sessionID, messageID: lastAssistant.id })
               continue
             }
             yield* Effect.logInfo("exiting loop due to assistant error", {
@@ -1223,10 +1374,10 @@ const layer = Layer.effect(
           if (rateLimitedModels.has(currentModelKey)) {
             // Try default model first
             const defaultModel = yield* provider.defaultModel().pipe(Effect.orDie)
-            const defaultKey = `${defaultModel.providerID}/${defaultModel.id}`
+            const defaultKey = `${defaultModel.providerID}/${defaultModel.modelID}`
             if (!rateLimitedModels.has(defaultKey)) {
               modelProviderID = defaultModel.providerID
-              modelModelID = defaultModel.id
+              modelModelID = defaultModel.modelID
             } else {
               // Default is also rate-limited — find any non-rate-limited model
               const allProviders = yield* provider.list().pipe(Effect.orDie)
@@ -1236,7 +1387,7 @@ const layer = Layer.effect(
                   const mk = `${prov.id}/${mid}`
                   if (!rateLimitedModels.has(mk) && m.status === "active") {
                     modelProviderID = prov.id
-                    modelModelID = mid
+                    modelModelID = ModelV2.ID.make(mid)
                     found = true
                     break
                   }
@@ -1260,14 +1411,14 @@ const layer = Layer.effect(
           const _tModel = Date.now()
           const model = yield* getModel(modelProviderID, modelModelID, sessionID).pipe(
             Effect.timeout(8_000),
-            Effect.catchTag("TimeoutException", () =>
+            Effect.catchTag("TimeoutError", () =>
               Effect.gen(function* () {
                 yield* Effect.logWarning("getModel timed out, falling back to default model", {
                   "session.id": sessionID,
                   providerID: lastUser.model.providerID,
                   modelID: lastUser.model.modelID,
                 })
-                return yield* provider.defaultModel().pipe(Effect.orDie)
+                return yield* defaultModelResolved()
               }),
             ),
           )
@@ -1522,7 +1673,7 @@ const layer = Layer.effect(
 
             const finished = handle.message.finish && !["tool-calls", "unknown"].includes(handle.message.finish)
             if (finished && !handle.message.error) {
-              const assistantText = (handle.message.parts ?? [])
+              const assistantText = (yield* handle.parts)
                 .filter((p): p is SessionV1.TextPart => p.type === "text")
                 .map((p) => p.text)
                 .join("\n")
@@ -1573,14 +1724,14 @@ const layer = Layer.effect(
                       "session.id": sessionID,
                       rateLimitedModels: [...rateLimitedModels].join(","),
                     })
-                    handle.message.error = {
+                    handle.message.error = new NamedError.Unknown({
                       message: "All available models are rate-limited. Please wait a moment and try again, or switch to a different provider.",
-                    }
+                    }).toObject()
                     yield* sessions.updateMessage(handle.message)
                     return "break" as const
                   }
                   // Delete the error message so loop can continue with fallback model
-                  yield* sessions.deleteMessage(handle.message.id)
+                  yield* sessions.removeMessage({ sessionID, messageID: handle.message.id })
                   return "continue" as const
                 }
               }

@@ -164,18 +164,15 @@ export const githubInstall = Effect.fn("Cli.github.install")(function* () {
     return yield* store.load({ directory: root })
   }))
   const gitSvc = yield* Git.Service
+  const providers = { ...(yield* ProviderCatalog.Service.use((service) => service.get())) }
+  // TODO: add guide for copilot, for now just hide it
+  delete providers["github-copilot"]
   yield* Effect.promise(async () => {
     {
       UI.empty()
       prompts.intro("Install GitHub agent")
       const app = await getAppInfo()
       await installGitHubApp()
-
-      const providers = await Effect.runPromise(ProviderCatalog.Service.use((service) => service.get())).then((p) => {
-        // TODO: add guide for copilot, for now just hide it
-        delete p["github-copilot"]
-        return p
-      })
 
       const provider = await promptProvider()
       const model = await promptModel()

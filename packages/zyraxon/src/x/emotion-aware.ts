@@ -6,9 +6,9 @@
  * Face analysis, voice tone, text sentiment, behavioral patterns
  */
 
-type Emotion = "happy" | "sad" | "angry" | "frustrated" | "excited" | "calm" | "anxious" | "confused" | "neutral"
+export type Emotion = "happy" | "sad" | "angry" | "frustrated" | "excited" | "calm" | "anxious" | "confused" | "neutral"
 
-type EmotionReading = {
+export type EmotionReading = {
   emotion: Emotion
   confidence: number
   source: "face" | "voice" | "text" | "behavior" | "combined"
@@ -17,7 +17,7 @@ type EmotionReading = {
   arousal: number
 }
 
-type AdaptationRule = {
+export type AdaptationRule = {
   trigger: Emotion[]
   response: {
     tone: string

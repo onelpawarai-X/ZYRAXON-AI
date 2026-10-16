@@ -1055,8 +1055,8 @@ function inferTypes(ast: ASTNode, source: string): TypeInfo[] {
 
       if (node.metadata.kind === "const") { confidence = Math.min(1, confidence + 0.1); constraints.push("immutable") }
 
-      varTypes.set(node.name, { type: inferredType, confidence, constraints })
-      types.push({ name: node.name, inferredType, confidence, constraints, origin: `${node.metadata.kind} at line ${node.line}` })
+      varTypes.set(node.name!, { type: inferredType, confidence, constraints })
+      types.push({ name: node.name!, inferredType, confidence, constraints, origin: `${node.metadata.kind} at line ${node.line}` })
     }
 
     if (node.type === "FunctionDecl") {
@@ -1120,10 +1120,10 @@ function generateFunctionFromSpec(spec: {
   return `/**\n * ${spec.description}\n * Algorithm: ${spec.algorithm || "Custom implementation"}\n * Time Complexity: ${spec.complexity || "O(n)"}\n */\nexport function ${spec.name}(${paramList}): ${spec.returnType} {\n${body}\n}`
 }
 
-function generateAlgorithmBody(spec: { name: string; returnType: string; algorithm?: string }): string {
+function generateAlgorithmBody(spec: { name: string; returnType: string; algorithm?: string; params?: Array<{ name: string; type: string }> }): string {
   const lines: string[] = []
   lines.push("  // Validate inputs")
-  for (const param of spec.params) {
+  for (const param of spec.params ?? []) {
     if (param.type === "number") {
       lines.push(`  if (typeof ${param.name} !== "number" || isNaN(${param.name})) throw new TypeError("${param.name} must be a valid number")`)
     }
@@ -1305,7 +1305,7 @@ interface SecurityIssue {
   severity: "critical" | "high" | "medium" | "low" | "info"
   type: string
   line: number
-  column: number
+  column?: number
   description: string
   recommendation: string
   cwe?: string
@@ -1424,7 +1424,7 @@ export async function ultraCodeGen(args: {
   generate?: "function" | "class" | "tests" | "docs" | "all"
   analyze?: boolean
   security?: boolean
-}): Promise<{ success: boolean; output: string; details?: Record<string, any> }> {
+}): Promise<{ success: boolean; output: string; error?: string; details?: Record<string, any> }> {
   try {
     const source = args.source || ""
     const language = args.language || "typescript"
@@ -1484,7 +1484,7 @@ export async function ultraCodeGen(args: {
       if (smells.length > 0) {
         results.push("── Code Smells ──")
         for (const s of smells) {
-          results.push(`  [${s.severity || "medium"}] ${s.pattern}: ${s.description}`)
+          results.push(`  [${(s as any).severity || "medium"}] ${s.pattern}: ${s.description}`)
           results.push(`         → ${s.suggestion}`)
         }
         results.push("")
@@ -1570,364 +1570,6 @@ export async function ultraCodeGen(args: {
   } catch (error: any) {
     return { success: false, output: "", error: error.message }
   }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// SECTION 18: DETECT CODE SMELLS
-// ═══════════════════════════════════════════════════════════════════
-interface SmellResult { pattern: string; line: number; severity: string; description: string; suggestion: string; }
-
-function detectCodeSmells(source: string, ast: ASTNode): SmellResult[] {
-  const smells: SmellResult[] = []
-  const lines = source.split("\n")
-
-  // Long Method
-  const functions = extractFunctions(ast)
-  for (const fn of functions) {
-    if (fn.bodyLines > 50) {
-      smells.push({ pattern: "Long Method", line: 0, severity: "high", description: `Function "${fn.name}" is ${fn.bodyLines} lines (max 50)`, suggestion: "Extract into smaller functions" })
-    }
-  }
-
-  // God Class
-  const classes = extractFunctions(ast)
-  if (classes.length > 30) {
-    smells.push({ pattern: "God Class", line: 0, severity: "critical", description: `File has ${classes.length} functions (max 30)`, suggestion: "Split into multiple modules" })
-  }
-
-  // Magic Numbers
-  for (let i = 0; i < lines.length; i++) {
-    const matches = lines[i].match(/\b\d{3,}\b/g) || []
-    for (const m of matches) {
-      if (m !== "0" && m !== "1" && !lines[i].includes("//") && !lines[i].includes("const")) {
-        smells.push({ pattern: "Magic Number", line: i + 1, severity: "low", description: `Magic number ${m} on line ${i + 1}`, suggestion: "Extract to named constant" })
-        break
-      }
-    }
-  }
-
-  // Deep Nesting
-  function checkNesting(node: ASTNode, depth: number = 0) {
-    if (depth > 4) {
-      smells.push({ pattern: "Deep Nesting", line: node.line, severity: "medium", description: `Nesting depth ${depth} exceeds 4`, suggestion: "Use early returns or extract method" })
-    }
-    for (const child of node.children) checkNesting(child, depth + 1)
-  }
-  checkNesting(ast)
-
-  // Duplicate Code Detection
-  const codeBlocks = new Map<string, number[]>()
-  for (let i = 0; i < lines.length - 5; i++) {
-    const block = lines.slice(i, i + 5).join("\n").trim()
-    if (block.length > 50 && !block.startsWith("//")) {
-      if (!codeBlocks.has(block)) codeBlocks.set(block, [])
-      codeBlocks.get(block)!.push(i + 1)
-    }
-  }
-  for (const [block, lineNums] of codeBlocks) {
-    if (lineNums.length > 1) {
-      smells.push({ pattern: "Duplicate Code", line: lineNums[0], severity: "high", description: `Code block duplicated ${lineNums.length}x at lines: ${lineNums.join(", ")}`, suggestion: "Extract to shared function" })
-    }
-  }
-
-  // Long Parameter List
-  function checkParams(node: ASTNode) {
-    if (node.type === "FunctionDecl" && node.metadata.params && (node.metadata.params as string[]).length > 5) {
-      smells.push({ pattern: "Long Parameter List", line: node.line, severity: "medium", description: `Function "${node.name}" has ${(node.metadata.params as string[]).length} params (max 5)`, suggestion: "Group parameters into object/config" })
-    }
-    for (const child of node.children) checkParams(child)
-  }
-  checkParams(ast)
-
-  // Dead Code (unreachable after return)
-  for (let i = 0; i < lines.length - 1; i++) {
-    if (lines[i].trim().startsWith("return ") && lines[i + 1]?.trim() && !lines[i + 1].trim().startsWith("}") && !lines[i + 1].trim().startsWith("//") && !lines[i + 1].trim().startsWith("case ")) {
-      smells.push({ pattern: "Dead Code", line: i + 2, severity: "medium", description: `Unreachable code after return on line ${i + 1}`, suggestion: "Remove dead code or restructure" })
-    }
-  }
-
-  return smells
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// SECTION 19: TYPE INFERENCE ENGINE
-// ═══════════════════════════════════════════════════════════════════
-interface TypeResult { name: string; inferredType: string; confidence: number; constraints: string[]; }
-
-function inferTypes(ast: ASTNode, source: string): TypeResult[] {
-  const types: TypeResult[] = []
-  const lines = source.split("\n")
-  const variableTypes = new Map<string, { type: string; confidence: number; constraints: string[] }>()
-
-  function walk(node: ASTNode) {
-    // Variable declarations
-    if (node.type === "VariableDeclaration" || (node.type === "BinaryExpr" && node.operator === "=")) {
-      const varName = node.name || `var_${node.line}`
-      let inferredType = "any"
-      let confidence = 0.3
-      const constraints: string[] = []
-
-      // Check assignment value
-      if (node.children.length > 0) {
-        const valueNode = node.children[0]
-        if (valueNode.type === "Literal") {
-          const val = valueNode.value
-          if (typeof val === "number") {
-            inferredType = Number.isInteger(val) ? "number" : "float"
-            confidence = 0.95
-            constraints.push(`value = ${val}`)
-          } else if (typeof val === "string") {
-            inferredType = "string"
-            confidence = 0.95
-            constraints.push(`length = ${val.length}`)
-          } else if (typeof val === "boolean") {
-            inferredType = "boolean"
-            confidence = 0.95
-          } else if (Array.isArray(val)) {
-            inferredType = "array"
-            confidence = 0.8
-            constraints.push(`length = ${val.length}`)
-          } else if (typeof val === "object" && val !== null) {
-            inferredType = "object"
-            confidence = 0.8
-          }
-        } else if (valueNode.type === "BinaryExpr") {
-          if (["+", "-", "*", "/", "%"].includes(valueNode.operator)) {
-            inferredType = "number"
-            confidence = 0.7
-            constraints.push(`arithmetic: ${valueNode.operator}`)
-          } else if (["==", "===", "!=", "!==", ">", "<", ">=", "<="].includes(valueNode.operator)) {
-            inferredType = "boolean"
-            confidence = 0.7
-            constraints.push(`comparison: ${valueNode.operator}`)
-          }
-        } else if (valueNode.type === "CallExpr") {
-          inferredType = "return_type_of_" + (valueNode.name || "unknown")
-          confidence = 0.4
-          constraints.push(`function call: ${valueNode.name}`)
-        }
-      }
-
-      variableTypes.set(varName, { type: inferredType, confidence, constraints })
-    }
-
-    // Function parameters
-    if (node.type === "FunctionDecl" && node.metadata.params) {
-      for (const param of node.metadata.params as string[]) {
-        variableTypes.set(param, { type: "parameter", confidence: 0.5, constraints: ["function parameter"] })
-      }
-    }
-
-    // Type annotations
-    if (source.includes(`: ${node.name}`) || source.includes(`as ${node.name}`)) {
-      const varName = node.name || "unknown"
-      if (variableTypes.has(varName)) {
-        variableTypes.get(varName)!.confidence = 1.0
-        variableTypes.get(varName)!.constraints.push("explicit annotation")
-      }
-    }
-
-    for (const child of node.children) walk(child)
-  }
-  walk(ast)
-
-  for (const [name, info] of variableTypes) {
-    types.push({ name, inferredType: info.type, confidence: info.confidence, constraints: info.constraints })
-  }
-
-  return types
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// SECTION 20: SECURITY ANALYSIS
-// ═══════════════════════════════════════════════════════════════════
-interface SecurityIssue { type: string; severity: string; line: number; description: string; recommendation: string; cwe?: string; cvss?: number; }
-
-function analyzeSecurity(source: string, ast: ASTNode): SecurityIssue[] {
-  const issues: SecurityIssue[] = []
-  const lines = source.split("\n")
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    const lineNum = i + 1
-
-    // SQL Injection
-    if (line.includes("query(") && (line.includes("+") || line.includes("${") || line.includes("template"))) {
-      issues.push({ type: "SQL Injection", severity: "critical", line: lineNum, description: "String concatenation in SQL query", recommendation: "Use parameterized queries", cwe: "CWE-89", cvss: 9.8 })
-    }
-
-    // XSS
-    if (line.includes("innerHTML") || line.includes("dangerouslySetInnerHTML")) {
-      issues.push({ type: "XSS", severity: "high", line: lineNum, description: "Direct HTML injection", recommendation: "Sanitize input, use textContent", cwe: "CWE-79", cvss: 6.1 })
-    }
-
-    // Hardcoded Secrets
-    if (line.match(/(password|secret|api_key|token|apikey)\s*[:=]\s*["'][^"']+["']/i)) {
-      issues.push({ type: "Hardcoded Secret", severity: "critical", line: lineNum, description: "Secret/token hardcoded in source", recommendation: "Use environment variables", cwe: "CWE-798", cvss: 9.1 })
-    }
-
-    // eval/exec
-    if (line.includes("eval(") || line.includes("exec(") || line.includes("Function(")) {
-      issues.push({ type: "Code Injection", severity: "critical", line: lineNum, description: "Dynamic code execution", recommendation: "Avoid eval; use safe alternatives", cwe: "CWE-94", cvss: 9.8 })
-    }
-
-    // Path Traversal
-    if (line.includes("path.join(") || line.includes("readFile") || line.includes("writeFile")) {
-      if (line.includes("+") || line.includes("${")) {
-        issues.push({ type: "Path Traversal", severity: "high", line: lineNum, description: "Dynamic file path construction", recommendation: "Validate and sanitize paths", cwe: "CWE-22", cvss: 7.5 })
-      }
-    }
-
-    // Insecure HTTP
-    if (line.includes("http://") && !line.includes("localhost") && !line.includes("127.0.0.1")) {
-      issues.push({ type: "Insecure Transport", severity: "medium", line: lineNum, description: "Using HTTP instead of HTTPS", recommendation: "Use HTTPS for all external connections", cwe: "CWE-319", cvss: 5.3 })
-    }
-
-    // Weak Crypto
-    if (line.includes("md5") || line.includes("sha1") || line.includes("createHash('md5'")) {
-      issues.push({ type: "Weak Cryptography", severity: "high", line: lineNum, description: "Weak hash algorithm (MD5/SHA1)", recommendation: "Use SHA-256 or stronger", cwe: "CWE-328", cvss: 7.5 })
-    }
-
-    // Random for security
-    if (line.includes("Math.random()") && (line.includes("token") || line.includes("key") || line.includes("secret") || line.includes("password"))) {
-      issues.push({ type: "Weak Randomness", severity: "high", line: lineNum, description: "Math.random() used for security", recommendation: "Use crypto.randomBytes()", cwe: "CWE-330", cvss: 7.5 })
-    }
-
-    // CORS wildcard
-    if (line.includes("Access-Control-Allow-Origin") && line.includes("*")) {
-      issues.push({ type: "CORS Misconfiguration", severity: "medium", line: lineNum, description: "CORS wildcard allows any origin", recommendation: "Restrict to specific origins", cwe: "CWE-942", cvss: 5.3 })
-    }
-
-    // Prototype Pollution
-    if (line.includes("__proto__") || line.includes("constructor[") || line.includes("Object.assign(")) {
-      issues.push({ type: "Prototype Pollution", severity: "high", line: lineNum, description: "Potential prototype pollution vector", recommendation: "Use Object.create(null) or freeze prototypes", cwe: "CWE-1321", cvss: 7.5 })
-    }
-  }
-
-  return issues
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// SECTION 21: FUNCTION GENERATOR FROM SPEC
-// ═══════════════════════════════════════════════════════════════════
-function generateFunctionFromSpec(spec: { name: string; params: Array<{ name: string; type: string }>; returnType: string; description: string; algorithm: string; complexity: string }): string {
-  const paramList = spec.params.map(p => `${p.name}: ${p.type || "any"}`).join(", ")
-  const paramNames = spec.params.map(p => p.name).join(", ")
-
-  let body = ""
-  switch (spec.algorithm) {
-    case "binary_search":
-      body = `
-  let left = 0, right = arr.length - 1;
-  while (left <= right) {
-    const mid = Math.floor((left + right) / 2);
-    if (arr[mid] === target) return mid;
-    if (arr[mid] < target) left = mid + 1;
-    else right = mid - 1;
-  }
-  return -1;`
-      break
-    case "merge_sort":
-      body = `
-  if (arr.length <= 1) return arr;
-  const mid = Math.floor(arr.length / 2);
-  const left = mergeSort(arr.slice(0, mid));
-  const right = mergeSort(arr.slice(mid));
-  return merge(left, right);`
-      break
-    case "bfs":
-      body = `
-  const visited = new Set();
-  const queue = [start];
-  visited.add(start);
-  while (queue.length > 0) {
-    const node = queue.shift()!;
-    for (const neighbor of graph[node] || []) {
-      if (!visited.has(neighbor)) {
-        visited.add(neighbor);
-        queue.push(neighbor);
-      }
-    }
-  }
-  return visited;`
-      break
-    case "dynamic_programming":
-      body = `
-  const dp = new Array(n + 1).fill(0);
-  dp[0] = 0;
-  dp[1] = 1;
-  for (let i = 2; i <= n; i++) {
-    dp[i] = dp[i - 1] + dp[i - 2];
-  }
-  return dp[n];`
-      break
-    default:
-      body = `
-  // TODO: Implement ${spec.description}
-  throw new Error("Not implemented");`
-  }
-
-  return `function ${spec.name}(${paramList}): ${spec.returnType || "any"} {${body}
-}`
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// SECTION 22: TEST SUITE GENERATOR
-// ═══════════════════════════════════════════════════════════════════
-function generateTestSuite(source: string, ast: ASTNode): string {
-  const functions = extractFunctions(ast)
-  const tests: string[] = []
-
-  tests.push(`import { describe, it, expect } from "vitest";\n`)
-
-  for (const fn of functions) {
-    tests.push(`describe("${fn.name}", () => {`)
-    tests.push(`  it("should return expected output for normal input", () => {`)
-    tests.push(`    const result = ${fn.name}(${fn.params.map(() => "testValue").join(", ")});`)
-    tests.push(`    expect(result).toBeDefined();`)
-    tests.push(`  });\n`)
-    tests.push(`  it("should handle edge cases", () => {`)
-    tests.push(`    expect(() => ${fn.name}(${fn.params.map(() => "undefined").join(", ")})).not.toThrow();`)
-    tests.push(`  });\n`)
-    tests.push(`  it("should handle empty input", () => {`)
-    tests.push(`    const result = ${fn.name}(${fn.params.map(() => '""').join(", ")});`)
-    tests.push(`    expect(result).toBeDefined();`)
-    tests.push(`  });`)
-    tests.push(`});\n`)
-  }
-
-  return tests.join("\n")
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// SECTION 23: DOCUMENTATION GENERATOR
-// ═══════════════════════════════════════════════════════════════════
-function generateDocumentation(source: string, ast: ASTNode): string {
-  const functions = extractFunctions(ast)
-  const docs: string[] = []
-
-  docs.push("# Auto-Generated Documentation\n")
-  docs.push(`**Total Functions:** ${functions.length}`)
-  docs.push(`**Lines of Code:** ${source.split("\n").length}\n`)
-
-  docs.push("## Functions\n")
-  for (const fn of functions) {
-    docs.push(`### ${fn.name}(${fn.params.join(", ")})`)
-    docs.push(`- **Parameters:** ${fn.params.length > 0 ? fn.params.map(p => `\`${p}\``).join(", ") : "none"}`)
-    docs.push(`- **Body Size:** ${fn.bodyLines} lines`)
-    docs.push(`- **Complexity:** ${fn.bodyLines > 30 ? "High" : fn.bodyLines > 15 ? "Medium" : "Low"}`)
-    docs.push("")
-  }
-
-  docs.push("## Complexity Summary\n")
-  const totalComplexity = functions.reduce((sum, fn) => sum + fn.bodyLines, 0)
-  const avgComplexity = functions.length > 0 ? (totalComplexity / functions.length).toFixed(1) : "0"
-  docs.push(`- Total function lines: ${totalComplexity}`)
-  docs.push(`- Average function size: ${avgComplexity} lines`)
-  docs.push(`- Largest function: ${functions.reduce((max, fn) => fn.bodyLines > max.bodyLines ? fn : max, functions[0] || { name: "none", bodyLines: 0 }).name} (${functions.reduce((max, fn) => fn.bodyLines > max.bodyLines ? fn : max, functions[0] || { name: "none", bodyLines: 0 }).bodyLines} lines)`)
-  docs.push(`- Smallest function: ${functions.reduce((min, fn) => fn.bodyLines < min.bodyLines ? fn : min, functions[0] || { name: "none", bodyLines: Infinity }).name} (${functions.reduce((min, fn) => fn.bodyLines < min.bodyLines ? fn : min, functions[0] || { name: "none", bodyLines: Infinity }).bodyLines} lines)`)
-
-  return docs.join("\n")
 }
 
 // ═══════════════════════════════════════════════════════════════════

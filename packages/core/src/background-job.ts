@@ -42,6 +42,7 @@ type FinishResult = {
   info?: Info
   done?: Deferred.Deferred<Info>
   scope?: Scope.Closeable
+  promoted?: Deferred.Deferred<Info>
 }
 
 type PromoteResult = {

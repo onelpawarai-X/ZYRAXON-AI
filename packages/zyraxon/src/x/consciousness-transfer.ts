@@ -6,7 +6,7 @@
  * Seamless multi-agent handoff and collaboration
  */
 
-type AgentConsciousness = {
+export type AgentConsciousness = {
   agentId: string
   name: string
   skills: string[]
@@ -16,7 +16,7 @@ type AgentConsciousness = {
   lastActive: number
 }
 
-type TransferPackage = {
+export type TransferPackage = {
   id: string
   fromAgent: string
   toAgent: string
@@ -30,7 +30,7 @@ type TransferPackage = {
   status: "pending" | "transferred" | "merged" | "failed"
 }
 
-type CollaborationSession = {
+export type CollaborationSession = {
   id: string
   agents: string[]
   task: string

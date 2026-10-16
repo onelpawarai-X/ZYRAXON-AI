@@ -46,7 +46,7 @@ export type XToolDef = {
   id: string
   name: string
   description: string
-  parameters: Record<string, { type: string; description: string; required?: boolean }>
+  parameters: Record<string, { type: string; description?: string; required?: boolean }>
   category: string
   execute: (args: any) => Promise<{ ok: boolean; data?: any; error?: string }>
 }
@@ -3178,10 +3178,10 @@ export const xToolRegistry: XToolDef[] = [
   // REMOTE CONTROL (6 tools)
   // ═══════════════════════════════════════════════════════════════════════════
   { id: "x_ws_start", name: "WebSocket Start", description: "Start WebSocket server", parameters: { port: { type: "number", required: true } }, category: "remote", execute: async (a) => new WebSocketServer().start(a.port) },
-  { id: "x_rest_add_route", name: "REST Add Route", description: "Add REST API route", parameters: { method: { type: "string", required: true }, path: { type: "string", required: true } }, category: "remote", execute: async (a) => { const c = new RESTAPI(); c.addRoute(a.method, a.path, () => ({})); return { ok: true } } },
+  { id: "x_rest_add_route", name: "REST Add Route", description: "Add REST API route", parameters: { method: { type: "string", required: true }, path: { type: "string", required: true } }, category: "remote", execute: async (a) => { const c = new RESTAPI(); c.addRoute(a.method, a.path, () => ({ ok: true })); return { ok: true } } },
   { id: "x_auth_add_client", name: "Network Auth Add Client", description: "Add network client", parameters: { id: { type: "string", required: true }, key: { type: "string", required: true }, role: { type: "string", required: true } }, category: "remote", execute: async (a) => new NetworkAuth().addClient(a.id, a.key, a.role) },
   { id: "x_remote_connect", name: "Remote Session Connect", description: "Connect remote session", parameters: { target: { type: "string", required: true }, credentials: { type: "object", required: true } }, category: "remote", execute: async (a) => new RemoteSession().connect(a.target, a.credentials) },
-  { id: "x_cmd_register", name: "Command Register", description: "Register command", parameters: { name: { type: "string", required: true } }, category: "remote", execute: async (a) => { const c = new CommandProtocol(); c.registerCommand(a.name, () => ({})); return { ok: true } } },
+  { id: "x_cmd_register", name: "Command Register", description: "Register command", parameters: { name: { type: "string", required: true } }, category: "remote", execute: async (a) => { const c = new CommandProtocol(); c.registerCommand(a.name, () => ({ ok: true })); return { ok: true } } },
   { id: "x_heartbeat_start", name: "Heartbeat Start", description: "Start heartbeat monitor", parameters: { target: { type: "string", required: true }, intervalMs: { type: "number", required: true } }, category: "remote", execute: async (a) => new HeartbeatMonitor().start(a.target, a.intervalMs) },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -3423,11 +3423,11 @@ export const xToolRegistry: XToolDef[] = [
   // ═══════════════════════════════════════════════════════════════════════════
   // DAILY TASK SYSTEM (5 tools)
   // ═══════════════════════════════════════════════════════════════════════════
-  { id: "x_task_create", name: "Create Daily Task", description: "Create a scheduled daily task with specific time and action", parameters: { name: { type: "string", description: "Task name", required: true }, time: { type: "string", description: "Time like '09:00' or '14:30'", required: true }, action: { type: "string", description: "What to do: 'open_app', 'run_script', 'send_message', 'browse_url', 'ai_prompt'", required: true }, target: { type: "string", description: "App name, URL, or script path", required: true }, prompt: { type: "string", description: "AI prompt to execute when task runs (for ai_prompt action)" }, days: { type: "string", description: "Days: 'mon-fri', 'daily', 'weekends', or comma-separated 'mon,tue,wed'" } }, category: "daily-task", execute: async (a) => { try { const fs = require('fs'); const path = require('path'); const tasksFile = path.join(process.env.HOME || process.env.USERPROFILE || '', '.zyraxon', 'daily-tasks.json'); let tasks = []; if (fs.existsSync(tasksFile)) { tasks = JSON.parse(fs.readFileSync(tasksFile, 'utf-8')); } const task = { id: Date.now().toString(36), name: a.name, time: a.time, action: a.action, target: a.target, prompt: a.prompt || '', days: a.days || 'daily', enabled: true, lastRun: null, createdAt: new Date().toISOString() }; tasks.push(task); fs.mkdirSync(path.dirname(tasksFile), { recursive: true }); fs.writeFileSync(tasksFile, JSON.stringify(tasks, null, 2)); return { ok: true, data: task }; } catch (e) { return { ok: false, error: e.message }; } } },
-  { id: "x_task_list", name: "List Daily Tasks", description: "List all scheduled daily tasks", parameters: {}, category: "daily-task", execute: async () => { try { const fs = require('fs'); const path = require('path'); const tasksFile = path.join(process.env.HOME || process.env.USERPROFILE || '', '.zyraxon', 'daily-tasks.json'); if (!fs.existsSync(tasksFile)) return { ok: true, data: [] }; const tasks = JSON.parse(fs.readFileSync(tasksFile, 'utf-8')); return { ok: true, data: tasks }; } catch (e) { return { ok: false, error: e.message }; } } },
-  { id: "x_task_delete", name: "Delete Daily Task", description: "Delete a scheduled task by ID", parameters: { taskId: { type: "string", description: "Task ID to delete", required: true } }, category: "daily-task", execute: async (a) => { try { const fs = require('fs'); const path = require('path'); const tasksFile = path.join(process.env.HOME || process.env.USERPROFILE || '', '.zyraxon', 'daily-tasks.json'); if (!fs.existsSync(tasksFile)) return { ok: false, error: 'No tasks file found' }; let tasks = JSON.parse(fs.readFileSync(tasksFile, 'utf-8')); const before = tasks.length; tasks = tasks.filter((t) => t.id !== a.taskId); fs.writeFileSync(tasksFile, JSON.stringify(tasks, null, 2)); return { ok: true, data: { deleted: before - tasks.length > 0 } }; } catch (e) { return { ok: false, error: e.message }; } } },
-  { id: "x_task_toggle", name: "Enable/Disable Daily Task", description: "Toggle a task on or off", parameters: { taskId: { type: "string", required: true }, enabled: { type: "boolean", required: true } }, category: "daily-task", execute: async (a) => { try { const fs = require('fs'); const path = require('path'); const tasksFile = path.join(process.env.HOME || process.env.USERPROFILE || '', '.zyraxon', 'daily-tasks.json'); if (!fs.existsSync(tasksFile)) return { ok: false, error: 'No tasks file found' }; let tasks = JSON.parse(fs.readFileSync(tasksFile, 'utf-8')); const task = tasks.find((t) => t.id === a.taskId); if (!task) return { ok: false, error: 'Task not found' }; task.enabled = a.enabled; fs.writeFileSync(tasksFile, JSON.stringify(tasks, null, 2)); return { ok: true, data: task }; } catch (e) { return { ok: false, error: e.message }; } } },
-  { id: "x_task_run_now", name: "Run Daily Task Now", description: "Immediately execute a scheduled task", parameters: { taskId: { type: "string", required: true } }, category: "daily-task", execute: async (a) => { try { const fs = require('fs'); const path = require('path'); const { execSync } = require('child_process'); const tasksFile = path.join(process.env.HOME || process.env.USERPROFILE || '', '.zyraxon', 'daily-tasks.json'); if (!fs.existsSync(tasksFile)) return { ok: false, error: 'No tasks file found' }; const tasks = JSON.parse(fs.readFileSync(tasksFile, 'utf-8')); const task = tasks.find((t) => t.id === a.taskId); if (!task) return { ok: false, error: 'Task not found' }; let result = ''; if (task.action === 'open_app') { if (process.platform === 'win32') { execSync(`start "" "${task.target}"`, { timeout: 10000 }); } else if (process.platform === 'darwin') { execSync(`open "${task.target}"`, { timeout: 10000 }); } else { execSync(`${task.target} &`, { timeout: 10000 }); } result = `Opened: ${task.target}`; } else if (task.action === 'browse_url') { result = `URL: ${task.target}`; } else if (task.action === 'run_script') { result = execSync(task.target, { encoding: 'utf-8', timeout: 30000 }); } return { ok: true, data: { task: task.name, result } }; } catch (e) { return { ok: false, error: e.message }; } } },
+  { id: "x_task_create", name: "Create Daily Task", description: "Create a scheduled daily task with specific time and action", parameters: { name: { type: "string", description: "Task name", required: true }, time: { type: "string", description: "Time like '09:00' or '14:30'", required: true }, action: { type: "string", description: "What to do: 'open_app', 'run_script', 'send_message', 'browse_url', 'ai_prompt'", required: true }, target: { type: "string", description: "App name, URL, or script path", required: true }, prompt: { type: "string", description: "AI prompt to execute when task runs (for ai_prompt action)" }, days: { type: "string", description: "Days: 'mon-fri', 'daily', 'weekends', or comma-separated 'mon,tue,wed'" } }, category: "daily-task", execute: async (a) => { try { const fs = require('fs'); const path = require('path'); const tasksFile = path.join(process.env.HOME || process.env.USERPROFILE || '', '.zyraxon', 'daily-tasks.json'); let tasks = []; if (fs.existsSync(tasksFile)) { tasks = JSON.parse(fs.readFileSync(tasksFile, 'utf-8')); } const task = { id: Date.now().toString(36), name: a.name, time: a.time, action: a.action, target: a.target, prompt: a.prompt || '', days: a.days || 'daily', enabled: true, lastRun: null, createdAt: new Date().toISOString() }; tasks.push(task); fs.mkdirSync(path.dirname(tasksFile), { recursive: true }); fs.writeFileSync(tasksFile, JSON.stringify(tasks, null, 2)); return { ok: true, data: task }; } catch (e: any) { return { ok: false, error: e.message }; } } },
+  { id: "x_task_list", name: "List Daily Tasks", description: "List all scheduled daily tasks", parameters: {}, category: "daily-task", execute: async () => { try { const fs = require('fs'); const path = require('path'); const tasksFile = path.join(process.env.HOME || process.env.USERPROFILE || '', '.zyraxon', 'daily-tasks.json'); if (!fs.existsSync(tasksFile)) return { ok: true, data: [] }; const tasks = JSON.parse(fs.readFileSync(tasksFile, 'utf-8')); return { ok: true, data: tasks }; } catch (e: any) { return { ok: false, error: e.message }; } } },
+  { id: "x_task_delete", name: "Delete Daily Task", description: "Delete a scheduled task by ID", parameters: { taskId: { type: "string", description: "Task ID to delete", required: true } }, category: "daily-task", execute: async (a) => { try { const fs = require('fs'); const path = require('path'); const tasksFile = path.join(process.env.HOME || process.env.USERPROFILE || '', '.zyraxon', 'daily-tasks.json'); if (!fs.existsSync(tasksFile)) return { ok: false, error: 'No tasks file found' }; let tasks = JSON.parse(fs.readFileSync(tasksFile, 'utf-8')); const before = tasks.length; tasks = tasks.filter((t: any) => t.id !== a.taskId); fs.writeFileSync(tasksFile, JSON.stringify(tasks, null, 2)); return { ok: true, data: { deleted: before - tasks.length > 0 } }; } catch (e: any) { return { ok: false, error: e.message }; } } },
+  { id: "x_task_toggle", name: "Enable/Disable Daily Task", description: "Toggle a task on or off", parameters: { taskId: { type: "string", required: true }, enabled: { type: "boolean", required: true } }, category: "daily-task", execute: async (a) => { try { const fs = require('fs'); const path = require('path'); const tasksFile = path.join(process.env.HOME || process.env.USERPROFILE || '', '.zyraxon', 'daily-tasks.json'); if (!fs.existsSync(tasksFile)) return { ok: false, error: 'No tasks file found' }; let tasks = JSON.parse(fs.readFileSync(tasksFile, 'utf-8')); const task = tasks.find((t: any) => t.id === a.taskId); if (!task) return { ok: false, error: 'Task not found' }; task.enabled = a.enabled; fs.writeFileSync(tasksFile, JSON.stringify(tasks, null, 2)); return { ok: true, data: task }; } catch (e: any) { return { ok: false, error: e.message }; } } },
+  { id: "x_task_run_now", name: "Run Daily Task Now", description: "Immediately execute a scheduled task", parameters: { taskId: { type: "string", required: true } }, category: "daily-task", execute: async (a) => { try { const fs = require('fs'); const path = require('path'); const { execSync } = require('child_process'); const tasksFile = path.join(process.env.HOME || process.env.USERPROFILE || '', '.zyraxon', 'daily-tasks.json'); if (!fs.existsSync(tasksFile)) return { ok: false, error: 'No tasks file found' }; const tasks = JSON.parse(fs.readFileSync(tasksFile, 'utf-8')); const task = tasks.find((t: any) => t.id === a.taskId); if (!task) return { ok: false, error: 'Task not found' }; let result = ''; if (task.action === 'open_app') { if (process.platform === 'win32') { execSync(`start "" "${task.target}"`, { timeout: 10000 }); } else if (process.platform === 'darwin') { execSync(`open "${task.target}"`, { timeout: 10000 }); } else { execSync(`${task.target} &`, { timeout: 10000 }); } result = `Opened: ${task.target}`; } else if (task.action === 'browse_url') { result = `URL: ${task.target}`; } else if (task.action === 'run_script') { result = execSync(task.target, { encoding: 'utf-8', timeout: 30000 }); } return { ok: true, data: { task: task.name, result } }; } catch (e: any) { return { ok: false, error: e.message }; } } },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // DAILY TASK AUTO-SCHEDULER (2 tools)
@@ -3454,13 +3454,13 @@ export const xToolRegistry: XToolDef[] = [
         }
 
         function getDayOfWeek() { return ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][new Date().getDay()]; }
-        function isTaskScheduledToday(task) {
+        function isTaskScheduledToday(task: any) {
           const days = (task.days || "daily").toLowerCase();
           if (days === "daily") return true;
           const today = getDayOfWeek();
           if (days === "weekends") return today === "sat" || today === "sun";
           if (days === "mon-fri") return ["mon", "tue", "wed", "thu", "fri"].includes(today);
-          return days.split(",").map((d) => d.trim()).includes(today);
+          return days.split(",").map((d: string) => d.trim()).includes(today);
         }
         function checkAndRunTasks() {
           try {
@@ -3494,7 +3494,7 @@ export const xToolRegistry: XToolDef[] = [
                 }
               }
             }
-          } catch (e) {
+          } catch (e: any) {
             fs.appendFileSync(logFile, `[${new Date().toISOString()}] ERROR: ${e.message}\n`);
           }
         }
@@ -3510,7 +3510,7 @@ export const xToolRegistry: XToolDef[] = [
         process.on("SIGINT", () => { clearInterval(interval); try { fs.unlinkSync(pidFile); } catch {} process.exit(0); });
 
         return { ok: true, data: { message: "Daily task scheduler started", pid: process.pid, checkInterval: "60 seconds" } };
-      } catch (e) { return { ok: false, error: e.message }; }
+      } catch (e: any) { return { ok: false, error: e.message }; }
     },
   },
   {
@@ -3542,18 +3542,18 @@ export const xToolRegistry: XToolDef[] = [
           recentLogs = lines.slice(-10);
         }
 
-        return { ok: true, data: { running, pid, totalTasks: tasks.length, enabledTasks: tasks.filter((t) => t.enabled).length, recentLogs } };
-      } catch (e) { return { ok: false, error: e.message }; }
+        return { ok: true, data: { running, pid, totalTasks: tasks.length, enabledTasks: tasks.filter((t: any) => t.enabled).length, recentLogs } };
+      } catch (e: any) { return { ok: false, error: e.message }; }
     },
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // CAPTCHA SOLVING TOOLS (4 tools)
   // ═══════════════════════════════════════════════════════════════════════════
-  { id: "x_captcha_detect", name: "Detect Captcha Type", description: "Detect what type of captcha is on the current page", parameters: {}, category: "captcha", execute: async () => { try { const http = require('http'); const result = await new Promise((resolve, reject) => { http.get('http://127.0.0.1:9222/json', (res) => { let data = ''; res.on('data', (c) => data += c); res.on('end', () => resolve(JSON.parse(data))); }).on('error', reject); }); const ws = result[0]?.webSocketDebuggerUrl; if (!ws) return { ok: false, error: 'No Chrome tab found' }; const WebSocket = require('ws'); const socket = new WebSocket(ws); const captcha = await new Promise((resolve) => { socket.on('open', () => { socket.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression: `JSON.stringify((() => { if (document.querySelector('iframe[src*="recaptcha"]') || document.querySelector('.g-recaptcha')) return {type:'recaptcha-v2',confidence:0.95}; if (document.querySelector('iframe[src*="hcaptcha"]') || document.querySelector('.h-captcha')) return {type:'hcaptcha',confidence:0.95}; if (document.querySelector('iframe[src*="challenges.cloudflare.com"]') || document.querySelector('[data-sitekey]')) return {type:'turnstile',confidence:0.90}; const c=document.querySelector('canvas'); if(c&&c.width>50&&c.height>50) return {type:'image-captcha',confidence:0.70}; const img=document.querySelector('img[src*="captcha"],img[alt*="captcha"]'); if(img) return {type:'text-captcha',confidence:0.80}; return {type:'none',confidence:0}; })())`, returnByValue: true } })); }); socket.on('message', (data) => { const msg = JSON.parse(data.toString()); if (msg.id === 1) { resolve(JSON.parse(msg.result?.result?.value || '{"type":"none","confidence":0}')); socket.close(); } }); setTimeout(() => { resolve({ type: 'timeout', confidence: 0 }); socket.close(); }, 5000); }); return { ok: true, data: captcha }; } catch (e) { return { ok: false, error: e.message }; } } },
-  { id: "x_captcha_click", name: "Click Captcha Checkbox", description: "Click the captcha checkbox (reCAPTCHA, hCaptcha, Turnstile)", parameters: {}, category: "captcha", execute: async () => { try { const http = require('http'); const result = await new Promise((resolve, reject) => { http.get('http://127.0.0.1:9222/json', (res) => { let data = ''; res.on('data', (c) => data += c); res.on('end', () => resolve(JSON.parse(data))); }).on('error', reject); }); const ws = result[0]?.webSocketDebuggerUrl; if (!ws) return { ok: false, error: 'No Chrome tab found' }; const WebSocket = require('ws'); const socket = new WebSocket(ws); const clicked = await new Promise((resolve) => { socket.on('open', () => { socket.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression: `(() => { const f=document.querySelector('iframe[src*="recaptcha/anchor"]'); if(f){const r=f.getBoundingClientRect();document.elementFromPoint(r.left+28,r.top+28)?.click();return true;} const h=document.querySelector('iframe[src*="hcaptcha/checkbox"]'); if(h){const r=h.getBoundingClientRect();document.elementFromPoint(r.left+28,r.top+28)?.click();return true;} const t=document.querySelector('[data-sitekey]'); if(t){t.click();return true;} return false; })()`, returnByValue: true } })); }); socket.on('message', (data) => { const msg = JSON.parse(data.toString()); if (msg.id === 1) { resolve(msg.result?.result?.value === true); socket.close(); } }); setTimeout(() => { resolve(false); socket.close(); }, 5000); }); return { ok: true, data: { clicked } }; } catch (e) { return { ok: false, error: e.message }; } } },
-  { id: "x_captcha_solve_image", name: "Solve Image Captcha", description: "Attempt to solve image-based captcha using OCR", parameters: { imageData: { type: "string", description: "Base64 image data or image URL", required: true } }, category: "captcha", execute: async (a) => { try { const http = require('http'); const result = await new Promise((resolve, reject) => { http.get('http://127.0.0.1:9222/json', (res) => { let data = ''; res.on('data', (c) => data += c); res.on('end', () => resolve(JSON.parse(data))); }).on('error', reject); }); const ws = result[0]?.webSocketDebuggerUrl; if (!ws) return { ok: false, error: 'No Chrome tab found' }; const WebSocket = require('ws'); const socket = new WebSocket(ws); const text = await new Promise((resolve) => { socket.on('open', () => { socket.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression: `(() => { const img=document.querySelector('img[src*="captcha"],img[alt*="captcha"],img[id*="captcha"]'); if(!img) return ''; const c=document.createElement('canvas'); c.width=img.naturalWidth||img.width; c.height=img.naturalHeight||img.height; const ctx=c.getContext('2d'); ctx.drawImage(img,0,0); return c.toDataURL('image/png'); })()`, returnByValue: true } })); }); socket.on('message', (data) => { const msg = JSON.parse(data.toString()); if (msg.id === 1) { resolve(msg.result?.result?.value || ''); socket.close(); } }); setTimeout(() => { resolve(''); socket.close(); }, 5000); }); return { ok: true, data: { captchaImage: text, message: 'Image captured. Use AI vision to read the text.' } }; } catch (e) { return { ok: false, error: e.message }; } } },
-  { id: "x_captcha_input", name: "Input Captcha Text", description: "Type captcha solution into the input field", parameters: { text: { type: "string", description: "Captcha text to type", required: true } }, category: "captcha", execute: async (a) => { try { const http = require('http'); const result = await new Promise((resolve, reject) => { http.get('http://127.0.0.1:9222/json', (res) => { let data = ''; res.on('data', (c) => data += c); res.on('end', () => resolve(JSON.parse(data))); }).on('error', reject); }); const ws = result[0]?.webSocketDebuggerUrl; if (!ws) return { ok: false, error: 'No Chrome tab found' }; const WebSocket = require('ws'); const socket = new WebSocket(ws); const success = await new Promise((resolve) => { socket.on('open', () => { socket.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression: `(() => { const input=document.querySelector('input[name*="captcha"],input[id*="captcha"],input[placeholder*="captcha"],input[aria-label*="captcha"]'); if(!input){const inputs=document.querySelectorAll('input[type="text"]'); if(inputs.length>0){inputs[inputs.length-1].focus();inputs[inputs.length-1].value='${a.text.replace(/'/g,"\\'")}';inputs[inputs.length-1].dispatchEvent(new Event('input',{bubbles:true}));inputs[inputs.length-1].dispatchEvent(new Event('change',{bubbles:true}));return true;} return false;} input.focus(); input.value='${a.text.replace(/'/g,"\\'")}'; input.dispatchEvent(new Event('input',{bubbles:true})); input.dispatchEvent(new Event('change',{bubbles:true})); return true; })()`, returnByValue: true } })); }); socket.on('message', (data) => { const msg = JSON.parse(data.toString()); if (msg.id === 1) { resolve(msg.result?.result?.value === true); socket.close(); } }); setTimeout(() => { resolve(false); socket.close(); }, 5000); }); return { ok: true, data: { success } }; } catch (e) { return { ok: false, error: e.message }; } } },
+  { id: "x_captcha_detect", name: "Detect Captcha Type", description: "Detect what type of captcha is on the current page", parameters: {}, category: "captcha", execute: async () => { try { const http = require('http'); const result = await new Promise<any>((resolve, reject) => { http.get('http://127.0.0.1:9222/json', (res: any) => { let data = ''; res.on('data', (c: any) => data += c); res.on('end', () => resolve(JSON.parse(data))); }).on('error', reject); }); const ws = result[0]?.webSocketDebuggerUrl; if (!ws) return { ok: false, error: 'No Chrome tab found' }; const WebSocket = require('ws'); const socket = new WebSocket(ws); const captcha = await new Promise((resolve) => { socket.on('open', () => { socket.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression: `JSON.stringify((() => { if (document.querySelector('iframe[src*="recaptcha"]') || document.querySelector('.g-recaptcha')) return {type:'recaptcha-v2',confidence:0.95}; if (document.querySelector('iframe[src*="hcaptcha"]') || document.querySelector('.h-captcha')) return {type:'hcaptcha',confidence:0.95}; if (document.querySelector('iframe[src*="challenges.cloudflare.com"]') || document.querySelector('[data-sitekey]')) return {type:'turnstile',confidence:0.90}; const c=document.querySelector('canvas'); if(c&&c.width>50&&c.height>50) return {type:'image-captcha',confidence:0.70}; const img=document.querySelector('img[src*="captcha"],img[alt*="captcha"]'); if(img) return {type:'text-captcha',confidence:0.80}; return {type:'none',confidence:0}; })())`, returnByValue: true } })); }); socket.on('message', (data: any) => { const msg = JSON.parse(data.toString()); if (msg.id === 1) { resolve(JSON.parse(msg.result?.result?.value || '{"type":"none","confidence":0}')); socket.close(); } }); setTimeout(() => { resolve({ type: 'timeout', confidence: 0 }); socket.close(); }, 5000); }); return { ok: true, data: captcha }; } catch (e: any) { return { ok: false, error: e.message }; } } },
+  { id: "x_captcha_click", name: "Click Captcha Checkbox", description: "Click the captcha checkbox (reCAPTCHA, hCaptcha, Turnstile)", parameters: {}, category: "captcha", execute: async () => { try { const http = require('http'); const result = await new Promise<any>((resolve, reject) => { http.get('http://127.0.0.1:9222/json', (res: any) => { let data = ''; res.on('data', (c: any) => data += c); res.on('end', () => resolve(JSON.parse(data))); }).on('error', reject); }); const ws = result[0]?.webSocketDebuggerUrl; if (!ws) return { ok: false, error: 'No Chrome tab found' }; const WebSocket = require('ws'); const socket = new WebSocket(ws); const clicked = await new Promise((resolve) => { socket.on('open', () => { socket.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression: `(() => { const f=document.querySelector('iframe[src*="recaptcha/anchor"]'); if(f){const r=f.getBoundingClientRect();document.elementFromPoint(r.left+28,r.top+28)?.click();return true;} const h=document.querySelector('iframe[src*="hcaptcha/checkbox"]'); if(h){const r=h.getBoundingClientRect();document.elementFromPoint(r.left+28,r.top+28)?.click();return true;} const t=document.querySelector('[data-sitekey]'); if(t){t.click();return true;} return false; })()`, returnByValue: true } })); }); socket.on('message', (data: any) => { const msg = JSON.parse(data.toString()); if (msg.id === 1) { resolve(msg.result?.result?.value === true); socket.close(); } }); setTimeout(() => { resolve(false); socket.close(); }, 5000); }); return { ok: true, data: { clicked } }; } catch (e: any) { return { ok: false, error: e.message }; } } },
+  { id: "x_captcha_solve_image", name: "Solve Image Captcha", description: "Attempt to solve image-based captcha using OCR", parameters: { imageData: { type: "string", description: "Base64 image data or image URL", required: true } }, category: "captcha", execute: async (a) => { try { const http = require('http'); const result = await new Promise<any>((resolve, reject) => { http.get('http://127.0.0.1:9222/json', (res: any) => { let data = ''; res.on('data', (c: any) => data += c); res.on('end', () => resolve(JSON.parse(data))); }).on('error', reject); }); const ws = result[0]?.webSocketDebuggerUrl; if (!ws) return { ok: false, error: 'No Chrome tab found' }; const WebSocket = require('ws'); const socket = new WebSocket(ws); const text = await new Promise((resolve) => { socket.on('open', () => { socket.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression: `(() => { const img=document.querySelector('img[src*="captcha"],img[alt*="captcha"],img[id*="captcha"]'); if(!img) return ''; const c=document.createElement('canvas'); c.width=img.naturalWidth||img.width; c.height=img.naturalHeight||img.height; const ctx=c.getContext('2d'); ctx.drawImage(img,0,0); return c.toDataURL('image/png'); })()`, returnByValue: true } })); }); socket.on('message', (data: any) => { const msg = JSON.parse(data.toString()); if (msg.id === 1) { resolve(msg.result?.result?.value || ''); socket.close(); } }); setTimeout(() => { resolve(''); socket.close(); }, 5000); }); return { ok: true, data: { captchaImage: text, message: 'Image captured. Use AI vision to read the text.' } }; } catch (e: any) { return { ok: false, error: e.message }; } } },
+  { id: "x_captcha_input", name: "Input Captcha Text", description: "Type captcha solution into the input field", parameters: { text: { type: "string", description: "Captcha text to type", required: true } }, category: "captcha", execute: async (a) => { try { const http = require('http'); const result = await new Promise<any>((resolve, reject) => { http.get('http://127.0.0.1:9222/json', (res: any) => { let data = ''; res.on('data', (c: any) => data += c); res.on('end', () => resolve(JSON.parse(data))); }).on('error', reject); }); const ws = result[0]?.webSocketDebuggerUrl; if (!ws) return { ok: false, error: 'No Chrome tab found' }; const WebSocket = require('ws'); const socket = new WebSocket(ws); const success = await new Promise((resolve) => { socket.on('open', () => { socket.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression: `(() => { const input=document.querySelector('input[name*="captcha"],input[id*="captcha"],input[placeholder*="captcha"],input[aria-label*="captcha"]'); if(!input){const inputs=document.querySelectorAll('input[type="text"]'); if(inputs.length>0){inputs[inputs.length-1].focus();inputs[inputs.length-1].value='${a.text.replace(/'/g,"\\'")}';inputs[inputs.length-1].dispatchEvent(new Event('input',{bubbles:true}));inputs[inputs.length-1].dispatchEvent(new Event('change',{bubbles:true}));return true;} return false;} input.focus(); input.value='${a.text.replace(/'/g,"\\'")}'; input.dispatchEvent(new Event('input',{bubbles:true})); input.dispatchEvent(new Event('change',{bubbles:true})); return true; })()`, returnByValue: true } })); }); socket.on('message', (data: any) => { const msg = JSON.parse(data.toString()); if (msg.id === 1) { resolve(msg.result?.result?.value === true); socket.close(); } }); setTimeout(() => { resolve(false); socket.close(); }, 5000); }); return { ok: true, data: { success } }; } catch (e: any) { return { ok: false, error: e.message }; } } },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // MEMORY SYSTEM (7 tools) — Persistent memory like Claude
@@ -3719,7 +3719,7 @@ export const xToolRegistry: XToolDef[] = [
   // ══════════════════════════════════════════════════════════════════════════════════════
   // UNIVERSAL COMMAND ENGINE (5 tools) — Natural language command processing
   // ══════════════════════════════════════════════════════════════════════════════════════
-  { id: "x_uce_process", name: "Universal Command Process", description: "Process any natural language command and execute it across IoT, vehicles, robotics, software, and hardware domains", parameters: { command: { type: "string", description: "Natural language command to process", required: true } }, category: "universal-command", execute: async (a) => { const uce = new UniversalCommandEngine(); return uce.processCommand(a.command); } },
+  { id: "x_uce_process", name: "Universal Command Process", description: "Process any natural language command and execute it across IoT, vehicles, robotics, software, and hardware domains", parameters: { command: { type: "string", description: "Natural language command to process", required: true } }, category: "universal-command", execute: async (a) => { const uce = new UniversalCommandEngine(); const r = await uce.processCommand(a.command); return { ok: r.success, data: r, error: r.success ? undefined : r.output }; } },
   { id: "x_uce_devices", name: "List UCE Devices", description: "List all registered devices and their capabilities in the Universal Command Engine", parameters: {}, category: "universal-command", execute: async () => { const uce = new UniversalCommandEngine(); return { ok: true, data: uce.getDevices() }; } },
   { id: "x_uce_history", name: "UCE Command History", description: "Get the last 50 processed commands with their results and execution times", parameters: {}, category: "universal-command", execute: async () => { const uce = new UniversalCommandEngine(); return { ok: true, data: uce.getHistory() }; } },
   { id: "x_uce_context", name: "UCE Get Context", description: "Get current context state of the Universal Command Engine", parameters: {}, category: "universal-command", execute: async () => { const uce = new UniversalCommandEngine(); return { ok: true, data: uce.getContext() }; } },
@@ -3978,7 +3978,7 @@ export const xToolRegistry: XToolDef[] = [
                 fs.writeFileSync(file, update.content, "utf8")
                 modified.push(hunk.path)
               }
-            } catch (e) {
+            } catch (e: any) {
               return { ok: false, error: `Failed applying hunk to ${hunk.path}: ${e instanceof Error ? e.message : String(e)}` }
             }
           }
@@ -3990,7 +3990,7 @@ export const xToolRegistry: XToolDef[] = [
         return { ok: false, error: `Unified diff apply failed: ${result.errors.join("; ")}` }
       }
       return { ok: true, data: { format: "unified-diff", ...result } }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) }
     }
   } },
@@ -4047,7 +4047,7 @@ export const xToolRegistry: XToolDef[] = [
         },
         error: resp.ok ? undefined : `HTTP ${resp.status} ${resp.statusText}`,
       }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: `Request failed: ${e instanceof Error ? e.message : String(e)}` }
     }
   } },
@@ -4074,7 +4074,7 @@ export const xToolRegistry: XToolDef[] = [
           const { stdout } = await execFileAsyncLocal("df", ["-k"], { timeout: 10000 })
           disk = stdout
         }
-      } catch (e) {
+      } catch (e: any) {
         disk = { error: e instanceof Error ? e.message : String(e) }
       }
       return {
@@ -4102,7 +4102,7 @@ export const xToolRegistry: XToolDef[] = [
           disk,
         },
       }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) }
     }
   } },
@@ -4112,7 +4112,7 @@ export const xToolRegistry: XToolDef[] = [
       const shot = await captureScreenBase64()
       const prompt = String(a.prompt ?? "").trim() || "Describe what is on screen"
       return { ok: true, data: { base64: shot.base64, width: shot.width, height: shot.height, path: shot.path, prompt, mimeType: "image/png" } }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: `Screen capture failed: ${e instanceof Error ? e.message : String(e)}` }
     }
   } },
@@ -4177,7 +4177,7 @@ export const xToolRegistry: XToolDef[] = [
       const byKind: Record<string, number> = {}
       for (const f of findings) byKind[f.kind] = (byKind[f.kind] ?? 0) + 1
       return { ok: true, data: { root, focus: focus || null, filesScanned: scanned, findingCount: findings.length, byKind, findings } }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) }
     }
   } },
@@ -4200,7 +4200,7 @@ export const xToolRegistry: XToolDef[] = [
       const next = { mode, previousMode, updatedAt: new Date().toISOString() }
       fs.writeFileSync(file, JSON.stringify(next, null, 2), "utf8")
       return { ok: true, data: next }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) }
     }
   } },
@@ -4278,7 +4278,7 @@ export const xToolRegistry: XToolDef[] = [
         return { ok: false, error: `No web results for "${query}". Check network connectivity or try a different query.` }
       }
       return { ok: true, data: { query, count: results.length, results } }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: `Web search failed: ${e instanceof Error ? e.message : String(e)}` }
     }
   } },
@@ -4291,7 +4291,7 @@ export const xToolRegistry: XToolDef[] = [
       const type = inferSiteType(name, String(a.template ?? ""))
       const site = await manager.createSite({ name, type, template: String(a.template ?? "") || type })
       return { ok: true, data: site }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: `site_create failed: ${e instanceof Error ? e.message : String(e)}` }
     }
   } },
@@ -4304,7 +4304,7 @@ export const xToolRegistry: XToolDef[] = [
       if (!manager.getSite(siteId)) return { ok: false, error: `Site not found: ${siteId}` }
       const result = await manager.publishSite(siteId)
       return { ok: true, data: result }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: `site_publish failed: ${e instanceof Error ? e.message : String(e)}` }
     }
   } },
@@ -4317,7 +4317,7 @@ export const xToolRegistry: XToolDef[] = [
       if (!manager.getSite(siteId)) return { ok: false, error: `Site not found: ${siteId}` }
       await manager.unpublishSite(siteId)
       return { ok: true, data: { siteId, published: false } }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: `site_unpublish failed: ${e instanceof Error ? e.message : String(e)}` }
     }
   } },
@@ -4332,7 +4332,7 @@ export const xToolRegistry: XToolDef[] = [
       if (!manager.getSite(siteId)) return { ok: false, error: `Site not found: ${siteId}` }
       const result = await manager.setCustomDomain(siteId, domain)
       return { ok: true, data: result }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: `site_domain failed: ${e instanceof Error ? e.message : String(e)}` }
     }
   } },
@@ -4355,7 +4355,7 @@ export const xToolRegistry: XToolDef[] = [
         timestamp: new Date().toISOString(),
       })
       return { ok: true, data: { siteId, previewUrl: url } }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: `site_preview failed: ${e instanceof Error ? e.message : String(e)}` }
     }
   } },
@@ -4384,7 +4384,7 @@ export const xToolRegistry: XToolDef[] = [
       const outPath = path.join(dir, `${base}${ext}`)
       fs.writeFileSync(outPath, bytes)
       return { ok: true, data: { path: outPath, size: bytes.length, contentType, url: parsed.toString(), typeHint: hint || null } }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: `media_fetch failed: ${e instanceof Error ? e.message : String(e)}` }
     }
   } },
@@ -4419,7 +4419,7 @@ export const xToolRegistry: XToolDef[] = [
           const userMatch = out.match(/Logged in to github\.com as\s+([^\s(]+)/i)
           ghAccount = userMatch ? userMatch[1] : null
           checks.ghAuthStatus = out.trim().slice(0, 2000)
-        } catch (e) {
+        } catch (e: any) {
           ghAuthenticated = false
           checks.ghAuthError = e instanceof Error ? e.message : String(e)
         }
@@ -4457,7 +4457,7 @@ export const xToolRegistry: XToolDef[] = [
           } else {
             checks.repoHttpStatus = resp.status
           }
-        } catch (e) {
+        } catch (e: any) {
           repoReachable = false
           checks.repoError = e instanceof Error ? e.message : String(e)
         }
@@ -4476,7 +4476,7 @@ export const xToolRegistry: XToolDef[] = [
           ...checks,
         },
       }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: `github_connect failed: ${e instanceof Error ? e.message : String(e)}` }
     }
   } },
@@ -4531,7 +4531,7 @@ export const xToolRegistry: XToolDef[] = [
         return { ok: true, data: { removed: true, path: resolved, count: entries.length, directories: entries } }
       }
       return { ok: false, error: `Unknown action "${action}". Use list, add, or remove.` }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) }
     }
   } },
@@ -4548,7 +4548,7 @@ export const xToolRegistry: XToolDef[] = [
       const result = await ultraCodeGen({ source: spec, language, task: spec, generate: "all", analyze: true, security: true })
       if (!result.success && !result.output) return { ok: false, error: "ultraCodeGen produced no output" }
       return { ok: result.success, data: result, error: result.success ? undefined : "ultraCodeGen reported success=false" }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) }
     }
   } },
@@ -4568,7 +4568,7 @@ export const xToolRegistry: XToolDef[] = [
         return { ok: false, error: (result as { error?: string }).error || "ultraSecuritySweep failed" }
       }
       return { ok: true, data: result }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) }
     }
   } },
@@ -4583,7 +4583,7 @@ export const xToolRegistry: XToolDef[] = [
         return { ok: false, error: (result as { error?: string }).error || "ultraPerformance failed" }
       }
       return { ok: true, data: result }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) }
     }
   } },
@@ -4599,7 +4599,7 @@ export const xToolRegistry: XToolDef[] = [
         return { ok: false, error: (result as { error?: string }).error || "ultraRefactor failed" }
       }
       return { ok: true, data: result }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) }
     }
   } },
@@ -4612,7 +4612,7 @@ export const xToolRegistry: XToolDef[] = [
       const content = typeof (result as { content?: unknown }).content === "string" ? (result as { content: string }).content : ""
       if (/^Error:/i.test(content.trim())) return { ok: false, error: content.trim() }
       return { ok: true, data: result }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) }
     }
   } },
@@ -4625,7 +4625,7 @@ export const xToolRegistry: XToolDef[] = [
       const content = typeof (result as { content?: unknown }).content === "string" ? (result as { content: string }).content : ""
       if (/^Error:/i.test(content.trim())) return { ok: false, error: content.trim() }
       return { ok: true, data: result }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) }
     }
   } },
@@ -4644,7 +4644,7 @@ export const xToolRegistry: XToolDef[] = [
         ultraPerformance({ code }),
       ])
       return { ok: true, data: { analysis, security, performance } }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) }
     }
   } },
@@ -4655,7 +4655,7 @@ export const xToolRegistry: XToolDef[] = [
       const sim = simulateQuantumCircuit(circuit)
       if ("error" in sim) return { ok: false, error: sim.error }
       return { ok: true, data: sim }
-    } catch (e) {
+    } catch (e: any) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) }
     }
   } },
@@ -4882,7 +4882,7 @@ function analyzeCode(code: string, language: string): Record<string, unknown> {
   }
 }
 
-function inferSiteType(name: string, template: string): string {
+function inferSiteType(name: string, template: string): any {
   const valid = ["portfolio", "landing", "blog", "ecommerce", "business", "restaurant", "saas", "dashboard", "gallery", "custom"]
   const t = template.trim().toLowerCase()
   if (valid.includes(t)) return t
@@ -5050,7 +5050,7 @@ function simulateQuantumCircuit(circuitText: string): { qubits: number; gates: n
         else if (Array.isArray(g.targets)) qubits = [...(g.controls ?? []).map(Number), ...g.targets.map(Number)]
         return { name, qubits, angle: g.theta ?? g.angle }
       })
-    } catch (e) {
+    } catch (e: any) {
       return { error: `Invalid JSON circuit: ${e instanceof Error ? e.message : String(e)}` }
     }
   } else {

@@ -3,6 +3,7 @@
 import { spawn } from "node:child_process"
 import * as os from "node:os"
 import * as path from "node:path"
+import { ffmpegPathEnv } from "../util/media-ffmpeg"
 
 export type RunOptions = { timeout?: number; input?: string | Buffer }
 
@@ -25,7 +26,7 @@ export function runCommand(
   options: RunOptions = {},
 ): Promise<RunResult> {
   return new Promise<RunResult>((resolve) => {
-    const child = spawn(command, args, { windowsHide: true })
+    const child = spawn(command, args, { windowsHide: true, env: { ...process.env, PATH: ffmpegPathEnv() } })
     const stdout: Buffer[] = []
     const stderr: Buffer[] = []
     child.stdout.on("data", (c: Buffer) => stdout.push(c))
@@ -71,7 +72,7 @@ export function runBinary(
   options: RunOptions = {},
 ): Promise<BinaryResult> {
   return new Promise<BinaryResult>((resolve) => {
-    const child = spawn(command, args, { windowsHide: true })
+    const child = spawn(command, args, { windowsHide: true, env: { ...process.env, PATH: ffmpegPathEnv() } })
     const stdout: Buffer[] = []
     const stderr: Buffer[] = []
     let settled = false

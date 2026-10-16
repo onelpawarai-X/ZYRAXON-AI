@@ -63,6 +63,7 @@ export type Result = "compact" | "stop" | "continue"
 
 export interface Handle {
   readonly message: SessionV1.Assistant
+  readonly parts: Effect.Effect<SessionV1.Part[]>
   readonly updateToolCall: (
     toolCallID: string,
     update: (part: SessionV1.ToolPart) => SessionV1.ToolPart,
@@ -807,6 +808,9 @@ const layer = Layer.effect(
       return {
         get message() {
           return ctx.assistantMessage
+        },
+        get parts() {
+          return MessageV2.parts(ctx.assistantMessage.id).pipe(Effect.provideService(Database.Service, database))
         },
         updateToolCall,
         completeToolCall,

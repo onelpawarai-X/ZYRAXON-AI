@@ -74,7 +74,7 @@ export const SvgGenerateTool = Tool.define<typeof Parameters>(
             }
 
             const size = params.size || defaultSizes[params.type] || 24
-            const colors = params.colors || ["#6366f1", "#8b5cf6"]
+            const colors: string[] = params.colors ? [...params.colors] : ["#6366f1", "#8b5cf6"]
             const style = (params.style as any) || "outline"
 
             let svg: string

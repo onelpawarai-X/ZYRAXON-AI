@@ -77,7 +77,9 @@ import { scheduleConnectedMeasure } from "./measure"
 import { observeElementOffsetReconnectAware } from "./observe-element-offset"
 import { createTimelineProjection } from "./projection"
 import { MessageComment, SummaryDiff, TimelineRow, TimelineRowMap } from "./rows"
+import { MediaProcessingIndicator } from "./media-processing"
 import { filterVirtualIndexes } from "./virtual-items"
+import "./media-processing.css"
 
 const emptyMessages: MessageType[] = []
 const emptyParts: PartType[] = []
@@ -1821,6 +1823,22 @@ export function MessageTimeline(props: {
 
   const workingTurn = (userMessageID: string) => sessionStatus().type !== "idle" && activeMessageID() === userMessageID
 
+  // A large audio/video part is re-encoded (and possibly split) before the model
+  // sees it, which can take a while. Surface that as a live animation while the
+  // turn is still working, so a slow prepare never looks like a frozen screen.
+  const mediaProcessing = (userMessageID: string): { kind: "audio" | "video"; filename?: string } | undefined => {
+    if (!workingTurn(userMessageID)) return undefined
+    const message = messageByID().get(userMessageID)
+    if (!message || message.role !== "user") return undefined
+    for (const part of getMsgParts(userMessageID)) {
+      const candidate = part as { type?: string; mime?: string; filename?: string; url?: string }
+      if (candidate.type !== "file") continue
+      const mime = candidate.mime ?? ""
+      if (mime.startsWith("audio/")) return { kind: "audio", filename: candidate.filename }
+      if (mime.startsWith("video/")) return { kind: "video", filename: candidate.filename }
+    }
+  }
+
   const turnDurationMs = (userMessageID: string) => {
     const message = messageByID().get(userMessageID)
     if (!message || message.role !== "user") return
@@ -2083,6 +2101,13 @@ export function MessageTimeline(props: {
         return (
           <TimelineRowFrame row={thinkingRow}>
             <div data-slot="session-turn-message-container" class="w-full px-4 md:px-5">
+              <Show when={mediaProcessing(thinkingRow().userMessageID)}>
+                {(media) => (
+                  <div class="mb-2">
+                    <MediaProcessingIndicator kind={media().kind} filename={media().filename} />
+                  </div>
+                )}
+              </Show>
               <TimelineThinkingRow
                 reasoningHeading={thinkingRow().reasoningHeading}
                 showReasoningSummaries={settings.general.showReasoningSummaries()}

@@ -111,7 +111,7 @@ export class ZyraxonX {
     const prediction = this.predict.predictNext(text)
     if (prediction) this.emit("prediction", prediction)
 
-    const context: Record<string, any> = {
+    const context: { graph: any; memory: any; learn: any; knowledgeContext?: string } = {
       graph: this.graph,
       memory: this.memory,
       learn: this.learn,

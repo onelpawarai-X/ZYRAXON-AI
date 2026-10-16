@@ -485,7 +485,7 @@ interface CreateResult {
   instructions?: string
 }
 
-interface AuthResult {
+export interface AuthResult {
   authorizationUrl: string
   oauthState: string
   client?: MCPClient
@@ -541,11 +541,11 @@ export interface Interface {
     mcpName: string,
     onAuthorization?: (authorizationUrl: string, oauthState: string) => void,
     options?: { open?: boolean },
-  ) => Effect.Effect<{ authorizationUrl: string; oauthState: string }, NotFoundError>
+  ) => Effect.Effect<AuthResult & { error?: string }, NotFoundError>
   readonly authenticate: (
     mcpName: string,
     onAuthorization?: (authorizationUrl: string) => void,
-  ) => Effect.Effect<Status, NotFoundError>
+  ) => Effect.Effect<Status, Error>
   readonly finishAuth: (mcpName: string, authorizationCode: string) => Effect.Effect<Status, NotFoundError>
   readonly removeAuth: (mcpName: string) => Effect.Effect<void>
   readonly supportsOAuth: (mcpName: string) => Effect.Effect<boolean, NotFoundError>
@@ -1557,7 +1557,19 @@ const layer = Layer.effect(
           // No callback is driving this handshake, so the page opens itself. A missed
           // callback used to leave the consent URL built and never shown — the browser
           // never appeared and the connect sat waiting on a page nobody could approve.
-          yield* browser.open(url)
+          //
+          // A failed open is logged rather than raised: the consent URL is already
+          // built and is returned to the caller either way, so the person can still
+          // open it by hand instead of losing the whole sign-in attempt.
+          yield* browser.open(url).pipe(
+            Effect.catch((error) =>
+              Effect.logWarning("oauth consent page could not be opened", {
+                server: mcpName,
+                url,
+                reason: error instanceof Error ? error.message : String(error),
+              }),
+            ),
+          )
         }
       })
       yield* openConsent(consentUrl)

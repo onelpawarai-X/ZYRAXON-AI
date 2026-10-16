@@ -47,7 +47,7 @@ export function schema<S extends EffectSchema.Decoder<unknown, never>>(
     // from starting.
     console.warn(`[config] ${source}: unrecognized keys ignored: ${extra.join(", ")}`)
     if (typeof data === "object" && data !== null && !Array.isArray(data)) {
-      const cleaned = { ...data }
+      const cleaned: Record<string, unknown> = { ...data }
       for (const key of extra) delete cleaned[key]
       data = cleaned
     }

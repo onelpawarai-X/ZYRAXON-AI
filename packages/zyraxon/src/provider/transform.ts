@@ -6,7 +6,7 @@ import type { JSONSchema7 } from "@ai-sdk/provider"
 import type * as Provider from "./provider"
 import type * as ProviderCatalog from "@zyraxon-ai/core/provider-catalog"
 import { iife } from "@/util/iife"
-import { mediaCarrierAccepts, modelAcceptsInputModality } from "@/util/media"
+import { inlineMediaTooLarge, mediaCarrierAccepts, modelAcceptsInputModality } from "@/util/media"
 
 type Modality = NonNullable<ProviderCatalog.Model["modalities"]>["input"][number]
 
@@ -432,6 +432,18 @@ function unsupportedParts(msgs: ModelMessage[], model: Provider.Model): ModelMes
 
       const mime = part.type === "image" ? String(part.image).split(";")[0].replace("data:", "") : part.mediaType
       const filename = part.type === "file" ? part.filename : undefined
+      // Oversized inline media trips the upstream payload limit and surfaces as an
+      // opaque provider 400. Downgrade it to a note so the model still answers and
+      // the reason is visible, matching the unsupported-modality path. The payload
+      // lives in `data` (bare base64) for file parts, not in `url`.
+      const payload = part.type === "file" ? (part as { data?: unknown; url?: string }).data ?? (part as { url?: string }).url : part.image
+      if (inlineMediaTooLarge(mime, payload)) {
+        const name = filename ? `"${filename}"` : mime
+        return {
+          type: "text" as const,
+          text: `ERROR: ${name} is too large to attach (over 36 MB). Ask the user to send a smaller file, or a link.`,
+        }
+      }
       const modality = mimeToModality(mime)
       if (!modality) return part
       if (modelAcceptsInputModality(model.capabilities.input, mime) && mediaCarrierAccepts(model.api.npm, mime)) return part

@@ -117,21 +117,21 @@ export type PriorityTask = {
 }
 
 export class PriorityQueue {
-  private tasks: PriorityTask[] = []
+  private _tasks: PriorityTask[] = []
   private _running = false
 
-  get tasks() { return [...this.tasks].sort((a, b) => b.priority - a.priority) }
-  get pendingCount() { return this.tasks.filter(t => t.status === "pending").length }
+  get tasks() { return [...this._tasks].sort((a, b) => b.priority - a.priority) }
+  get pendingCount() { return this._tasks.filter(t => t.status === "pending").length }
 
   enqueue(id: string, priority: number, execute: () => Promise<any>) {
-    this.tasks.push({ id, priority, execute, status: "pending", created: Date.now() })
+    this._tasks.push({ id, priority, execute, status: "pending", created: Date.now() })
   }
 
   async process(): Promise<void> {
     if (this._running) return
     this._running = true
     while (true) {
-      const next = this.tasks
+      const next = this._tasks
         .filter(t => t.status === "pending")
         .sort((a, b) => b.priority - a.priority)[0]
       if (!next) break
@@ -147,11 +147,11 @@ export class PriorityQueue {
   }
 
   cancel(id: string) {
-    const task = this.tasks.find(t => t.id === id)
+    const task = this._tasks.find(t => t.id === id)
     if (task && task.status === "pending") task.status = "failed"
   }
 
-  clear() { this.tasks = [] }
+  clear() { this._tasks = [] }
 }
 
 // ─── Geofence ─────────────────────────────────────────────
@@ -221,8 +221,8 @@ export class Scheduler {
     this.tasks.set(id, { id, intervalMs, action, enabled: true, lastRun: 0 })
   }
 
-  enable(id: string) { this.tasks.get(id).enabled = true }
-  disable(id: string) { this.tasks.get(id).enabled = false }
+  enable(id: string) { this.tasks.get(id)!.enabled = true }
+  disable(id: string) { this.tasks.get(id)!.enabled = false }
   remove(id: string) { this.stop(id); this.tasks.delete(id) }
 
   start(id: string) {

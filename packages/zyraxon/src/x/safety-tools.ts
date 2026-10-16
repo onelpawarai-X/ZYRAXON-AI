@@ -296,7 +296,7 @@ export class FMEAAnalyzer {
             });
         });
         if (!highest) return { ok: false, error: "no components" };
-        return { ok: true, data: { component: highestComponent, ...highest } };
+        return { ok: true, data: { component: highestComponent, ...((highest as any)) } };
     }
 
     getRecommendations(): R {

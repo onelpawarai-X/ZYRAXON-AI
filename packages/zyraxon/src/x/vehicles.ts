@@ -108,7 +108,7 @@ export class DroneController {
     this._telemetry.timestamp = Date.now()
   }
 
-  private send(cmd: string, params: any) {
+  send(cmd: string, params: any = {}) {
     if (!this.sock) return
     this._seq++
     this.sock.send(JSON.stringify({ seq: this._seq, cmd, ...params }))

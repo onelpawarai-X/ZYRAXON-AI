@@ -227,7 +227,7 @@ export class SandboxRuntime {
       totalExecutions: this.executionHistory.length,
       successRate: successCount / this.executionHistory.length,
       avgDuration,
-      outputEntropy: shannonEntropy(Array.from(freq.values())),
+      outputEntropy: shannonEntropy(Array.from(freq.values()).join(",")),
     }
   }
 

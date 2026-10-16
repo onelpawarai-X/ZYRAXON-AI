@@ -261,7 +261,7 @@ export function startDownload(
     return {
       pause: () => {},
       cancel: () => existing.process.abort(),
-      promise: existing.promise,
+      promise: existing.process.promise,
     }
   }
 
@@ -298,14 +298,14 @@ export function startDownload(
     process: download,
     progress: {
       modelId: model.id,
-      status: "downloading" as const,
+      status: "downloading",
       bytesDownloaded: 0,
       totalBytes: model.expectedSizeBytes,
       percent: 0,
       speedBytesPerSec: 0,
       etaSeconds: 0,
       startTime: Date.now(),
-    },
+    } as DownloadProgress,
     callbacks,
   }
 
@@ -322,7 +322,7 @@ export function startDownload(
     pause: () => {
       // Pause = abort (will need resume logic for full implementation)
       download.abort()
-      entry.progress.status = "paused"
+      entry.progress.status = "paused" as const
       wrapper(entry.progress)
     },
     cancel: () => {

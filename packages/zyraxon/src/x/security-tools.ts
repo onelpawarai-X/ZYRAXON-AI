@@ -495,7 +495,7 @@ export class EncryptionEngine {
   async hash(data: string, algorithm: string = "SHA-256"): Promise<R> {
     try {
       const enc = new TextEncoder().encode(data)
-      const hashBuffer = await crypto.subtle.hash(algorithm, enc)
+      const hashBuffer = await crypto.subtle.digest(algorithm, enc)
       const hashArray = Array.from(new Uint8Array(hashBuffer))
       const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("")
       return { ok: true, data: { hash: hashHex, algorithm } }

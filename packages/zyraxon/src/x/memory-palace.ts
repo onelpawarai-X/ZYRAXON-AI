@@ -14,7 +14,7 @@ import { Global } from "@zyraxon-ai/core/global"
 
 type DB = import("bun:sqlite").Database
 
-type MemoryNode = {
+export type MemoryNode = {
   id: string
   type: "conversation" | "code_change" | "decision" | "fact" | "person" | "project" | "emotion" | "skill"
   content: any
@@ -27,7 +27,7 @@ type MemoryNode = {
   decay: number
 }
 
-type MemoryQuery = {
+export type MemoryQuery = {
   text?: string
   type?: MemoryNode["type"]
   tags?: string[]
@@ -36,7 +36,7 @@ type MemoryQuery = {
   limit?: number
 }
 
-type MemoryStats = {
+export type MemoryStats = {
   totalNodes: number
   byType: Record<string, number>
   avgImportance: number

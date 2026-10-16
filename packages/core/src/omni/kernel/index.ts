@@ -171,7 +171,7 @@ export class KernelEngine {
     return this.db
       .query("SELECT name FROM mechanism_registry WHERE active = 1")
       .all()
-      .map((r: { name: string }) => r.name)
+      .map((r) => (r as { name: string }).name)
   }
 
   getMechanismStats(): Array<{ name: string; successCount: number; failCount: number; lastUsed: number }> {

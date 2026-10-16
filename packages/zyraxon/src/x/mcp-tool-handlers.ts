@@ -1670,7 +1670,7 @@ Write-Output ($path + '|' + $rect.Width + '|' + $rect.Height + '|' + $enc)`
       if (!ident) return err("tab_identifier is required (tab index or title substring)")
       try {
         const { port, tabs } = await listChromeTabsLocal()
-        let target = tabs[0]
+        let target: (typeof tabs)[number] | undefined = tabs[0]
         if (/^\d+$/.test(ident)) {
           const idx = Number(ident)
           target = tabs[idx] ?? tabs[idx - 1]
@@ -1693,7 +1693,7 @@ Write-Output ($path + '|' + $rect.Width + '|' + $rect.Height + '|' + $enc)`
         if (!ident) {
           return err(`tab_identifier is required. Open tabs: ${tabs.map((t, i) => `${i}:${t.title || t.url}`).join(" | ")}`)
         }
-        let target = tabs[0]
+        let target: (typeof tabs)[number] | undefined = tabs[0]
         if (/^\d+$/.test(ident)) {
           const idx = Number(ident)
           target = tabs[idx] ?? tabs[idx - 1]

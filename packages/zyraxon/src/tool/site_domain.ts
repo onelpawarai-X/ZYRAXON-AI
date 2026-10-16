@@ -44,6 +44,9 @@ const Parameters = Schema.Struct({
   pages: Schema.optional(Schema.Array(Schema.String)).annotate({
     description: "Page paths for sitemap (for generate_sitemap)",
   }),
+  subdomain: Schema.optional(Schema.String).annotate({
+    description: "Subdomain (optional, e.g. blog for blog.zorkson.com)",
+  }),
   title: Schema.optional(Schema.String).annotate({
     description: "Site title for SEO (for generate_seo)",
   }),
@@ -168,7 +171,7 @@ export const SiteDomainTool = Tool.define<typeof Parameters>(
                   return { success: false, output: "", error: `Site not found: ${params.siteId}` }
                 }
 
-                const pages = params.pages || [""]
+                const pages = params.pages ? [...params.pages] : [""]
                 const sitemap = domainManager.generateSitemap(site.directory, params.url, pages)
 
                 // Save to site directory

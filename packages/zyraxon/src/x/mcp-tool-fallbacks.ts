@@ -1,9 +1,9 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-import type { XToolDef } from "../x-tool-registry"
+import type { XToolDef } from "./x-tool-registry"
 import { toolHandlers, type HandlerArgs, type HandlerResult } from "./mcp-tool-handlers"
 
-function fb(id: string, name: string, desc: string, params: Record<string, { type: string; description: string; required?: boolean }>, cat: string, server: string): XToolDef {
+function fb(id: string, name: string, desc: string, params: Record<string, { type: string; description?: string; required?: boolean }>, cat: string, server: string): XToolDef {
   return { id, name, description: desc, category: cat, parameters: params,
     execute: async (args: HandlerArgs): Promise<HandlerResult> => {
       try {

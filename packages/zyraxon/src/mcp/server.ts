@@ -17,12 +17,7 @@ import { omniTools } from "./omni-tools"
 // ULTRA TOOL REGISTRY — Permission-controlled
 // ============================================
 
-export type UltraToolFn = (args: Record<string, unknown>) => Promise<{
-  success: boolean
-  output: string
-  error?: string
-  details?: Record<string, unknown>
-}>
+export type UltraToolFn = (args: any) => Promise<any>
 
 export interface UltraToolEntry {
   execute: UltraToolFn

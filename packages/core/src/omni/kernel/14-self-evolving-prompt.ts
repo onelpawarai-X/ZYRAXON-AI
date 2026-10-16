@@ -200,7 +200,7 @@ export class SelfEvolvingPrompt {
           score: entry.effectiveness * 0.9,
         })
       }
-      const actionVariants = generateActionVariants(entry.action)
+      const actionVariants = this.generateActionVariants(entry.action)
       for (const variant of actionVariants.slice(0, 2)) {
         candidates.push({
           trigger: entry.trigger,

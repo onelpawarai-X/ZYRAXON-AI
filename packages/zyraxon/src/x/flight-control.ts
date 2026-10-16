@@ -59,9 +59,9 @@ export class AttitudeController {
     const rollCmd = this.outerRollPID.compute(targetRoll - currentRoll, dt)
     const pitchCmd = this.outerPitchPID.compute(targetPitch - currentPitch, dt)
     return {
-      rollRateCmd: +this.rollRatePID.compute(rollCmd - rollRate, dt).toFixed(3),
-      pitchRateCmd: +this.pitchRatePID.compute(pitchCmd - pitchRate, dt).toFixed(3),
-      yawRateCmd: +this.yawRatePID.compute(yawErr - yawRate, dt).toFixed(3),
+      rollRateCmd: +this.rollRatePID.compute(rollCmd, rollRate, dt).toFixed(3),
+      pitchRateCmd: +this.pitchRatePID.compute(pitchCmd, pitchRate, dt).toFixed(3),
+      yawRateCmd: +this.yawRatePID.compute(yawErr, yawRate, dt).toFixed(3),
     }
   }
 }
@@ -212,7 +212,7 @@ export class AutopilotManager {
   disengage(): void { this.engaged = false; this.director.disengage() }
   isEngaged(): boolean { return this.engaged }
 
-  compute(state: { altitude: number; airspeed: number; heading: number; vs: number; lat: number; lon: number; roll: number; pitch: number; rollRate: number; pitchRate: number; yawRate: number }, dt: number) {
+  compute(state: any, dt: number) {
     if (!this.engaged) return { aileron: 0, elevator: 0, rudder: 0, throttle: 50, engaged: false }
     const cmd = this.director.compute(state, dt)
     const rates = this.attitude.compute(cmd.roll, cmd.pitch, 0, state.roll, state.pitch, 0, state.rollRate, state.pitchRate, state.yawRate, dt)
@@ -271,7 +271,7 @@ export class AircraftFlightControl {
     this.director = this.autopilot.director
   }
 
-  updateSurface(name: keyof typeof surfaces, value: any): void {
+  updateSurface(name: keyof AircraftFlightControl["surfaces"], value: any): void {
     (this.surfaces as any)[name] = value
   }
 

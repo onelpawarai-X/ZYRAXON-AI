@@ -6,7 +6,7 @@
  * Supports: IoT, Robotics, Vehicles, Software, Hardware, Everything
  */
 
-type CommandIntent = {
+export type CommandIntent = {
   domain: string
   action: string
   target: string
@@ -14,7 +14,7 @@ type CommandIntent = {
   confidence: number
 }
 
-type CommandResult = {
+export type CommandResult = {
   success: boolean
   output: any
   domain: string
@@ -23,7 +23,7 @@ type CommandResult = {
   sideEffects: string[]
 }
 
-type DeviceProfile = {
+export type DeviceProfile = {
   id: string
   type: string
   capabilities: string[]

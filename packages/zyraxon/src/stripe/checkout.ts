@@ -127,7 +127,7 @@ const layer = Layer.effect(
 
     const getPaymentLinks = Effect.fn("StripeCheckout.getPaymentLinks")(function* () {
       return {
-        free: undefined,
+        free: PAYMENT_LINKS.free ?? "",
         pro: PAYMENT_LINKS.pro ?? "",
         max: PAYMENT_LINKS.max ?? "",
         ultra: PAYMENT_LINKS.ultra ?? "",

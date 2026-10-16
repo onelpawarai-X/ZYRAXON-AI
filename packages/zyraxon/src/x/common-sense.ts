@@ -137,28 +137,28 @@ export class CausalInference {
 
   simulateIntervention(varId: string, value: any): R {
     if (!this._variables.has(varId)) return { ok: false, error: "Variable not found" };
-    const受影响Vars = new Map<string, any>();
-    受影响Vars.set(varId, value);
+    const affectedVars = new Map<string, any>();
+    affectedVars.set(varId, value);
     const queue = [varId];
     while (queue.length > 0) {
       const current = queue.shift()!;
       const outgoing = this._links.filter(l => l.from === current);
       for (const link of outgoing) {
-        if (受影响Vars.has(link.to)) continue;
-        const sourceVal = 受影响Vars.get(current) ?? 0;
+        if (affectedVars.has(link.to)) continue;
+        const sourceVal = affectedVars.get(current) ?? 0;
         const numVal = typeof sourceVal === "number" ? sourceVal : parseFloat(sourceVal) || 0;
         const newVal = numVal * link.strength;
-        受影响Vars.set(link.to, newVal);
+        affectedVars.set(link.to, newVal);
         queue.push(link.to);
       }
     }
-    for (const [vid, val] of 受影响Vars) {
+    for (const [vid, val] of affectedVars) {
       const v = this._variables.get(vid)!;
       v.value = val;
       const obs = this._observations.get(vid)!;
       obs.push({ varId: vid, value: val, timestamp: Date.now() });
     }
-    return { ok: true, data: Object.fromEntries(受影响Vars) };
+    return { ok: true, data: Object.fromEntries(affectedVars) };
   }
 }
 

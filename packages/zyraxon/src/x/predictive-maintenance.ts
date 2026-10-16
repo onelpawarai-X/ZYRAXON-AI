@@ -382,7 +382,7 @@ export class OilAnalyzer {
     if (result.data.healthScore <= 25) recs.push("immediate_oil_change");
     else if (result.data.healthScore <= 50) recs.push("schedule_oil_change");
     if (result.data.issues.includes("water_contamination")) recs.push("investigate_water_source");
-    if (result.data.issues.some(i => i.includes("metal"))) recs.push("inspect_wear_parts");
+    if (result.data.issues.some((i: string) => i.includes("metal"))) recs.push("inspect_wear_parts");
     if (recs.length === 0) recs.push("oil_condition_normal");
     return { ok: true, data: { recommendations: recs, healthScore: result.data.healthScore } };
   }
