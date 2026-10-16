@@ -8,13 +8,18 @@ const defaultContext: InstanceContext = {
   directory: process.cwd(),
   worktree: process.cwd(),
   project: {
-    id: "default",
-    type: "node" as const,
+    id: "default" as InstanceContext["project"]["id"],
+    worktree: process.cwd(),
     name: "default",
+    time: { created: 0, updated: 0 },
+    sandboxes: [],
   },
 }
 
-export const InstanceRef = Context.Reference<InstanceContext | undefined>("~zyraxon/InstanceRef", {
+// A reference with a non-optional default: the instance context is always
+// resolvable (falling back to the process working directory), so consumers never
+// have to null-check it. `WorkspaceRef` stays optional because it has no default.
+export const InstanceRef = Context.Reference<InstanceContext>("~zyraxon/InstanceRef", {
   defaultValue: () => defaultContext,
 })
 

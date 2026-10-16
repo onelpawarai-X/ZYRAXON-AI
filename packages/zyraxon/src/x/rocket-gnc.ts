@@ -214,7 +214,7 @@ export class TelemetryRecorder {
     const keys = new Set<string>()
     this.records.forEach(r => Object.keys(r.data).forEach(k => keys.add(k)))
     const header = ['time', ...keys].join(',')
-    const rows = this.records.map(r => [r.time, ...keys.map(k => r.data[k] ?? '')].join(','))
+    const rows = this.records.map(r => [r.time, ...[...keys].map((k: string) => r.data[k] ?? '')].join(','))
     return header + '\n' + rows.join('\n')
   }
 

@@ -81,13 +81,14 @@ interface CabinStatus {
   safetyChecklist: string[];
 }
 
-interface TCASResolution {
+export interface TCASResolutionData {
   action: 'CLIMB' | 'DESCEND' | 'MAINTAIN' | 'TURN_LEFT' | 'TURN_RIGHT';
   verticalRate: number | null;
   headingChange: number | null;
   threat: TrafficInfo;
   separation: { vertical: number; horizontal: number };
 }
+export type TCASResolutionType = TCASResolutionData;
 
 export class ATCCommunication {
   private _log: string[] = [];
@@ -536,7 +537,7 @@ export class TCASResolution {
     const altDiff = closest.alt - own.alt;
     const hSep = this._horizontalSeparation(own, closest);
     const closingRate = this._closingRate(own, closest);
-    let action: TCASResolution['action'];
+    let action: TCASResolutionData['action'];
     let verticalRate: number | null = null;
     let headingChange: number | null = null;
 
@@ -559,7 +560,7 @@ export class TCASResolution {
       action = 'MAINTAIN';
     }
 
-    const resolution: TCASResolution = {
+    const resolution: TCASResolutionType = {
       action, verticalRate, headingChange,
       threat: closest,
       separation: { vertical: Math.abs(altDiff), horizontal: Math.round(hSep) },
@@ -904,6 +905,5 @@ export class EngineHealthMonitoring {
 export type {
   R, TrafficInfo, OverrideRequest, EngineReading, Engine,
   NOTAM, RunwayCondition, METARData, SIGMETData, CabinStatus,
-  TCASResolution as TCASResolutionType,
 };
 

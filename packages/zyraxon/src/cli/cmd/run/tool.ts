@@ -1473,7 +1473,7 @@ export function toolEntryBody(commit: StreamCommit, raw: string): RunEntryBody |
   // Detect media generation tools in progress — show generating animation
   if (commit.phase === "progress" && commit.kind === "tool") {
     const toolName = (commit.tool || commit.part?.tool || "").toLowerCase()
-    const input = commit.part?.input || {}
+    const input = (commit.part as { input?: Record<string, unknown> } | undefined)?.input || {}
     const prompt = (input as any).prompt || (input as any).text || (input as any).description || ""
 
     if (toolName.includes("image") || toolName.includes("generate_image") || toolName.includes("flux")) {

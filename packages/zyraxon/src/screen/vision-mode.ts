@@ -125,7 +125,7 @@ export class VisionMode {
   private async handleNewFrame(frame: Frame): Promise<void> {
     // Process the frame
     const previousFrame = this.state.currentFrame
-    const processed = await this.processor.processFrame(frame, previousFrame)
+    const processed = await this.processor.processFrame(frame, previousFrame ?? undefined)
 
     // Store in memory
     await this.memory.storeFrame(processed)

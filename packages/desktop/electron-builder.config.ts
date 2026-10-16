@@ -133,6 +133,8 @@ const getBase = (appId: string): Configuration => ({
       filter: ["index.js", "index.d.ts", "build/Release/mac_window.node", "swift-build/**"],
     },
     {
+      // Carries bundled tools such as ffmpeg, so media normalization works on a
+      // fresh install without the user installing anything.
       from: "resources/bin/",
       to: "bin/",
     },

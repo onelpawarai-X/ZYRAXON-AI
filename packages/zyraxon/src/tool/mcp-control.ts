@@ -359,7 +359,7 @@ function unknownApp(apps: AppEntry[], wanted: string) {
  */
 const tokenFlow = Effect.fn("McpControl.tokenFlow")(function* (
   mcp: MCP.Interface,
-  config: Config.Service,
+  config: Config.Interface,
   app: AppEntry,
   token?: string,
 ) {

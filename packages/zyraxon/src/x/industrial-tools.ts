@@ -309,6 +309,7 @@ export class RoboticArmController {
   private _speed: number;
   private readonly MAX_ANGLE = 180;
   private readonly MIN_ANGLE = -180;
+  private _position: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 };
 
   constructor() {
     this._joints = { j1: 0, j2: 0, j3: 0, j4: 0, j5: 0, j6: 0 };

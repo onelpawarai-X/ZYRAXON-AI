@@ -921,7 +921,7 @@ function extractTags(text: string): string[] {
     config: "config", configuration: "config", settings: "config",
     master: "master", মাস্টার: "master",
     important: "important", critical: "important",
-    opencode: "opencode", opencode: "opencode",
+    opencode: "opencode",
   }
   for (const [keyword, tag] of Object.entries(tagMap)) {
     if (lower.includes(keyword) && !tags.includes(tag)) tags.push(tag)

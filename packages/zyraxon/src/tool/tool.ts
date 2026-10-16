@@ -152,8 +152,8 @@ function wrap<Parameters extends Schema.Decoder<unknown>, Result extends Metadat
 
 export function define<
   Parameters extends Schema.Decoder<unknown>,
-  Result extends Metadata,
-  R,
+  Result extends Metadata = Metadata,
+  R = never,
   ID extends string = string,
 >(
   id: ID,

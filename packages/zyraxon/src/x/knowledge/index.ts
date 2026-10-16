@@ -157,7 +157,7 @@ export class KnowledgeSystem {
     if (this.entries.size === 0) {
       try {
         const kb = await import("./knowledge-base.json")
-        const entries: KnowledgeEntry[] = kb.default || kb
+        const entries = (kb.default || kb) as unknown as KnowledgeEntry[]
         for (const e of entries) {
           this.entries.set(e.id, {
             ...e,

@@ -57,7 +57,7 @@ async function saveMemories(store: MemoryStore) {
 }
 
 // Smart search with fuzzy matching and importance weighting
-function smartSearch(memories: MemoryEntry[], query: string, tags?: string[]): MemoryEntry[] {
+function smartSearch(memories: MemoryEntry[], query: string, tags?: readonly string[]): MemoryEntry[] {
   const queryLower = query.toLowerCase()
   const queryWords = queryLower.split(/\s+/).filter((w) => w.length > 1)
 
@@ -227,7 +227,7 @@ export const MemoryTool = Tool.define<typeof Parameters>(
                 const entry: MemoryEntry = {
                   key: params.key,
                   content: params.content,
-                  tags: params.tags ?? [],
+                  tags: params.tags ? [...params.tags] : [],
                   time_created: existing >= 0 ? store.memories[existing].time_created : now,
                   time_updated: now,
                   importance,

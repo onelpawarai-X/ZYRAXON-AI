@@ -531,7 +531,7 @@ const MATH = {
   huffmanEncode(text: string): { encoded: string; tree: any } {
     const freq: Record<string, number> = {}
     for (const ch of text) freq[ch] = (freq[ch] || 0) + 1
-    let nodes = Object.entries(freq).map(([ch, f]) => ({ ch, freq: f, left: null as any, right: null as any }))
+    let nodes: Array<{ ch: string | null; freq: number; left: any; right: any }> = Object.entries(freq).map(([ch, f]) => ({ ch, freq: f, left: null as any, right: null as any }))
     while (nodes.length > 1) {
       nodes.sort((a, b) => a.freq - b.freq)
       const left = nodes.shift()!
@@ -1078,7 +1078,7 @@ export async function ultraDocGen(args: {
       details: { totalFunctions, classes: classes.length, format },
     }
   } catch (e: any) {
-    return { success: false, output: "", error: e.message }
+    return { success: false, output: "", details: { error: e.message } }
   }
 }
 
@@ -1312,7 +1312,7 @@ export async function ultraDebug(args: {
       },
     }
   } catch (e: any) {
-    return { success: false, output: "", error: e.message }
+    return { success: false, output: "", details: { error: e.message } }
   }
 }
 
@@ -1509,7 +1509,7 @@ export async function ultraComplexity(args: {
       },
     }
   } catch (e: any) {
-    return { success: false, output: "", error: e.message }
+    return { success: false, output: "", details: { error: e.message } }
   }
 }
 
@@ -1672,7 +1672,7 @@ export async function ultraArchitect(args: {
       },
     }
   } catch (e: any) {
-    return { success: false, output: "", error: e.message }
+    return { success: false, output: "", details: { error: e.message } }
   }
 }
 
@@ -1856,7 +1856,7 @@ export async function ultraGraph(args: {
       details: { nodes: nodes.length, edges: edges.length, patterns },
     }
   } catch (e: any) {
-    return { success: false, output: "", error: e.message }
+    return { success: false, output: "", details: { error: e.message } }
   }
 }
 
@@ -2050,7 +2050,7 @@ export async function ultraMetrics(args: {
       },
     }
   } catch (e: any) {
-    return { success: false, output: "", error: e.message }
+    return { success: false, output: "", details: { error: e.message } }
   }
 }
 
@@ -2227,7 +2227,7 @@ export async function ultraProfile(args: {
   slowest?: boolean
   memoryHogs?: boolean
   failures?: boolean
-}): Promise<{ success: boolean; output: string; details?: Record<string, unknown> }> {
+}): Promise<{ success: boolean; output: string; details?: Record<string, any> }> {
   try {
     if (args.toolName) {
       const report = toolProfiler.generateReport(args.toolName)
@@ -2273,7 +2273,7 @@ export async function ultraProfile(args: {
       details: { type: "full-report", toolsProfiled: toolProfiler["profiles"].size },
     }
   } catch (e: any) {
-    return { success: false, output: "", error: e.message }
+    return { success: false, output: "", details: { error: e.message } }
   }
 }
 
@@ -2390,7 +2390,7 @@ export async function ultraSchedule(args: {
   priority?: number
   dependencies?: string[]
   id?: string
-}): Promise<{ success: boolean; output: string; details?: Record<string, unknown> }> {
+}): Promise<{ success: boolean; output: string; details?: Record<string, any> }> {
   try {
     switch (args.action) {
       case "enqueue": {
@@ -2417,7 +2417,7 @@ export async function ultraSchedule(args: {
       }
     }
   } catch (e: any) {
-    return { success: false, output: "", error: e.message }
+    return { success: false, output: "", details: { error: e.message } }
   }
 }
 

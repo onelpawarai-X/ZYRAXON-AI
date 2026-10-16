@@ -6,7 +6,7 @@
  * IoT, Smart Home, Smart Car, Smart City, Robotics
  */
 
-type IoTDevice = {
+export type IoTDevice = {
   id: string
   name: string
   type: "light" | "ac" | "heater" | "fan" | "lock" | "camera" | "speaker" | "thermostat" | "sensor" | "custom"
@@ -17,7 +17,7 @@ type IoTDevice = {
   lastSeen: number
 }
 
-type AutomationRule = {
+export type AutomationRule = {
   id: string
   name: string
   trigger: { type: string; value: any }
@@ -26,7 +26,7 @@ type AutomationRule = {
   enabled: boolean
 }
 
-type Scene = {
+export type Scene = {
   id: string
   name: string
   devices: { deviceId: string; state: Record<string, any> }[]

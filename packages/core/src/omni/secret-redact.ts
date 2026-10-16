@@ -169,8 +169,8 @@ export class SecretRedactEngine {
     return SENSITIVE_FILE_PATTERNS.some((p) => p.test(filename))
   }
 
-  scanFile(content: string, filename: string): Array<{ finding: string; severity: "low" | "high" | "critical"; line?: number }> {
-    const findings: Array<{ finding: string; severity: "low" | "high" | "critical"; line?: number }> = []
+  scanFile(content: string, filename: string): Array<{ finding: string; severity: "low" | "medium" | "high" | "critical"; line?: number }> {
+    const findings: Array<{ finding: string; severity: "low" | "medium" | "high" | "critical"; line?: number }> = []
     if (this.detectSensitiveFile(filename)) {
       findings.push({ finding: `Sensitive file detected: ${filename}`, severity: "critical" })
     }

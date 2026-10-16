@@ -58,6 +58,42 @@ export function mediaCarrierAccepts(npm: string, mime: string) {
   return true
 }
 
+// Inline media is base64-inflated (4/3) inside a JSON body that also carries the
+// whole prompt and tool catalogue, and the free gateway answers an opaque
+// `400 Param Incorrect` once the body crosses its payload limit. The verified
+// safe ceiling is well under the raw body cap, so the decoded budget here is
+// deliberately conservative: 24 MiB. Anything larger is re-encoded (and, when a
+// single re-encode still cannot fit, split into multiple parts) by
+// `media-normalize` before the provider ever sees it.
+export const MAX_INLINE_MEDIA_DECODED_BYTES = 24 * 1024 * 1024
+
+/** Decoded byte length of an inline base64 payload (data URL or bare base64). */
+export function inlineMediaDecodedBytes(value: string) {
+  if (value.startsWith("data:")) {
+    const comma = value.indexOf(",")
+    if (comma === -1) return undefined
+    const meta = value.slice(5, comma)
+    if (!meta.includes(";base64")) return undefined
+    value = value.slice(comma + 1)
+  }
+  return Math.floor((value.length * 3) / 4)
+}
+
+/** Decoded byte length of a raw media payload (base64 string or bytes). */
+export function mediaDecodedBytes(data: unknown) {
+  if (typeof data === "string") return inlineMediaDecodedBytes(data)
+  if (data instanceof Uint8Array) return data.byteLength
+  if (data instanceof ArrayBuffer) return data.byteLength
+  return undefined
+}
+
+/** Whether an inline media payload is large enough to trip the provider payload limit. */
+export function inlineMediaTooLarge(mime: string, data: unknown) {
+  if (!isMedia(mime)) return false
+  const bytes = mediaDecodedBytes(data)
+  return bytes !== undefined && bytes > MAX_INLINE_MEDIA_DECODED_BYTES
+}
+
 /**
  * Whether the catalogue's own capability flag agrees that a part can be carried.
  *

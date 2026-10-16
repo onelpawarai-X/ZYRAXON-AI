@@ -53,7 +53,6 @@ export type { MQTTMessage } from "./iot"
 export {
   ZyraxonBehavior,
   StateMachine,
-  DecisionTree,
   PriorityQueue,
   Geofence,
   Scheduler,
@@ -127,15 +126,13 @@ export {
 } from "./flight-control"
 
 export {
-  BoatMCS,
-  DynamicPositioning,
-  DPController,
-  DynamicPosition,
-  StationKeeper,
-  ThrusterAllocator,
-  DPFilter,
-  FlightControlSurfaces,
-  HelicopterControl,
+  BoatControlSystem,
+  PropulsionSystem,
+  SteeringSystem,
+  BilgeSystem,
+  NavigationLighting,
+  BoatAutopilot,
+  MarineWeather,
 } from "./boat-mcs"
 
 export {
@@ -254,8 +251,8 @@ export {
   isPinnedModel,
   getPinnedLocalPath,
   formatSize,
-} from "./pinned-models"
-export type { PinnedModel, ModelCategory } from "./pinned-models"
+} from "../provider/pinned-models"
+export type { PinnedModel, ModelCategory } from "../provider/pinned-models"
 
 export {
   startDownload,
@@ -266,8 +263,8 @@ export {
   getActiveDownloads,
   formatSpeed,
   formatETA,
-} from "./download-manager"
-export type { DownloadProgress, DownloadStatus } from "./download-manager"
+} from "../provider/download-manager"
+export type { DownloadProgress, DownloadStatus } from "../provider/download-manager"
 
 // ═══════════════════════════════════════════════════════════════════
 // Aviation Tools
@@ -282,7 +279,7 @@ export {
   CabinPressure,
   EngineHealthMonitoring,
 } from "./aviation-tools"
-export type { METAR, SIGMET, NOTAM, RunwayCondition } from "./aviation-tools"
+export type { METARData, SIGMETData, NOTAM, RunwayCondition } from "./aviation-tools"
 
 // ═══════════════════════════════════════════════════════════════════
 // Ground Vehicle Tools
@@ -617,19 +614,19 @@ export {
 // ═══════════════════════════════════════════════════════════════════
 
 export { UniversalCommandEngine } from "./universal-command"
-export type { UniversalCommand, CommandResult, CommandHistory } from "./universal-command"
+export type { CommandIntent, CommandResult, DeviceProfile } from "./universal-command"
 
 export { RealityBridge } from "./reality-bridge"
-export type { IoTDevice, Scene, DeviceState, AutomationAction } from "./reality-bridge"
+export type { IoTDevice, Scene, AutomationRule } from "./reality-bridge"
 
 export { OmniCreator } from "./omni-creator"
-export type { CreationType, CreationRequest, CreationResult, CreationTemplate } from "./omni-creator"
+export type { CreationType, CreationSpec, CreationResult, ProjectTemplate } from "./omni-creator"
 
 export { TimeManipulator } from "./time-manipulator"
-export type { CodeSnapshot, TimeEvent, EvolutionMetrics } from "./time-manipulator"
+export type { TimeRange, CodeSnapshot, DependencyChange, BugArchaeology, TimelineEvent } from "./time-manipulator"
 
 export { ConsciousnessTransfer } from "./consciousness-transfer"
-export type { Agent, TransferPackage, CollaborationSession } from "./consciousness-transfer"
+export type { AgentConsciousness, TransferPackage, CollaborationSession } from "./consciousness-transfer"
 
 export { SelfEvolvingCodebase } from "./self-evolve"
 export type { CodePattern, RefactorSuggestion, EvolutionMetric } from "./self-evolve"

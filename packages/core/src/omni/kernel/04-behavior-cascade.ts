@@ -68,7 +68,7 @@ export class BehaviorCascade {
     typingSpeed: 0, scrollDepth: 0, activeFile: "", lastActions: [],
     currentMode: "idle", modeConfidence: 0.5, entropy: 0, timestamp: Date.now(),
   }
-  private transitionCounts: Map<string, Map<string, number>> = new Map()
+  private transitionCounts: Map<string, Map<FlowState["currentMode"], number>> = new Map()
   private totalBySource: Map<string, number> = new Map()
   private actionHistory: ActionRecord[] = []
   private maxHistory = 50
@@ -109,7 +109,7 @@ export class BehaviorCascade {
     return bestMode
   }
 
-  private recordTransition(from: string, to: string) {
+  private recordTransition(from: FlowState["currentMode"], to: FlowState["currentMode"]) {
     if (!this.transitionCounts.has(from)) this.transitionCounts.set(from, new Map())
     const transitions = this.transitionCounts.get(from)!
     transitions.set(to, (transitions.get(to) ?? 0) + 1)

@@ -61,8 +61,8 @@ export class GitHubManager {
 
     try {
       const data = await fs.readFile(GITHUB_CONFIG_PATH, "utf-8")
-      this.config = JSON.parse(data)
-      this.octokit = new Octokit({ auth: this.config.token })
+      this.config = JSON.parse(data) as GitHubConfig
+      this.octokit = new Octokit({ auth: this.config!.token })
       return true
     } catch {
       return false

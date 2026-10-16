@@ -7,7 +7,7 @@ type R = { ok: boolean; data?: any; error?: string };
 export class V2XCommunication {
   private _connections: Map<string, { protocol: string; connected: boolean; lastSeen: number }> = new Map();
   private _messages: Array<{ from: string; to: string; type: string; payload: any; timestamp: number }> = [];
-  private _signalPhases: Map<string, { phase: number; duration: number; elapsed: number; cycleLength: number }> = new Map();
+  private _signalPhases: Map<string, { phase: number; duration: number[]; elapsed: number; cycleLength: number }> = new Map();
   private _connectionCounter: number = 0;
 
   connect(protocol: string): R {
@@ -53,7 +53,7 @@ export class V2XCommunication {
   getMessages(filter?: { type?: string; since?: number }): R {
     let result = this._messages;
     if (filter?.type) result = result.filter(m => m.type === filter.type);
-    if (filter?.since) result = result.filter(m => m.timestamp >= filter.since);
+    if (filter?.since) result = result.filter(m => m.timestamp >= (filter.since ?? 0));
     return { ok: true, data: result.slice(-100) };
   }
 

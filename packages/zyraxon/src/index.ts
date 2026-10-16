@@ -32,7 +32,7 @@ import { errorMessage } from "./util/error"
 import { PluginCommand } from "./cli/cmd/plug"
 import { Heap } from "./cli/heap"
 import { captureLog } from "./util/capture-log"
-import { InstallationVersion, InstallationChannel } from "@zyraxon-ai/core/installation/version"
+import { InstallationChannel } from "@zyraxon-ai/core/installation/version"
 
 const args = hideBin(process.argv)
 

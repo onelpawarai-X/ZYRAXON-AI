@@ -92,8 +92,10 @@ export const mcpHandlers = HttpApiBuilder.group(InstanceHttpApi, "mcp", (handler
         }
         return yield* mcp.startAuth(ctx.params.name, undefined, { open: ctx.query.open === "true" })
       }).pipe(
-        Effect.catchTag("MCP.NotFoundError", (error) =>
-          Effect.fail(new McpServerNotFoundError({ name: error.name, message: `MCP server not found: ${error.name}` })),
+        Effect.catchIf(
+          (error): error is MCP.NotFoundError => error instanceof MCP.NotFoundError,
+          (error) =>
+            Effect.fail(new McpServerNotFoundError({ name: error.name, message: `MCP server not found: ${error.name}` })),
         ),
       )
     })
@@ -130,8 +132,10 @@ export const mcpHandlers = HttpApiBuilder.group(InstanceHttpApi, "mcp", (handler
         }
         return yield* mcp.authenticate(ctx.params.name)
       }).pipe(
-        Effect.catchTag("MCP.NotFoundError", (error) =>
-          Effect.fail(new McpServerNotFoundError({ name: error.name, message: `MCP server not found: ${error.name}` })),
+        Effect.catchIf(
+          (error): error is MCP.NotFoundError => error instanceof MCP.NotFoundError,
+          (error) =>
+            Effect.fail(new McpServerNotFoundError({ name: error.name, message: `MCP server not found: ${error.name}` })),
         ),
         // A handshake that times out, is interrupted, or dies on its own is a failure
         // with a reason, not a defect. Left as a defect it became a 500 whose body was

@@ -7,7 +7,7 @@
  * No limits — does whatever is asked
  */
 
-type SystemState = {
+export type SystemState = {
   health: number
   performance: number
   capabilities: string[]
@@ -18,7 +18,7 @@ type SystemState = {
   lastImprovement: number
 }
 
-type Capability = {
+export type Capability = {
   name: string
   level: number
   maxLevel: number
@@ -27,7 +27,7 @@ type Capability = {
   improvements: string[]
 }
 
-type HealAction = {
+export type HealAction = {
   id: string
   type: "auto_fix" | "workaround" | "escalation" | "prevention"
   target: string
@@ -37,7 +37,7 @@ type HealAction = {
   resolved: boolean
 }
 
-type EvolutionStep = {
+export type EvolutionStep = {
   id: string
   from: string
   to: string
@@ -88,9 +88,9 @@ export class SingularityEngine {
     const actions: string[] = []
     const intent = this.analyzeIntent(request)
     const bestCapability = this.selectBestCapability(intent)
+    const cap = bestCapability ? this.capabilities.get(bestCapability) : undefined
 
-    if (bestCapability) {
-      const cap = this.capabilities.get(bestCapability)!
+    if (cap) {
       cap.lastUsed = Date.now()
       cap.experience += 10
       if (cap.experience >= cap.level * 100 && cap.level < cap.maxLevel) {

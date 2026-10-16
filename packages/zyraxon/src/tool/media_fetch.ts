@@ -231,7 +231,7 @@ export const MediaFetchTool = Tool.define<typeof Parameters>(
                   type: "icon",
                   style: (params.iconStyle as any) || "outline",
                   subject: params.query,
-                  colors: params.iconColors,
+                  colors: params.iconColors ? [...params.iconColors] : undefined,
                   size: params.iconSize,
                 })
 

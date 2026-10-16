@@ -6,9 +6,9 @@
  * Git history analysis, dependency evolution, bug archaeology
  */
 
-type TimeRange = { start: Date; end: Date }
+export type TimeRange = { start: Date; end: Date }
 
-type CodeSnapshot = {
+export type CodeSnapshot = {
   commit: string
   date: Date
   message: string
@@ -17,7 +17,7 @@ type CodeSnapshot = {
   stats: { totalFiles: number; totalLines: number; languages: Record<string, number> }
 }
 
-type DependencyChange = {
+export type DependencyChange = {
   date: Date
   package: string
   fromVersion: string
@@ -25,7 +25,7 @@ type DependencyChange = {
   breaking: boolean
 }
 
-type BugArchaeology = {
+export type BugArchaeology = {
   commit: string
   date: Date
   bugType: string
@@ -36,7 +36,7 @@ type BugArchaeology = {
   timeToFix?: number
 }
 
-type TimelineEvent = {
+export type TimelineEvent = {
   date: Date
   type: "commit" | "bug" | "refactor" | "feature" | "dependency" | "milestone"
   title: string

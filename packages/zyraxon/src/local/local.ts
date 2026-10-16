@@ -15,6 +15,7 @@ import * as fs from "fs"
 import * as os from "os"
 import * as path from "path"
 import * as child_process from "child_process"
+import { ensureLlamaServer, resolveLlamaServerSync } from "./llama-provision"
 
 // The file begins with the ASCII bytes "GGUF" (47 47 55 46). Compared as a
 // string rather than a little-endian integer: the previous integer constant
@@ -155,6 +156,8 @@ export function scanModels(): LocalModel[] {
 
 /** Locate a llama.cpp server binary, checking the bundled toolchain first. */
 export function findLlamaServer(): string | null {
+  const provisioned = resolveLlamaServerSync()
+  if (provisioned) return provisioned
   const candidates = [
     path.join(os.homedir(), ".zyraxon", "llama-server"),
     "/workspace/.tooling/llama/build/bin/llama-server",
@@ -366,7 +369,10 @@ async function ensureServer(modelPath: string): Promise<ServerHandle> {
   const existing = servers.get(modelPath)
   if (existing && !existing.proc.killed) return existing
 
-  const bin = findLlamaServer()
+  // A missing llama-server is fetched once, automatically, so a fresh install
+  // can run a GGUF model without the user building llama.cpp by hand.
+  let bin = findLlamaServer()
+  if (!bin) bin = await ensureLlamaServer()
   if (!bin) throw new Error("llama-server binary not found")
 
   const port = await nextFreePort()

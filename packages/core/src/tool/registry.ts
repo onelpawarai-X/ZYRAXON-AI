@@ -14,7 +14,7 @@ import { ApplicationTools } from "./application-tools"
 import { definition, permission, settle, validateName, type AnyTool, type RegistrationError } from "./tool"
 import { Tools } from "./tools"
 import { makeLocationNode } from "../effect/app-node"
-import { OmniKernelService } from "../omni/index"
+import { OmniKernelService, type ProcessAfterToolResult, type ProcessBeforeToolResult } from "../omni/index"
 
 export type ExecuteInput = {
   readonly sessionID: SessionSchema.ID
@@ -66,9 +66,16 @@ const registryLayer = Layer.effect(
         return { result: { type: "error" as const, value: `Stale tool call: ${input.call.name}` } }
 
       // OmniKernel: process before tool call — sanitize args and predict context
-      const beforeResult = yield* Effect.tryPromise({
-        try: () => omniKernel.processBeforeToolCall({ toolName: input.call.name, args: input.call.input, sessionId: input.sessionID }),
-        catch: () => ({ sanitizedArgs: input.call.input, prediction: { predictedFiles: [], predictedCommands: [], confidence: 0 } }),
+      const beforeResult = yield* Effect.promise(async (): Promise<ProcessBeforeToolResult> => {
+        try {
+          return await omniKernel.processBeforeToolCall({
+            toolName: input.call.name,
+            args: input.call.input,
+            sessionId: input.sessionID,
+          })
+        } catch {
+          return { sanitizedArgs: input.call.input, prediction: { predictedFiles: [], predictedCommands: [], confidence: 0 } }
+        }
       })
 
       const startTime = performance.now()
@@ -87,15 +94,18 @@ const registryLayer = Layer.effect(
 
       // OmniKernel: process after tool call — record result and learn
       const toolSuccess = !("result" in pending) || pending.result.type !== "error"
-      yield* Effect.tryPromise({
-        try: () => omniKernel.processAfterToolCall({
-          toolName: input.call.name,
-          result: "result" in pending ? pending.result : pending,
-          success: toolSuccess,
-          latency,
-          sessionId: input.sessionID,
-        }),
-        catch: () => ({ recorded: false, repairProposal: null, learned: false }),
+      yield* Effect.promise(async (): Promise<ProcessAfterToolResult> => {
+        try {
+          return await omniKernel.processAfterToolCall({
+            toolName: input.call.name,
+            result: "result" in pending ? pending.result : pending,
+            success: toolSuccess,
+            latency,
+            sessionId: input.sessionID,
+          })
+        } catch {
+          return { recorded: false, repairProposal: null, learned: false }
+        }
       })
 
       if ("result" in pending) return pending
@@ -141,10 +151,10 @@ const registryLayer = Layer.effect(
           if (whollyDisabled(permission(registration.tool, name), permissions)) registrations.delete(name)
         return {
           definitions: Array.from(registrations, ([name, registration]) => definition(name, registration.tool)),
-          settle: (input) => {
+          settle: (input): Effect.Effect<Settlement, ToolOutputStore.Error> => {
             const registration = registrations.get(input.call.name)
             if (registration) return settleWith(input, registration.identity)
-            return Effect.succeed({ result: { type: "error", value: `Unknown tool: ${input.call.name}` } })
+            return Effect.succeed({ result: { type: "error" as const, value: `Unknown tool: ${input.call.name}` } })
           },
         }
       }),

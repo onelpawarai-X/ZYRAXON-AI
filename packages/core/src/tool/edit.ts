@@ -20,7 +20,7 @@ import { PermissionV2 } from "../permission"
 import { ToolRegistry } from "./registry"
 import { Tool } from "./tool"
 import { Tools } from "./tools"
-import { OmniKernelService } from "../omni/index"
+import { OmniKernelService, type ProcessBeforeFileEditResult } from "../omni/index"
 
 export const name = "edit"
 
@@ -186,13 +186,16 @@ const layer = Layer.effectDiscard(
                     : source.text.replace(oldString, newString)
 
                 // OmniKernel: process before file edit — validate the change
-                const omniResult = yield* Effect.tryPromise({
-                  try: () => omniKernel.processBeforeFileEdit({
-                    filePath: target.canonical,
-                    oldContent: source.text,
-                    newContent: replaced,
-                  }),
-                  catch: () => ({ valid: true, errors: [], warnings: [], repairProposal: null }),
+                const omniResult = yield* Effect.promise(async (): Promise<ProcessBeforeFileEditResult> => {
+                  try {
+                    return await omniKernel.processBeforeFileEdit({
+                      filePath: target.canonical,
+                      oldContent: source.text,
+                      newContent: replaced,
+                    })
+                  } catch {
+                    return { valid: true, errors: [], warnings: [], repairProposal: null }
+                  }
                 })
                 if (!omniResult.valid && omniResult.errors.length > 0) {
                   return yield* new ToolFailure({
@@ -225,7 +228,7 @@ const layer = Layer.effectDiscard(
                     },
                   ],
                   replacements,
-                } satisfies Output
+                } as Output
               })
             },
           }),

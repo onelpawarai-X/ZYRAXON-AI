@@ -1,0 +1,122 @@
+/* Copyright (c) 2026 onelpawarai. All rights reserved. */
+
+[data-component="media-processing"] {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-weak-base, rgba(255, 255, 255, 0.1));
+  background: color-mix(in srgb, currentColor 6%, transparent);
+  overflow: hidden;
+}
+
+[data-component="media-processing"] .media-processing-orb {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+}
+
+[data-component="media-processing"] .media-processing-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  opacity: 0.35;
+  animation: media-processing-ring 1.6s ease-out infinite;
+}
+
+[data-component="media-processing"] .media-processing-ring-2 {
+  animation-delay: 0.8s;
+}
+
+@keyframes media-processing-ring {
+  0% {
+    transform: scale(0.35);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+[data-component="media-processing"] .media-processing-core {
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: media-processing-core 1.6s ease-in-out infinite;
+}
+
+@keyframes media-processing-core {
+  0%,
+  100% {
+    transform: scale(0.7);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+[data-component="media-processing"] .media-processing-meta {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+[data-component="media-processing"] .media-processing-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-base, currentColor);
+}
+
+[data-component="media-processing"] .media-processing-sub {
+  font-size: 11px;
+  color: var(--text-weaker, currentColor);
+  opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-component="media-processing"] .media-processing-wave {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 18px;
+  margin-top: 6px;
+}
+
+[data-component="media-processing"] .media-processing-wave span {
+  flex: 1 1 auto;
+  min-width: 2px;
+  height: 100%;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.5;
+  transform-origin: bottom;
+  animation: media-processing-wave 1.1s ease-in-out infinite;
+}
+
+@keyframes media-processing-wave {
+  0%,
+  100% {
+    transform: scaleY(0.18);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 0.85;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-component="media-processing"] .media-processing-ring,
+  [data-component="media-processing"] .media-processing-core,
+  [data-component="media-processing"] .media-processing-wave span {
+    animation: none;
+  }
+}

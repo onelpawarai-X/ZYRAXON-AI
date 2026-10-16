@@ -6,7 +6,7 @@
  * What-if analysis, impact prediction, risk assessment
  */
 
-type SimulationScenario = {
+export type SimulationScenario = {
   id: string
   name: string
   description: string
@@ -15,7 +15,7 @@ type SimulationScenario = {
   constraints: { type: string; value: any }[]
 }
 
-type SimulationResult = {
+export type SimulationResult = {
   scenarioId: string
   success: boolean
   before: Record<string, any>

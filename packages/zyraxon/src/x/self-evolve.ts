@@ -6,7 +6,7 @@
  * Pattern detection, auto-refactoring, predictive optimization
  */
 
-type CodePattern = {
+export type CodePattern = {
   id: string
   type: "function" | "class" | "module" | "api" | "test"
   name: string
@@ -16,7 +16,7 @@ type CodePattern = {
   quality: number
 }
 
-type RefactorSuggestion = {
+export type RefactorSuggestion = {
   id: string
   type: "extract" | "rename" | "simplify" | "optimize" | "restructure"
   target: string
@@ -26,7 +26,7 @@ type RefactorSuggestion = {
   autoApplyable: boolean
 }
 
-type EvolutionMetric = {
+export type EvolutionMetric = {
   timestamp: number
   codeQuality: number
   complexity: number

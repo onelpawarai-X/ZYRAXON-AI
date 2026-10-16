@@ -111,7 +111,7 @@ async function searchZyraxon(query: string, limit: number): Promise<MarketItem[]
       headers: { Accept: "application/vnd.github.v3+json" },
     })
     if (!resp.ok) return []
-    const data = await resp.json()
+    const data: any = await resp.json()
     if (!data.content) return []
     const items = JSON.parse(atob(data.content.replace(/\n/g, ""))) as any[]
     const q = query.toLowerCase()
@@ -149,7 +149,7 @@ async function getZyraxonItem(itemId: string): Promise<MarketItem | null> {
       headers: { Accept: "application/vnd.github.v3+json" },
     })
     if (!resp.ok) return null
-    const data = await resp.json()
+    const data: any = await resp.json()
     if (!data.content) return null
     const items = JSON.parse(atob(data.content.replace(/\n/g, ""))) as any[]
     const item = items.find((i: any) => i.id === itemId || i.name === itemId)
@@ -196,7 +196,7 @@ async function searchVSCode(query: string, limit: number): Promise<MarketItem[]>
   })
 
   if (!resp.ok) return []
-  const data = await resp.json()
+  const data: any = await resp.json()
   const exts = data.results?.[0]?.extensions || []
 
   return exts.map((ext: any) => ({
@@ -216,7 +216,7 @@ async function searchVSCode(query: string, limit: number): Promise<MarketItem[]>
 async function searchOpenVSX(query: string, limit: number): Promise<MarketItem[]> {
   const resp = await fetch(`${OpenVSX_API}/search?query=${encodeURIComponent(query)}&size=${limit}`)
   if (!resp.ok) return []
-  const data = await resp.json()
+  const data: any = await resp.json()
 
   return (data.extensions || []).map((ext: any) => ({
     name: ext.name,
@@ -235,7 +235,7 @@ async function searchOpenVSX(query: string, limit: number): Promise<MarketItem[]
 async function searchNpm(query: string, limit: number): Promise<MarketItem[]> {
   const resp = await fetch(`${Npm_API}?text=${encodeURIComponent(query)}&size=${limit}`)
   if (!resp.ok) return []
-  const data = await resp.json()
+  const data: any = await resp.json()
 
   return (data.objects || []).map((pkg: any) => ({
     name: pkg.package.name,
@@ -256,7 +256,7 @@ async function searchGitHubActions(query: string, limit: number): Promise<Market
     headers: { Accept: "application/vnd.github.v3+json" },
   })
   if (!resp.ok) return []
-  const data = await resp.json()
+  const data: any = await resp.json()
 
   return (data.items || []).map((repo: any) => ({
     name: repo.name,
@@ -275,7 +275,7 @@ async function searchGitHubActions(query: string, limit: number): Promise<Market
 async function searchDocker(query: string, limit: number): Promise<MarketItem[]> {
   const resp = await fetch(`${Docker_API}?type=image&query=${encodeURIComponent(query)}&page_size=${limit}`)
   if (!resp.ok) return []
-  const data = await resp.json()
+  const data: any = await resp.json()
 
   return (data.results || []).map((img: any) => ({
     name: img.repo_name?.split("/").pop() || "",
@@ -295,7 +295,7 @@ async function searchChromium(query: string, limit: number): Promise<MarketItem[
   try {
     const resp = await fetch(`${Chromium_API}?hl=en&gl=US&q=${encodeURIComponent(query)}`)
     if (!resp.ok) return []
-    const data = await resp.json()
+    const data: any = await resp.json()
     const exts = data[1] || []
 
     return exts.slice(0, limit).map((ext: any) => ({
@@ -379,7 +379,7 @@ async function publishToZyraxon(item: {
   // Read current items
   const fileResp = await fetch(`${ZYRAXON_API}/repos/${ZYRAXON_REPO}/contents/marketplace/published/index.json`, { headers })
   if (!fileResp.ok) return "ERROR: Could not read marketplace data."
-  const fileData = await fileResp.json()
+  const fileData: any = await fileResp.json()
   const sha = fileData.sha
   const items = JSON.parse(atob(fileData.content.replace(/\n/g, ""))) as any[]
 
@@ -421,7 +421,7 @@ async function publishToZyraxon(item: {
   })
 
   if (!commitResp.ok) {
-    const err = await commitResp.json()
+    const err: any = await commitResp.json()
     return `ERROR: Failed to publish — ${err.message || "unknown error"}`
   }
 
@@ -504,7 +504,7 @@ const layer = Layer.effectDiscard(
                   version: input.version,
                   category: input.category,
                   type: input.type,
-                  tags: input.tags,
+                  tags: input.tags ? [...input.tags] : undefined,
                   liveDemo: input.liveDemo,
                   githubRepo: input.githubRepo,
                   installCommand: input.installCommand,

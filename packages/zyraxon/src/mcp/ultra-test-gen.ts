@@ -788,7 +788,6 @@ class PropertyBasedTester {
     const range = max - min + 1;
     // Deterministic: cycle through boundary values, then fill middle
     const boundaryValues = [min, min + 1, max - 1, max, 0, -1, 1];
-    const index = this.generateInteger.call ? 0 : 0; // avoid recursion
     return min + this.deterministicValue(this.seed + min + max, range);
   }
 

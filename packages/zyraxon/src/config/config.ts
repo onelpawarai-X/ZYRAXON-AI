@@ -714,7 +714,7 @@ const layer = Layer.effect(
       let next: Info
       let changed: boolean
       if (!file.endsWith(".jsonc")) {
-        const existing = yield* Effect.try({ try: () => ConfigParse.schema(ConfigV1.Info, ConfigParse.jsonc(before, file), file), catch: (err) => err })
+        const existing = yield* Effect.try({ try: () => ConfigParse.schema(ConfigV1.Info, ConfigParse.jsonc(before, file), file), catch: (err) => err }).pipe(Effect.orDie)
         const merged = mergeDeep(writable(existing), patch)
         const serialized = JSON.stringify(merged, null, 2)
         changed = serialized !== before
@@ -722,7 +722,7 @@ const layer = Layer.effect(
         next = merged
       } else {
         const updated = patchJsonc(before, patch)
-        next = yield* Effect.try({ try: () => ConfigParse.schema(ConfigV1.Info, ConfigParse.jsonc(updated, file), file), catch: (err) => err })
+        next = yield* Effect.try({ try: () => ConfigParse.schema(ConfigV1.Info, ConfigParse.jsonc(updated, file), file), catch: (err) => err }).pipe(Effect.orDie)
         changed = updated !== before
         if (changed) yield* fs.writeFileString(file, updated).pipe(Effect.orDie)
       }

@@ -12,11 +12,11 @@ const drivesRealInput = currentPlatform() === "windows" && process.env.ZYRAXON_D
 describe("CyberSecurityMonitor port probing uses real TCP results", () => {
   test("reports the real state of a port that is actually listening", async () => {
     const monitor = new CyberSecurityMonitor()
-    const server = Bun.serve({ port: 0, fetch: () => new Response("ok") })
+    const server: any = Bun.serve({ port: 0, fetch: () => new Response("ok") })
     const port = server.port
     monitor.addHost("h1", "127.0.0.1")
 
-    const result = await monitor.probeHostPorts("h1", [port], 2000)
+    const result: any = await monitor.probeHostPorts("h1", [port], 2000)
     server.stop(true)
 
     expect(result.ok).toBe(true)
@@ -26,10 +26,10 @@ describe("CyberSecurityMonitor port probing uses real TCP results", () => {
 
   test("every probed port is accounted for and no scan verdict is invented", async () => {
     const monitor = new CyberSecurityMonitor()
-    const server = Bun.serve({ port: 0, fetch: () => new Response("ok") })
+    const server: any = Bun.serve({ port: 0, fetch: () => new Response("ok") })
     monitor.addHost("h1", "127.0.0.1")
 
-    const result = await monitor.probeHostPorts("h1", [server.port, 9], 2000)
+    const result: any = await monitor.probeHostPorts("h1", [server.port, 9], 2000)
     server.stop(true)
 
     expect(result.data.probed).toBe(2)
@@ -43,12 +43,12 @@ describe("CyberSecurityMonitor port probing uses real TCP results", () => {
     const monitor = new CyberSecurityMonitor()
     monitor.addHost("h1", "127.0.0.1")
     // Bind then immediately release, so the port is almost certainly free.
-    const probe = Bun.serve({ port: 0, fetch: () => new Response("ok") })
+    const probe: any = Bun.serve({ port: 0, fetch: () => new Response("ok") })
     const port = probe.port
     probe.stop(true)
     await Bun.sleep(50)
 
-    const result = await monitor.probeHostPorts("h1", [port], 1000)
+    const result: any = await monitor.probeHostPorts("h1", [port], 1000)
 
     expect(result.ok).toBe(true)
     expect(result.data.openPorts).toEqual([])
@@ -59,7 +59,7 @@ describe("CyberSecurityMonitor port probing uses real TCP results", () => {
     const monitor = new CyberSecurityMonitor()
     monitor.addHost("h1", "127.0.0.1")
 
-    const result = await monitor.probeHostPorts("h1", [], 500)
+    const result: any = await monitor.probeHostPorts("h1", [], 500)
     expect(result.ok).toBe(false)
     expect(result.error).toContain("non-empty")
   })
@@ -68,14 +68,14 @@ describe("CyberSecurityMonitor port probing uses real TCP results", () => {
     const monitor = new CyberSecurityMonitor()
     monitor.addHost("h1", "not-an-ip")
 
-    const result = await monitor.probeHostPorts("h1", [80], 500)
+    const result: any = await monitor.probeHostPorts("h1", [80], 500)
     expect(result.ok).toBe(false)
     expect(result.error).toContain("IPv4")
   })
 
   test("unknown host is an explicit error", async () => {
     const monitor = new CyberSecurityMonitor()
-    const result = await monitor.probeHostPorts("missing", [80], 500)
+    const result: any = await monitor.probeHostPorts("missing", [80], 500)
     expect(result.ok).toBe(false)
     expect(result.error).toBe("Host not found")
   })

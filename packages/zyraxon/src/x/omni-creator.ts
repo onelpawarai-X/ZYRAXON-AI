@@ -6,9 +6,9 @@
  * Uses local models: FLUX (images), MusicGen (music), Wan2.1 (video), Bark (TTS)
  */
 
-type CreationType = "app" | "website" | "game" | "music" | "video" | "art" | "document" | "api" | "database" | "automation"
+export type CreationType = "app" | "website" | "game" | "music" | "video" | "art" | "document" | "api" | "database" | "automation"
 
-type CreationSpec = {
+export type CreationSpec = {
   type: CreationType
   name: string
   description: string
@@ -20,7 +20,7 @@ type CreationSpec = {
   format?: string
 }
 
-type CreationResult = {
+export type CreationResult = {
   success: boolean
   type: CreationType
   name: string
@@ -32,7 +32,7 @@ type CreationResult = {
   message: string
 }
 
-type ProjectTemplate = {
+export type ProjectTemplate = {
   type: CreationType
   name: string
   files: { path: string; template: string }[]

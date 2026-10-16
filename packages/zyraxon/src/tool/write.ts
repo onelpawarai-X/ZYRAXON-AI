@@ -69,7 +69,7 @@ export const WriteTool = Tool.define(
             omniBeforeFileEdit(filepath, contentOld, contentNew),
           )
           if (!fileEditResult.valid && fileEditResult.errors.length > 0) {
-            consterrorMsg = fileEditResult.errors.join("; ")
+            const errorMsg = fileEditResult.errors.join("; ")
             return {
               title: path.relative(instance.worktree, filepath),
               metadata: { diagnostics: {}, filepath, exists },

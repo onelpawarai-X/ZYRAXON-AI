@@ -340,7 +340,7 @@ export class RunScrollbackStream {
 
     this.active.body = body
     this.active.commit = commit
-    this.active.content += body.content
+    this.active.content += "content" in body ? body.content : ""
     await this.flushActive(false, false)
     if (this.active.rendered) {
       this.markRendered(this.active.commit)

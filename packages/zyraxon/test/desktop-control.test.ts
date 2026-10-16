@@ -29,7 +29,7 @@ describe("desktop control runs on every platform", () => {
   })
 
   test("desktop information comes from the live system", async () => {
-    const result = await desktopInfo()
+    const result: any = await desktopInfo()
     expect(result.ok).toBe(true)
     expect(result.data.platform).toBe(currentPlatform())
     expect(result.data.user.length).toBeGreaterThan(0)

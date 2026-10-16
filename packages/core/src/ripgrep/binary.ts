@@ -100,7 +100,7 @@ export namespace RipgrepBinary {
             if (yield* fs.isFile(target).pipe(Effect.orDie)) return target
 
             const bundledPath = path.join(
-              process.resourcesPath ?? path.join(__dirname, "..", "..", "resources"),
+              (process as any).resourcesPath ?? path.join(__dirname, "..", "..", "resources"),
               "bin",
               `rg${process.platform === "win32" ? ".exe" : ""}`,
             )

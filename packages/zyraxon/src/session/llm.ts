@@ -244,7 +244,7 @@ const live: Layer.Layer<
           topK: prepared.params.topK,
           maxOutputTokens: prepared.params.maxOutputTokens,
           providerOptions: prepared.params.options,
-          headers: prepared.headers,
+          headers: prepared.headers as Record<string, string>,
           abort: input.abort,
         })
         if (native.type === "supported") {
