@@ -189,10 +189,17 @@ function VoiceSection() {
 }
 
 export const SettingsNotificationsV2: Component = () => {
+  const language = useLanguage()
+
   return (
     <>
-      <NotificationsSection />
-      <VoiceSection />
+      <div class="settings-v2-tab-header">
+        <h2 class="settings-v2-tab-title">{language.t("settings.tab.notifications")}</h2>
+      </div>
+      <div class="settings-v2-tab-body">
+        <NotificationsSection />
+        <VoiceSection />
+      </div>
     </>
   )
 }

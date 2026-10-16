@@ -99,12 +99,17 @@ export const SettingsStorageV2: Component<{ directory?: () => string | undefined
   }
 
   return (
-    <div class="settings-v2-section">
-      <Show when={notice()}>
-        <div class="settings-v2-notice" role="status">
-          {notice()}
-        </div>
-      </Show>
+    <>
+      <div class="settings-v2-tab-header">
+        <h2 class="settings-v2-tab-title">{language.t("settings.tab.storage")}</h2>
+      </div>
+      <div class="settings-v2-tab-body">
+        <div class="settings-v2-section">
+          <Show when={notice()}>
+            <div class="settings-v2-notice" role="status">
+              {notice()}
+            </div>
+          </Show>
 
       <SettingsListV2>
         <SettingsRowV2
@@ -178,6 +183,8 @@ export const SettingsStorageV2: Component<{ directory?: () => string | undefined
       />
 
       <StorageMessagesV2 directory={props.directory} />
-    </div>
+        </div>
+      </div>
+    </>
   )
 }

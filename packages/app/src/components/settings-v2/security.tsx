@@ -14,8 +14,13 @@ export const SettingsSecurityV2: Component = () => {
   const settings = useSettings()
 
   return (
-    <div class="settings-v2-section">
-      <h3 class="settings-v2-section-title">{language.t("settings.security.permissions")}</h3>
+    <>
+      <div class="settings-v2-tab-header">
+        <h2 class="settings-v2-tab-title">{language.t("settings.tab.security")}</h2>
+      </div>
+      <div class="settings-v2-tab-body">
+        <div class="settings-v2-section">
+          <h3 class="settings-v2-section-title">{language.t("settings.security.permissions")}</h3>
       <SettingsListV2>
         <SettingsRowV2
           title={language.t("settings.permission.title")}
@@ -57,6 +62,8 @@ export const SettingsSecurityV2: Component = () => {
           <div class="settings-v2-mono">127.0.0.1</div>
         </SettingsRowV2>
       </SettingsListV2>
-    </div>
+        </div>
+      </div>
+    </>
   )
 }
