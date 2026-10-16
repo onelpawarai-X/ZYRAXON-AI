@@ -1,0 +1,351 @@
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
+# One YML that releases the whole product for every platform at once.
+#
+# Publishing a release (or dispatching by tag) fans out to six jobs: a desktop
+# installer and a CLI archive set for Linux, Windows and macOS. Each job runs on
+# the runner that can actually build that platform, then attaches its own assets
+# to the same GitHub release.
+#
+# The per-platform workflows (release-linux.yml, release-macos.yml,
+# release-windows.yml) remain for retrying a single platform in isolation. This
+# file is the "cut a release" entry point: run it once and all three platforms
+# land on the release together.
+name: Release (All platforms)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to build and attach to
+        required: true
+        default: v19.0.6
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-all-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  ZYRAXON_CHANNEL: dev
+  # husky would install and try to wire git hooks, which CI does not need.
+  HUSKY: "0"
+  # The chained build runs tsc and vite over the whole monorepo. The macOS runner
+  # ran out of heap without this, so every job says so explicitly.
+  NODE_OPTIONS: --max-old-space-size=8192
+
+jobs:
+  # ---------------------------------------------------------------- desktop ---
+  desktop-linux:
+    name: Desktop · Linux x64
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun modules and Electron downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+            ~/.cache/electron
+            ~/.cache/electron-builder
+          key: release-all-linux-x64-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-linux-x64-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Linux packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            rpm libfuse2 libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 \
+            xvfb xdg-utils
+
+      - name: Build the engine, node bundle, app and desktop
+        run: bun run zyraxon:build
+
+      - name: Package the Linux installer
+        working-directory: packages/desktop
+        # --publish never: the build config names a GitHub publisher, so
+        # electron-builder would try to upload the release itself and fail on a
+        # missing token. This workflow owns the upload, below.
+        run: bunx electron-builder --linux --x64 --config electron-builder.config.ts --publish never
+
+      - name: Attach Linux desktop assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd packages/desktop/dist
+          files=(*.AppImage *.deb *.rpm *.blockmap latest-linux.yml)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No Linux artifacts were produced."; ls -la; exit 1
+          fi
+          printf '  %s\n' "${files[@]}"
+          gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+
+  desktop-windows:
+    name: Desktop · Windows x64
+    runs-on: windows-latest
+    timeout-minutes: 90
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun modules and Electron downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: release-all-windows-x64-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-windows-x64-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build the engine, node bundle, app and desktop
+        run: bun run zyraxon:build
+
+      - name: Package the Windows installer
+        working-directory: packages/desktop
+        # signtoolOptions points at script/sign-windows.ps1. That script exits 0
+        # without signing unless GITHUB_ACTIONS is true and the Azure Trusted
+        # Signing variables are present, so an unsigned build still succeeds.
+        run: bunx electron-builder --win --x64 --config electron-builder.config.ts --publish never
+
+      - name: Attach Windows desktop assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd packages/desktop/dist
+          files=(*.exe *.blockmap latest.yml)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No Windows artifacts were produced."; ls -la; exit 1
+          fi
+          printf '  %s\n' "${files[@]}"
+          gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+
+  desktop-macos:
+    name: Desktop · macOS (arm64 + x64)
+    runs-on: macos-latest
+    timeout-minutes: 60
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun modules and Electron downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+            ~/Library/Caches/electron
+            ~/Library/Caches/electron-builder
+          key: release-all-macos-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-macos-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build the engine, node bundle, app and desktop
+        run: bun run zyraxon:build
+
+      - name: Package the macOS installer
+        working-directory: packages/desktop
+        # Both architectures from one runner. electron-builder downloads the
+        # matching Electron build for each target, so an arm64 runner can produce
+        # an Intel app too.
+        run: bunx electron-builder --mac --x64 --arm64 --config electron-builder.config.ts --publish never
+
+      - name: Attach macOS desktop assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd packages/desktop/dist
+          files=(*.dmg *.zip *.blockmap latest-mac.yml)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No macOS artifacts were produced."; ls -la; exit 1
+          fi
+          printf '  %s\n' "${files[@]}"
+          gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+
+  # -------------------------------------------------------------------- cli ---
+  cli-linux:
+    name: CLI · Linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: release-all-cli-linux-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-cli-linux-
+      - run: bun install --frozen-lockfile
+      - run: bun run --cwd packages/cli script/build.ts --os=linux
+      - run: bun run --cwd packages/cli script/package-release.ts
+      - name: Attach Linux CLI archives
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd packages/cli/release
+          files=(*.tar.gz)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No Linux CLI archives were produced."; exit 1
+          fi
+          printf '  %s\n' "${files[@]}"
+          gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+
+  cli-darwin:
+    name: CLI · macOS
+    runs-on: macos-latest
+    timeout-minutes: 90
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: release-all-cli-darwin-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-cli-darwin-
+      - run: bun install --frozen-lockfile
+      - run: bun run --cwd packages/cli script/build.ts --os=darwin
+      - run: bun run --cwd packages/cli script/package-release.ts
+      - name: Each archive holds one flat binary
+        run: |
+          set -euo pipefail
+          cd packages/cli/release
+          for archive in *.zip; do
+            contents=$(unzip -Z1 "$archive")
+            if [ "$contents" != "zyraxon" ]; then
+              echo "::error::$archive should hold a single entry named zyraxon, holds: $contents"; exit 1
+            fi
+            echo "  $archive -> $contents"
+          done
+      - name: Attach macOS CLI archives
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd packages/cli/release
+          files=(*.zip)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No macOS CLI archives were produced."; exit 1
+          fi
+          printf '  %s\n' "${files[@]}"
+          gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+
+  cli-windows:
+    name: CLI · Windows targets
+    # Bun cross-compiles win32 binaries from Linux and the archive step needs the
+    # system zip binary, so this runs on ubuntu-latest rather than Windows.
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: release-all-cli-windows-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-cli-windows-
+      - run: bun install --frozen-lockfile
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends zip
+      - run: bun run --cwd packages/cli script/build.ts --os=win32
+      - run: bun run --cwd packages/cli script/package-release.ts
+      - name: Each archive holds one flat binary
+        run: |
+          set -euo pipefail
+          cd packages/cli/release
+          for archive in *.zip; do
+            contents=$(unzip -Z1 "$archive")
+            if [ "$contents" != "zyraxon" ]; then
+              echo "::error::$archive should hold a single entry named zyraxon, holds: $contents"; exit 1
+            fi
+            echo "  $archive -> $contents"
+          done
+      - name: Attach Windows CLI archives
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd packages/cli/release
+          files=(*.zip)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No Windows CLI archives were produced."; exit 1
+          fi
+          printf '  %s\n' "${files[@]}"
+          gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber

@@ -160,8 +160,12 @@ export const SettingsExtensionsV2: Component = () => {
   )
 
   return (
-    <div class="zy-extensions">
-      <nav class="zy-extensions-nav" aria-label={language.t("settings.extensions.nav")}>
+    <div class="zy-extensions-wrap">
+      <div class="settings-v2-tab-header">
+        <h2 class="settings-v2-tab-title">{language.t("settings.tab.extensions")}</h2>
+      </div>
+      <div class="zy-extensions">
+        <nav class="zy-extensions-nav" aria-label={language.t("settings.extensions.nav")}>
         <For each={PANES}>
           {(entry) => (
             <button
@@ -353,6 +357,7 @@ export const SettingsExtensionsV2: Component = () => {
             </div>
           </section>
         </Show>
+      </div>
       </div>
     </div>
   )

@@ -112,48 +112,55 @@ export const SettingsAgentsV2: Component = () => {
   }
 
   return (
-    <div class="settings-v2-section">
-      <div class="zy-agents-head">
-        <div class="zy-agents-heading">
-          <h3 class="zy-agents-title">{language.t("settings.agents.title")}</h3>
-          <p class="zy-agents-sub">{language.t("settings.agents.description")}</p>
-        </div>
-        <div class="settings-v2-inline">
-          <ButtonV2 size="small" variant="ghost-muted" icon="zy-repositories" onClick={() => void openConfig()}>
-            {language.t("settings.agents.openConfig")}
-          </ButtonV2>
-          <ButtonV2 size="small" variant="neutral" icon="plus" onClick={createAgent}>
-            {language.t("settings.agents.create.action")}
-          </ButtonV2>
+    <>
+      <div class="settings-v2-tab-header">
+        <h2 class="settings-v2-tab-title">{language.t("settings.tab.agents")}</h2>
+      </div>
+      <div class="settings-v2-tab-body">
+        <div class="settings-v2-section">
+          <div class="zy-agents-head">
+            <div class="zy-agents-heading">
+              <h3 class="zy-agents-title">{language.t("settings.agents.title")}</h3>
+              <p class="zy-agents-sub">{language.t("settings.agents.description")}</p>
+            </div>
+            <div class="settings-v2-inline">
+              <ButtonV2 size="small" variant="ghost-muted" icon="zy-repositories" onClick={() => void openConfig()}>
+                {language.t("settings.agents.openConfig")}
+              </ButtonV2>
+              <ButtonV2 size="small" variant="neutral" icon="plus" onClick={createAgent}>
+                {language.t("settings.agents.create.action")}
+              </ButtonV2>
+            </div>
+          </div>
+
+          <SettingsListV2>
+            <For each={agents() ?? []}>
+              {(agent) => (
+                <SettingsRowV2
+                  title={agent.name}
+                  description={agent.description ?? language.t("settings.agents.rules.at", { path: configPath() })}
+                >
+                  <div class="settings-v2-inline">
+                    <Tag variant="neutral">{agent.mode}</Tag>
+                    <Show when={agent.model}>
+                      <span class="settings-v2-mono">{agent.model}</span>
+                    </Show>
+                    <button
+                      type="button"
+                      class="settings-v2-path-button"
+                      data-action="settings-agents-delete"
+                      onClick={() => void deleteAgent(agent.name)}
+                    >
+                      {language.t("common.delete")}
+                    </button>
+                  </div>
+                </SettingsRowV2>
+              )}
+            </For>
+          </SettingsListV2>
         </div>
       </div>
-
-      <SettingsListV2>
-        <For each={agents() ?? []}>
-          {(agent) => (
-            <SettingsRowV2
-              title={agent.name}
-              description={agent.description ?? language.t("settings.agents.rules.at", { path: configPath() })}
-            >
-              <div class="settings-v2-inline">
-                <Tag variant="neutral">{agent.mode}</Tag>
-                <Show when={agent.model}>
-                  <span class="settings-v2-mono">{agent.model}</span>
-                </Show>
-                <button
-                  type="button"
-                  class="settings-v2-path-button"
-                  data-action="settings-agents-delete"
-                  onClick={() => void deleteAgent(agent.name)}
-                >
-                  {language.t("common.delete")}
-                </button>
-              </div>
-            </SettingsRowV2>
-          )}
-        </For>
-      </SettingsListV2>
-    </div>
+    </>
   )
 
   async function deleteAgent(name: string) {

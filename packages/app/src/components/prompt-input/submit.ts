@@ -19,7 +19,7 @@ import { useSettings } from "@/context/settings"
 import { replyLanguageName } from "@zyraxon-ai/session-ui/v2/prompt-input/reply-language"
 import { Identifier } from "@/utils/id"
 import { Worktree as WorktreeState } from "@/utils/worktree"
-import { buildRequestParts } from "./build-request-parts"
+import { buildRequestParts, mediaAttachmentUrl } from "./build-request-parts"
 import { setCursorPosition } from "./editor-dom"
 import { formatServerError } from "@/utils/server-errors"
 import { ScopedKey } from "@/utils/server-scope"
@@ -101,8 +101,8 @@ export async function sendFollowupDraft(input: FollowupSendInput) {
           id: Identifier.ascending("part"),
           type: "file" as const,
           mime: attachment.mime,
-          url: attachment.dataUrl,
-          filename: attachment.filename,
+          url: mediaAttachmentUrl(attachment),
+          filename: attachment.sourcePath ?? attachment.filename,
         })),
       })
       return true
@@ -513,8 +513,8 @@ export function createPromptSubmit(input: PromptSubmitInput) {
               id: Identifier.ascending("part"),
               type: "file" as const,
               mime: attachment.mime,
-              url: attachment.dataUrl,
-              filename: attachment.filename,
+              url: mediaAttachmentUrl(attachment),
+              filename: attachment.sourcePath ?? attachment.filename,
             })),
           })
           .catch((err) => {

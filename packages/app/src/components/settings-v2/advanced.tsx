@@ -19,8 +19,13 @@ export const SettingsAdvancedV2: Component = () => {
   const instance = () => serverSync().data.path.directory
 
   return (
-    <div class="settings-v2-section">
-      <h3 class="settings-v2-section-title">{language.t("settings.advanced.paths")}</h3>
+    <>
+      <div class="settings-v2-tab-header">
+        <h2 class="settings-v2-tab-title">{language.t("settings.tab.advanced")}</h2>
+      </div>
+      <div class="settings-v2-tab-body">
+        <div class="settings-v2-section">
+          <h3 class="settings-v2-section-title">{language.t("settings.advanced.paths")}</h3>
       <SettingsListV2>
         <SettingsRowV2 title={language.t("settings.advanced.project")} description={worktree()}>
           <div class="settings-v2-mono">{language.t("common.default")}</div>
@@ -55,6 +60,8 @@ export const SettingsAdvancedV2: Component = () => {
       <Show when={false}>
         <Icon name="zy-terminal" size="small" />
       </Show>
-    </div>
+        </div>
+      </div>
+    </>
   )
 }

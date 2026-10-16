@@ -1,0 +1,183 @@
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
+# Builds the Windows installer when a release is published, and attaches it to
+# that same release.
+#
+# Linux and macOS are handled by release-linux.yml and release-macos.yml. Windows
+# used to be produced by hand from a developer machine, which meant a published
+# release could go out with no .exe at all. This workflow makes Windows a first
+# class member of the release matrix: publishing the release is the only trigger,
+# and electron-builder's GitHub publisher is disabled because the upload is owned
+# by the "Attach to the release" step below.
+name: Release (Windows)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to build and attach to
+        required: true
+        default: v19.0.6
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-windows-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    name: Windows x64
+    runs-on: windows-latest
+    timeout-minutes: 90
+
+    env:
+      ZYRAXON_CHANNEL: dev
+      # husky would install and try to wire git hooks, which CI does not need.
+      HUSKY: "0"
+      # The chained build runs tsc and vite over the whole monorepo.
+      NODE_OPTIONS: --max-old-space-size=8192
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun modules and Electron downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: release-windows-x64-${{ hashFiles('bun.lock') }}
+          restore-keys: release-windows-x64-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build the engine, node bundle, app and desktop
+        run: bun run zyraxon:build
+
+      - name: Package the Windows installer
+        working-directory: packages/desktop
+        # --publish never: the build config names a GitHub publisher, so
+        # electron-builder would try to upload the release itself and fail on a
+        # missing token. This workflow owns the upload, via the release asset
+        # step below.
+        #
+        # signtoolOptions points at script/sign-windows.ps1. That script exits 0
+        # without signing unless GITHUB_ACTIONS is true and the Azure Trusted
+        # Signing variables are present, so an unsigned build still succeeds here.
+        run: bunx electron-builder --win --x64 --config electron-builder.config.ts --publish never
+
+      - name: Attach to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd packages/desktop/dist
+          files=(*.exe *.blockmap latest.yml)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No Windows artifacts were produced."
+            ls -la
+            exit 1
+          fi
+          printf '  %s\n' "${files[@]}"
+          gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+
+      - name: Verify the release now carries Windows assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --json assets --jq '.assets[].name' | sed 's/^/  /'
+
+  cli:
+    name: CLI (Windows targets)
+    # Bun cross-compiles win32 binaries from Linux, and the archive step relies on
+    # the system zip binary, so this job runs on ubuntu-latest alongside the Linux
+    # CLI job rather than on a Windows runner.
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    env:
+      ZYRAXON_CHANNEL: dev
+      HUSKY: "0"
+      NODE_OPTIONS: --max-old-space-size=8192
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: release-cli-windows-${{ hashFiles('bun.lock') }}
+          restore-keys: release-cli-windows-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install zip
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends zip
+
+      - name: Build every Windows CLI target
+        run: bun run --cwd packages/cli script/build.ts --os=win32
+
+      - name: Package the CLI into install archives
+        run: bun run --cwd packages/cli script/package-release.ts
+
+      - name: Each archive holds one flat binary
+        run: |
+          set -euo pipefail
+          cd packages/cli/release
+          for archive in *.zip; do
+            contents=$(unzip -Z1 "$archive")
+            if [ "$contents" != "zyraxon" ]; then
+              echo "::error::$archive should hold a single entry named zyraxon, holds: $contents"
+              exit 1
+            fi
+            echo "  $archive -> $contents"
+          done
+
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd packages/cli/release
+          files=(*.zip)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No Windows CLI archives were produced."
+            exit 1
+          fi
+          printf '  %s\n' "${files[@]}"
+          gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber

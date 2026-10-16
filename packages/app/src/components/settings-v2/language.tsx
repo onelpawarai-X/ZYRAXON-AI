@@ -23,7 +23,11 @@ export function SettingsLanguageV2() {
   const spoken = createMemo(() => country().languages)
 
   return (
-    <div class="language-v2">
+    <div class="language-v2-wrap">
+      <div class="settings-v2-tab-header">
+        <h2 class="settings-v2-tab-title">{language.t("settings.tab.language")}</h2>
+      </div>
+      <div class="language-v2">
       <div class="language-v2-pane language-v2-countries">
         <div class="language-v2-search">
           <Icon name="zy-search" size="small" />
@@ -131,6 +135,7 @@ export function SettingsLanguageV2() {
             </For>
           </div>
         </Show>
+      </div>
       </div>
     </div>
   )

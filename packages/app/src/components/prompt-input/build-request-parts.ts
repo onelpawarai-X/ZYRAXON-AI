@@ -54,6 +54,20 @@ const parseCommentMentions = (comment: string) => {
 const isFileAttachment = (part: Prompt[number]): part is FileAttachmentPart => part.type === "file"
 const isAgentAttachment = (part: Prompt[number]): part is AgentPart => part.type === "agent"
 
+/**
+ * A file part's URL for a composer media attachment (image, video, audio).
+ *
+ * A video or audio clip can be hundreds of megabytes. When the desktop picker
+ * knows the real path, send a file URL and let the server read it, instead of
+ * base64-encoding the whole clip into a data URL in the renderer. Images stay
+ * inline because the server resizes them before the request goes upstream.
+ */
+export const mediaAttachmentUrl = (attachment: MediaAttachmentPart) => {
+  const media = attachment.mime.startsWith("video/") || attachment.mime.startsWith("audio/")
+  if (media && attachment.sourcePath) return `file://${encodeFilePath(attachment.sourcePath)}`
+  return attachment.dataUrl
+}
+
 const toOptimisticPart = (part: PromptRequestPart, sessionID: string, messageID: string): Part => {
   if (part.type === "text") {
     return {
@@ -199,7 +213,7 @@ export function buildRequestParts(input: BuildRequestPartsInput) {
       id: Identifier.ascending("part"),
       type: "file",
       mime: attachment.mime,
-      url: attachment.dataUrl,
+      url: mediaAttachmentUrl(attachment),
       filename: attachment.sourcePath ?? attachment.filename,
     } satisfies PromptRequestPart
   })

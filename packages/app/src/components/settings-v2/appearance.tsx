@@ -44,8 +44,13 @@ export const SettingsAppearanceV2: Component = () => {
   ])
 
   return (
-    <div class="settings-v2-section">
-      <h3 class="settings-v2-section-title">{language.t("settings.general.section.appearance")}</h3>
+    <>
+      <div class="settings-v2-tab-header">
+        <h2 class="settings-v2-tab-title">{language.t("settings.tab.appearance")}</h2>
+      </div>
+      <div class="settings-v2-tab-body">
+        <div class="settings-v2-section">
+          <h3 class="settings-v2-section-title">{language.t("settings.general.section.appearance")}</h3>
 
       <SettingsListV2>
         <SettingsRowV2
@@ -157,7 +162,9 @@ export const SettingsAppearanceV2: Component = () => {
             />
           </div>
         </SettingsRowV2>
-      </SettingsListV2>
-    </div>
+        </SettingsListV2>
+        </div>
+      </div>
+    </>
   )
 }
