@@ -304,8 +304,14 @@ function transcodeTimelapse(input: string, output: string, duration: number | un
     "libx264",
     "-preset",
     "veryfast",
+    // Cap the instantaneous bitrate so the encoder cannot overshoot the target
+    // and blow past the inline budget on dense synthetic frames.
     "-b:v",
     String(bitrate),
+    "-maxrate",
+    String(bitrate),
+    "-bufsize",
+    String(bitrate * 2),
     "-pix_fmt",
     "yuv420p",
     "-movflags",

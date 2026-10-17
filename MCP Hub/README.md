@@ -89,17 +89,24 @@ this one is plain fetch, because this runs in the UI. **Change them together.**
 
 ```
 node "MCP Hub/scripts/verify-injection.mjs"   # is the Hub actually wired into the app
+node "MCP Hub/scripts/verify-catalog.mjs"     # is every catalog entry well formed
 node "MCP Hub/scripts/verify-live.mjs"        # does every endpoint still answer
 node "MCP Hub/scripts/verify-oauth.mjs"       # can every browser app find its sign-in page
 node "MCP Hub/scripts/verify-resolve.mjs"     # can catalog apps be resolved
+node "MCP Hub/scripts/verify-local.mjs"       # does every local server actually start
 node "MCP Hub/scripts/smoke.mjs"              # end to end against real servers
 node "MCP Hub/scripts/preview.mjs"            # the panel, in a browser, without a build
 node "MCP Hub/scripts/build-registry-cache.mjs" --dry-run   # refresh the registry numbers
 ```
 
-`verify-live`, `verify-oauth` and `smoke` talk to real servers on somebody else's
-infrastructure. They send a plain `initialize` and read the answer. Keep the concurrency
-low; there is no reason to look like a load test.
+`verify-live`, `verify-oauth`, `verify-local` and `smoke` talk to real servers — remote ones
+on somebody else's infrastructure, local ones started on this machine. They send a plain
+`initialize` and read the answer. Keep the concurrency low; there is no reason to look like a
+load test.
+
+`verify-catalog` and `verify-local` are what `.github/workflows/mcp-hub.yml` runs on Linux,
+macOS and Windows for every push. A local card promises a command that starts on the reader's
+platform, and only that platform can prove it, so the two run on all three.
 
 ## Two things that will bite you
 
