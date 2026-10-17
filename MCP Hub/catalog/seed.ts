@@ -293,7 +293,7 @@ export const browserApps: AppEntry[] = [
       "Paste it into the Client ID field here — Replicate accepts the token in that role — and press Connect.",
     ], oauth: { authorizationUrl: "https://replicate.com/oauth/authorize", tokenUrl: "https://api.replicate.com/oauth/token" }, zeroSetup: true },
 
-  { id: "heygen", iconDomain: "heygen.com", name: "HeyGen", description: "AI avatar and talking-head video", category: "Media", kind: "oauth", url: "https://mcp.heygen.com/mcp", color: "#7B3FE4", zeroSetup: true },
+  { id: "heygen", iconDomain: "heygen.com", name: "HeyGen", description: "AI avatar and talking-head video", category: "Media", kind: "oauth", url: "https://mcp.heygen.com/mcp/", color: "#7B3FE4", zeroSetup: true },
 
   { id: "runway", iconDomain: "runwayml.com", name: "Runway", description: "AI video generation and editing", category: "Media", kind: "oauth", url: "https://mcp.runwayml.com/mcp", color: "#00C2FF" },
 
@@ -403,7 +403,7 @@ export const browserApps: AppEntry[] = [
       "Paste them into the two fields here and press Connect. Google MCP does not register clients by itself, so this one-time step is required.",
     ], tokenUrl: "https://console.cloud.google.com/apis/credentials", color: "#00897B", via: "google" },
 
-  { id: "pdf", iconDomain: "ifillpdf.com", name: "PDF", description: "Read and extract from PDFs", category: "Documents", kind: "oauth", url: "https://ifillpdf.com/api/mcp", color: "#E3262F", note: "Served by iFillPDF, not Adobe. Its sign-in document points at a hosted identity provider and registers clients itself, so nothing has to be filled in.", via: "ifillpdf", zeroSetup: true },
+  { id: "pdf", iconDomain: "ifillpdf.com", name: "PDF", description: "Read and extract from PDFs", category: "Documents", kind: "oauth", url: "https://www.ifillpdf.com/api/mcp", color: "#E3262F", note: "Served by iFillPDF, not Adobe. Its sign-in document points at a hosted identity provider and registers clients itself, so nothing has to be filled in.", via: "ifillpdf", zeroSetup: true },
 
   { id: "planetscale", iconDomain: "planetscale.com", name: "PlanetScale", description: "Serverless MySQL branches", category: "Database", kind: "oauth", url: "https://mcp.pscale.dev/mcp/planetscale", consoleUrl: "https://app.planetscale.com", color: "#000000" },
 
