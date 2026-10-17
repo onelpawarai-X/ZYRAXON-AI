@@ -82,7 +82,7 @@ async function sources(): Promise<Download[]> {
   return []
 }
 
-function download(url: string, dest: string): Promise<void> {
+function downloadOnce(url: string, dest: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const follow = (target: string, redirects = 0) => {
       if (redirects > 5) return reject(new Error("too many redirects"))
@@ -95,7 +95,14 @@ function download(url: string, dest: string): Promise<void> {
           }
           if (status !== 200) {
             response.resume()
-            return reject(new Error(`download failed: HTTP ${status}`))
+            const error = new Error(`download failed: HTTP ${status}`) as Error & {
+              status?: number
+              retryAfter?: number
+            }
+            error.status = status
+            const retryAfter = Number(response.headers["retry-after"])
+            if (Number.isFinite(retryAfter) && retryAfter > 0) error.retryAfter = retryAfter
+            return reject(error)
           }
           const file = fs.createWriteStream(dest)
           response.pipe(file)
@@ -106,6 +113,30 @@ function download(url: string, dest: string): Promise<void> {
     }
     follow(url)
   })
+}
+
+/**
+ * Download with retry.
+ *
+ * evermeet answers 429 when its two macOS archives are pulled in quick succession
+ * — it is the only static macOS source, and it is the second request (ffprobe,
+ * right after ffmpeg) that trips it — so a rate-limited or transient response is
+ * retried after a growing wait, honouring Retry-After when it is sent.
+ */
+async function download(url: string, dest: string): Promise<void> {
+  const attempts = 5
+  for (let n = 1; ; n++) {
+    try {
+      return await downloadOnce(url, dest)
+    } catch (error) {
+      const { status, retryAfter } = error as { status?: number; retryAfter?: number }
+      const retryable = status === 429 || (status !== undefined && status >= 500)
+      if (!retryable || n >= attempts) throw error
+      const wait = (retryAfter ?? 10 * 2 ** (n - 1)) * 1000
+      console.log(`[provision-tools] ${url} answered HTTP ${status}; retrying in ${wait / 1000}s (${n}/${attempts - 1})`)
+      await new Promise((resolve) => setTimeout(resolve, wait))
+    }
+  }
 }
 
 function findInTree(dir: string, name: string): string | null {
@@ -140,7 +171,9 @@ async function main() {
 
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "zyraxon-tools-"))
   try {
-    for (const src of downloads) {
+    for (const [index, src] of downloads.entries()) {
+      // Space the requests out; evermeet rate-limits back-to-back downloads.
+      if (index > 0) await new Promise((resolve) => setTimeout(resolve, 3_000))
       // The extension has to match the archive: PowerShell's Expand-Archive
       // refuses anything that is not .zip, so a .zip download must not be saved
       // as an extension-less file.
