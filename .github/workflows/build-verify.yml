@@ -8,13 +8,27 @@
 # and electron-builder expect. A renamed output or a broken package name would
 # otherwise only surface when a release was cut.
 #
-# Manual only: it is a real, multi-minute build, so it does not belong on every
-# push. The release workflows (release-all.yml and friends) remain the shipping
-# entry point; this is the check that says they will work before a tag is made.
+# Manual, or automatically when a change can alter the build output: the build
+# scripts, the packaging configs, the dependency manifest, this workflow, or the
+# shared setup action. It is a real, multi-minute build, so it stays off the
+# ordinary push path. The release workflows (release-all.yml and friends) remain
+# the shipping entry point; this is the check that says they will work.
 name: build-verify
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/build-verify.yml"
+      - ".github/actions/setup-bun/**"
+      - "package.json"
+      - "bun.lock"
+      - "scripts/zyraxon-build-all.ts"
+      - "packages/zyraxon/script/build.ts"
+      - "packages/zyraxon/script/build-node.ts"
+      - "packages/app/vite.config.ts"
+      - "packages/desktop/electron.vite.config.ts"
+      - "packages/desktop/electron-builder.config.ts"
 
 permissions:
   contents: read
