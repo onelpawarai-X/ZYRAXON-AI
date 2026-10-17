@@ -54,6 +54,12 @@ const createEmbeddedWebUIBundle = async () => {
 }
 
 const embeddedFileMap = skipEmbedWebUi ? null : await createEmbeddedWebUIBundle()
+if (embeddedFileMap) {
+  // The compiled binary reads the file map from bunfs, but desktop packaging and
+  // runtime dev import the tracked package-root file. Keep it in sync with the
+  // freshly built UI so the committed map always matches the app `dist`.
+  await Bun.write(path.join(dir, "zyraxon-web-ui.gen.ts"), embeddedFileMap)
+}
 const treeSitterWorker = await Bun.file(fileURLToPath(import.meta.resolve("@opentui/core/parser.worker"))).text()
 
 const allTargets: {

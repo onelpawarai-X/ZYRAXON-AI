@@ -1,5 +1,6 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 // @ts-nocheck
+// Import all files as file_$i with type: "file"
 import file_0 from "../app/dist/_headers" with { type: "file" };
 import file_1 from "../app/dist/apple-touch-icon-v3.png" with { type: "file" };
 import file_2 from "../app/dist/apple-touch-icon.png" with { type: "file" };
@@ -307,7 +308,7 @@ import file_303 from "../app/dist/assets/css-Br67jR8j.js" with { type: "file" };
 import file_304 from "../app/dist/assets/css-CLj8gQPS.js" with { type: "file" };
 import file_305 from "../app/dist/assets/css-DdJfP1eB.js" with { type: "file" };
 import file_306 from "../app/dist/assets/css.worker-CwR69jcm.js" with { type: "file" };
-import file_307 from "../app/dist/assets/cssMode-DtXiuli5.js" with { type: "file" };
+import file_307 from "../app/dist/assets/cssMode-WDSNMvEZ.js" with { type: "file" };
 import file_308 from "../app/dist/assets/csv-D5aBhKLr.js" with { type: "file" };
 import file_309 from "../app/dist/assets/csv-fuZLfV_i.js" with { type: "file" };
 import file_310 from "../app/dist/assets/ctg-DwfrsFPt.js" with { type: "file" };
@@ -341,16 +342,16 @@ import file_337 from "../app/dist/assets/desktop-DZfyBMgF.js" with { type: "file
 import file_338 from "../app/dist/assets/dg-CJPJrjiZ.svg" with { type: "file" };
 import file_339 from "../app/dist/assets/dg-DqkWLbnk.svg" with { type: "file" };
 import file_340 from "../app/dist/assets/dialog-command-palette-v2-CTGIdC2q.css" with { type: "file" };
-import file_341 from "../app/dist/assets/dialog-command-palette-v2-RhZ8IDV6.js" with { type: "file" };
-import file_342 from "../app/dist/assets/dialog-edit-project-CfKTDyg-.js" with { type: "file" };
-import file_343 from "../app/dist/assets/dialog-edit-project-v2-BeI0wsfX.js" with { type: "file" };
-import file_344 from "../app/dist/assets/dialog-fork-bKwDGMP0.js" with { type: "file" };
-import file_345 from "../app/dist/assets/dialog-manage-models-Cffr4_Uf.js" with { type: "file" };
+import file_341 from "../app/dist/assets/dialog-command-palette-v2-Cbk62mBU.js" with { type: "file" };
+import file_342 from "../app/dist/assets/dialog-edit-project-DU16cdNT.js" with { type: "file" };
+import file_343 from "../app/dist/assets/dialog-edit-project-v2-COFrxxdP.js" with { type: "file" };
+import file_344 from "../app/dist/assets/dialog-fork-CPQRVudq.js" with { type: "file" };
+import file_345 from "../app/dist/assets/dialog-manage-models-CW3DwRsl.js" with { type: "file" };
 import file_346 from "../app/dist/assets/dialog-select-directory-v2-BLfZvzPV.css" with { type: "file" };
-import file_347 from "../app/dist/assets/dialog-select-directory-v2-kzHhscMi.js" with { type: "file" };
-import file_348 from "../app/dist/assets/dialog-select-file-BIVvMLHY.js" with { type: "file" };
-import file_349 from "../app/dist/assets/dialog-select-mcp-CXz1dz0Q.js" with { type: "file" };
-import file_350 from "../app/dist/assets/dialog-settings-DwrqsH53.js" with { type: "file" };
+import file_347 from "../app/dist/assets/dialog-select-directory-v2-cqMgUMct.js" with { type: "file" };
+import file_348 from "../app/dist/assets/dialog-select-file-BA5AQNl8.js" with { type: "file" };
+import file_349 from "../app/dist/assets/dialog-select-mcp-CcJ-YkPp.js" with { type: "file" };
+import file_350 from "../app/dist/assets/dialog-settings-BQhkiFIF.js" with { type: "file" };
 import file_351 from "../app/dist/assets/diff-D97Zzqfu.js" with { type: "file" };
 import file_352 from "../app/dist/assets/diff-jW5kmiru.js" with { type: "file" };
 import file_353 from "../app/dist/assets/dm-Cbhezfe1.svg" with { type: "file" };
@@ -381,7 +382,7 @@ import file_377 from "../app/dist/assets/ec-cwfBJlvF.svg" with { type: "file" };
 import file_378 from "../app/dist/assets/ecl-BEgZUVRK.js" with { type: "file" };
 import file_379 from "../app/dist/assets/edge-DTiORMU5.js" with { type: "file" };
 import file_380 from "../app/dist/assets/edge-FbVlp4U3.js" with { type: "file" };
-import file_381 from "../app/dist/assets/edit-project-ONzfEPTE.js" with { type: "file" };
+import file_381 from "../app/dist/assets/edit-project-4SEAppNv.js" with { type: "file" };
 import file_382 from "../app/dist/assets/ee-DFKsJOaW.js" with { type: "file" };
 import file_383 from "../app/dist/assets/efi-Djp6wIJI.js" with { type: "file" };
 import file_384 from "../app/dist/assets/eg-DwOkwyQ0.svg" with { type: "file" };
@@ -452,7 +453,7 @@ import file_448 from "../app/dist/assets/fortran-free-form-DB5N_DgY.js" with { t
 import file_449 from "../app/dist/assets/fr-BkpyCuug.js" with { type: "file" };
 import file_450 from "../app/dist/assets/fr-Dqp3jJ1A.js" with { type: "file" };
 import file_451 from "../app/dist/assets/fr-tPze5MZn.js" with { type: "file" };
-import file_452 from "../app/dist/assets/freemarker2-CIZ9LDGV.js" with { type: "file" };
+import file_452 from "../app/dist/assets/freemarker2-fg3b_GVR.js" with { type: "file" };
 import file_453 from "../app/dist/assets/fsharp-CXgrBDvD.js" with { type: "file" };
 import file_454 from "../app/dist/assets/fsharp-DRAF1jsN.js" with { type: "file" };
 import file_455 from "../app/dist/assets/fsharp-PahG7c26.js" with { type: "file" };
@@ -474,7 +475,7 @@ import file_470 from "../app/dist/assets/genie-D0YGMca9.js" with { type: "file" 
 import file_471 from "../app/dist/assets/genie-DSsjfZMX.js" with { type: "file" };
 import file_472 from "../app/dist/assets/gherkin-Cl2Fw-_0.js" with { type: "file" };
 import file_473 from "../app/dist/assets/gherkin-DyxjwDmM.js" with { type: "file" };
-import file_474 from "../app/dist/assets/ghostty-web-RmuPNOxz.js" with { type: "file" };
+import file_474 from "../app/dist/assets/ghostty-web-CqR9_9vQ.js" with { type: "file" };
 import file_475 from "../app/dist/assets/gil-Djp6wIJI.js" with { type: "file" };
 import file_476 from "../app/dist/assets/git-commit-CJPsQObV.js" with { type: "file" };
 import file_477 from "../app/dist/assets/git-commit-F4YmCXRG.js" with { type: "file" };
@@ -550,9 +551,9 @@ import file_546 from "../app/dist/assets/hack-DbPARsA_.js" with { type: "file" }
 import file_547 from "../app/dist/assets/hak-DD0Uig0w.js" with { type: "file" };
 import file_548 from "../app/dist/assets/haml-C4vGXCDX.js" with { type: "file" };
 import file_549 from "../app/dist/assets/haml-D5jkg6IW.js" with { type: "file" };
-import file_550 from "../app/dist/assets/handlebars-BpdQsYii.js" with { type: "file" };
-import file_551 from "../app/dist/assets/handlebars-BsldGL5W.js" with { type: "file" };
-import file_552 from "../app/dist/assets/handlebars-vgGG0dh3.js" with { type: "file" };
+import file_550 from "../app/dist/assets/handlebars-8KFgbRVm.js" with { type: "file" };
+import file_551 from "../app/dist/assets/handlebars-BpdQsYii.js" with { type: "file" };
+import file_552 from "../app/dist/assets/handlebars-BsldGL5W.js" with { type: "file" };
 import file_553 from "../app/dist/assets/haskell-BfdhR_WN.js" with { type: "file" };
 import file_554 from "../app/dist/assets/haskell-Df6bDoY_.js" with { type: "file" };
 import file_555 from "../app/dist/assets/haw-DE5APL67.js" with { type: "file" };
@@ -589,12 +590,12 @@ import file_585 from "../app/dist/assets/ht-DIMg4gti.svg" with { type: "file" };
 import file_586 from "../app/dist/assets/ht-D_dS9LMW.js" with { type: "file" };
 import file_587 from "../app/dist/assets/ht-pweRl6ZP.svg" with { type: "file" };
 import file_588 from "../app/dist/assets/html-BW_6VhB7.js" with { type: "file" };
-import file_589 from "../app/dist/assets/html-Blh3vMP_.js" with { type: "file" };
+import file_589 from "../app/dist/assets/html-BsznzozN.js" with { type: "file" };
 import file_590 from "../app/dist/assets/html-derivative-BxANmYVz.js" with { type: "file" };
 import file_591 from "../app/dist/assets/html-derivative-DlHx6ybY.js" with { type: "file" };
 import file_592 from "../app/dist/assets/html-pp8916En.js" with { type: "file" };
 import file_593 from "../app/dist/assets/html.worker-Bi4H7ya6.js" with { type: "file" };
-import file_594 from "../app/dist/assets/htmlMode-lFWM9f8h.js" with { type: "file" };
+import file_594 from "../app/dist/assets/htmlMode-DFymJtI7.js" with { type: "file" };
 import file_595 from "../app/dist/assets/http-CG3jvXcS.js" with { type: "file" };
 import file_596 from "../app/dist/assets/http-jrhK8wxY.js" with { type: "file" };
 import file_597 from "../app/dist/assets/hu-CEH2KBKR.js" with { type: "file" };
@@ -619,8 +620,8 @@ import file_615 from "../app/dist/assets/im--VPIqfkF.svg" with { type: "file" };
 import file_616 from "../app/dist/assets/im-Dd9p-0-T.svg" with { type: "file" };
 import file_617 from "../app/dist/assets/imba-D-Pk5S0X.js" with { type: "file" };
 import file_618 from "../app/dist/assets/imba-DGztddWO.js" with { type: "file" };
-import file_619 from "../app/dist/assets/index-B9MpRMDD.css" with { type: "file" };
-import file_620 from "../app/dist/assets/index-CEB12Ahi.js" with { type: "file" };
+import file_619 from "../app/dist/assets/index-D1r4D37D.css" with { type: "file" };
+import file_620 from "../app/dist/assets/index-_Kr5FTDH.js" with { type: "file" };
 import file_621 from "../app/dist/assets/ini-BEwlwnbL.js" with { type: "file" };
 import file_622 from "../app/dist/assets/ini-Dix3pTmg.js" with { type: "file" };
 import file_623 from "../app/dist/assets/ini-Kd9XrMLS.js" with { type: "file" };
@@ -642,7 +643,7 @@ import file_638 from "../app/dist/assets/ja-zyhj00HU.js" with { type: "file" };
 import file_639 from "../app/dist/assets/java-BTDmaRNO.js" with { type: "file" };
 import file_640 from "../app/dist/assets/java-CXBNlu9o.js" with { type: "file" };
 import file_641 from "../app/dist/assets/java-CylS5w8V.js" with { type: "file" };
-import file_642 from "../app/dist/assets/javascript-EdMWGpFv.js" with { type: "file" };
+import file_642 from "../app/dist/assets/javascript-BDQQwWFm.js" with { type: "file" };
 import file_643 from "../app/dist/assets/javascript-WyGyM1wV.js" with { type: "file" };
 import file_644 from "../app/dist/assets/javascript-wDzz0qaB.js" with { type: "file" };
 import file_645 from "../app/dist/assets/je-DyWbhIiC.svg" with { type: "file" };
@@ -656,7 +657,7 @@ import file_652 from "../app/dist/assets/json-Cp-IABpG.js" with { type: "file" }
 import file_653 from "../app/dist/assets/json.worker-_QY6dyVb.js" with { type: "file" };
 import file_654 from "../app/dist/assets/json5-C9tS-k6U.js" with { type: "file" };
 import file_655 from "../app/dist/assets/json5-Cdatmj9n.js" with { type: "file" };
-import file_656 from "../app/dist/assets/jsonMode-C1qYQCw6.js" with { type: "file" };
+import file_656 from "../app/dist/assets/jsonMode-CmZnD8yX.js" with { type: "file" };
 import file_657 from "../app/dist/assets/jsonc-CvUCa1o5.js" with { type: "file" };
 import file_658 from "../app/dist/assets/jsonc-Des-eS-w.js" with { type: "file" };
 import file_659 from "../app/dist/assets/jsonl-9I_GBd5L.js" with { type: "file" };
@@ -737,8 +738,8 @@ import file_733 from "../app/dist/assets/li-CHdhvNcr.svg" with { type: "file" };
 import file_734 from "../app/dist/assets/li-CMlf0YU8.svg" with { type: "file" };
 import file_735 from "../app/dist/assets/light-plus-B7mTdjB0.js" with { type: "file" };
 import file_736 from "../app/dist/assets/light-plus-g_Fi9vkG.js" with { type: "file" };
-import file_737 from "../app/dist/assets/liquid-C0sCDyMI.js" with { type: "file" };
-import file_738 from "../app/dist/assets/liquid-Cj6PAptO.js" with { type: "file" };
+import file_737 from "../app/dist/assets/liquid-B2qo1RPe.js" with { type: "file" };
+import file_738 from "../app/dist/assets/liquid-C0sCDyMI.js" with { type: "file" };
 import file_739 from "../app/dist/assets/liquid-VEiCTF4k.js" with { type: "file" };
 import file_740 from "../app/dist/assets/lk-DSQoDxn_.svg" with { type: "file" };
 import file_741 from "../app/dist/assets/lk-DUkgV9Tq.svg" with { type: "file" };
@@ -751,7 +752,7 @@ import file_747 from "../app/dist/assets/log-CcaF_xNv.js" with { type: "file" };
 import file_748 from "../app/dist/assets/logo-BtOb2qkB.js" with { type: "file" };
 import file_749 from "../app/dist/assets/logo-D9WQLoKQ.js" with { type: "file" };
 import file_750 from "../app/dist/assets/loz-Zh5iD-6n.js" with { type: "file" };
-import file_751 from "../app/dist/assets/lspLanguageFeatures-xwLeol_T.js" with { type: "file" };
+import file_751 from "../app/dist/assets/lspLanguageFeatures-D2FzK2Qg.js" with { type: "file" };
 import file_752 from "../app/dist/assets/lt-D5ud3lL_.js" with { type: "file" };
 import file_753 from "../app/dist/assets/lt-Dvg2aqf7.js" with { type: "file" };
 import file_754 from "../app/dist/assets/lt-kd420MaN.js" with { type: "file" };
@@ -790,14 +791,14 @@ import file_786 from "../app/dist/assets/material-theme-palenight-Csfq5Kiy.js" w
 import file_787 from "../app/dist/assets/matlab-D7o27uSR.js" with { type: "file" };
 import file_788 from "../app/dist/assets/matlab-DzreyMvm.js" with { type: "file" };
 import file_789 from "../app/dist/assets/matrix-DOmRsv_l.js" with { type: "file" };
-import file_790 from "../app/dist/assets/mcp-B_dBSZU7.js" with { type: "file" };
+import file_790 from "../app/dist/assets/mcp-PwO_DDeU.js" with { type: "file" };
 import file_791 from "../app/dist/assets/md-DRlxvNwm.svg" with { type: "file" };
 import file_792 from "../app/dist/assets/md-DTi94M3M.svg" with { type: "file" };
 import file_793 from "../app/dist/assets/mdc-DTYItulj.js" with { type: "file" };
 import file_794 from "../app/dist/assets/mdc-DuMdwZAv.js" with { type: "file" };
 import file_795 from "../app/dist/assets/mdx-C2fqO2XY.js" with { type: "file" };
 import file_796 from "../app/dist/assets/mdx-Cmh6b_Ma.js" with { type: "file" };
-import file_797 from "../app/dist/assets/mdx-DG1cOh7t.js" with { type: "file" };
+import file_797 from "../app/dist/assets/mdx-DhT1NVJH.js" with { type: "file" };
 import file_798 from "../app/dist/assets/me-CfGorN3b.svg" with { type: "file" };
 import file_799 from "../app/dist/assets/me-Cv4Gwqah.svg" with { type: "file" };
 import file_800 from "../app/dist/assets/men-Djp6wIJI.js" with { type: "file" };
@@ -861,7 +862,7 @@ import file_857 from "../app/dist/assets/nds-LlAbuYh9.js" with { type: "file" };
 import file_858 from "../app/dist/assets/nds-kVuSPzK0.js" with { type: "file" };
 import file_859 from "../app/dist/assets/ne-DwCdivil.js" with { type: "file" };
 import file_860 from "../app/dist/assets/new-DX2DI5Pc.js" with { type: "file" };
-import file_861 from "../app/dist/assets/new-session-cqG19IUZ.js" with { type: "file" };
+import file_861 from "../app/dist/assets/new-session-DkcOmo0q.js" with { type: "file" };
 import file_862 from "../app/dist/assets/nextflow-C-mBbutL.js" with { type: "file" };
 import file_863 from "../app/dist/assets/nextflow-D9i3Mg89.js" with { type: "file" };
 import file_864 from "../app/dist/assets/nextflow-groovy-BtKenbWl.js" with { type: "file" };
@@ -977,7 +978,7 @@ import file_973 from "../app/dist/assets/plastic-3e1v2bzS.js" with { type: "file
 import file_974 from "../app/dist/assets/plastic-CXnNNlFZ.js" with { type: "file" };
 import file_975 from "../app/dist/assets/plsql-ChMvpjG-.js" with { type: "file" };
 import file_976 from "../app/dist/assets/plsql-Dbm3tV2N.js" with { type: "file" };
-import file_977 from "../app/dist/assets/plugin-CA2vY0WV.js" with { type: "file" };
+import file_977 from "../app/dist/assets/plugin-Cy-Wyl98.js" with { type: "file" };
 import file_978 from "../app/dist/assets/pn-BPAlH32D.svg" with { type: "file" };
 import file_979 from "../app/dist/assets/pn-DgxdtieE.svg" with { type: "file" };
 import file_980 from "../app/dist/assets/po-BTJTHyun.js" with { type: "file" };
@@ -1016,9 +1017,9 @@ import file_1012 from "../app/dist/assets/purescript-BgpM7rDH.js" with { type: "
 import file_1013 from "../app/dist/assets/purescript-CklMAg4u.js" with { type: "file" };
 import file_1014 from "../app/dist/assets/py-BKi5dxWt.svg" with { type: "file" };
 import file_1015 from "../app/dist/assets/py-mNzh0mZC.svg" with { type: "file" };
-import file_1016 from "../app/dist/assets/python-B6Ihcp-E.js" with { type: "file" };
-import file_1017 from "../app/dist/assets/python-B6aJPvgy.js" with { type: "file" };
-import file_1018 from "../app/dist/assets/python-B8Cif5Ai.js" with { type: "file" };
+import file_1016 from "../app/dist/assets/python-B4TuxeS_.js" with { type: "file" };
+import file_1017 from "../app/dist/assets/python-B6Ihcp-E.js" with { type: "file" };
+import file_1018 from "../app/dist/assets/python-B6aJPvgy.js" with { type: "file" };
 import file_1019 from "../app/dist/assets/qml-3beO22l8.js" with { type: "file" };
 import file_1020 from "../app/dist/assets/qml-DmGQGbca.js" with { type: "file" };
 import file_1021 from "../app/dist/assets/qmldir-C8lEn-DE.js" with { type: "file" };
@@ -1035,9 +1036,9 @@ import file_1031 from "../app/dist/assets/racket-CeDx7KO2.js" with { type: "file
 import file_1032 from "../app/dist/assets/raj-BfD9TOtc.js" with { type: "file" };
 import file_1033 from "../app/dist/assets/raku-BMJwmrCS.js" with { type: "file" };
 import file_1034 from "../app/dist/assets/raku-DXvB9xmW.js" with { type: "file" };
-import file_1035 from "../app/dist/assets/razor-BjBPvh-w.js" with { type: "file" };
-import file_1036 from "../app/dist/assets/razor-C2a5o_rD.js" with { type: "file" };
-import file_1037 from "../app/dist/assets/razor-GSUuCt7x.js" with { type: "file" };
+import file_1035 from "../app/dist/assets/razor-BIsIvcAq.js" with { type: "file" };
+import file_1036 from "../app/dist/assets/razor-BjBPvh-w.js" with { type: "file" };
+import file_1037 from "../app/dist/assets/razor-C2a5o_rD.js" with { type: "file" };
 import file_1038 from "../app/dist/assets/red-DR6ZwibK.js" with { type: "file" };
 import file_1039 from "../app/dist/assets/red-bN70gL4F.js" with { type: "file" };
 import file_1040 from "../app/dist/assets/redis-Bu5POkcn.js" with { type: "file" };
@@ -1192,7 +1193,7 @@ import file_1188 from "../app/dist/assets/staplebops-07-_-IkdLL4.js" with { type
 import file_1189 from "../app/dist/assets/staplebops-07-cqQEvbIf.aac" with { type: "file" };
 import file_1190 from "../app/dist/assets/stata-BcICKvEt.js" with { type: "file" };
 import file_1191 from "../app/dist/assets/stata-DI20mbqo.js" with { type: "file" };
-import file_1192 from "../app/dist/assets/status-popover-body-CHVRAnnM.js" with { type: "file" };
+import file_1192 from "../app/dist/assets/status-popover-body-Bgm72Z_l.js" with { type: "file" };
 import file_1193 from "../app/dist/assets/stylus-BEDo0Tqx.js" with { type: "file" };
 import file_1194 from "../app/dist/assets/stylus-CIg617SB.js" with { type: "file" };
 import file_1195 from "../app/dist/assets/su-CFWyqm-K.js" with { type: "file" };
@@ -1210,7 +1211,7 @@ import file_1206 from "../app/dist/assets/sw-Zh5iD-6n.js" with { type: "file" };
 import file_1207 from "../app/dist/assets/swift-Bqt4WxQ4.js" with { type: "file" };
 import file_1208 from "../app/dist/assets/swift-D82vCrfD.js" with { type: "file" };
 import file_1209 from "../app/dist/assets/swift-tEesUtni.js" with { type: "file" };
-import file_1210 from "../app/dist/assets/switch-D-nxyO_X.js" with { type: "file" };
+import file_1210 from "../app/dist/assets/switch-60uoywXW.js" with { type: "file" };
 import file_1211 from "../app/dist/assets/sx-RKKs0ph6.svg" with { type: "file" };
 import file_1212 from "../app/dist/assets/sx-nDhIaDNb.svg" with { type: "file" };
 import file_1213 from "../app/dist/assets/syl-DwfrsFPt.js" with { type: "file" };
@@ -1275,7 +1276,7 @@ import file_1271 from "../app/dist/assets/ts-WoUkrp7W.js" with { type: "file" };
 import file_1272 from "../app/dist/assets/ts-tags-D351s5mN.js" with { type: "file" };
 import file_1273 from "../app/dist/assets/ts-tags-xUT7JH_c.js" with { type: "file" };
 import file_1274 from "../app/dist/assets/ts.worker-B0NHWjri.js" with { type: "file" };
-import file_1275 from "../app/dist/assets/tsMode-Bds15Z2B.js" with { type: "file" };
+import file_1275 from "../app/dist/assets/tsMode-BzfxlMsl.js" with { type: "file" };
 import file_1276 from "../app/dist/assets/tsv-BFtm7NXx.js" with { type: "file" };
 import file_1277 from "../app/dist/assets/tsv-B_m7g4N7.js" with { type: "file" };
 import file_1278 from "../app/dist/assets/tsx-COt5Ahok.js" with { type: "file" };
@@ -1292,7 +1293,7 @@ import file_1288 from "../app/dist/assets/twig-Csy3S7wG.js" with { type: "file" 
 import file_1289 from "../app/dist/assets/ty-CQAY-fjn.js" with { type: "file" };
 import file_1290 from "../app/dist/assets/typescript-BPQ3VLAy.js" with { type: "file" };
 import file_1291 from "../app/dist/assets/typescript-BqvgUolh.js" with { type: "file" };
-import file_1292 from "../app/dist/assets/typescript-COooQrIl.js" with { type: "file" };
+import file_1292 from "../app/dist/assets/typescript-tTk_-EFi.js" with { type: "file" };
 import file_1293 from "../app/dist/assets/typespec-B09nCZui.js" with { type: "file" };
 import file_1294 from "../app/dist/assets/typespec-Btyra-wh.js" with { type: "file" };
 import file_1295 from "../app/dist/assets/typespec-CAFt9gP4.js" with { type: "file" };
@@ -1368,19 +1369,19 @@ import file_1364 from "../app/dist/assets/wo-BJDOYuM7.js" with { type: "file" };
 import file_1365 from "../app/dist/assets/wolfram-lXgVvXCa.js" with { type: "file" };
 import file_1366 from "../app/dist/assets/wolfram-pu21K997.js" with { type: "file" };
 import file_1367 from "../app/dist/assets/worker-DlWPvypT.js" with { type: "file" };
-import file_1368 from "../app/dist/assets/workers-BZ5J55HF.js" with { type: "file" };
+import file_1368 from "../app/dist/assets/workers-BvH_rsBt.js" with { type: "file" };
 import file_1369 from "../app/dist/assets/wuu-C0drUtyp.js" with { type: "file" };
 import file_1370 from "../app/dist/assets/xh-rXLrFpjt.js" with { type: "file" };
 import file_1371 from "../app/dist/assets/xk-Bj15g7cp.svg" with { type: "file" };
 import file_1372 from "../app/dist/assets/xk-Cdz2uTvR.svg" with { type: "file" };
-import file_1373 from "../app/dist/assets/xml-BkAJuBCc.js" with { type: "file" };
-import file_1374 from "../app/dist/assets/xml-CKvhKrPg.js" with { type: "file" };
+import file_1373 from "../app/dist/assets/xml-Bg6K_lnW.js" with { type: "file" };
+import file_1374 from "../app/dist/assets/xml-BkAJuBCc.js" with { type: "file" };
 import file_1375 from "../app/dist/assets/xml-sdJ4AIDG.js" with { type: "file" };
 import file_1376 from "../app/dist/assets/xsl-C6UUWSil.js" with { type: "file" };
 import file_1377 from "../app/dist/assets/xsl-CtQFsRM5.js" with { type: "file" };
 import file_1378 from "../app/dist/assets/yaml-Bopit2L3.js" with { type: "file" };
 import file_1379 from "../app/dist/assets/yaml-Buea-lGh.js" with { type: "file" };
-import file_1380 from "../app/dist/assets/yaml-DPTUGqoo.js" with { type: "file" };
+import file_1380 from "../app/dist/assets/yaml-CZluGnX3.js" with { type: "file" };
 import file_1381 from "../app/dist/assets/yi-B1h8nIY_.js" with { type: "file" };
 import file_1382 from "../app/dist/assets/yi-DDAJgcrq.js" with { type: "file" };
 import file_1383 from "../app/dist/assets/yi-DONLMagb.js" with { type: "file" };
@@ -1429,6 +1430,7 @@ import file_1425 from "../app/dist/videos/help.mp4" with { type: "file" };
 import file_1426 from "../app/dist/videos/setting.mp4" with { type: "file" };
 import file_1427 from "../app/dist/web-app-manifest-192x192.png" with { type: "file" };
 import file_1428 from "../app/dist/web-app-manifest-512x512.png" with { type: "file" };
+// Export with original mappings
 export default {
   "_headers": file_0,
   "apple-touch-icon-v3.png": file_1,
@@ -1737,7 +1739,7 @@ export default {
   "assets/css-CLj8gQPS.js": file_304,
   "assets/css-DdJfP1eB.js": file_305,
   "assets/css.worker-CwR69jcm.js": file_306,
-  "assets/cssMode-DtXiuli5.js": file_307,
+  "assets/cssMode-WDSNMvEZ.js": file_307,
   "assets/csv-D5aBhKLr.js": file_308,
   "assets/csv-fuZLfV_i.js": file_309,
   "assets/ctg-DwfrsFPt.js": file_310,
@@ -1771,16 +1773,16 @@ export default {
   "assets/dg-CJPJrjiZ.svg": file_338,
   "assets/dg-DqkWLbnk.svg": file_339,
   "assets/dialog-command-palette-v2-CTGIdC2q.css": file_340,
-  "assets/dialog-command-palette-v2-RhZ8IDV6.js": file_341,
-  "assets/dialog-edit-project-CfKTDyg-.js": file_342,
-  "assets/dialog-edit-project-v2-BeI0wsfX.js": file_343,
-  "assets/dialog-fork-bKwDGMP0.js": file_344,
-  "assets/dialog-manage-models-Cffr4_Uf.js": file_345,
+  "assets/dialog-command-palette-v2-Cbk62mBU.js": file_341,
+  "assets/dialog-edit-project-DU16cdNT.js": file_342,
+  "assets/dialog-edit-project-v2-COFrxxdP.js": file_343,
+  "assets/dialog-fork-CPQRVudq.js": file_344,
+  "assets/dialog-manage-models-CW3DwRsl.js": file_345,
   "assets/dialog-select-directory-v2-BLfZvzPV.css": file_346,
-  "assets/dialog-select-directory-v2-kzHhscMi.js": file_347,
-  "assets/dialog-select-file-BIVvMLHY.js": file_348,
-  "assets/dialog-select-mcp-CXz1dz0Q.js": file_349,
-  "assets/dialog-settings-DwrqsH53.js": file_350,
+  "assets/dialog-select-directory-v2-cqMgUMct.js": file_347,
+  "assets/dialog-select-file-BA5AQNl8.js": file_348,
+  "assets/dialog-select-mcp-CcJ-YkPp.js": file_349,
+  "assets/dialog-settings-BQhkiFIF.js": file_350,
   "assets/diff-D97Zzqfu.js": file_351,
   "assets/diff-jW5kmiru.js": file_352,
   "assets/dm-Cbhezfe1.svg": file_353,
@@ -1811,7 +1813,7 @@ export default {
   "assets/ecl-BEgZUVRK.js": file_378,
   "assets/edge-DTiORMU5.js": file_379,
   "assets/edge-FbVlp4U3.js": file_380,
-  "assets/edit-project-ONzfEPTE.js": file_381,
+  "assets/edit-project-4SEAppNv.js": file_381,
   "assets/ee-DFKsJOaW.js": file_382,
   "assets/efi-Djp6wIJI.js": file_383,
   "assets/eg-DwOkwyQ0.svg": file_384,
@@ -1882,7 +1884,7 @@ export default {
   "assets/fr-BkpyCuug.js": file_449,
   "assets/fr-Dqp3jJ1A.js": file_450,
   "assets/fr-tPze5MZn.js": file_451,
-  "assets/freemarker2-CIZ9LDGV.js": file_452,
+  "assets/freemarker2-fg3b_GVR.js": file_452,
   "assets/fsharp-CXgrBDvD.js": file_453,
   "assets/fsharp-DRAF1jsN.js": file_454,
   "assets/fsharp-PahG7c26.js": file_455,
@@ -1904,7 +1906,7 @@ export default {
   "assets/genie-DSsjfZMX.js": file_471,
   "assets/gherkin-Cl2Fw-_0.js": file_472,
   "assets/gherkin-DyxjwDmM.js": file_473,
-  "assets/ghostty-web-RmuPNOxz.js": file_474,
+  "assets/ghostty-web-CqR9_9vQ.js": file_474,
   "assets/gil-Djp6wIJI.js": file_475,
   "assets/git-commit-CJPsQObV.js": file_476,
   "assets/git-commit-F4YmCXRG.js": file_477,
@@ -1980,9 +1982,9 @@ export default {
   "assets/hak-DD0Uig0w.js": file_547,
   "assets/haml-C4vGXCDX.js": file_548,
   "assets/haml-D5jkg6IW.js": file_549,
-  "assets/handlebars-BpdQsYii.js": file_550,
-  "assets/handlebars-BsldGL5W.js": file_551,
-  "assets/handlebars-vgGG0dh3.js": file_552,
+  "assets/handlebars-8KFgbRVm.js": file_550,
+  "assets/handlebars-BpdQsYii.js": file_551,
+  "assets/handlebars-BsldGL5W.js": file_552,
   "assets/haskell-BfdhR_WN.js": file_553,
   "assets/haskell-Df6bDoY_.js": file_554,
   "assets/haw-DE5APL67.js": file_555,
@@ -2019,12 +2021,12 @@ export default {
   "assets/ht-D_dS9LMW.js": file_586,
   "assets/ht-pweRl6ZP.svg": file_587,
   "assets/html-BW_6VhB7.js": file_588,
-  "assets/html-Blh3vMP_.js": file_589,
+  "assets/html-BsznzozN.js": file_589,
   "assets/html-derivative-BxANmYVz.js": file_590,
   "assets/html-derivative-DlHx6ybY.js": file_591,
   "assets/html-pp8916En.js": file_592,
   "assets/html.worker-Bi4H7ya6.js": file_593,
-  "assets/htmlMode-lFWM9f8h.js": file_594,
+  "assets/htmlMode-DFymJtI7.js": file_594,
   "assets/http-CG3jvXcS.js": file_595,
   "assets/http-jrhK8wxY.js": file_596,
   "assets/hu-CEH2KBKR.js": file_597,
@@ -2049,8 +2051,8 @@ export default {
   "assets/im-Dd9p-0-T.svg": file_616,
   "assets/imba-D-Pk5S0X.js": file_617,
   "assets/imba-DGztddWO.js": file_618,
-  "assets/index-B9MpRMDD.css": file_619,
-  "assets/index-CEB12Ahi.js": file_620,
+  "assets/index-D1r4D37D.css": file_619,
+  "assets/index-_Kr5FTDH.js": file_620,
   "assets/ini-BEwlwnbL.js": file_621,
   "assets/ini-Dix3pTmg.js": file_622,
   "assets/ini-Kd9XrMLS.js": file_623,
@@ -2072,7 +2074,7 @@ export default {
   "assets/java-BTDmaRNO.js": file_639,
   "assets/java-CXBNlu9o.js": file_640,
   "assets/java-CylS5w8V.js": file_641,
-  "assets/javascript-EdMWGpFv.js": file_642,
+  "assets/javascript-BDQQwWFm.js": file_642,
   "assets/javascript-WyGyM1wV.js": file_643,
   "assets/javascript-wDzz0qaB.js": file_644,
   "assets/je-DyWbhIiC.svg": file_645,
@@ -2086,7 +2088,7 @@ export default {
   "assets/json.worker-_QY6dyVb.js": file_653,
   "assets/json5-C9tS-k6U.js": file_654,
   "assets/json5-Cdatmj9n.js": file_655,
-  "assets/jsonMode-C1qYQCw6.js": file_656,
+  "assets/jsonMode-CmZnD8yX.js": file_656,
   "assets/jsonc-CvUCa1o5.js": file_657,
   "assets/jsonc-Des-eS-w.js": file_658,
   "assets/jsonl-9I_GBd5L.js": file_659,
@@ -2167,8 +2169,8 @@ export default {
   "assets/li-CMlf0YU8.svg": file_734,
   "assets/light-plus-B7mTdjB0.js": file_735,
   "assets/light-plus-g_Fi9vkG.js": file_736,
-  "assets/liquid-C0sCDyMI.js": file_737,
-  "assets/liquid-Cj6PAptO.js": file_738,
+  "assets/liquid-B2qo1RPe.js": file_737,
+  "assets/liquid-C0sCDyMI.js": file_738,
   "assets/liquid-VEiCTF4k.js": file_739,
   "assets/lk-DSQoDxn_.svg": file_740,
   "assets/lk-DUkgV9Tq.svg": file_741,
@@ -2181,7 +2183,7 @@ export default {
   "assets/logo-BtOb2qkB.js": file_748,
   "assets/logo-D9WQLoKQ.js": file_749,
   "assets/loz-Zh5iD-6n.js": file_750,
-  "assets/lspLanguageFeatures-xwLeol_T.js": file_751,
+  "assets/lspLanguageFeatures-D2FzK2Qg.js": file_751,
   "assets/lt-D5ud3lL_.js": file_752,
   "assets/lt-Dvg2aqf7.js": file_753,
   "assets/lt-kd420MaN.js": file_754,
@@ -2220,14 +2222,14 @@ export default {
   "assets/matlab-D7o27uSR.js": file_787,
   "assets/matlab-DzreyMvm.js": file_788,
   "assets/matrix-DOmRsv_l.js": file_789,
-  "assets/mcp-B_dBSZU7.js": file_790,
+  "assets/mcp-PwO_DDeU.js": file_790,
   "assets/md-DRlxvNwm.svg": file_791,
   "assets/md-DTi94M3M.svg": file_792,
   "assets/mdc-DTYItulj.js": file_793,
   "assets/mdc-DuMdwZAv.js": file_794,
   "assets/mdx-C2fqO2XY.js": file_795,
   "assets/mdx-Cmh6b_Ma.js": file_796,
-  "assets/mdx-DG1cOh7t.js": file_797,
+  "assets/mdx-DhT1NVJH.js": file_797,
   "assets/me-CfGorN3b.svg": file_798,
   "assets/me-Cv4Gwqah.svg": file_799,
   "assets/men-Djp6wIJI.js": file_800,
@@ -2291,7 +2293,7 @@ export default {
   "assets/nds-kVuSPzK0.js": file_858,
   "assets/ne-DwCdivil.js": file_859,
   "assets/new-DX2DI5Pc.js": file_860,
-  "assets/new-session-cqG19IUZ.js": file_861,
+  "assets/new-session-DkcOmo0q.js": file_861,
   "assets/nextflow-C-mBbutL.js": file_862,
   "assets/nextflow-D9i3Mg89.js": file_863,
   "assets/nextflow-groovy-BtKenbWl.js": file_864,
@@ -2407,7 +2409,7 @@ export default {
   "assets/plastic-CXnNNlFZ.js": file_974,
   "assets/plsql-ChMvpjG-.js": file_975,
   "assets/plsql-Dbm3tV2N.js": file_976,
-  "assets/plugin-CA2vY0WV.js": file_977,
+  "assets/plugin-Cy-Wyl98.js": file_977,
   "assets/pn-BPAlH32D.svg": file_978,
   "assets/pn-DgxdtieE.svg": file_979,
   "assets/po-BTJTHyun.js": file_980,
@@ -2446,9 +2448,9 @@ export default {
   "assets/purescript-CklMAg4u.js": file_1013,
   "assets/py-BKi5dxWt.svg": file_1014,
   "assets/py-mNzh0mZC.svg": file_1015,
-  "assets/python-B6Ihcp-E.js": file_1016,
-  "assets/python-B6aJPvgy.js": file_1017,
-  "assets/python-B8Cif5Ai.js": file_1018,
+  "assets/python-B4TuxeS_.js": file_1016,
+  "assets/python-B6Ihcp-E.js": file_1017,
+  "assets/python-B6aJPvgy.js": file_1018,
   "assets/qml-3beO22l8.js": file_1019,
   "assets/qml-DmGQGbca.js": file_1020,
   "assets/qmldir-C8lEn-DE.js": file_1021,
@@ -2465,9 +2467,9 @@ export default {
   "assets/raj-BfD9TOtc.js": file_1032,
   "assets/raku-BMJwmrCS.js": file_1033,
   "assets/raku-DXvB9xmW.js": file_1034,
-  "assets/razor-BjBPvh-w.js": file_1035,
-  "assets/razor-C2a5o_rD.js": file_1036,
-  "assets/razor-GSUuCt7x.js": file_1037,
+  "assets/razor-BIsIvcAq.js": file_1035,
+  "assets/razor-BjBPvh-w.js": file_1036,
+  "assets/razor-C2a5o_rD.js": file_1037,
   "assets/red-DR6ZwibK.js": file_1038,
   "assets/red-bN70gL4F.js": file_1039,
   "assets/redis-Bu5POkcn.js": file_1040,
@@ -2622,7 +2624,7 @@ export default {
   "assets/staplebops-07-cqQEvbIf.aac": file_1189,
   "assets/stata-BcICKvEt.js": file_1190,
   "assets/stata-DI20mbqo.js": file_1191,
-  "assets/status-popover-body-CHVRAnnM.js": file_1192,
+  "assets/status-popover-body-Bgm72Z_l.js": file_1192,
   "assets/stylus-BEDo0Tqx.js": file_1193,
   "assets/stylus-CIg617SB.js": file_1194,
   "assets/su-CFWyqm-K.js": file_1195,
@@ -2640,7 +2642,7 @@ export default {
   "assets/swift-Bqt4WxQ4.js": file_1207,
   "assets/swift-D82vCrfD.js": file_1208,
   "assets/swift-tEesUtni.js": file_1209,
-  "assets/switch-D-nxyO_X.js": file_1210,
+  "assets/switch-60uoywXW.js": file_1210,
   "assets/sx-RKKs0ph6.svg": file_1211,
   "assets/sx-nDhIaDNb.svg": file_1212,
   "assets/syl-DwfrsFPt.js": file_1213,
@@ -2705,7 +2707,7 @@ export default {
   "assets/ts-tags-D351s5mN.js": file_1272,
   "assets/ts-tags-xUT7JH_c.js": file_1273,
   "assets/ts.worker-B0NHWjri.js": file_1274,
-  "assets/tsMode-Bds15Z2B.js": file_1275,
+  "assets/tsMode-BzfxlMsl.js": file_1275,
   "assets/tsv-BFtm7NXx.js": file_1276,
   "assets/tsv-B_m7g4N7.js": file_1277,
   "assets/tsx-COt5Ahok.js": file_1278,
@@ -2722,7 +2724,7 @@ export default {
   "assets/ty-CQAY-fjn.js": file_1289,
   "assets/typescript-BPQ3VLAy.js": file_1290,
   "assets/typescript-BqvgUolh.js": file_1291,
-  "assets/typescript-COooQrIl.js": file_1292,
+  "assets/typescript-tTk_-EFi.js": file_1292,
   "assets/typespec-B09nCZui.js": file_1293,
   "assets/typespec-Btyra-wh.js": file_1294,
   "assets/typespec-CAFt9gP4.js": file_1295,
@@ -2798,19 +2800,19 @@ export default {
   "assets/wolfram-lXgVvXCa.js": file_1365,
   "assets/wolfram-pu21K997.js": file_1366,
   "assets/worker-DlWPvypT.js": file_1367,
-  "assets/workers-BZ5J55HF.js": file_1368,
+  "assets/workers-BvH_rsBt.js": file_1368,
   "assets/wuu-C0drUtyp.js": file_1369,
   "assets/xh-rXLrFpjt.js": file_1370,
   "assets/xk-Bj15g7cp.svg": file_1371,
   "assets/xk-Cdz2uTvR.svg": file_1372,
-  "assets/xml-BkAJuBCc.js": file_1373,
-  "assets/xml-CKvhKrPg.js": file_1374,
+  "assets/xml-Bg6K_lnW.js": file_1373,
+  "assets/xml-BkAJuBCc.js": file_1374,
   "assets/xml-sdJ4AIDG.js": file_1375,
   "assets/xsl-C6UUWSil.js": file_1376,
   "assets/xsl-CtQFsRM5.js": file_1377,
   "assets/yaml-Bopit2L3.js": file_1378,
   "assets/yaml-Buea-lGh.js": file_1379,
-  "assets/yaml-DPTUGqoo.js": file_1380,
+  "assets/yaml-CZluGnX3.js": file_1380,
   "assets/yi-B1h8nIY_.js": file_1381,
   "assets/yi-DDAJgcrq.js": file_1382,
   "assets/yi-DONLMagb.js": file_1383,
