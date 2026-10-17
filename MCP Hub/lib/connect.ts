@@ -193,13 +193,29 @@ export function toServerConfig(
   token?: string,
   clientId?: string,
   clientSecret?: string,
+  env?: Record<string, string>,
 ): McpLocalConfig | McpRemoteConfig | Record<string, never> {
   if (app.kind === "local") {
     // Bundled local servers are declared by ZYRAXON's own defaults and need nothing.
     // One that ships its own launch command has to be declared here or it can never
     // start, so it becomes a normal local entry pointing at that command.
     if (!app.command) return {}
-    return { type: "local", command: [app.command.command, ...app.command.args], enabled: true, timeout: REQUEST_TIMEOUT_MS }
+    // Credentials the fetched server reads from its environment. Only variables the
+    // catalog declares are passed, so a server never sees anything it did not ask for.
+    const environment = app.env
+      ? Object.fromEntries(
+          app.env
+            .map((entry) => [entry.key, env?.[entry.key]?.trim()] as const)
+            .filter((pair): pair is readonly [string, string] => Boolean(pair[1])),
+        )
+      : undefined
+    return {
+      type: "local",
+      command: [app.command.command, ...app.command.args],
+      enabled: true,
+      timeout: REQUEST_TIMEOUT_MS,
+      ...(environment && Object.keys(environment).length > 0 ? { environment } : {}),
+    }
   }
 
   if (!app.url) return {}
@@ -207,7 +223,12 @@ export function toServerConfig(
   const config: McpRemoteConfig = { type: "remote", url: app.url, enabled: true, timeout: REQUEST_TIMEOUT_MS }
 
   if (token) {
-    config.headers = { Authorization: `Bearer ${token}` }
+    // Some endpoints reject the default Bearer header and require the key under a
+    // vendor-specific name. The catalog records which (HasData, Green API) after
+    // probing each one with a dummy credential; the rest default to Bearer.
+    const header = app.auth === "x-api-key" ? "x-api-key" : "Authorization"
+    const value = app.auth === "x-api-key" ? token : `Bearer ${token}`
+    config.headers = { [header]: value }
     return config
   }
 
@@ -284,6 +305,14 @@ export interface ConnectOptions {
   clientId?: string
   /** the secret, where the console showed one next to the ID */
   clientSecret?: string
+  /**
+   * Values for the environment variables a fetched local server reads.
+   *
+   * Keyed by the variable name the catalog declares, so the panel can collect one box
+   * per entry without knowing which server is behind it. They are written into the
+   * server's config as its `environment` and never leave the machine.
+   */
+  env?: Record<string, string>
   /** report intermediate states so a card can say "check your browser" */
   onProgress?: (state: ConnectionState) => void
 }
@@ -327,7 +356,7 @@ async function attempt(
   let signedIn = false
 
   try {
-    const config = toServerConfig(app, token, options.clientId, options.clientSecret)
+    const config = toServerConfig(app, token, options.clientId, options.clientSecret, options.env)
     onProgress?.({ status: "connecting" })
 
     // Local servers are already declared by ZYRAXON's own defaults, so there is

@@ -1291,6 +1291,13 @@ const layer = Layer.effect(
         const session = yield* sessions.get(sessionID).pipe(Effect.orDie)
         const rateLimitedModels = new Set<string>()
         const MAX_RATE_LIMIT_RETRIES = 3
+        // A single prompt must never compact the conversation more than once.
+        // Without this guard, an overflow after compaction schedules another
+        // compaction, which overflows again, then schedules another — an
+        // unbounded summary loop that burns the whole provider budget. After the
+        // first compaction this prompt either keeps running from the tail or
+        // stops with a clear error; it never re-enters the summarizer.
+        let compactedOnce = false
 
         while (true) {
           yield* status.set(sessionID, { type: "busy" })
@@ -1446,9 +1453,11 @@ const layer = Layer.effect(
           if (
             lastFinished &&
             lastFinished.summary !== true &&
+            !compactedOnce &&
             (yield* compaction.isOverflow({ tokens: lastFinished.tokens, model }))
           ) {
             yield* compaction.create({ sessionID, agent: lastUser.agent, model: lastUser.model, auto: true })
+            compactedOnce = true
             continue
           }
 
@@ -1738,6 +1747,17 @@ const layer = Layer.effect(
               return "break" as const
             }
             if (result === "compact") {
+              if (compactedOnce) {
+                // Overflow returned again right after compaction. Summarizing
+                // once already shrank the context; a second pass would only
+                // loop (the model keeps writing summaries and the provider
+                // budget burns). Surface the overflow as an error instead.
+                handle.message.error = new SessionV1.ContextOverflowError({
+                  message: "Conversation still overflows after compaction — context exceeds the model limit. Try a different model or a fresh session.",
+                }).toObject()
+                handle.message.finish = "error"
+                return "break" as const
+              }
               yield* compaction.create({
                 sessionID,
                 agent: lastUser.agent,
@@ -1745,6 +1765,7 @@ const layer = Layer.effect(
                 auto: true,
                 overflow: !handle.message.finish,
               })
+              compactedOnce = true
             }
             return "continue" as const
           }).pipe(

@@ -76,6 +76,55 @@ async function resolveNodePath(): Promise<string> {
   }
   return "node"
 }
+
+/**
+ * Absolute path for a package-runner command, or the command unchanged.
+ *
+ * A catalog entry that starts a server fetched from npm begins with `npx`, and a
+ * packaged desktop app does not always launch with the user's shell environment, so
+ * `npx` can be absent from PATH even though it is installed. cross-spawn resolves a
+ * bare name through PATH and would then fail the connect with "ENOENT". Probing the
+ * directories Node itself installs into, and the usual Windows locations, keeps the
+ * entry working on Windows, Linux and macOS alike without a hardcoded path.
+ *
+ * Only runner names are probed. Any other command is returned untouched, so a server
+ * that names a real program keeps resolving through PATH exactly as before.
+ */
+const LAUNCHERS = new Set(["npx", "npm", "pnpm", "yarn", "bunx", "bun", "uvx", "pipx", "deno"])
+
+function resolveLauncherPath(cmd: string): string {
+  if (cmd.includes("/") || cmd.includes("\\")) return cmd
+  const base = cmd.replace(/\.(cmd|exe|ps1|bat)$/i, "")
+  if (!LAUNCHERS.has(base)) return cmd
+
+  const { existsSync } = require("fs") as typeof import("fs")
+  const dirs: string[] = []
+  const execPath = (process as { execPath?: string }).execPath
+  if (execPath) dirs.push(path.dirname(execPath))
+  if (process.env.PATH) dirs.push(...process.env.PATH.split(path.delimiter).filter(Boolean))
+  dirs.push(
+    "/usr/local/bin",
+    "/opt/homebrew/bin",
+    "/usr/bin",
+    path.join(process.env.HOME ?? "", ".local/bin"),
+    path.join(process.env.HOME ?? "", ".bun/bin"),
+    path.join(process.env.APPDATA ?? "", "npm"),
+    path.join(process.env.LOCALAPPDATA ?? "", "Programs", "nodejs"),
+    "C:\\Program Files\\nodejs",
+  )
+
+  // Windows resolves a shim through its extension; POSIX needs the bare name.
+  const names =
+    process.platform === "win32" ? [`${base}.cmd`, `${base}.exe`, `${base}.ps1`, `${base}.bat`, base] : [base]
+  for (const dir of dirs) {
+    if (!dir) continue
+    for (const name of names) {
+      const full = path.join(dir, name)
+      if (existsSync(full)) return full
+    }
+  }
+  return cmd
+}
 const CLIENT_OPTIONS = {
   capabilities: {
     // https://github.com/onelpawarai/ZYRAXON-AI/issues/11948
@@ -836,6 +885,11 @@ const layer = Layer.effect(
         if (execPath && resolvedCmd === execPath) {
           dotenv = { ELECTRON_RUN_AS_NODE: "1" }
         }
+      } else {
+        // A package runner has the same problem as `node`: it is installed but not on the
+        // PATH the packaged app was launched with. Resolving it here is what lets a
+        // catalog entry that fetches its server from npm start on every platform.
+        resolvedCmd = resolveLauncherPath(resolvedCmd)
       }
 
       const transport = new StdioClientTransport({

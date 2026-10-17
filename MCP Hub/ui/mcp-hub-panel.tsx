@@ -65,6 +65,28 @@ const GUIDE_LANG_KEY = "zyraxon.mcp.guide.lang"
  */
 const CLIENT_IDS_KEY = "zyraxon.mcp.clientIds"
 
+/**
+ * Environment credentials the user typed once for a fetched local server, keyed by app
+ * and then by variable name.
+ *
+ * A token that a locally run server reads from its environment is the same kind of
+ * one-time value as a client ID, so it is kept the same way: remembered here and handed
+ * to the server on every connect. Without this a YouTube or Reddit credential would be
+ * re-typed on every visit.
+ */
+const ENV_VALUES_KEY = "zyraxon.mcp.envValues"
+
+function readEnvValues(): Record<string, Record<string, string>> {
+  try {
+    const raw = localStorage.getItem(ENV_VALUES_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === "object" ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
 function readClientIds(): Record<string, { id: string; secret?: string }> {
   try {
     const raw = localStorage.getItem(CLIENT_IDS_KEY)
@@ -159,10 +181,14 @@ const IDLE_POLL_MS = 10_000
  */
 const FLOW_BROWSER = "oauth"
 const FLOW_TOKEN = "token"
+const FLOW_SETUP = "setup"
 const FLOW_DIRECT = "direct"
 
 function flowOf(app: AppEntry): string {
-  if (app.kind === "local") return FLOW_DIRECT
+  // A fetched local server has no browser sign-in and no single pasted token: it reads
+  // several credentials from its environment. It gets its own section so the card can
+  // say what it will ask for before the dialog opens.
+  if (app.kind === "local") return app.env && app.env.length > 0 ? FLOW_SETUP : FLOW_DIRECT
   if (app.kind === "oauth") return FLOW_BROWSER
   if (app.kind === "token") return FLOW_TOKEN
   return FLOW_DIRECT
@@ -171,14 +197,16 @@ function flowOf(app: AppEntry): string {
 const FLOW_TITLE: Record<string, string> = {
   [FLOW_BROWSER]: "Sign in with your browser",
   [FLOW_TOKEN]: "Needs an access token",
+  [FLOW_SETUP]: "Runs on your machine",
   [FLOW_DIRECT]: "Connect instantly",
 }
 const FLOW_HINT: Record<string, string> = {
   [FLOW_BROWSER]: "Opens Chrome, you press Allow, and it connects itself.",
   [FLOW_TOKEN]: "Paste a token once and it connects itself.",
+  [FLOW_SETUP]: "Runs here from npm. Paste your own credentials once, nothing is brokered.",
   [FLOW_DIRECT]: "No sign-in at all. One click and it is live.",
 }
-const FLOW_ORDER = [FLOW_BROWSER, FLOW_TOKEN, FLOW_DIRECT]
+const FLOW_ORDER = [FLOW_BROWSER, FLOW_TOKEN, FLOW_SETUP, FLOW_DIRECT]
 
 export function McpHubPanel(props: McpHubPanelProps) {
   const apps = allSeedApps()
@@ -250,6 +278,26 @@ export function McpHubPanel(props: McpHubPanelProps) {
    * handshake completes.
    */
   const [clientIds, setClientIds] = createSignal<Record<string, { id: string; secret?: string }>>(readClientIds())
+
+  /**
+   * The app whose environment credentials are being collected, and the values typed.
+   *
+   * A server fetched from npm has no browser sign-in to offer, so Connect asks for the
+   * variables the catalog declares for it — one box each, in the server's own order. The
+   * app is held here so the dialog knows which list of boxes to render.
+   */
+  const [envFormFor, setEnvFormFor] = createSignal<AppEntry | null>(null)
+  const [envValues, setEnvValues] = createSignal<Record<string, Record<string, string>>>(readEnvValues())
+  const [envDraft, setEnvDraft] = createSignal<Record<string, string>>({})
+
+  // Same persistence as the client credentials: typed once, reused on every later connect.
+  createEffect(() => {
+    try {
+      localStorage.setItem(ENV_VALUES_KEY, JSON.stringify(envValues()))
+    } catch {
+      // no storage in this context — the in-memory copy still covers this session
+    }
+  })
 
   // Persist whatever was typed so a console-issued client is a one-time entry, not a
   // prompt on every visit.
@@ -644,6 +692,18 @@ export function McpHubPanel(props: McpHubPanelProps) {
    * is saved, Connect reuses it and goes straight to the handshake.
    */
   const beginConnect = (app: AppEntry) => {
+    if (app.env && app.env.length > 0) {
+      const saved = envValues()[app.id]
+      // A saved credential set is reused without asking again; the app only prompts when
+      // it has never been given one, which is what makes the second connect one press.
+      if (saved && app.env.every((entry) => saved[entry.key]?.trim())) {
+        void connectWithEnv(app, saved)
+        return
+      }
+      setEnvDraft(Object.fromEntries(app.env.map((entry) => [entry.key, saved?.[entry.key] ?? ""])))
+      setEnvFormFor(app)
+      return
+    }
     if (needsClientId(app)) {
       const saved = clientIds()[app.id]
       if (saved?.id?.trim()) {
@@ -699,6 +759,46 @@ export function McpHubPanel(props: McpHubPanelProps) {
    * The credentials go into the server's config as part of the connect, which is what
    * gives the handshake a client to request consent with.
    */
+  /**
+   * Remember the environment credentials and connect with them.
+   *
+   * The values are stored per app so the boxes appear once. They are handed to the
+   * connect, which writes them into the server's config as its environment — the server
+   * then reads them the way it expects, with nothing passed on the command line where
+   * another process could read it.
+   */
+  const submitEnvForm = () => {
+    const app = envFormFor()
+    if (!app) return
+    const values = envDraft()
+    if (!app.env?.every((entry) => values[entry.key]?.trim())) return
+    setEnvValues((prev) => ({ ...prev, [app.id]: values }))
+    setEnvFormFor(null)
+    void connectWithEnv(app, values)
+  }
+
+  /** Connect a fetched local server with the credentials its environment expects. */
+  const connectWithEnv = async (app: AppEntry, env: Record<string, string>) => {
+    if (busy()) return
+    busyIds.add(app.id)
+    setBusy(app.id)
+    setBusySince(Date.now())
+    setState(app.id, { status: "connecting" })
+    try {
+      setState(
+        app.id,
+        await connectApp(props.runtime, app, {
+          env,
+          onProgress: (s) => setState(app.id, s),
+        }),
+      )
+    } finally {
+      busyIds.delete(app.id)
+      setBusy(null)
+      setBusySince(0)
+    }
+  }
+
   const connectWithClientId = async (app: AppEntry, credentials: { id: string; secret?: string }) => {
     if (busy()) return
     busyIds.add(app.id)
@@ -1355,6 +1455,76 @@ export function McpHubPanel(props: McpHubPanelProps) {
         )}
       </Show>
 
+      {/* credential dialog — for apps whose server is fetched from npm and reads its
+          credentials from the environment. One box per variable the catalog declares,
+          so the form is exactly as long as the server's own requirements. */}
+      <Show when={envFormFor()}>
+        {(app) => (
+          <div
+            style={{
+              position: "fixed",
+              inset: "0",
+              "z-index": "2147483100",
+              display: "flex",
+              "align-items": "center",
+              "justify-content": "center",
+              background: overlayTint(),
+              padding: "1.5rem",
+              "pointer-events": "auto",
+            }}
+          >
+            <div
+              class="w-full max-w-[460px] rounded-xl border border-[var(--mcp-border-strong)] p-5"
+              style={{ background: raised(), "box-shadow": "0 24px 64px rgba(0,0,0,0.35)" }}
+            >
+              <div class="mb-1 text-[15px] font-[600]">Connect {app().name}</div>
+              <div class="mb-4 text-[12px] text-[var(--mcp-text-weak)]">
+                This server runs on your machine and reads its credentials from its environment. Create them at{" "}
+                <Show when={app().consoleUrl} fallback={<span>the developer console</span>}>
+                  <a class="underline" href={app().consoleUrl} target="_blank" rel="noopener">
+                    {app().consoleUrl}
+                  </a>
+                </Show>
+                . You only have to enter them once.
+              </div>
+              <For each={app().env ?? []}>
+                {(entry) => (
+                  <input
+                    type={entry.secret ? "password" : "text"}
+                    value={envDraft()[entry.key] ?? ""}
+                    onInput={(e) => setEnvDraft((prev) => ({ ...prev, [entry.key]: e.currentTarget.value }))}
+                    onKeyDown={(e) => e.key === "Enter" && submitEnvForm()}
+                    placeholder={entry.label}
+                    class="mb-2 h-9 w-full rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
+                  />
+                )}
+              </For>
+              <div class="mt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5"
+                  onClick={() => {
+                    setEnvFormFor(null)
+                    setEnvDraft({})
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] font-[600] disabled:opacity-50"
+                  disabled={!app().env?.every((entry) => envDraft()[entry.key]?.trim())}
+                  style={{ background: fill() }}
+                  onClick={submitEnvForm}
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Show>
+
       <Show when={detailsFor()}>
         {(app) => (
           <div
@@ -1494,6 +1664,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
                   class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5 disabled:opacity-50"
                   disabled={busy() !== null}
                   title="Build the sign-in link so it can be opened in whichever browser holds your account"
+                  style={{ display: app().env?.length ? "none" : undefined }}
                   onClick={() => beginGenerate(app())}
                 >
                   {generating() === app().id ? line(guideLang(), "generating") : line(guideLang(), "generateLink")}
