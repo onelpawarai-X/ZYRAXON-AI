@@ -45,6 +45,11 @@ jobs:
 
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
+        with:
+          # The shape check reads tracked files only — no imports outside the repo —
+          # so it does not need node_modules. Skipping the install keeps this job off
+          # the Windows patch step, which is where it used to fail (see setup-bun).
+          install-deps: "false"
 
       - name: Check catalog shape
         run: bun run "MCP Hub/scripts/verify-catalog.mjs"
