@@ -613,14 +613,19 @@ export const localApps: AppEntry[] = [
       "Read your Instagram Business account id from the same explorer, then paste both values here and press Connect.",
     ] },
 
-  // WhatsApp Business Cloud API through the user's own Meta app: the token and the
-  // WhatsApp Business Account id come from developers.facebook.com, so no Green API
-  // account is needed and no third party sees the credential.
-  { id: "whatsapp", icon: "whatsapp", iconDomain: "whatsapp.com", name: "WhatsApp Business", description: "Send and receive messages", category: "Communication", kind: "local", color: "#25D366", command: { command: "npx", args: ["-y", "verdant-meta-mcp"] }, env: [{ key: "META_ACCESS_TOKEN", label: "Meta access token", placeholder: "EAAG…", secret: true }, { key: "META_WABA_ID", label: "WhatsApp Business account ID", placeholder: "123456789012345" }], consoleUrl: "https://developers.facebook.com/apps", steps: [
-      "Open https://developers.facebook.com/apps and create a Business app, then add the WhatsApp product.",
-      "In WhatsApp → API Setup, copy the WhatsApp Business Account ID shown near the top.",
-      "Generate a token with the whatsapp_business_messaging permission.",
-      "Paste the token and the account id here and press Connect.",
+  // WhatsApp Web through a local Baileys server: no Meta Business account, no access
+  // token from developers.facebook.com. The server prints a QR code to stderr (never
+  // stdout, which is the MCP channel), the user scans it with WhatsApp → Linked Devices,
+  // and from then on the agent reads chats and messages, searches history and contacts,
+  // sends text/media/voice, manages contacts and deletes, all against the user's own
+  // session. The QR code is the only credential: nothing is brokered by a third party.
+  // Calls cannot be placed from any local server — WhatsApp exposes no API for them, and
+  // the Meta Cloud API only receives call webhooks — so the card is honest about that.
+  { id: "whatsapp", icon: "whatsapp", iconDomain: "whatsapp.com", name: "WhatsApp", description: "Read chats, send text, media and voice, manage contacts", category: "Communication", kind: "local", color: "#25D366", command: { command: "npx", args: ["-y", "@sjawhar/whatsapp-mcp"] }, steps: [
+      "Start the WhatsApp server — npx -y @sjawhar/whatsapp-mcp in a terminal, or press Connect here.",
+      "Watch the terminal: on first run it prints a QR code (the MCP channel stays clean because the QR goes to stderr).",
+      "On your phone open WhatsApp → Settings → Linked devices → Link a device and scan the QR.",
+      "The server reports Authenticated as <your name> on success. It remembers the session, so later starts need no QR.",
     ] },
 
   // Telegram bots are issued by BotFather inside Telegram itself, so this is the one
