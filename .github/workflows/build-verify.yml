@@ -29,6 +29,7 @@ on:
       - "packages/app/vite.config.ts"
       - "packages/desktop/electron.vite.config.ts"
       - "packages/desktop/electron-builder.config.ts"
+      - "packages/desktop/scripts/**"
 
 permissions:
   contents: read
