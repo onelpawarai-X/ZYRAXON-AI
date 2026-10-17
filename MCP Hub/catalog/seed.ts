@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // MCP Hub — the catalog.
 //
 // Every entry in this file was verified against the live network before being
@@ -640,6 +642,8 @@ export const localApps: AppEntry[] = [
       "Watch the terminal: on first run it prints a QR code (the MCP channel stays clean because the QR goes to stderr).",
       "On your phone open WhatsApp → Settings → Linked devices → Link a device and scan the QR.",
       "The server reports Authenticated as <your name> on success. It remembers the session, so later starts need no QR.",
+      "The session lives in the folder you start it from: auth_info/ holds the login, data/ the SQLite copy of your chats. Back up auth_info/ to skip the QR next time, and delete it to force a fresh scan.",
+      "To send a file it has to sit in uploads/ (ALLOWED_SEND_DIR) — the server refuses paths outside it. Sending, deleting a message and deleting a chat each ask for confirmation before they act.",
     ] },
 
   // Telegram bots are issued by BotFather inside Telegram itself, so this is the one

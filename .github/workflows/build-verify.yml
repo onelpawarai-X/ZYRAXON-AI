@@ -1,0 +1,108 @@
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
+# Prove the release build chain on every platform.
+#
+# It runs the same commands a release runs — bun install, then zyraxon:build,
+# which is the zyraxon binary, the node bundle, the app web-ui and the desktop —
+# and then checks that each artifact landed under the name the release workflows
+# and electron-builder expect. A renamed output or a broken package name would
+# otherwise only surface when a release was cut.
+#
+# Manual, or automatically when a change can alter the build output: the build
+# scripts, the packaging configs, the dependency manifest, this workflow, or the
+# shared setup action. It is a real, multi-minute build, so it stays off the
+# ordinary push path. The release workflows (release-all.yml and friends) remain
+# the shipping entry point; this is the check that says they will work.
+name: build-verify
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/build-verify.yml"
+      - ".github/actions/setup-bun/**"
+      - "package.json"
+      - "bun.lock"
+      - "scripts/zyraxon-build-all.ts"
+      - "packages/zyraxon/script/build.ts"
+      - "packages/zyraxon/script/build-node.ts"
+      - "packages/app/vite.config.ts"
+      - "packages/desktop/electron.vite.config.ts"
+      - "packages/desktop/electron-builder.config.ts"
+      - "packages/desktop/scripts/**"
+
+permissions:
+  contents: read
+
+env:
+  HUSKY: "0"
+  NODE_OPTIONS: --max-old-space-size=8192
+
+jobs:
+  build:
+    name: build (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Bun and install dependencies
+        uses: ./.github/actions/setup-bun
+        with:
+          # The pinned 1.3.14 hits the Windows patch race during bun install, and
+          # setup-bun clears the cache and retries that install on Windows. The
+          # release workflows install by hand, so this is where the race is caught.
+          bun-version: latest
+          install-flags: --frozen-lockfile
+
+      - name: Build the engine, node bundle, app and desktop
+        run: bun run zyraxon:build
+
+      - name: Check the artifact names
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          case "$RUNNER_OS" in
+            Linux)   os=linux ;;
+            macOS)   os=darwin ;;
+            Windows) os=windows ;;
+          esac
+
+          fail=0
+          check() {
+            if [ -e "$1" ]; then
+              echo "  ok   $1"
+            else
+              echo "::error::missing $1"
+              fail=1
+            fi
+          }
+
+          # build.ts writes dist/<pkg>-<os>-<arch>/bin/zyraxon for every target.
+          bins=(packages/zyraxon/dist/zyraxon-"$os"-*/bin/zyraxon*)
+          if [ ${#bins[@]} -gt 0 ]; then
+            printf '  ok   %s\n' "${bins[@]}"
+          else
+            echo "::error::no zyraxon binary for $os"
+            fail=1
+          fi
+
+          # build-node.ts writes dist/node/node.js.
+          check packages/zyraxon/dist/node/node.js
+          # The app web-ui vite build writes dist/index.html.
+          check packages/app/dist/index.html
+          # electron-vite writes out/main/index.js, which is the desktop main entry.
+          check packages/desktop/out/main/index.js
+
+          exit "$fail"

@@ -31,24 +31,55 @@ function isRunnable(bin: string) {
   }
 }
 
-/** Static build URL for the current platform, or null when unsupported. */
-function source(): { url: string; archive: "tar.xz" | "zip" } | null {
+/** One archive to download, and which of the bundled binaries it provides. */
+type Download = { url: string; archive: "tar.xz" | "zip"; binaries: string[] }
+
+/**
+ * The current release zip for one evermeet binary.
+ *
+ * evermeet publishes ffmpeg and ffprobe as two versioned zips. The old
+ * `/getrelease/zip` alias that used to serve a single archive now answers 410, so
+ * the version is read from the info API and the versioned URL is downloaded.
+ */
+async function evermeet(binary: "ffmpeg" | "ffprobe"): Promise<string> {
+  const response = await fetch(`https://evermeet.cx/ffmpeg/info/${binary}/release`)
+  if (!response.ok) throw new Error(`evermeet info for ${binary} failed: HTTP ${response.status}`)
+  const info = (await response.json()) as { download?: { zip?: { url?: string } } }
+  const url = info.download?.zip?.url
+  if (!url) throw new Error(`evermeet info for ${binary} had no zip download`)
+  return url
+}
+
+/** Static build sources for the current platform, or an empty list when unsupported. */
+async function sources(): Promise<Download[]> {
   if (process.platform === "linux") {
     const arch = process.arch === "arm64" ? "arm64" : "amd64"
-    return {
-      url: `https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-${arch}-static.tar.xz`,
-      archive: "tar.xz",
-    }
+    return [
+      {
+        url: `https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-${arch}-static.tar.xz`,
+        archive: "tar.xz",
+        binaries: [EXE, PROBE],
+      },
+    ]
   }
   if (process.platform === "darwin") {
-    if (process.arch !== "arm64" && process.arch !== "x64") return null
-    return { url: "https://evermeet.cx/ffmpeg/getrelease/zip", archive: "zip" }
+    if (process.arch !== "arm64" && process.arch !== "x64") return []
+    return [
+      { url: await evermeet("ffmpeg"), archive: "zip", binaries: [EXE] },
+      { url: await evermeet("ffprobe"), archive: "zip", binaries: [PROBE] },
+    ]
   }
   if (process.platform === "win32") {
-    if (process.arch !== "x64") return null
-    return { url: "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip", archive: "zip" }
+    if (process.arch !== "x64") return []
+    return [
+      {
+        url: "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip",
+        archive: "zip",
+        binaries: [EXE, PROBE],
+      },
+    ]
   }
-  return null
+  return []
 }
 
 function download(url: string, dest: string): Promise<void> {
@@ -92,51 +123,57 @@ function findInTree(dir: string, name: string): string | null {
 
 async function main() {
   fs.mkdirSync(BIN_DIR, { recursive: true })
-  for (const name of [EXE, PROBE]) {
+  const present = [EXE, PROBE].every((name) => {
     const existing = path.join(BIN_DIR, name)
-    if (fs.existsSync(existing) && isRunnable(existing)) {
-      console.log(`[provision-tools] ${name} already bundled at ${existing}`)
-      return
-    }
+    return fs.existsSync(existing) && isRunnable(existing)
+  })
+  if (present) {
+    console.log(`[provision-tools] ${EXE} and ${PROBE} already bundled in ${BIN_DIR}`)
+    return
   }
 
-  const src = source()
-  if (!src) {
+  const downloads = await sources()
+  if (downloads.length === 0) {
     console.error(`[provision-tools] no static ffmpeg source for ${process.platform}/${process.arch}`)
     process.exit(1)
   }
 
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "zyraxon-tools-"))
-  const archive = path.join(tmp, "ffmpeg-archive")
   try {
-    console.log(`[provision-tools] downloading ${src.url} ...`)
-    await download(src.url, archive)
+    for (const src of downloads) {
+      // The extension has to match the archive: PowerShell's Expand-Archive
+      // refuses anything that is not .zip, so a .zip download must not be saved
+      // as an extension-less file.
+      const archive = path.join(tmp, `ffmpeg-archive.${src.archive}`)
+      console.log(`[provision-tools] downloading ${src.url} ...`)
+      await download(src.url, archive)
 
-    const extractDir = path.join(tmp, "extract")
-    fs.mkdirSync(extractDir, { recursive: true })
-    if (src.archive === "tar.xz") {
-      await $`tar -xJf ${archive} -C ${extractDir}`
-    } else if (process.platform === "win32") {
-      await $`powershell -NoProfile -Command Expand-Archive -LiteralPath '${archive}' -DestinationPath '${extractDir}' -Force`
-    } else {
-      await $`unzip -o ${archive} -d ${extractDir}`
-    }
+      const extractDir = path.join(tmp, `extract-${path.basename(archive)}`)
+      fs.mkdirSync(extractDir, { recursive: true })
+      if (src.archive === "tar.xz") {
+        await $`tar -xJf ${archive} -C ${extractDir}`
+      } else if (process.platform === "win32") {
+        await $`powershell -NoProfile -Command Expand-Archive -LiteralPath '${archive}' -DestinationPath '${extractDir}' -Force`
+      } else {
+        await $`unzip -o ${archive} -d ${extractDir}`
+      }
 
-    for (const name of [EXE, PROBE]) {
-      const found = findInTree(extractDir, name)
-      if (!found) {
-        console.error(`[provision-tools] ${name} missing from ${src.url}`)
-        process.exit(1)
+      for (const name of src.binaries) {
+        const found = findInTree(extractDir, name)
+        if (!found) {
+          console.error(`[provision-tools] ${name} missing from ${src.url}`)
+          process.exit(1)
+        }
+        const target = path.join(BIN_DIR, name)
+        fs.copyFileSync(found, target)
+        fs.chmodSync(target, 0o755)
+        if (!isRunnable(target)) {
+          fs.rmSync(target, { force: true })
+          console.error(`[provision-tools] bundled ${name} is not runnable`)
+          process.exit(1)
+        }
+        console.log(`[provision-tools] bundled ${name}`)
       }
-      const target = path.join(BIN_DIR, name)
-      fs.copyFileSync(found, target)
-      fs.chmodSync(target, 0o755)
-      if (!isRunnable(target)) {
-        fs.rmSync(target, { force: true })
-        console.error(`[provision-tools] bundled ${name} is not runnable`)
-        process.exit(1)
-      }
-      console.log(`[provision-tools] bundled ${name}`)
     }
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true })

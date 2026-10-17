@@ -1,0 +1,164 @@
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
+# Build and package the desktop app on all three platforms, without cutting a release.
+#
+# This is the release pipeline run as a dry run: the same install, the same
+# `zyraxon:build` (zyraxon binary, node bundle, app web-ui, desktop), the same
+# electron-builder invocation per platform, but the installers are uploaded as
+# workflow artifacts instead of being attached to a GitHub release. It answers the
+# two questions a release would otherwise answer first: does electron-builder
+# produce an installer on this OS, and did the bundled payload — ffmpeg, the
+# default MCP config, desktop-commander, jarvis-browser, touchpoint-mcp,
+# nuphus-mcp — actually end up inside it.
+#
+# The content check unpacks the produced installer and asserts those paths exist
+# within it, so a green run is proof the bytes shipped, not just that a file with
+# the right name was written.
+name: build-package
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/build-package.yml"
+      - ".github/actions/setup-bun/**"
+      - "package.json"
+      - "bun.lock"
+      - "scripts/zyraxon-build-all.ts"
+      - "packages/zyraxon/script/build.ts"
+      - "packages/zyraxon/script/build-node.ts"
+      - "packages/app/vite.config.ts"
+      - "packages/desktop/electron.vite.config.ts"
+      - "packages/desktop/electron-builder.config.ts"
+      - "packages/desktop/scripts/**"
+      - "packages/desktop/resources/**"
+
+permissions:
+  contents: read
+
+env:
+  HUSKY: "0"
+  NODE_OPTIONS: --max-old-space-size=8192
+
+jobs:
+  package:
+    name: package (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Setup Bun and install dependencies
+        uses: ./.github/actions/setup-bun
+        with:
+          # The Windows patch race during bun install is what setup-bun retries;
+          # release-all.yml installs by hand, so this workflow is the one that
+          # exercises the hardened path.
+          bun-version: latest
+          install-flags: --frozen-lockfile
+
+      - name: Install Linux packaging tools
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            rpm libfuse2 libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 \
+            xvfb xdg-utils
+
+      - name: Build the engine, node bundle, app and desktop
+        run: bun run zyraxon:build
+
+      - name: Package the installer
+        working-directory: packages/desktop
+        # --publish never: the build config names a GitHub publisher, so
+        # electron-builder would try to upload a release itself and fail without a
+        # token. There is no release here at all; the artifacts are the output.
+        run: |
+          set -euo pipefail
+          case "$RUNNER_OS" in
+            Linux)   bunx electron-builder --linux --x64 --config electron-builder.config.ts --publish never ;;
+            macOS)   bunx electron-builder --mac --x64 --arm64 --config electron-builder.config.ts --publish never ;;
+            Windows) bunx electron-builder --win --x64 --config electron-builder.config.ts --publish never ;;
+          esac
+
+      - name: Check what landed inside the app
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd packages/desktop/dist
+          fail=0
+          ok()   { echo "  ok   $1"; }
+          need() { if [ -e "$1" ]; then ok "$1"; else echo "::error::missing $1"; fail=1; fi; }
+
+          # The payload every install must carry, relative to the app's resources
+          # directory. electron-builder always writes an unpacked tree next to the
+          # installer (linux-unpacked / win-unpacked / mac), which is the
+          # deterministic place to read it back from.
+          required=(
+            app.asar
+            bin/ffmpeg
+            bin/ffprobe
+            default-mcp-config.json
+            desktop-commander
+            jarvis-browser
+            touchpoint-mcp
+            nuphus-mcp
+          )
+
+          echo "== dist =="
+          ls -la
+
+          case "$RUNNER_OS" in
+            Linux)
+              appimage=(*.AppImage)
+              if [ ${#appimage[@]} -eq 0 ]; then echo "::error::no AppImage produced"; exit 1; fi
+              printf '  installer %s\n' "${appimage[@]}"
+              root=linux-unpacked/resources
+              ;;
+            macOS)
+              zip=(*.zip)
+              dmg=(*.dmg)
+              if [ ${#zip[@]} -eq 0 ] || [ ${#dmg[@]} -eq 0 ]; then echo "::error::no macOS zip/dmg produced"; exit 1; fi
+              printf '  installer %s\n' "${zip[@]}" "${dmg[@]}"
+              # The .app bundle: mac/ for x64, mac-arm64/ for arm64.
+              root=$(dirname "$(find mac mac-arm64 -name app.asar 2>/dev/null | head -1)")
+              ;;
+            Windows)
+              exe=(*.exe)
+              if [ ${#exe[@]} -eq 0 ]; then echo "::error::no Windows installer produced"; exit 1; fi
+              printf '  installer %s\n' "${exe[@]}"
+              root=win-unpacked/resources
+              ;;
+          esac
+
+          echo "  resources dir: $root"
+          if [ ! -d "$root" ]; then echo "::error::resources dir $root does not exist"; exit 1; fi
+          for r in "${required[@]}"; do need "$root/$r"; done
+
+          exit "$fail"
+
+      - name: Upload the installer
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: installer-${{ matrix.os }}
+          path: |
+            packages/desktop/dist/*.AppImage
+            packages/desktop/dist/*.deb
+            packages/desktop/dist/*.rpm
+            packages/desktop/dist/*.exe
+            packages/desktop/dist/*.dmg
+            packages/desktop/dist/*.zip
+          if-no-files-found: warn
+          retention-days: 14
