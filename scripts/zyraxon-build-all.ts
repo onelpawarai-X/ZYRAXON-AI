@@ -133,7 +133,7 @@ async function buildZyraxonNode() {
   if (!step("zyraxon-node")) return
 
   const distNode = path.join(pkg("zyraxon"), "dist", "node")
-  if (!force && existsSync(path.join(distNode, "index.js"))) {
+  if (!force && existsSync(path.join(distNode, "node.js"))) {
     skip("dist/node", "already built")
     return
   }
@@ -156,9 +156,9 @@ async function buildApp() {
 async function buildDesktop() {
   if (!step("desktop")) return
 
-  const dist = path.join(pkg("desktop"), "dist")
+  const dist = path.join(pkg("desktop"), "out")
   if (!force && existsSync(path.join(dist, "main", "index.js"))) {
-    skip("desktop", "dist already built")
+    skip("desktop", "out already built")
     return
   }
   console.log("Building desktop...")
