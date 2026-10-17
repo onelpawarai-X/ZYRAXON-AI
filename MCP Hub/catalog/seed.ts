@@ -405,9 +405,17 @@ export const browserApps: AppEntry[] = [
 
   { id: "pdf", iconDomain: "ifillpdf.com", name: "PDF", description: "Read and extract from PDFs", category: "Documents", kind: "oauth", url: "https://www.ifillpdf.com/api/mcp", color: "#E3262F", note: "Served by iFillPDF, not Adobe. Its sign-in document points at a hosted identity provider and registers clients itself, so nothing has to be filled in.", via: "ifillpdf", zeroSetup: true },
 
-  { id: "planetscale", iconDomain: "planetscale.com", name: "PlanetScale", description: "Serverless MySQL branches", category: "Database", kind: "oauth", url: "https://mcp.pscale.dev/mcp/planetscale", consoleUrl: "https://app.planetscale.com", color: "#000000" },
+  { id: "planetscale", iconDomain: "planetscale.com", name: "PlanetScale", description: "Serverless MySQL branches", category: "Database", kind: "oauth", url: "https://mcp.pscale.dev/mcp/planetscale", consoleUrl: "https://app.planetscale.com", color: "#000000", steps: [
+      "Open https://app.planetscale.com and sign in to the organization that owns the database.",
+      "Press Connect here and approve the sign-in in the browser; PlanetScale grants the MCP server access to the organizations you pick.",
+      "Choose the organization and database when the agent first asks, so its queries run against the branch you meant.",
+    ] },
 
-  { id: "captions", iconDomain: "captions.ai", name: "Captions", description: "Edit video with AI assistance", category: "Media", kind: "oauth", url: "https://mcp.captions.ai/mcp", tokenUrl: "https://www.captions.ai", color: "#111111" },
+  { id: "captions", iconDomain: "captions.ai", name: "Captions", description: "Edit video with AI assistance", category: "Media", kind: "oauth", url: "https://mcp.captions.ai/mcp", tokenUrl: "https://www.captions.ai", color: "#111111", steps: [
+      "Open https://www.captions.ai and sign in to the account that holds your projects.",
+      "Press Connect here and approve the sign-in in the browser.",
+      "Return to the card; the agent can then work with the projects on that account.",
+    ] },
 
   // A server can refuse every tool call while still answering initialize and
   // tools/list, which is how these spent one release listed as open. Each was
@@ -500,7 +508,11 @@ export const keyApps: AppEntry[] = [
       "ZYRAXON sends it as the x-api-key header on every request.",
     ] },
 
-  { id: "serpapi", iconDomain: "serpapi.com", name: "SerpApi", description: "Structured search results", category: "Search", kind: "token", url: "https://mcp.serpapi.com/mcp", tokenUrl: "https://serpapi.com/manage-api-key", color: "#1E40AF" },
+  { id: "serpapi", iconDomain: "serpapi.com", name: "SerpApi", description: "Structured search results", category: "Search", kind: "token", url: "https://mcp.serpapi.com/mcp", tokenUrl: "https://serpapi.com/manage-api-key", color: "#1E40AF", steps: [
+      "Open https://serpapi.com/manage-api-key and sign in or create the free account.",
+      "Copy the API key shown on that page.",
+      "Paste it here and press Connect; SerpApi sends the key as a Bearer token on every search.",
+    ] },
 
   // These two list their tools to anyone and answer initialize without a credential,
   // but every call comes back "This call needs an API key. Add header Authorization:
