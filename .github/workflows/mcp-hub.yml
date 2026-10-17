@@ -43,16 +43,8 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: "24"
-
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
-
-      - name: Install dependencies
-        run: bun install
 
       - name: Check catalog shape
         run: bun run "MCP Hub/scripts/verify-catalog.mjs"
@@ -82,16 +74,8 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: "24"
-
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
-
-      - name: Install dependencies
-        run: bun install
 
       - name: Install uv
         uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
