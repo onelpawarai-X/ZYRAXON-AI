@@ -605,11 +605,13 @@ export const localApps: AppEntry[] = [
   // Social and marketing
   // Instagram Graph API needs a token tied to a Business/Creator account. The npm
   // server reads the token and the account id from its environment; both come from
-  // the user's own Meta app, so nothing is brokered.
-  { id: "instagram", icon: "instagram", iconDomain: "instagram.com", name: "Instagram", description: "Profiles, posts and media", category: "Marketing", kind: "local", color: "#E4405F", command: { command: "npx", args: ["-y", "@mcpware/instagram-mcp"] }, env: [{ key: "INSTAGRAM_ACCESS_TOKEN", label: "Access token", placeholder: "EAAG…", secret: true }, { key: "INSTAGRAM_ACCOUNT_ID", label: "Instagram Business account ID", placeholder: "17841400000000000" }], consoleUrl: "https://developers.facebook.com/apps", steps: [
+  // the user's own Meta app, so nothing is brokered. 23 tools cover profiles and
+  // insights, image/video/carousel/Reel publishing, comments, direct messages,
+  // hashtag discovery, stories and mentions.
+  { id: "instagram", icon: "instagram", iconDomain: "instagram.com", name: "Instagram", description: "Posts, Reels and video, comments, DMs and insights", category: "Marketing", kind: "local", color: "#E4405F", command: { command: "npx", args: ["-y", "@mcpware/instagram-mcp"] }, env: [{ key: "INSTAGRAM_ACCESS_TOKEN", label: "Access token", placeholder: "EAAG…", secret: true }, { key: "INSTAGRAM_ACCOUNT_ID", label: "Instagram Business account ID", placeholder: "17841400000000000" }], consoleUrl: "https://developers.facebook.com/apps", steps: [
       "Open https://developers.facebook.com/apps and create an app of type Business.",
       "Add the Instagram Graph API product and connect your Instagram Business account.",
-      "In Graph API Explorer generate a token with instagram_basic, instagram_content_publish and pages_show_list.",
+      "In Graph API Explorer generate a token with instagram_basic, instagram_content_publish, instagram_manage_comments, instagram_manage_messages and instagram_manage_insights.",
       "Read your Instagram Business account id from the same explorer, then paste both values here and press Connect.",
     ] },
 
@@ -642,18 +644,33 @@ export const localApps: AppEntry[] = [
   // mcp.meta.com does not resolve), so Facebook is reached through a server fetched
   // from npm that talks the Graph API with the user's own Page access token. Nothing
   // is brokered by a third party: the token goes to Meta and nowhere else.
-  { id: "facebook", icon: "facebook", iconDomain: "facebook.com", name: "Facebook Pages", description: "Pages, posts and insights", category: "Social", kind: "local", color: "#0866FF", command: { command: "npx", args: ["-y", "facebook-pages-mcp"] }, env: [{ key: "FB_PAGE_ACCESS_TOKEN", label: "Page access token", placeholder: "EAAG…", secret: true }, { key: "FB_PAGE_ID", label: "Facebook Page ID", placeholder: "123456789012345" }], consoleUrl: "https://developers.facebook.com/apps", steps: [
+  //
+  // @ivanbaev/facebook-mcp is the one that covers a Page end to end: text/photo/video
+  // posts and Reels, scheduled posts, comments, reactions, conversations and private
+  // replies, ads read and budget-bounded updates, insights, and page/user management.
+  // It starts and handshakes over stdio under npx. Two npm neighbours were rejected:
+  // facebook-mcp-server is richer on paper but its own entrypoint guard never runs
+  // under the npx shim, and @node2flow/facebook-pages-mcp crashes against the current
+  // MCP SDK (inputSchema/Zod mismatch), so neither can connect.
+  { id: "facebook", icon: "facebook", iconDomain: "facebook.com", name: "Facebook Pages", description: "Posts, videos and Reels, comments, messages and insights", category: "Social", kind: "local", color: "#0866FF", command: { command: "npx", args: ["-y", "@ivanbaev/facebook-mcp"] }, env: [{ key: "FB_ACCESS_TOKEN", label: "Page access token", placeholder: "EAAG…", secret: true }, { key: "FB_PAGE_ID", label: "Facebook Page ID", placeholder: "123456789012345" }], consoleUrl: "https://developers.facebook.com/apps", steps: [
       "Open https://developers.facebook.com/apps and create an app of type Business.",
       "Add the Facebook Login and Pages products, then open Graph API Explorer under Tools.",
-      "Select your Page, grant pages_manage_posts and pages_read_engagement, and generate a Page access token.",
+      "Select your Page, grant pages_manage_posts, pages_manage_engagement, pages_read_engagement and pages_messaging, and generate a Page access token.",
       "Copy the Page ID shown next to the Page, extend the token to a long-lived one at https://developers.facebook.com/tools/debug/accesstoken, then paste both here and press Connect.",
     ] },
 
-  // Google runs no YouTube MCP (only Gmail/Drive/Calendar/Docs are published), so
-  // uploads and channel management go through an npm server that reads the user's own
-  // Google OAuth client. The refresh token is the piece that lets it act as the
-  // channel without a browser prompt on every start.
-  { id: "youtube", icon: "youtube", iconDomain: "youtube.com", name: "YouTube", description: "Upload, manage and read your channel", category: "Media", kind: "local", color: "#FF0000", command: { command: "npx", args: ["-y", "@thenavidm/youtube-mcp-cli"] }, env: [{ key: "YOUTUBE_OAUTH_CLIENT_ID", label: "Google OAuth client ID", placeholder: "…apps.googleusercontent.com" }, { key: "YOUTUBE_OAUTH_CLIENT_SECRET", label: "Google OAuth client secret", placeholder: "GOCSPX-…", secret: true }, { key: "YOUTUBE_REFRESH_TOKEN", label: "Refresh token", placeholder: "1//0…", secret: true }], consoleUrl: "https://console.cloud.google.com/apis/credentials", steps: [
+  // Google runs no YouTube MCP (only Gmail/Drive/Calendar/Docs are published), so channel
+  // management goes through an npm server that reads the user's own Google OAuth client.
+  // The refresh token is the piece that lets it act as the channel without a browser
+  // prompt on every start.
+  //
+  // No working MCP can upload a video to YouTube. Every npm server checked (this one,
+  // zubeid-youtube-mcp-server, youtube-data-mcp-server, @sfiorini/youtube-mcp,
+  // @yilin-jing/youtube-mcp-server, youtube-piped-mcp) exposes only reads, and no PyPI
+  // server uploads either. Google's videos.insert needs a resumable binary upload that
+  // these servers do not implement, so the card promises management and reading — never
+  // an upload it cannot do.
+  { id: "youtube", icon: "youtube", iconDomain: "youtube.com", name: "YouTube", description: "Manage and read your channel", category: "Media", kind: "local", color: "#FF0000", command: { command: "npx", args: ["-y", "@thenavidm/youtube-mcp-cli"] }, env: [{ key: "YOUTUBE_OAUTH_CLIENT_ID", label: "Google OAuth client ID", placeholder: "…apps.googleusercontent.com" }, { key: "YOUTUBE_OAUTH_CLIENT_SECRET", label: "Google OAuth client secret", placeholder: "GOCSPX-…", secret: true }, { key: "YOUTUBE_REFRESH_TOKEN", label: "Refresh token", placeholder: "1//0…", secret: true }], consoleUrl: "https://console.cloud.google.com/apis/credentials", steps: [
       "Open https://console.cloud.google.com/apis/credentials and create an OAuth client ID of type Desktop app.",
       "Enable the YouTube Data API v3 for the project at https://console.cloud.google.com/apis/library/youtube.googleapis.com.",
       "Run the package's own auth step once — npx -y @thenavidm/youtube-mcp-cli auth — and sign in with the channel's Google account.",
