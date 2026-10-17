@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // MCP Hub - the connect panel.
 // Rendered by the Hub's plugin entry. Uses ZYRAXON's own UI primitives so it
 // looks native, and keeps every piece of state inside this folder.

@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // MCP Hub — the catalog.
 //
 // Every entry in this file was verified against the live network before being

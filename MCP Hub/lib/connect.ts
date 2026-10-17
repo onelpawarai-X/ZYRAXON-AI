@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // MCP Hub — connect an app and hand its tools to the agent.
 //
 // The transport, OAuth handshake, client registration and token storage all live in
