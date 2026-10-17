@@ -75,13 +75,22 @@ runs:
             bun install ${{ inputs.install-flags }}
           fi
         }
-        # On Windows the patch step can fail with ENOTEMPTY while renaming into the
-        # shared cache (oven-sh/bun#28147). A poisoned cache directory reproduces it
-        # on every run, so clear the cache and retry once before giving up.
-        if ! install && [ "$RUNNER_OS" = "Windows" ]; then
+        # On Windows the patch step can race while renaming into the shared cache
+        # (ENOTEMPTY, then ENOENT on the next run) and fails intermittently. Retry
+        # with a cleared cache a few times before giving up; every other platform
+        # gets a single attempt.
+        attempts=1
+        if [ "$RUNNER_OS" = "Windows" ]; then attempts=3; fi
+        n=1
+        while :; do
+          install && break
+          if [ "$n" -ge "$attempts" ]; then
+            exit 1
+          fi
+          n=$((n + 1))
+          echo "::warning::bun install failed; clearing cache and retrying (attempt ${n}/${attempts})"
           bun pm cache rm || rm -rf "$(bun pm cache)"
-          install
-        fi
+        done
       shell: bash
 
     - name: Save Bun dependencies
