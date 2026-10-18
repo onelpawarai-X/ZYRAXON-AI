@@ -36,6 +36,54 @@ supports plugins, which is what this route is for.
 
 103 of the 108 are remote endpoints. All 103 answer a real MCP `initialize` today.
 
+## What each social and Google app can do
+
+Every line below is what the app's own card promises in `catalog/seed.ts` — the
+description and the setup steps — not a general idea of what the platform might
+offer. Where a limit is real, it is stated rather than hidden.
+
+### Social
+
+| App | What the agent can do | What it asks of you |
+|---|---|---|
+| **Facebook Pages** | Write text, photo and video posts and Reels; schedule posts; read and reply to comments and private messages; add reactions; read ads and make budget-bounded ad updates; read insights; manage pages and users. | A Page access token and the Page ID. Both come from your own Meta app. |
+| **Instagram** | 23 tools over the Instagram Graph API: read profiles and insights; publish images, videos, carousels and Reels; manage comments and direct messages; discover hashtags; read stories and mentions. | An access token tied to a Business or Creator account, plus the Instagram Business account ID. |
+| **WhatsApp** | Read chats and messages; search history and contacts; send text, media and voice notes; manage contacts; delete messages and chats. | Scan a QR code once from WhatsApp → Linked devices. No Meta Business account and no access token. |
+| **YouTube** | Manage and read your channel through the YouTube Data API v3. | A Google OAuth client (Desktop type) and a refresh token from the package's own `auth` step. |
+
+Honest limits on the social apps, all of which the cards repeat:
+
+- **WhatsApp cannot place calls.** No local server can — WhatsApp exposes no API for
+  them, and the Meta Cloud API only receives call webhooks.
+- **WhatsApp sends only files under `uploads/`** (`ALLOWED_SEND_DIR`), and sending a
+  message or deleting one asks for confirmation first.
+- **YouTube cannot upload a video.** Every npm and PyPI server checked exposes reads
+  only, and Google's `videos.insert` needs a resumable binary upload none of them
+  implement. The card promises management and reading, never an upload.
+- **Facebook and Instagram need a Meta Business app.** Neither Meta product runs a
+  hosted MCP of its own, so the token is created in your own Meta app and goes to
+  Meta and nowhere else.
+
+### Google
+
+All eight Google apps share one setup: a Google Cloud project, the relevant API
+enabled, and an OAuth client of type Desktop app. One project can serve all of them.
+
+| App | What the agent can do |
+|---|---|
+| **Gmail** | Read, search and send mail. |
+| **Google Drive** | Read files, folders and permissions. |
+| **Google Docs** | Read and update documents. |
+| **Google Sheets** | Read and write values, formulas and ranges. |
+| **Google Slides** | Read presentations and slide pages. |
+| **Google Calendar** | Read events, calendars and free time. |
+| **Google Chat** | Read messages and conversations. |
+| **Google Search** | Read web results and snippets, through SerpAPI. |
+
+Gmail, Drive, Docs, Sheets, Slides, Calendar and Chat are Google's own hosted MCP
+endpoints (`*mcp.googleapis.com/mcp/v1`). Google does not register clients by itself,
+so the one-time paste of your client ID and secret is required, and the card says so.
+
 ## How a connection works
 
 For a browser app the panel does not guess anything about OAuth. It runs the chain in the
