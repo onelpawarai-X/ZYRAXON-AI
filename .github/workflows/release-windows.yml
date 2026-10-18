@@ -69,16 +69,32 @@ jobs:
       - name: Cache Bun modules and Electron downloads
         uses: actions/cache@v4
         with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
           path: |
-            node_modules
             ~/.bun/install/cache
             ~/AppData/Local/electron/Cache
             ~/AppData/Local/electron-builder/Cache
-          key: release-windows-${{ matrix.arch }}-${{ hashFiles('bun.lock') }}
-          restore-keys: release-windows-${{ matrix.arch }}-
+          key: release-windows-${{ matrix.arch }}-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-windows-${{ matrix.arch }}-v2-
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        shell: bash
+        # bun on Windows intermittently fails to apply patches/@ai-sdk/*.patch
+        # with "renaming changes to cache dir: ENOTEMPTY", leaving a half-written
+        # patched-package cache entry behind. Clear that entry and retry; a later
+        # attempt succeeds. Seen on the windows-2025 arm64 runner.
+        run: |
+          for attempt in 1 2 3; do
+            if bun install --frozen-lockfile; then exit 0; fi
+            echo "::warning::bun install failed on attempt $attempt; clearing patched-package cache and retrying"
+            rm -rf node_modules
+            rm -rf "$HOME/.bun/install/cache"/*openai-compatible* "$HOME/.bun/install/cache"/*ai-sdk*
+            sleep 10
+          done
+          echo "::error::bun install failed after 3 attempts"
+          exit 1
 
       - name: Build the engine, node bundle, app and desktop
         run: bun run zyraxon:build
@@ -149,14 +165,30 @@ jobs:
       - name: Cache Bun modules
         uses: actions/cache@v4
         with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
           path: |
-            node_modules
             ~/.bun/install/cache
-          key: release-cli-windows-${{ hashFiles('bun.lock') }}
-          restore-keys: release-cli-windows-
+          key: release-cli-windows-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-cli-windows-v2-
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        shell: bash
+        # bun on Windows intermittently fails to apply patches/@ai-sdk/*.patch
+        # with "renaming changes to cache dir: ENOTEMPTY", leaving a half-written
+        # patched-package cache entry behind. Clear that entry and retry; a later
+        # attempt succeeds. Seen on the windows-2025 arm64 runner.
+        run: |
+          for attempt in 1 2 3; do
+            if bun install --frozen-lockfile; then exit 0; fi
+            echo "::warning::bun install failed on attempt $attempt; clearing patched-package cache and retrying"
+            rm -rf node_modules
+            rm -rf "$HOME/.bun/install/cache"/*openai-compatible* "$HOME/.bun/install/cache"/*ai-sdk*
+            sleep 10
+          done
+          echo "::error::bun install failed after 3 attempts"
+          exit 1
 
       - name: Install zip
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends zip

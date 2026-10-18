@@ -60,16 +60,32 @@ jobs:
       - name: Cache Bun modules and Electron downloads
         uses: actions/cache@v4
         with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
           path: |
-            node_modules
             ~/.bun/install/cache
             ~/.cache/electron
             ~/.cache/electron-builder
-          key: release-all-linux-x64-${{ hashFiles('bun.lock') }}
-          restore-keys: release-all-linux-x64-
+          key: release-all-linux-x64-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-linux-x64-v2-
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        shell: bash
+        # bun on Windows intermittently fails to apply patches/@ai-sdk/*.patch
+        # with "renaming changes to cache dir: ENOTEMPTY", leaving a half-written
+        # patched-package cache entry behind. Clear that entry and retry; a later
+        # attempt succeeds. Seen on the windows-2025 arm64 runner.
+        run: |
+          for attempt in 1 2 3; do
+            if bun install --frozen-lockfile; then exit 0; fi
+            echo "::warning::bun install failed on attempt $attempt; clearing patched-package cache and retrying"
+            rm -rf node_modules
+            rm -rf "$HOME/.bun/install/cache"/*openai-compatible* "$HOME/.bun/install/cache"/*ai-sdk*
+            sleep 10
+          done
+          echo "::error::bun install failed after 3 attempts"
+          exit 1
 
       - name: Install Linux packaging tools
         run: |
@@ -135,16 +151,32 @@ jobs:
       - name: Cache Bun modules and Electron downloads
         uses: actions/cache@v4
         with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
           path: |
-            node_modules
             ~/.bun/install/cache
             ~/AppData/Local/electron/Cache
             ~/AppData/Local/electron-builder/Cache
-          key: release-all-windows-${{ matrix.arch }}-${{ hashFiles('bun.lock') }}
-          restore-keys: release-all-windows-${{ matrix.arch }}-
+          key: release-all-windows-${{ matrix.arch }}-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-windows-${{ matrix.arch }}-v2-
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        shell: bash
+        # bun on Windows intermittently fails to apply patches/@ai-sdk/*.patch
+        # with "renaming changes to cache dir: ENOTEMPTY", leaving a half-written
+        # patched-package cache entry behind. Clear that entry and retry; a later
+        # attempt succeeds. Seen on the windows-2025 arm64 runner.
+        run: |
+          for attempt in 1 2 3; do
+            if bun install --frozen-lockfile; then exit 0; fi
+            echo "::warning::bun install failed on attempt $attempt; clearing patched-package cache and retrying"
+            rm -rf node_modules
+            rm -rf "$HOME/.bun/install/cache"/*openai-compatible* "$HOME/.bun/install/cache"/*ai-sdk*
+            sleep 10
+          done
+          echo "::error::bun install failed after 3 attempts"
+          exit 1
 
       - name: Build the engine, node bundle, app and desktop
         run: bun run zyraxon:build
@@ -193,16 +225,32 @@ jobs:
       - name: Cache Bun modules and Electron downloads
         uses: actions/cache@v4
         with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
           path: |
-            node_modules
             ~/.bun/install/cache
             ~/Library/Caches/electron
             ~/Library/Caches/electron-builder
-          key: release-all-macos-${{ hashFiles('bun.lock') }}
-          restore-keys: release-all-macos-
+          key: release-all-macos-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-macos-v2-
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        shell: bash
+        # bun on Windows intermittently fails to apply patches/@ai-sdk/*.patch
+        # with "renaming changes to cache dir: ENOTEMPTY", leaving a half-written
+        # patched-package cache entry behind. Clear that entry and retry; a later
+        # attempt succeeds. Seen on the windows-2025 arm64 runner.
+        run: |
+          for attempt in 1 2 3; do
+            if bun install --frozen-lockfile; then exit 0; fi
+            echo "::warning::bun install failed on attempt $attempt; clearing patched-package cache and retrying"
+            rm -rf node_modules
+            rm -rf "$HOME/.bun/install/cache"/*openai-compatible* "$HOME/.bun/install/cache"/*ai-sdk*
+            sleep 10
+          done
+          echo "::error::bun install failed after 3 attempts"
+          exit 1
 
       - name: Build the engine, node bundle, app and desktop
         run: bun run zyraxon:build
@@ -244,12 +292,29 @@ jobs:
           bun-version: latest
       - uses: actions/cache@v4
         with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
           path: |
-            node_modules
             ~/.bun/install/cache
-          key: release-all-cli-linux-${{ hashFiles('bun.lock') }}
-          restore-keys: release-all-cli-linux-
-      - run: bun install --frozen-lockfile
+          key: release-all-cli-linux-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-cli-linux-v2-
+      - name: Install dependencies
+        shell: bash
+        # bun on Windows intermittently fails to apply patches/@ai-sdk/*.patch
+        # with "renaming changes to cache dir: ENOTEMPTY", leaving a half-written
+        # patched-package cache entry behind. Clear that entry and retry; a later
+        # attempt succeeds. Seen on the windows-2025 arm64 runner.
+        run: |
+          for attempt in 1 2 3; do
+            if bun install --frozen-lockfile; then exit 0; fi
+            echo "::warning::bun install failed on attempt $attempt; clearing patched-package cache and retrying"
+            rm -rf node_modules
+            rm -rf "$HOME/.bun/install/cache"/*openai-compatible* "$HOME/.bun/install/cache"/*ai-sdk*
+            sleep 10
+          done
+          echo "::error::bun install failed after 3 attempts"
+          exit 1
       - name: Build the SDK the CLI imports
         # The CLI resolves @zyraxon-ai/sdk/v2/* out of the SDK's dist, and dist is
         # gitignored, so nothing else in the job creates it. Without this the
@@ -286,12 +351,29 @@ jobs:
           bun-version: latest
       - uses: actions/cache@v4
         with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
           path: |
-            node_modules
             ~/.bun/install/cache
-          key: release-all-cli-darwin-${{ hashFiles('bun.lock') }}
-          restore-keys: release-all-cli-darwin-
-      - run: bun install --frozen-lockfile
+          key: release-all-cli-darwin-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-cli-darwin-v2-
+      - name: Install dependencies
+        shell: bash
+        # bun on Windows intermittently fails to apply patches/@ai-sdk/*.patch
+        # with "renaming changes to cache dir: ENOTEMPTY", leaving a half-written
+        # patched-package cache entry behind. Clear that entry and retry; a later
+        # attempt succeeds. Seen on the windows-2025 arm64 runner.
+        run: |
+          for attempt in 1 2 3; do
+            if bun install --frozen-lockfile; then exit 0; fi
+            echo "::warning::bun install failed on attempt $attempt; clearing patched-package cache and retrying"
+            rm -rf node_modules
+            rm -rf "$HOME/.bun/install/cache"/*openai-compatible* "$HOME/.bun/install/cache"/*ai-sdk*
+            sleep 10
+          done
+          echo "::error::bun install failed after 3 attempts"
+          exit 1
       - name: Build the SDK the CLI imports
         # The CLI resolves @zyraxon-ai/sdk/v2/* out of the SDK's dist, and dist is
         # gitignored, so nothing else in the job creates it. Without this the
@@ -341,12 +423,29 @@ jobs:
           bun-version: latest
       - uses: actions/cache@v4
         with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
           path: |
-            node_modules
             ~/.bun/install/cache
-          key: release-all-cli-windows-${{ hashFiles('bun.lock') }}
-          restore-keys: release-all-cli-windows-
-      - run: bun install --frozen-lockfile
+          key: release-all-cli-windows-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-cli-windows-v2-
+      - name: Install dependencies
+        shell: bash
+        # bun on Windows intermittently fails to apply patches/@ai-sdk/*.patch
+        # with "renaming changes to cache dir: ENOTEMPTY", leaving a half-written
+        # patched-package cache entry behind. Clear that entry and retry; a later
+        # attempt succeeds. Seen on the windows-2025 arm64 runner.
+        run: |
+          for attempt in 1 2 3; do
+            if bun install --frozen-lockfile; then exit 0; fi
+            echo "::warning::bun install failed on attempt $attempt; clearing patched-package cache and retrying"
+            rm -rf node_modules
+            rm -rf "$HOME/.bun/install/cache"/*openai-compatible* "$HOME/.bun/install/cache"/*ai-sdk*
+            sleep 10
+          done
+          echo "::error::bun install failed after 3 attempts"
+          exit 1
       - name: Build the SDK the CLI imports
         # The CLI resolves @zyraxon-ai/sdk/v2/* out of the SDK's dist, and dist is
         # gitignored, so nothing else in the job creates it. Without this the
