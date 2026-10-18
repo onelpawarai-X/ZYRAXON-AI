@@ -66,13 +66,15 @@ jobs:
       - name: Cache Bun modules and Electron downloads
         uses: actions/cache@v4
         with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
           path: |
-            node_modules
             ~/.bun/install/cache
             ~/Library/Caches/electron
             ~/Library/Caches/electron-builder
-          key: release-macos-both-${{ hashFiles('bun.lock') }}
-          restore-keys: release-macos-both-
+          key: release-macos-both-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-macos-both-v2-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -144,11 +146,13 @@ jobs:
       - name: Cache Bun modules
         uses: actions/cache@v4
         with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
           path: |
-            node_modules
             ~/.bun/install/cache
-          key: release-cli-macos-${{ hashFiles('bun.lock') }}
-          restore-keys: release-cli-macos-
+          key: release-cli-macos-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-cli-macos-v2-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile

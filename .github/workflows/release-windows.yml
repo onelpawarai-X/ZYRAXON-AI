@@ -69,13 +69,15 @@ jobs:
       - name: Cache Bun modules and Electron downloads
         uses: actions/cache@v4
         with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
           path: |
-            node_modules
             ~/.bun/install/cache
             ~/AppData/Local/electron/Cache
             ~/AppData/Local/electron-builder/Cache
-          key: release-windows-${{ matrix.arch }}-${{ hashFiles('bun.lock') }}
-          restore-keys: release-windows-${{ matrix.arch }}-
+          key: release-windows-${{ matrix.arch }}-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-windows-${{ matrix.arch }}-v2-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -149,11 +151,13 @@ jobs:
       - name: Cache Bun modules
         uses: actions/cache@v4
         with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
           path: |
-            node_modules
             ~/.bun/install/cache
-          key: release-cli-windows-${{ hashFiles('bun.lock') }}
-          restore-keys: release-cli-windows-
+          key: release-cli-windows-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-cli-windows-v2-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
