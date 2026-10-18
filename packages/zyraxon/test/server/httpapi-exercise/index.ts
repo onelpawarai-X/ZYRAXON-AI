@@ -1742,6 +1742,79 @@ const scenarios: Scenario[] = [
     .probe({ path: "/global/upgrade", body: { target: 1 } })
     .at(() => ({ path: "/global/upgrade", body: { target: 1 } }))
     .status(400),
+  // ─── Local model routes ──────────────────────────────────────────────────────
+  // models, backends and downloads read only this machine, so they are offline.
+  // search and files read HuggingFace and are asserted on their shape rather than
+  // their contents. download and chat are exercised through their failure path:
+  // a repo that does not exist and a model that is not on disk both surface as an
+  // unhandled defect, which the route reports as 500. speak is given whitespace so
+  // it refuses before any backend is spawned.
+  http.protected.get("/local/models", "local.models").json(200, array),
+  http.protected.get("/local/backends", "local.backends").json(200, array),
+  http.protected
+    .get("/local/search", "local.search")
+    .at((ctx) => ({ path: `/local/search?${new URLSearchParams({ q: "tinyllama gguf" })}`, headers: ctx.headers() }))
+    .json(200, array),
+  http.protected
+    .get("/local/files", "local.files")
+    .at((ctx) => ({
+      path: `/local/files?${new URLSearchParams({ repo: "tinyllama/tinyllama-1.1B-Chat-v1.0" })}`,
+      headers: ctx.headers(),
+    }))
+    .json(200, array),
+  http.protected.get("/local/downloads", "local.downloads").json(200, array),
+  http.protected
+    .post("/local/download", "local.download")
+    .mutating()
+    .at((ctx) => ({
+      path: "/local/download",
+      headers: ctx.headers(),
+      body: { repo: "httpapi/missing", file: "missing.gguf" },
+    }))
+    .status(500),
+  http.protected
+    .post("/local/chat", "local.chat")
+    .at((ctx) => ({
+      path: "/local/chat",
+      headers: ctx.headers(),
+      body: { model: "httpapi-missing", messages: [{ role: "user", content: "hello" }] },
+    }))
+    .status(500),
+  http.protected
+    .post("/local/speak", "local.speak")
+    .at((ctx) => ({ path: "/local/speak", headers: ctx.headers(), body: { text: "   " } }))
+    .status(500),
+  // ─── Server storage routes ───────────────────────────────────────────────────
+  // usage and locations read the live database; compact folds the WAL back in and
+  // purge deletes by age, so both are mutating and run against the isolated DB.
+  http.protected.get("/api/storage", "v2.storage.usage").json(200, object),
+  http.protected
+    .post("/api/storage/compact", "v2.storage.compact")
+    .mutating()
+    .at((ctx) => ({ path: "/api/storage/compact", headers: ctx.headers(), body: {} }))
+    .json(200, object),
+  http.protected
+    .post("/api/storage/purge", "v2.storage.purge")
+    .mutating()
+    .at((ctx) => ({ path: "/api/storage/purge", headers: ctx.headers(), body: {} }))
+    .json(200, object),
+  http.protected.get("/api/storage/locations", "v2.storage.locations").json(200, object),
+  // ─── Remaining MCP routes ────────────────────────────────────────────────────
+  http.protected
+    .get("/mcp/{name}/auth/has-tokens", "mcp.auth.hasTokens")
+    .at((ctx) => ({ path: route("/mcp/{name}/auth/has-tokens", { name: "httpapi-missing" }), headers: ctx.headers() }))
+    .json(404, object, "status"),
+  http.protected
+    .post("/mcp/open-url", "mcp.openUrl")
+    .at((ctx) => ({
+      path: "/mcp/open-url",
+      headers: ctx.headers(),
+      body: { url: "https://example.com/httpapi-exercise" },
+    }))
+    .json(200, (body) => {
+      object(body)
+      check(body.success === true, "open-url should report success")
+    }),
 ]
 
 const llmScenarios = new Set([
