@@ -135,6 +135,13 @@ jobs:
         working-directory: packages/app
         run: bunx playwright install chromium
 
+      # The app resolves @zyraxon-ai/sdk/v2/client from the SDK's dist output. A
+      # production build reaches it through packages/app prebuild, but the e2e job
+      # runs vite dev, which never triggers prebuild, so the SDK must be built here.
+      - name: Build the workspace SDK
+        working-directory: packages/sdk/js
+        run: bun run build
+
       - name: Run app e2e tests
         run: bun --cwd packages/app test:e2e:local
         env:
