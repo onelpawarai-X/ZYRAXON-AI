@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // MCP Hub — live access to the official MCP registry, and OAuth metadata discovery.
 //
 // The registry at registry.modelcontextprotocol.io lists thousands of servers. It is

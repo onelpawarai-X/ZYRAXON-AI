@@ -1,3 +1,5 @@
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # SPDX-License-Identifier: MIT
 # Copyright (C) 2023 Max Bachmann
 

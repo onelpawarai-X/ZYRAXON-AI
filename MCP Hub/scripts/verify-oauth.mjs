@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Prove the OAuth discovery chain reaches a real sign-in page for every browser app.
 //
 //   node "MCP Hub/scripts/verify-oauth.mjs"              all browser apps

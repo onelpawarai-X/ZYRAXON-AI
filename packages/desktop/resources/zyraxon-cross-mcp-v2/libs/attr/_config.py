@@ -1,3 +1,5 @@
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 # SPDX-License-Identifier: MIT
 
 __all__ = ["get_run_validators", "set_run_validators"]

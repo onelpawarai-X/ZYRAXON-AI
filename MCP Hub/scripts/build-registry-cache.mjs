@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Rebuild catalog/registry-cache.json and catalog/registry-summary.json from the official
 // MCP registry.
 //

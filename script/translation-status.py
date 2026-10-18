@@ -1,3 +1,5 @@
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """List registry locales that Argos can translate but that are not written yet.
 
 Used to drive the translation run in batches and to report what is left, so a

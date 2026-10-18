@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ZYRAXON demo video — scripted Playwright tour.
 // Records 1920x1080 webm; the in-app recorder UI is hidden so it never reaches the video.
 import { chromium } from "@playwright/test"

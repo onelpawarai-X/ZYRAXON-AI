@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // How big the official MCP registry was the last time it was fetched.
 //
 // The panel used to quote a server count typed into its own markup: the header said

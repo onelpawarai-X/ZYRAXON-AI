@@ -1,3 +1,5 @@
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Report any string in a locale file that is not written in its own script.
 
 A hand-written dictionary drifts: a phrase from another language slips in, a

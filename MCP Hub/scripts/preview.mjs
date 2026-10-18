@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Open the MCP Connect panel in a real browser, against a stub MCP runtime.
 //
 //   node "MCP Hub/scripts/preview.mjs"                start the stub and open the panel
