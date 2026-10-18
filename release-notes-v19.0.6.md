@@ -149,6 +149,17 @@ Existing Windows installs pick this build up automatically through the in-app up
 - ☁️ **Cloud Agent:** https://zyraxon-pro-x.lovable.app
 - ⭐ **GitHub:** https://github.com/onelpawarai-X/ZYRAXON-AI
 
+### 🎬 Watch ZYRAXON in action
+
+Two short films ship with this release. Both are attached to the release, in the assets list.
+
+| Video | Language | File |
+|:------|:---------|:-----|
+| ZYRAXON in action | English | `ZYRAXON-VIRAL-EN.mp4` |
+| ZYRAXON in action | বাংলা | `ZYRAXON-VIRAL-BN.mp4` |
+
+1080p, 30fps, just under four minutes. Download the one you want, or both.
+
 ### License
 
 **ZSL-X** - source-available. Use it, change it and learn from it freely. Section 5 of the license sets what may be published or sold: you may not sell ZYRAXON itself, and you may not publish a modified version of it.
