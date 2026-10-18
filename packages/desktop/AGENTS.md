@@ -305,4 +305,10 @@ wrong. Fix the copy.
 
 - Renderer process should only call `window.api` from `src/preload`.
 - Main process should register IPC handlers in `src/main/ipc.ts`.
+- `scripts/provision-tools.ts` bundles ffmpeg/ffprobe from the `ffmpeg-static`
+  GitHub release (raw binaries for every platform, no archive to unpack). Prefer
+  that one source; the older per-OS downloads each broke differently — a
+  `.tar.xz` that PowerShell cannot expand on Windows, and evermeet.cx answering
+  410/429 on macOS. Run `build-verify` and `build-package` to confirm all three
+  platforms after touching it.
 
