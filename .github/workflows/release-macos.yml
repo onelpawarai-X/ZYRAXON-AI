@@ -153,6 +153,12 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Build the SDK the CLI imports
+        # The CLI resolves @zyraxon-ai/sdk/v2/* out of the SDK's dist, and dist is
+        # gitignored, so nothing else in the job creates it. Without this the
+        # bundler fails with "Could not resolve @zyraxon-ai/sdk/v2/client".
+        run: bun run --cwd packages/sdk/js build
+
       - name: Build every macOS CLI target
         run: bun run --cwd packages/cli script/build.ts --os=darwin
 

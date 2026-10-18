@@ -250,6 +250,11 @@ jobs:
           key: release-all-cli-linux-${{ hashFiles('bun.lock') }}
           restore-keys: release-all-cli-linux-
       - run: bun install --frozen-lockfile
+      - name: Build the SDK the CLI imports
+        # The CLI resolves @zyraxon-ai/sdk/v2/* out of the SDK's dist, and dist is
+        # gitignored, so nothing else in the job creates it. Without this the
+        # bundler fails with "Could not resolve @zyraxon-ai/sdk/v2/client".
+        run: bun run --cwd packages/sdk/js build
       - run: bun run --cwd packages/cli script/build.ts --os=linux
       - run: bun run --cwd packages/cli script/package-release.ts
       - name: Attach Linux CLI archives
@@ -287,6 +292,11 @@ jobs:
           key: release-all-cli-darwin-${{ hashFiles('bun.lock') }}
           restore-keys: release-all-cli-darwin-
       - run: bun install --frozen-lockfile
+      - name: Build the SDK the CLI imports
+        # The CLI resolves @zyraxon-ai/sdk/v2/* out of the SDK's dist, and dist is
+        # gitignored, so nothing else in the job creates it. Without this the
+        # bundler fails with "Could not resolve @zyraxon-ai/sdk/v2/client".
+        run: bun run --cwd packages/sdk/js build
       - run: bun run --cwd packages/cli script/build.ts --os=darwin
       - run: bun run --cwd packages/cli script/package-release.ts
       - name: Each archive holds one flat binary
@@ -337,6 +347,11 @@ jobs:
           key: release-all-cli-windows-${{ hashFiles('bun.lock') }}
           restore-keys: release-all-cli-windows-
       - run: bun install --frozen-lockfile
+      - name: Build the SDK the CLI imports
+        # The CLI resolves @zyraxon-ai/sdk/v2/* out of the SDK's dist, and dist is
+        # gitignored, so nothing else in the job creates it. Without this the
+        # bundler fails with "Could not resolve @zyraxon-ai/sdk/v2/client".
+        run: bun run --cwd packages/sdk/js build
       - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends zip
       - run: bun run --cwd packages/cli script/build.ts --os=win32
       - run: bun run --cwd packages/cli script/package-release.ts
