@@ -79,6 +79,11 @@ jobs:
       - name: Run HttpApi exerciser gates
         if: runner.os == 'Linux'
         working-directory: packages/zyraxon
+        # Three modes run back to back and each walks the whole route tree, so
+        # the full pass normally takes a few minutes. Without a bound the step
+        # can hang on a slow runner and hold the pull request open indefinitely,
+        # so cap it generously above the healthy runtime.
+        timeout-minutes: 30
         run: bun run test:httpapi
 
   e2e:
