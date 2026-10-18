@@ -1,158 +1,158 @@
 ## ZYRAXON AI v19.0.6
 
-**বিশ্বের সবচেয়ে শক্তিশালী ওপেন-সোর্স এজেন্ট ইঞ্জিনগুলোর একটি — সম্পূর্ণ ওপেন, আর চলে তোমার নিজের মেশিনেই।**
+**One of the most capable open-source agent engines in the world — fully open, and it runs on your own machine.**
 
-আমরা ZYRAXON বানিয়েছি একটাই কারণে: AI দিয়ে শুধু কথা বলা নয়, আসল কাজটা করানো উচিত। তাই এমন একটা সিস্টেম বানিয়েছি যে কোড লেখে, কমান্ড চালায়, ব্রাউজার চালায়, নিজের ভুল নিজে ঠিক করে — আর কাজ শেষ না হওয়া পর্যন্ত থামে না।
-
----
-
-### এটা আসলে কী
-
-ZYRAXON একটা **এজেন্ট ইঞ্জিন**। এটা চ্যাটবট নয়, অটোকমপ্লিট বক্সও নয়।
-
-তুমি একটা কাজ দাও — *"এই বাগটা ঠিক করো"*, *"এই ফিচারটা বানাও"*, *"এই ডেটা যাচাই করো"* — সে নিজে থেকে কাজ শুরু করে। পরিকল্পনা করে, প্রতিটি ধাপের জন্য ঠিক টুলটা বেছে নেয়, ধাপটা চালায়, আর কিছু ভাঙলে হাল ছেড়ে না দিয়ে কারণ খুঁজে ঠিক করে।
-
-শেষে তুমি তৈরি রেজাল্ট পাও।
+We built ZYRAXON for one simple reason: we thought AI should be used to *actually get the work done*, not just to talk about it. So we built a system that writes code, runs commands, drives browsers, fixes its own mistakes, and does not stop until the job is finished.
 
 ---
 
-### কীভাবে কাজ করে
+### What this actually is
 
-প্রতিটি কাজ ছোট ছোট ধাপে ভাগ হয়। প্রতিটি ধাপের জন্য ZYRAXON শত শত টুলের লাইব্রেরি থেকে সবচেয়ে উপযুক্তটা বেছে নেয়, তারপর চালায়। কোনো ধাপ ফেল করলে থামে না — কারণ খুঁজে বের করে, সমাধান করে, আবার চালায়।
+ZYRAXON is an **agent engine**. It is not a chatbot, and it is not an autocomplete box.
 
-কাজ যত বড়, সে তত বেশি ছড়িয়ে দেয়। সে **শত শত সাব-এজেন্ট সমান্তরালে** চালাতে পারে, তারপর চূড়ান্ত ফলাফল সাজানোর আগে প্রতিটির রেজাল্ট নিজেই যাচাই করে। তোমার পাশে এক জন; কাজটা একশ জনের।
+You hand it a task — *"fix this bug"*, *"build this feature"*, *"verify this data"* — and it starts working on its own. It plans, it picks the right tool for each step, it runs the step, and when something breaks it diagnoses the problem and fixes it rather than giving up.
 
----
-
-### টুল ইকোসিস্টেম
-
-ফাইল, শেল, git, ডেটাবেস, ব্রাউজার অটোমেশন, ইমেইল, ক্যালেন্ডার, মিডিয়া, স্ক্রিন কন্ট্রোল, ডিভাইস কন্ট্রোল — এমনকি যানবাহন, ড্রোন, সামুদ্রিক, রকেট আর রোবোটিক কন্ট্রোল সিস্টেম। শত শত টুল এক ছাদের নিচে।
-
-কোনো টুল না থাকলে ZYRAXON থামে না। খুঁজে আনে, ইনস্টল করে, আর দরকার হলে নতুন একটা লিখে ফেলে। MCP সার্ভার নিজে খুঁজে কানেক্ট করে — তোমাকে একটা কমান্ডও চালাতে হয় না। আর টার্মিনাল নেই এমন মেশিনেও চলে, কারণ সে নিজের সার্ভার নিজেই বহন করে।
+You get the finished result.
 
 ---
 
-### 🔓 এজেন্ট যে সীমা ভাঙে
+### How it works
 
-বেশিরভাগ এজেন্ট একটা API-তে বাঁধা — API যা দেয়, তার বাইরে তারা কিছুই করতে পারে না। ZYRAXON তা নয়।
+Every task is broken into small steps. For each step ZYRAXON selects the most appropriate tool from a library of hundreds, and executes it. If a step fails, it does not stop — it identifies the cause, resolves it, and runs the step again.
 
-- **API যা পারে না, ZYRAXON Preview প্যানেলে গিয়ে করে ফেলে।** YouTube-এ ভিডিও আপলোড? WhatsApp-এ কল? যে প্ল্যাটফর্মে কোনো API নেই সেখানে পোস্ট? সে আসল অ্যাপ্লিকেশন Preview প্যানেলে খুলে, ইন্টারফেস দিয়ে, একজন মানুষের মতোই কাজটা করে ফেলে।
-- **প্রতিটি কাজ Preview দিয়ে শুরু, তারপর প্রয়োজনে পেছনের টুলগুলো** — Jarvis Browser, Nuphus, Touchpoint, desktop-commander। একটার পরে আরেকটা — থামে না।
-- **MCP Connect নিজে চালায়** — ভেরিফায়েড অ্যাপগুলো নিজে কানেক্ট করে, তারপর কাজ শেষ করে। পুরো অটোমেশন।
-- **কিছু না থাকলে self-healing** — টুল নিজে ডাউনলোড করে, ইনস্টল করে, সেটআপ করে, তারপর কাজ শেষ করে।
+The larger the job, the wider it spreads the work. It can run **hundreds of sub-agents in parallel**, then verify every one of their results itself before assembling the final output. One person on your side; the work of a hundred.
 
 ---
 
-### সবচেয়ে গুরুত্বপূর্ণ সিদ্ধান্ত: কারো উপর নির্ভর না করা
+### The tool ecosystem
 
-**ZYRAXON ডিজাইনেই প্রোভাইডার-অ্যাগনস্টিক।**
+Files, shell, git, databases, browser automation, email, calendars, media, screen control, device control — even vehicle, drone, marine, rocket and robotic control systems. Hundreds of tools under one roof.
 
-OpenAI, Anthropic, Google, Groq, OpenRouter, Ollama, Mistral আর চায়না ওপেন-ওয়েট ইকোসিস্টেম — সবই একটাই ইন্টারফেসের পেছনে প্লাগ-ইন। ইঞ্জিন কোনো ভেন্ডরকে হার্ডকোড করে না — সে রাউট করে, সেই সময়ে যেটা আসলে সবচেয়ে ভালো কাজ করছে সেটা বেছে নেয়। দাম বাড়ল, সে বদলে যায়। স্পিড দরকার, সে বদলে যায়। একটা সার্ভিস গায়েব হয়ে গেল, সে চলতে থাকে।
-
-**ব্যবহারে এর মানে কী:** কোনো কোম্পানি দাম তিনগুণ করে দিলেও ZYRAXON কিছু মনে করে না। কেউ আমাদের সুইচ অফ করতে পারে না, কারণ আমরা একটা দরজার পেছনে দাঁড়িয়ে নেই। এটা মার্কেটিং নয় — এটা আমাদের আর্কিটেকচারের সরাসরি ফল।
-
-এ কারণেই আমাদের নিজের মডেল যখন আসবে, তখন একটা বর্তমান ইউজারও না ভেঙে সেটা বসে যাবে।
+If a tool is missing, ZYRAXON does not stop. It searches for it, installs it, and writes a new one when it has to. It finds MCP servers and connects them on its own — you never have to run a command. And it still works on a machine with no terminal, because it ships its own server.
 
 ---
 
-### 🔐 সিকিউরিটি ও প্রাইভেসি
+### 🔓 The limit the agent breaks
 
-প্রতিটি API কী, টোকেন আর পাসওয়ার্ড বাইরের কোনো মডেলে যাওয়ার আগেই ফিল্টার হয়ে যায়। প্রতিটি টুল কল আগে তোমার অনুমতি চায়।
+Most agents are bound to an API. Whatever the API exposes is all they can do. ZYRAXON is not.
 
-**Zero Distribution** — তোমার ফাইল, তোমার ডেটা আর তোমার কী কখনো তোমার মেশিন ছেড়ে যায় না। সবকিছু লোকালি চলে।
-
----
-
-### 🩹 সেলফ-হিলিং
-
-ZYRAXON-এর সাথে একটা সেলফ-হিলিং সিস্টেম আসে। টুল নেই? সে একটা খুঁজে আনে। টেস্ট ফেল? সে ঠিক করে। কোড চলছে না? সে সেটা নিয়ে কাজ করে। প্রতিটি সেশন persist থাকে, তাই মেশিন রিস্টার্টে তোমার কাজ হারায় না — পরের রান ঠিক যেখানে থেমেছিল সেখান থেকেই শুরু করে।
+- **If the API cannot do it, ZYRAXON does it through the Preview panel.** Upload a video to YouTube? Place a call on WhatsApp? Post to a platform with no API at all? It opens the real application in the Preview panel and works through the interface the way a person would.
+- **Every task starts in the Preview panel, then reaches for the tools behind it** — Jarvis Browser, Nuphus, Touchpoint, desktop-commander. One after another, without stopping.
+- **It runs MCP Connect itself** — it connects the verified apps on its own, then finishes the job. Full automation.
+- **If something is missing, it self-heals** — it downloads the tool, installs it, configures it, and finishes the task.
 
 ---
 
-### এই ভার্সনে নতুন কী (v19.0.6)
+### The most important decision: depending on nobody
 
-- **মিডিয়া নরমালাইজেশন — যেকোনো ফাইল, যেকোনো মডেল।** বড় অডিও/ভিডিও মডেলে পৌঁছানোর আগেই নরমালাইজ হয়; ২ ঘণ্টার অডিও বা ১ ঘণ্টার ভিডিও আর রিজেক্ট হয় না। আসল ফাইলে টেস্ট করা।
-- **MCP Hub — ভেরিফায়েড ইন্টিগ্রেশন, এক স্ক্রিনে।** এই রিলিজে লোকাল Telegram সার্ভার যোগ হয়েছে, আর Facebook Pages, Instagram, WhatsApp, YouTube, Gmail, Google Drive/Docs/Sheets/Slides/Calendar/Chat/Search-এর অ্যাপ-ভিত্তিক সেটআপ গাইড।
-- **সম্পূর্ণ অফলাইন ডেস্কটপ।** `ffmpeg` আর `ffprobe` এখন অ্যাপের ভেতরেই — নেটওয়ার্ক লাগে না, আলাদা ইনস্টলও না।
-- **বিশ্বাসযোগ্য বিল্ড।** Linux, macOS, Windows-এ প্রতি-প্ল্যাটফর্ম artifact ভেরিফিকেশন।
-- **Windows on ARM।** এবার থেকে ARM64 ইনস্টলারও তৈরি হয় — রিলিজে এখন মোট **৭টি অ্যাসেট**।
+**ZYRAXON is provider-agnostic by design.**
 
----
+OpenAI, Anthropic, Google, Groq, OpenRouter, Ollama, Mistral and the Chinese open-weight ecosystem are all plug-ins behind a single interface. The engine never hardcodes a vendor — it routes, choosing whichever one is actually working best at that moment. Price goes up, it switches. Speed matters, it switches. A service disappears, it keeps running.
 
-### 🌍 আমাদের মিশন — ১,০০,০০০ স্টারে পৌঁছাতে সাহায্য করো
+**What that means in practice:** a company can quietly triple its prices and ZYRAXON does not care. Nobody can switch us off, because we do not stand behind a single door. This is not marketing — it is the direct consequence of how the architecture was built.
 
-ZYRAXON আজ একটা এজেন্ট ইঞ্জিন। কাল একটা কোম্পানির পরিবার।
-
-**এই প্রজেক্ট ১,০০,০০০ স্টারে পৌঁছালে আমরা অঙ্গীকার করছি:**
-
-- 🧠 **আমাদের নিজের মডেল** — আমাদের নিজের ওয়েট, নিজের ইনফ্রাস্ট্রাকচারে ট্রেইন করা
-- 🔌 **আমাদের নিজের প্রোভাইডার** — কোনো কোম্পানির উপর শূন্য নির্ভরতা
-- 🌐 **আমাদের নিজের ইকোসিস্টেম** — টুল, SDK, মার্কেটপ্লেস, ইন্টিগ্রেশন
-- 🏢 **আমাদের নিজের কোম্পানি** — যারা বানায় তাদেরই মালিকানায়, দীর্ঘদিন টিকবে
-
-**অঙ্গীকার: ইনস্টল আর কোড-লেখা খোলা — কখনোই বন্ধ হবে না।**
-
-সবচেয়ে গুরুত্বপূর্ণ কথাটা সোজা করে বলি: ZYRAXON একটা ব্যবসা, আর এটা চালাতে খরচ হয় — মডেল, সার্ভার, ইনফ্রাস্ট্রাকচার, টিম। তাই যেটা আসলেই টাকা লাগায়, সেটাকে আমরা "ফ্রি" বলি না।
-
-যেটা ফ্রি, সেটা ফ্রি-ই থাকে:
-
-- ডেস্কটপ আর CLI ইনস্টল করে চালাতে কিছু লাগে না
-- ফাইল, শেল, git, ডেটাবেস, কোড-লেখা — মেশিনের নিজের কাজগুলো ফ্রি
-- MCP Hub-এর বান্ডল করা সার্ভারগুলো (Jarvis, Nuphus, Touchpoint, desktop-commander) কোনো চাবি ছাড়াই চলে
-- লোকাল মডেল (Ollama, ওপেন-ওয়েট) দিয়ে সাবস্ক্রিপশন ছাড়াই কাজ করা যায়
-
-যেটা আসলে ক্যাপাসিটির খরচ, সেটা প্রো আর ক্লাউডে: বেশি রান, গভীর সাব-এজেন্ট প্যারালালিজম, ভারী মডেল, আর ম্যানেজড Cloud Agent। এটা ভালো প্ল্যান আর বড় প্ল্যানের পার্থক্য — মিথ্যা আশা নয়, খোলাখুলি হিসাব।
-
-**আর যেটা আমরা চাই: প্রতি সাবস্ক্রিপশন আমাদের নিজের মডেল আর নিজের প্রোভাইডারের কাজে যায়।** সেটা এলে যতটা সম্ভব লোকালে চালানো যাবে — কিন্তু যেটা আমাদের খরচ করায়, সেটাকে "ফ্রি" বলে চালিয়ে দেব না। জিনিসটা যেটা, সেটাই বলব।
-
-আমরা ব্যবহারকারীদের চেপে ধরতে আসিনি, ভুয়া "ফ্রি" দিয়ে টানতেও আসিনি। আমরা চাই যার একটা ওপেন AI দরকার, তার হাতে সেটা পৌঁছে দিতে — আর সেটা যেন বছরের পর বছর টিকে থাকে।
-
-### ⭐ পৌঁছাতে সাহায্য করো
-
-⭐ **[ZYRAXON-কে স্টার দাও](https://github.com/onelpawarai-X/ZYRAXON-AI/stargazers)** আর ১,০০,০০০-এ পৌঁছাতে সাহায্য করো। প্রতিটি স্টার উপরের ভবিষ্যতের পক্ষে একটা ভোট।
+It is also the reason our own models, when they arrive, will drop in without breaking a single existing user.
 
 ---
 
-### টেকনিক্যাল সামারি
+### 🔐 Security and privacy
 
-- মনোরেপো জুড়ে ৭০০+ টেস্ট ফাইল, প্রতিটি পরিবর্তনে CI চলে
-- সেশন ইঞ্জিন, টুল রেজিস্ট্রি, স্তরভিত্তিক পারমিশন সিস্টেম, MCP ক্লায়েন্ট
-- ডেস্কটপ, CLI আর web ইন্টারফেস
-- বড় কমার্শিয়াল আর ওপেন-ওয়েট ইকোসিস্টেম জুড়ে প্রোভাইডার রাউটিং
-- অফলাইন ব্যবহারের জন্য MCP সার্ভার বান্ডল সহ একটাই ফ্রোজেন ডিপেন্ডেন্সি ট্রি
+Every API key, token and password is filtered out before anything is sent to an external model. Every tool call asks for your permission first.
 
-### ইনস্টলেশন — ৭টি অ্যাসেট
+**Zero Distribution** — your files, your data and your keys never leave your machine. Everything runs locally.
 
-এই রিলিজে তিনটি ডেস্কটপ প্ল্যাটফর্মের সবই আছে।
+---
 
-| প্ল্যাটফর্ম | ফাইল | আর্ক |
+### 🩹 Self-healing
+
+ZYRAXON ships with a self-healing system. Missing tool? It finds one. Failing test? It fixes it. Code that will not run? It works on it. Every session is persisted, so a machine restart does not lose your work — the next run picks up from exactly where it stopped.
+
+---
+
+### What is new in v19.0.6
+
+- **Media normalisation — any file, any model.** Large audio and video are normalised before they reach the model, so a two-hour recording or an hour of video is no longer rejected. Tested against real files.
+- **MCP Hub — verified integrations on one screen.** This release adds the local Telegram server, plus app-based setup guides for Facebook Pages, Instagram, WhatsApp, YouTube, Gmail, and Google Drive/Docs/Sheets/Slides/Calendar/Chat/Search.
+- **Fully offline desktop.** `ffmpeg` and `ffprobe` now ship inside the app — no network, no separate install.
+- **Trustworthy builds.** Per-platform artifact verification on Linux, macOS and Windows.
+- **Windows on ARM.** An ARM64 installer is now produced alongside x64 — seven assets in total.
+
+---
+
+### 🌍 Our mission — help us reach 100,000 stars
+
+ZYRAXON is an agent engine today. It is a family of companies tomorrow.
+
+**If this project reaches 100,000 stars, we commit to the following:**
+
+- 🧠 **Our own model** — our own weights, trained on our own infrastructure
+- 🔌 **Our own provider** — zero dependency on any other company
+- 🌐 **Our own ecosystem** — tools, SDK, marketplace, integrations
+- 🏢 **Our own company** — built to last, owned by the people who build it
+
+**The commitment that matters: install and code work stay open, and they are not going behind a paywall.**
+
+Let us be straight about one thing. ZYRAXON is a business, and running it costs money — models, servers, infrastructure, a team. So we will not call something "free" when it is not.
+
+What is free, and stays free:
+
+- Installing and running the desktop app and the CLI
+- The local machine's own work: files, shell, git, databases, code
+- The bundled MCP servers (Jarvis, Nuphus, Touchpoint, desktop-commander) — no key needed
+- Working with local models through Ollama or open-weight weights, with no subscription
+
+What the subscription pays for is capacity: more runs, deeper sub-agent parallelism, the heavy models, and the managed Cloud Agent. That is the difference between a bigger plan and a smaller one — an honest line, not a false promise.
+
+**And what we want most: every subscription funds the work toward our own model and our own provider.** When that arrives, as much of it as possible will run locally. But we will not dress up what costs us money as "free". We will say the thing for what it is.
+
+We are not here to squeeze the people who use us, and we are not here to pull them in with a fake "free". We are here to put an open AI into every hand that wants one — and to make it last for years.
+
+### ⭐ Help us get there
+
+⭐ **[Star ZYRAXON](https://github.com/onelpawarai-X/ZYRAXON-AI/stargazers)** and help us reach 100,000. Every star is one vote for the future described above.
+
+---
+
+### Technical summary
+
+- 700+ test files across the monorepo, with CI running on every change
+- Session engine, tool registry, layered permission system, MCP client
+- Desktop, CLI and web interfaces
+- Provider routing across the major commercial and open-weight ecosystems
+- Single frozen dependency tree with the MCP server bundles vendored for offline use
+
+### Installation — seven assets
+
+This release carries every desktop platform.
+
+| Platform | File | Arch |
 |:---------|:-----|:----:|
 | Windows | `ZYRAXON-Dev-win-x64-installer.exe` | x64 |
 | Windows | `ZYRAXON-Dev-win-arm64-installer.exe` | ARM64 |
 | macOS | `zyraxon-desktop-mac-arm64.dmg` | Apple Silicon |
 | macOS | `zyraxon-desktop-mac-x64.dmg` | Intel |
-| Linux | `zyraxon-desktop-linux-x86_64.AppImage` | x64, ইনস্টল লাগে না |
+| Linux | `zyraxon-desktop-linux-x86_64.AppImage` | x64, no install needed |
 | Linux | `zyraxon-desktop-linux-amd64.deb` | Debian, Ubuntu |
 | Linux | `zyraxon-desktop-linux-x86_64.rpm` | Fedora |
 
-**Windows ARM64:** Surface Pro X বা Snapdragon ল্যাপটপে থাকলে `arm64` ইনস্টলারটাই নাও — x64 ভার্সনটা এমুলেশনে চলবে, কিন্তু ARM64 নেটিভ গতিতে চলবে।
+**Windows on ARM:** on a Surface Pro X or a Snapdragon laptop, take the `arm64` installer. The x64 build runs under emulation, but ARM64 runs at native speed.
 
-**macOS:** বিল্ডটা এখনো Apple Developer ID দিয়ে সাইন করা নয়, তাই Gatekeeper প্রথম লঞ্চে থামায়। অ্যাপে right-click করে **Open** বেছে নাও, তারপর কনফার্ম করো। একবারই।
+**macOS:** the build is not signed with an Apple Developer ID yet, so Gatekeeper stops the first launch. Right click the app and choose **Open**, then confirm. One time only.
 
-**Linux:** AppImage-এ ইনস্টল লাগে না। `chmod +x` করে চালাও। `deb` হলো Debian আর Ubuntu-র জন্য, `rpm` Fedora-র জন্য।
+**Linux:** the AppImage needs no install. `chmod +x` it and run it. The `deb` is for Debian and Ubuntu, the `rpm` for Fedora.
 
-পুরনো Windows ইনস্টলগুলো in-app updater দিয়ে এই বিল্ড নিজেই পেয়ে যাবে।
+Existing Windows installs pick this build up automatically through the in-app updater.
 
-### 🔗 লিংক
+### 🔗 Links
 
-- 🌐 **ওয়েবসাইট:** https://zyraxonai.lovable.app
+- 🌐 **Website:** https://zyraxonai.lovable.app
 - ☁️ **Cloud Agent:** https://zyraxon-pro-x.lovable.app
 - ⭐ **GitHub:** https://github.com/onelpawarai-X/ZYRAXON-AI
 
-### লাইসেন্স
+### License
 
-**ZSL-X** — সোর্স-অ্যাভেইলেবল। ব্যবহার করো, বদলাও, শেখো স্বাধীনভাবে। লাইসেন্সের Section 5 ঠিক করে কী প্রকাশ বা বিক্রি করা যাবে: ZYRAXON নিজে বিক্রি করা যাবে না, আর এর বদলানো ভার্সন প্রকাশ করা যাবে না।
+**ZSL-X** - source-available. Use it, change it and learn from it freely. Section 5 of the license sets what may be published or sold: you may not sell ZYRAXON itself, and you may not publish a modified version of it.
 
 ---
 
-*যারা ভেবেছিলেন এটা আরেকটা টুল: এটা ছিল একটা ইঞ্জিন। আর যারা ১,০০,০০০ স্টারে ফিরে আসবেন: তখন এখানে একটা কোম্পানির পরিবার দাঁড়িয়ে থাকবে।*
+*For those who thought this was just another tool: it was an engine. For those who come back at 100,000 stars: a family of companies will be standing here.*
