@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { describe, expect, test } from "bun:test";
 import { AgentReliabilityKernel } from "../src/index";
 

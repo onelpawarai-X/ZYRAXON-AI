@@ -1,3 +1,5 @@
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Check every locale file for the mistakes a hand-written dictionary makes.
 
 Duplicate keys silently drop a string, a stray leading space shifts a label,

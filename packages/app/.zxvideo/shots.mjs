@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { chromium } from "@playwright/test"
 import fs from "node:fs"
 

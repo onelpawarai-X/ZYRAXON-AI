@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Check that the host actually wired the Hub into the app.
 //
 //   node "MCP Hub/scripts/verify-injection.mjs"            check the source

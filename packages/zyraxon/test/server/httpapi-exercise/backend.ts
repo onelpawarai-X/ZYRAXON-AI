@@ -24,7 +24,11 @@ export function callAuthProbe(scenario: ActiveScenario, credentials: "missing" |
     const controller = new AbortController()
     return Promise.race([
       Promise.resolve(
-        app(await runtime(), { auth: { password: "secret" } }).request(
+        // The probe authenticates as `zyraxon`, so the app under test must be
+        // configured with that same username. Leaving it unset let the server
+        // fall back to its own default, the two disagreed, and every protected
+        // route reported "auth rejected valid credentials".
+        app(await runtime(), { auth: { username: "zyraxon", password: "secret" } }).request(
           toAuthProbeRequest(scenario, credentials, controller.signal),
         ),
       ).then((response) => capture(response, scenario.capture)),

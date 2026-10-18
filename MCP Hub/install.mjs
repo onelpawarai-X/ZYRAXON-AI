@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // One-command install for MCP Hub.
 //
 //   node "MCP Hub/install.mjs"              install

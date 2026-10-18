@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // End-to-end smoke test for the Hub, against real servers.
 //
 //   node "MCP Hub/scripts/smoke.mjs"                 one open server, one OAuth server

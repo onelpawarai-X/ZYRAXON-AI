@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { chromium } from "@playwright/test"
 
 const APP = process.env.APP_URL ?? "http://127.0.0.1:12000/"

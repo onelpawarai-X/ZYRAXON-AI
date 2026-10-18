@@ -1,7 +1,7 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import { MCP } from "@/mcp"
-import { Cause, Effect, Schema } from "effect"
+import { Cause, Effect, Option, Schema } from "effect"
 import { HttpApiBuilder, HttpApiError } from "effect/unstable/httpapi"
 import { InstanceHttpApi } from "../api"
 import { McpServerNotFoundError } from "../errors"
@@ -143,24 +143,34 @@ export const mcpHandlers = HttpApiBuilder.group(InstanceHttpApi, "mcp", (handler
         // the browser never appeared, and nothing said why. The reason travels back as a
         // normal status so the card can show it.
         //
-        // Effect v4 has no catchAll and no catchAllDefect â€” both are reached through
-        // catchCause, which hands over the whole Cause. A Cause carrying a defect is
-        // logged as one; anything else keeps the warning and the plain reason.
-        Effect.catchCause((cause) =>
-          Cause.hasDies(cause)
-            ? Effect.logError("mcp authenticate defect", {
-                server: ctx.params.name,
-                reason: describeError(Cause.squash(cause)),
-              }).pipe(
-                Effect.andThen(
-                  Effect.succeed({ status: "failed" as const, error: `The sign-in attempt failed: ${describeError(Cause.squash(cause))}` }),
-                ),
-              )
-            : Effect.logWarning("mcp authenticate failed", {
-                server: ctx.params.name,
-                reason: describeError(Cause.squash(cause)),
-              }).pipe(Effect.andThen(Effect.succeed({ status: "failed" as const, error: describeError(Cause.squash(cause)) }))),
-        ),
+        // Effect v4 has no catchAll and no catchAllDefect — both are reached through
+        // catchCause, which hands over the whole Cause. The two typed route errors are
+        // rethrown first: catching them turned the 404 they exist to produce into a 200
+        // whose body repeated the same words. Everything else keeps the warning, or the
+        // error log when the Cause carries a defect.
+        Effect.catchCause((cause) => {
+          const handshakeFailure = () =>
+            Cause.hasDies(cause)
+              ? Effect.logError("mcp authenticate defect", {
+                  server: ctx.params.name,
+                  reason: describeError(Cause.squash(cause)),
+                }).pipe(
+                  Effect.andThen(
+                    Effect.succeed({ status: "failed" as const, error: `The sign-in attempt failed: ${describeError(Cause.squash(cause))}` }),
+                  ),
+                )
+              : Effect.logWarning("mcp authenticate failed", {
+                  server: ctx.params.name,
+                  reason: describeError(Cause.squash(cause)),
+                }).pipe(Effect.andThen(Effect.succeed({ status: "failed" as const, error: describeError(Cause.squash(cause)) })))
+          return Option.match(Cause.findErrorOption(cause), {
+            onSome: (error) =>
+              error instanceof McpServerNotFoundError || error instanceof UnsupportedOAuthError
+                ? Effect.fail(error)
+                : handshakeFailure(),
+            onNone: handshakeFailure,
+          })
+        }),
       )
     })
 

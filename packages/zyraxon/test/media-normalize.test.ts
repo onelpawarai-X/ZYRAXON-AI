@@ -65,6 +65,11 @@ describe.if(enabled)("normalizeMedia on real files", () => {
     expect(parts[0]!.data.byteLength).toBe(src.byteLength)
   })
 
+  // These three sample a real long recording: the fixture is generated with the
+  // bundled ffmpeg on first run and is orders of magnitude slower than the
+  // normalization under test, so each gets its own generous budget rather than
+  // the suite-wide 30s. Point ZYRAXON_MEDIA_FIXTURES at pre-recorded files to
+  // skip generation entirely.
   test("a 50-minute audio recording is re-encoded to an in-budget mp3 that keeps the timeline", async () => {
     const file = sample("long-audio-50m.mp3", (out) =>
       run(ffmpeg!, ["-y", "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=44100", "-t", "3000", "-c:a", "libmp3lame", "-b:a", "128k", out]),
@@ -80,7 +85,7 @@ describe.if(enabled)("normalizeMedia on real files", () => {
       expect(part.data.byteLength).toBeGreaterThan(0)
       expect(part.sourceSeconds).toBeGreaterThan(2900)
     }
-  })
+  }, { timeout: 120_000 })
 
   test("a two-hour audio recording is split into ordered in-budget parts", async () => {
     const file = sample("long-audio-2h.mp3", (out) =>
@@ -97,7 +102,7 @@ describe.if(enabled)("normalizeMedia on real files", () => {
       expect(part.chunkIndex).toBe(index + 1)
       expect(part.chunkCount).toBe(parts.length)
     }
-  })
+  }, { timeout: 180_000 })
 
   test("a one-hour video becomes a timelapse spanning the whole timeline", async () => {
     const file = sample("long-video-1h.mp4", (out) =>
@@ -139,5 +144,5 @@ describe.if(enabled)("normalizeMedia on real files", () => {
     const out = path.join(dir, "normalized-1h.mp4")
     fs.writeFileSync(out, part.data)
     expect(probeSeconds(out)).toBeGreaterThan(0)
-  })
+  }, { timeout: 600_000 })
 })

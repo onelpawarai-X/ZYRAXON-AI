@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export interface RegistrySummary {
     /** ISO timestamp of the fetch that produced this number */
     fetched?: string;

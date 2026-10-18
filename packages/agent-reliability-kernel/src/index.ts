@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * ZYRAXON Agent Reliability Kernel
  *

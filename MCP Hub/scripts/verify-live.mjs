@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Check that every endpoint in the catalog still exists and still needs what it claims.
 //
 //   node "MCP Hub/scripts/verify-live.mjs"              every remote endpoint

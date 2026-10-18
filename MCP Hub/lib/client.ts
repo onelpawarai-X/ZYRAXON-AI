@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // MCP Hub — a small, dependency-free MCP client.
 //
 // Speaks the Streamable HTTP transport directly: initialize, notifications/initialized,

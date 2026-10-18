@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // MCP Hub — adapts ZYRAXON's own MCP service to the McpRuntime the panel expects.
 //
 // This is the seam. The host passes in its client and its config writer and gets back

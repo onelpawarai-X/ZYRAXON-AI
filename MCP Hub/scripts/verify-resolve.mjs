@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Check that apps the catalog cannot reach can still be resolved through the registry.
 //
 //   node "MCP Hub/scripts/verify-resolve.mjs"               every catalog app

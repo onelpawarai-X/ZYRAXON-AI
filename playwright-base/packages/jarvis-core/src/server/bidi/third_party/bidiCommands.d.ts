@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * @license
  * Copyright 2024 Google Inc.

@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // MCP Hub — plugin entry.
 //
 // This is the only file ZYRAXON needs to know about. It exposes the panel, the catalog

@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { test, expect } from "bun:test"
 import { mediaAttachmentUrl } from "./build-request-parts"
 import type { MediaAttachmentPart } from "@/context/prompt-state"

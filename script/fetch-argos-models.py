@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
 """Download every Argos Translate model this project can use.
 
 Argos runs the translation locally once a model is installed, so this is the

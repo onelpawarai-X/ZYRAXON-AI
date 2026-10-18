@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // MCP Hub — resolve an app to a real, connectable MCP server.
 //
 // An app the catalog already names resolves to that endpoint and nothing else. Only the
