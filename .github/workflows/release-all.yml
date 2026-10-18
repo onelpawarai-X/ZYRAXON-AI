@@ -103,8 +103,21 @@ jobs:
           gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
 
   desktop-windows:
-    name: Desktop · Windows x64
-    runs-on: windows-latest
+    name: Desktop · Windows ${{ matrix.arch }}
+    # x64 builds on windows-latest. arm64 needs the ARM64 MSVC cross-compilation
+    # toolchain, which is only present on the larger windows-2025 image, so the
+    # two targets run on separate runners rather than one --x64 --arm64 pass.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-latest
+            arch: x64
+            platform_flag: --win --x64
+          - runner: windows-2025
+            arch: arm64
+            platform_flag: --win --arm64
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     env:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
@@ -127,8 +140,8 @@ jobs:
             ~/.bun/install/cache
             ~/AppData/Local/electron/Cache
             ~/AppData/Local/electron-builder/Cache
-          key: release-all-windows-x64-${{ hashFiles('bun.lock') }}
-          restore-keys: release-all-windows-x64-
+          key: release-all-windows-${{ matrix.arch }}-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-windows-${{ matrix.arch }}-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -141,7 +154,7 @@ jobs:
         # signtoolOptions points at script/sign-windows.ps1. That script exits 0
         # without signing unless GITHUB_ACTIONS is true and the Azure Trusted
         # Signing variables are present, so an unsigned build still succeeds.
-        run: bunx electron-builder --win --x64 --config electron-builder.config.ts --publish never
+        run: bunx electron-builder ${{ matrix.platform_flag }} --config electron-builder.config.ts --publish never
 
       - name: Attach Windows desktop assets
         shell: bash
@@ -151,6 +164,8 @@ jobs:
           set -euo pipefail
           shopt -s nullglob
           cd packages/desktop/dist
+          # electron-builder names the blockmap and latest.yml after the installer,
+          # so ${arch} in artifactName keeps the two targets apart.
           files=(*.exe *.blockmap latest.yml)
           if [ ${#files[@]} -eq 0 ]; then
             echo "::error::No Windows artifacts were produced."; ls -la; exit 1
