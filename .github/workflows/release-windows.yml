@@ -30,8 +30,21 @@ concurrency:
 
 jobs:
   windows:
-    name: Windows x64
-    runs-on: windows-latest
+    name: Windows ${{ matrix.arch }}
+    # x64 builds on windows-latest. arm64 needs the ARM64 MSVC cross-compilation
+    # toolchain, which is only present on the larger windows-2025 image, so the
+    # two targets run on separate runners rather than one --x64 --arm64 pass.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-latest
+            arch: x64
+            platform_flag: --win --x64
+          - runner: windows-2025
+            arch: arm64
+            platform_flag: --win --arm64
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
 
     env:
@@ -60,8 +73,8 @@ jobs:
             ~/.bun/install/cache
             ~/AppData/Local/electron/Cache
             ~/AppData/Local/electron-builder/Cache
-          key: release-windows-x64-${{ hashFiles('bun.lock') }}
-          restore-keys: release-windows-x64-
+          key: release-windows-${{ matrix.arch }}-${{ hashFiles('bun.lock') }}
+          restore-keys: release-windows-${{ matrix.arch }}-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -79,7 +92,7 @@ jobs:
         # signtoolOptions points at script/sign-windows.ps1. That script exits 0
         # without signing unless GITHUB_ACTIONS is true and the Azure Trusted
         # Signing variables are present, so an unsigned build still succeeds here.
-        run: bunx electron-builder --win --x64 --config electron-builder.config.ts --publish never
+        run: bunx electron-builder ${{ matrix.platform_flag }} --config electron-builder.config.ts --publish never
 
       - name: Attach to the release
         shell: bash

@@ -243,7 +243,9 @@ const getBase = (appId: string): Configuration => ({
     // and spaces in a release asset name become dots in the GitHub download URL
     // while electron-updater looks the asset up under the sanitized name written
     // into latest.yml. Build the name from the channel directly so both agree.
-    artifactName: `${PRODUCT_SLUGS[channel]}-\${os}-installer.\${ext}`,
+    // ${arch} keeps the x64 and arm64 installers apart — without it both
+    // targets write the same name and the second upload clobbers the first.
+    artifactName: `${PRODUCT_SLUGS[channel]}-\${os}-\${arch}-installer.\${ext}`,
   },
   linux: {
     icon: `resources/icons`,
