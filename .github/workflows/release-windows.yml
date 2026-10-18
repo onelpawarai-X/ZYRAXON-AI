@@ -1,19 +1,20 @@
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
-# Builds the Windows installer when a release is published, and attaches it to
-# that same release.
+# Builds the Windows installer on demand and attaches it to the named release.
 #
-# Linux and macOS are handled by release-linux.yml and release-macos.yml. Windows
-# used to be produced by hand from a developer machine, which meant a published
-# release could go out with no .exe at all. This workflow makes Windows a first
-# class member of the release matrix: publishing the release is the only trigger,
-# and electron-builder's GitHub publisher is disabled because the upload is owned
-# by the "Attach to the release" step below.
+# Linux and macOS are handled by release-linux.yml and release-macos.yml, and the
+# automatic all-platform path is release-all.yml. Windows used to be produced by
+# hand from a developer machine, which meant a published release could go out
+# with no .exe at all. electron-builder's GitHub publisher is disabled because
+# the upload is owned by the "Attach to the release" step below, so dispatch this
+# workflow by hand to retry Windows alone.
 name: Release (Windows)
 
 on:
-  release:
-    types: [published]
+  # No `release: published` trigger on purpose. release-all.yml owns that event
+  # and already builds every platform, so keeping this workflow subscribed to it
+  # built each asset twice and raced the two uploads against each other. Dispatch
+  # this workflow by hand when a single platform needs to be retried on its own.
   workflow_dispatch:
     inputs:
       tag:

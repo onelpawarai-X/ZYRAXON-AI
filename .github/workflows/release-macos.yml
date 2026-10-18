@@ -1,23 +1,27 @@
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
-# Builds the macOS installer when a release is published, and attaches it to
-# that same release.
+# Builds the macOS installer on demand and attaches it to the named release.
 #
 # macOS runners are free on public repositories, so this costs nothing. The
 # builds are unsigned, which means macOS Gatekeeper will ask the user to confirm
 # the first launch with a right click -> Open. Signing needs an Apple Developer
 # ID, and the secret is wired in below for whenever that exists.
+#
+# release-all.yml owns the automatic path and builds every platform when a
+# release is published; dispatch this workflow by hand to retry macOS alone.
 name: Release (macOS)
 
 on:
-  release:
-    types: [published]
+  # No `release: published` trigger on purpose. release-all.yml owns that event
+  # and already builds every platform, so keeping this workflow subscribed to it
+  # built each asset twice and raced the two uploads against each other. Dispatch
+  # this workflow by hand when a single platform needs to be retried on its own.
   workflow_dispatch:
     inputs:
       tag:
         description: Release tag to build and attach to
         required: true
-        default: v19.0.5
+        default: v19.0.6
 
 permissions:
   contents: write

@@ -1,23 +1,24 @@
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
-# Builds the Linux installer when a release is published, and attaches it to
-# that same release.
+# Builds the Linux installer on demand and attaches it to the named release.
 #
-# The Windows installer is uploaded by the release script, which publishes the
-# release in the same step. `on.release.published` therefore fires once the
-# release exists and the Windows assets are already attached, and this workflow
-# appends the Linux ones without anyone touching it by hand.
+# release-all.yml owns the automatic path: it fires when a release is published
+# and builds every platform at once. This workflow covers the other case —
+# retrying a single platform without rebuilding the rest — so it is dispatched by
+# hand with the tag to attach to.
 name: Release (Linux)
 
 on:
-  release:
-    types: [published]
+  # No `release: published` trigger on purpose. release-all.yml owns that event
+  # and already builds every platform, so keeping this workflow subscribed to it
+  # built each asset twice and raced the two uploads against each other. Dispatch
+  # this workflow by hand when a single platform needs to be retried on its own.
   workflow_dispatch:
     inputs:
       tag:
         description: Release tag to build and attach to
         required: true
-        default: v19.0.5
+        default: v19.0.6
 
 permissions:
   contents: write
