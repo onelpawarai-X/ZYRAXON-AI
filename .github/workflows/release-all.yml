@@ -60,13 +60,15 @@ jobs:
       - name: Cache Bun modules and Electron downloads
         uses: actions/cache@v4
         with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
           path: |
-            node_modules
             ~/.bun/install/cache
             ~/.cache/electron
             ~/.cache/electron-builder
-          key: release-all-linux-x64-${{ hashFiles('bun.lock') }}
-          restore-keys: release-all-linux-x64-
+          key: release-all-linux-x64-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-linux-x64-v2-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -135,13 +137,15 @@ jobs:
       - name: Cache Bun modules and Electron downloads
         uses: actions/cache@v4
         with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
           path: |
-            node_modules
             ~/.bun/install/cache
             ~/AppData/Local/electron/Cache
             ~/AppData/Local/electron-builder/Cache
-          key: release-all-windows-${{ matrix.arch }}-${{ hashFiles('bun.lock') }}
-          restore-keys: release-all-windows-${{ matrix.arch }}-
+          key: release-all-windows-${{ matrix.arch }}-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-windows-${{ matrix.arch }}-v2-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -193,13 +197,15 @@ jobs:
       - name: Cache Bun modules and Electron downloads
         uses: actions/cache@v4
         with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
           path: |
-            node_modules
             ~/.bun/install/cache
             ~/Library/Caches/electron
             ~/Library/Caches/electron-builder
-          key: release-all-macos-${{ hashFiles('bun.lock') }}
-          restore-keys: release-all-macos-
+          key: release-all-macos-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-macos-v2-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -244,11 +250,13 @@ jobs:
           bun-version: latest
       - uses: actions/cache@v4
         with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
           path: |
-            node_modules
             ~/.bun/install/cache
-          key: release-all-cli-linux-${{ hashFiles('bun.lock') }}
-          restore-keys: release-all-cli-linux-
+          key: release-all-cli-linux-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-cli-linux-v2-
       - run: bun install --frozen-lockfile
       - name: Build the SDK the CLI imports
         # The CLI resolves @zyraxon-ai/sdk/v2/* out of the SDK's dist, and dist is
@@ -286,11 +294,13 @@ jobs:
           bun-version: latest
       - uses: actions/cache@v4
         with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
           path: |
-            node_modules
             ~/.bun/install/cache
-          key: release-all-cli-darwin-${{ hashFiles('bun.lock') }}
-          restore-keys: release-all-cli-darwin-
+          key: release-all-cli-darwin-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-cli-darwin-v2-
       - run: bun install --frozen-lockfile
       - name: Build the SDK the CLI imports
         # The CLI resolves @zyraxon-ai/sdk/v2/* out of the SDK's dist, and dist is
@@ -341,11 +351,13 @@ jobs:
           bun-version: latest
       - uses: actions/cache@v4
         with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
           path: |
-            node_modules
             ~/.bun/install/cache
-          key: release-all-cli-windows-${{ hashFiles('bun.lock') }}
-          restore-keys: release-all-cli-windows-
+          key: release-all-cli-windows-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-cli-windows-v2-
       - run: bun install --frozen-lockfile
       - name: Build the SDK the CLI imports
         # The CLI resolves @zyraxon-ai/sdk/v2/* out of the SDK's dist, and dist is
