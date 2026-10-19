@@ -1,21 +1,189 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Get the latest Git tag
-latest_tag=$(git tag --sort=committerdate | grep -E '^vscode-v[0-9]+\.[0-9]+\.[0-9]+$' | tail -1)
-if [ -z "$latest_tag" ]; then
-    echo "No tags found"
-    exit 1
+# Publish the ZYRAXON VS Code extension for every platform.
+#
+# The whole application is one native binary per platform, so a single VSIX
+# cannot work everywhere: each platform needs its own package with its own
+# binary inside. This script fetches those binaries from the matching GitHub
+# release, then hands packaging to `script/build` (the single source of truth
+# for per-target VSIX layout) and finally publishes each package to both the
+# VS Code Marketplace and Open VSX.
+#
+# Usage:
+#   script/publish                     # every platform, download + publish
+#   script/publish linux-x64 darwin-arm64
+#   script/publish --no-publish        # build packages only
+#   script/publish --skip-download     # use binaries already in packages/zyraxon/dist
+#
+# Env:
+#   VSCE_PAT        VS Code Marketplace token (skips marketplace when unset)
+#   OPENVSX_TOKEN   Open VSX token (skips Open VSX when unset)
+
+cd "$(dirname "$0")/.."
+
+EXT_DIR="$(pwd)"
+REPO_ROOT="$(cd "$EXT_DIR/../.." && pwd)"
+DIST_ROOT="$REPO_ROOT/packages/zyraxon/dist"
+OUT_DIR="$EXT_DIR/dist"
+NAME="$(node -p "require('./package.json').name")"
+VERSION="$(node -p "require('./package.json').version")"
+REPO="${ZYRAXON_REPO:-onelpawarai-X/ZYRAXON-AI}"
+
+# vsce target -> release asset for that platform's binary
+asset_for() {
+  case "$1" in
+    linux-x64) echo "zyraxon-linux-x64.tar.gz" ;;
+    linux-arm64) echo "zyraxon-linux-arm64.tar.gz" ;;
+    alpine-x64) echo "zyraxon-linux-x64-musl.tar.gz" ;;
+    alpine-arm64) echo "zyraxon-linux-arm64-musl.tar.gz" ;;
+    darwin-x64) echo "zyraxon-darwin-x64.zip" ;;
+    darwin-arm64) echo "zyraxon-darwin-arm64.zip" ;;
+    win32-x64) echo "zyraxon-windows-x64.zip" ;;
+    win32-arm64) echo "zyraxon-windows-arm64.zip" ;;
+    *) echo "" ;;
+  esac
+}
+
+# vsce target -> binary directory under DIST_ROOT
+binary_dir() {
+  case "$1" in
+    linux-x64) echo "zyraxon-linux-x64" ;;
+    linux-arm64) echo "zyraxon-linux-arm64" ;;
+    alpine-x64) echo "zyraxon-linux-x64-musl" ;;
+    alpine-arm64) echo "zyraxon-linux-arm64-musl" ;;
+    darwin-x64) echo "zyraxon-darwin-x64" ;;
+    darwin-arm64) echo "zyraxon-darwin-arm64" ;;
+    win32-x64) echo "zyraxon-windows-x64" ;;
+    win32-arm64) echo "zyraxon-windows-arm64" ;;
+    *) echo "" ;;
+  esac
+}
+
+binary_name() {
+  case "$1" in
+    win32-*) echo "zyraxon.exe" ;;
+    *) echo "zyraxon" ;;
+  esac
+}
+
+ALL_TARGETS=(
+  linux-x64 linux-arm64 alpine-x64 alpine-arm64
+  darwin-x64 darwin-arm64 win32-x64 win32-arm64
+)
+
+PUBLISH=true
+DOWNLOAD=true
+TARGETS=()
+for arg in "$@"; do
+  case "$arg" in
+    --no-publish) PUBLISH=false ;;
+    --skip-download) DOWNLOAD=false ;;
+    *) TARGETS+=("$arg") ;;
+  esac
+done
+[ ${#TARGETS[@]} -eq 0 ] && TARGETS=("${ALL_TARGETS[@]}")
+
+release_tag() {
+  # Prefer the extension tag, fall back to the plain app tag.
+  if git tag -l "vscode-v$VERSION" | grep -q .; then
+    echo "vscode-v$VERSION"
+  else
+    echo "v$VERSION"
+  fi
+}
+
+extract_archive() {
+  local archive="$1" dest="$2" target="$3"
+  rm -rf "$dest"
+  mkdir -p "$dest"
+  case "$archive" in
+    *.tar.gz) tar -xzf "$archive" -C "$dest" ;;
+    *.zip)
+      if command -v unzip >/dev/null 2>&1; then
+        unzip -oq "$archive" -d "$dest"
+      else
+        python3 -c "import sys,zipfile; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])" "$archive" "$dest"
+      fi
+      ;;
+    *) echo "unknown archive: $archive" >&2; return 1 ;;
+  esac
+  local wanted found
+  wanted="$(binary_name "$target")"
+  found="$(find "$dest" -type f -name "$wanted" | head -1)"
+  if [ -z "$found" ]; then
+    # Some archives ship the Windows binary without its .exe suffix.
+    found="$(find "$dest" -type f -name 'zyraxon*' | head -1)"
+  fi
+  if [ -z "$found" ]; then
+    # Last resort: the archive holds one binary, so take the largest file.
+    found="$(find "$dest" -type f -printf '%s %p\n' | sort -rn | head -1 | cut -d' ' -f2-)"
+  fi
+  [ -z "$found" ] && { echo "no binary inside $archive" >&2; return 1; }
+  echo "$found"
+}
+
+download_binary() {
+  local target="$1" asset="$2" dir="$3" name="$4"
+  local src="$DIST_ROOT/$dir/bin/$name"
+  mkdir -p "$(dirname "$src")"
+  local tmp
+  tmp="$(mktemp -d)"
+  echo "   downloading $asset from $TAG"
+  if command -v gh >/dev/null 2>&1; then
+    gh release download "$TAG" --repo "$REPO" -p "$asset" -D "$tmp" --clobber
+  else
+    curl -fsSL "https://github.com/$REPO/releases/download/$TAG/$asset" -o "$tmp/$asset"
+  fi
+  local extracted
+  extracted="$(extract_archive "$tmp/$asset" "$tmp/x" "$target")"
+  cp -f "$extracted" "$src"
+  chmod +x "$src"
+  rm -rf "$tmp"
+}
+
+if [ "$DOWNLOAD" = true ]; then
+  TAG="$(release_tag)"
+  echo "Fetching $TAG binaries for ${#TARGETS[@]} target(s)"
+  for target in "${TARGETS[@]}"; do
+    asset="$(asset_for "$target")"
+    [ -z "$asset" ] && { echo "skip $target: unknown target"; continue; }
+    dir="$(binary_dir "$target")"
+    download_binary "$target" "$asset" "$dir" "$(binary_name "$target")"
+  done
 fi
-echo "Latest tag: $latest_tag"
-version=$(echo "$latest_tag" | sed 's/^vscode-v//')
-echo "Latest version: $version"
 
-# package-marketplace
-vsce package --no-git-tag-version --no-update-package-json --no-dependencies --skip-license -o dist/zyraxon.vsix "$version"
+# Packaging is delegated so local and CI builds are byte-for-byte identical.
+echo
+./script/build "${TARGETS[@]}"
 
-# publish-marketplace
-vsce publish --packagePath dist/zyraxon.vsix
+if [ "$PUBLISH" = false ]; then
+  echo "packages ready in $OUT_DIR (publishing skipped)"
+  exit 0
+fi
 
-# publish-openvsx
-npx ovsx publish dist/zyraxon.vsix -p "$OPENVSX_TOKEN"
+marketplace=true
+[ -z "${VSCE_PAT:-}" ] && marketplace=false
+openvsx=true
+[ -z "${OPENVSX_TOKEN:-}" ] && openvsx=false
+
+if [ "$marketplace" = false ] && [ "$openvsx" = false ]; then
+  echo "neither VSCE_PAT nor OPENVSX_TOKEN is set; packages built but not published" >&2
+  exit 0
+fi
+
+for target in "${TARGETS[@]}"; do
+  vsix="$OUT_DIR/$NAME-$VERSION-$target.vsix"
+  [ -f "$vsix" ] || { echo "missing package: $vsix" >&2; exit 1; }
+
+  echo "== publishing $NAME@$VERSION $target =="
+  if [ "$marketplace" = true ]; then
+    npx --yes @vscode/vsce publish --packagePath "$vsix" --target "$target" -p "$VSCE_PAT"
+  fi
+  if [ "$openvsx" = true ]; then
+    npx --yes ovsx publish "$vsix" -p "$OPENVSX_TOKEN"
+  fi
+done
+
+echo
+echo "published $NAME@$VERSION for ${#TARGETS[@]} target(s)"

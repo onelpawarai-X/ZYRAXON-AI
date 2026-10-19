@@ -26,7 +26,7 @@
 #>
 
 param(
-    [string]$Version = "19.0.6",
+    [string]$Version = "19.0.7",
     [string]$NpmToken = "",
     [switch]$DryRun
 )

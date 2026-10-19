@@ -4,7 +4,7 @@ import { chromium } from "@playwright/test"
 const base = process.env.APP_URL ?? "http://127.0.0.1:12000"
 const browser = await chromium.launch({ headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage", "--autoplay-policy=no-user-gesture-required"] })
 const page = await browser.newPage()
-const url = `${base}/recordings/ZYRAXON-v19.0.6-demo.mp4`
+const url = `${base}/recordings/ZYRAXON-v19.0.7-demo.mp4`
 const res = await page.goto(url, { waitUntil: "load", timeout: 60000 })
 console.log("status:", res.status(), "type:", res.headers()["content-type"])
 await page.waitForTimeout(1500)
