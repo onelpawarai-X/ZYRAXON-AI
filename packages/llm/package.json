@@ -4,7 +4,6 @@
   "name": "@zyraxon-ai/llm",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE",
-  "private": true,
   "scripts": {
     "setup:recording-env": "bun run script/setup-recording-env.ts",
     "typecheck": "tsgo --noEmit"

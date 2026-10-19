@@ -1,34 +1,65 @@
-# ZYRAXON VS Code Extension
+# ZYRAXON AI — VS Code Extension
 
-A Visual Studio Code extension that integrates [ZYRAXON](https://ZYRAXON.ai) directly into your development workflow.
+[![VS Code Marketplace](https://img.shields.io/badge/VS%20Code%20Marketplace-ZYRAXON%20AI-007ACC?logo=visualstudiocode&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=zyraxon.zyraxon)
+[![Open VSX](https://img.shields.io/badge/Open%20VSX-ZYRAXON%20AI-C160EF?logo=eclipseide&logoColor=white)](https://open-vsx.org/extension/zyraxon/zyraxon)
+[![License](https://img.shields.io/badge/license-ZSL--X%202.0.0-black)](./LICENSE)
 
-## Prerequisites
+**ZYRAXON AI** brings the full ZYRAXON agent into Visual Studio Code — AI chat, code
+generation, refactoring, terminal control, and **888 tools across 63 categories**, plus
+**108 verified MCP integrations**, in one extension.
 
-This extension requires the [ZYRAXON CLI](https://ZYRAXON.ai) to be installed on your system. Visit [ZYRAXON.ai](https://ZYRAXON.ai) for installation instructions.
+The extension bundles the native ZYRAXON runtime for your platform. On first launch it
+starts a local server and opens the ZYRAXON web app in a panel beside your editor, so
+nothing extra needs to be installed separately.
 
 ## Features
 
-- **Quick Launch**: Use `Cmd+Esc` (Mac) or `Ctrl+Esc` (Windows/Linux) to open ZYRAXON in a split terminal view, or focus an existing terminal session if one is already running.
-- **New Session**: Use `Cmd+Shift+Esc` (Mac) or `Ctrl+Shift+Esc` (Windows/Linux) to start a new ZYRAXON terminal session, even if one is already open. You can also click the ZYRAXON button in the UI.
-- **Context Awareness**: Automatically share your current selection or tab with ZYRAXON.
-- **File Reference Shortcuts**: Use `Cmd+Option+K` (Mac) or `Alt+Ctrl+K` (Linux/Windows) to insert file references. For example, `@File#L37-42`.
+- **One-click launch** — opens ZYRAXON in a split panel and focuses an existing session
+  if one is already running.
+- **New session** — start a fresh ZYRAXON session at any time without closing the current one.
+- **Editor context** — your current selection and active file are shared with ZYRAXON automatically.
+- **File reference shortcuts** — insert `@File#L37-42` style references at the cursor.
+- **Terminal integration** — run the ZYRAXON CLI in an integrated terminal.
+- **888 tools** — 63 categories spanning coding, refactoring, tests, docs, system
+  automation, vehicles, aviation, marine, robotics, security, and more.
+
+## Commands
+
+| Command | Default keybinding | Description |
+| --- | --- | --- |
+| `ZYRAXON: Open ZYRAXON` | `Cmd+Esc` / `Ctrl+Esc` | Open ZYRAXON in a split panel |
+| `ZYRAXON: Open ZYRAXON in New Tab` | `Cmd+Shift+Esc` / `Ctrl+Shift+Esc` | Start a new ZYRAXON session |
+| `ZYRAXON: Open ZYRAXON Terminal` | — | Run the ZYRAXON CLI in a terminal |
+| `ZYRAXON: Add Filepath to Terminal` | `Cmd+Alt+K` / `Ctrl+Alt+K` | Insert a file reference at the cursor |
+
+## Getting started
+
+1. Install the extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=zyraxon.zyraxon)
+   or [Open VSX](https://open-vsx.org/extension/zyraxon/zyraxon).
+2. Open any project in VS Code.
+3. Press `Cmd+Esc` (macOS) or `Ctrl+Esc` (Windows/Linux) to launch ZYRAXON.
+
+## Requirements
+
+- VS Code `1.94.0` or newer.
+- No separate runtime install: the matching ZYRAXON binary ships inside the extension for
+  Linux (x64/arm64, glibc and musl), macOS (Intel and Apple Silicon), and Windows
+  (x64/arm64).
 
 ## Support
 
-This is an early release. If you encounter issues or have feedback, please create an issue at https://github.com/onelpawarai/ZYRAXON-AI/issues.
+- Website: <https://zyraxonai.lovable.app>
+- Issues and feedback: <https://github.com/onelpawarai-X/ZYRAXON-AI/issues>
 
 ## Development
 
-1. `code sdks/vscode` - Open the `sdks/vscode` directory in VS Code. **Do not open from repo root.**
-2. `bun install` - Run inside the `sdks/vscode` directory.
-3. Press `F5` to start debugging - This launches a new VS Code window with the extension loaded.
+1. `code sdks/vscode` — open the `sdks/vscode` directory in VS Code. **Do not open from the repo root.**
+2. `bun install` — run inside the `sdks/vscode` directory.
+3. Press `F5` — launches a new VS Code window with the extension loaded.
 
-#### Making Changes
+`tsc` and `esbuild` watchers run automatically during debugging. After a change, run
+`Developer: Reload Window` from the Command Palette to reload the extension.
 
-`tsc` and `esbuild` watchers run automatically during debugging (visible in the Terminal tab). Changes to the extension are automatically rebuilt in the background.
+## License
 
-To test your changes:
-
-1. In the debug VS Code window, press `Cmd+Shift+P`
-2. Search for `Developer: Reload Window`
-3. Reload to see your changes without restarting the debug session
+Released under the ZYRAXON Sovereign License — X Edition (ZSL-X) v2.0.0. See [LICENSE](./LICENSE).

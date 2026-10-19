@@ -1,139 +1,224 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-// This method is called when your extension is deactivated
-export function deactivate() {}
-
 import * as vscode from "vscode"
+import { spawn, type ChildProcess } from "node:child_process"
+import * as fs from "node:fs"
+import * as net from "node:net"
+import * as os from "node:os"
+import * as path from "node:path"
 
 const TERMINAL_NAME = "zyraxon"
+const START_TIMEOUT_MS = 30_000
+
+let serverProcess: ChildProcess | undefined
+let serverPort: number | undefined
+let appPanel: vscode.WebviewPanel | undefined
 
 export function activate(context: vscode.ExtensionContext) {
-  const openNewTerminalDisposable = vscode.commands.registerCommand("zyraxon.openNewTerminal", async () => {
-    await openTerminal()
-  })
+  context.subscriptions.push(
+    vscode.commands.registerCommand("zyraxon.openTerminal", () => openApp(context, false)),
+    vscode.commands.registerCommand("zyraxon.openNewTerminal", () => openApp(context, true)),
+    vscode.commands.registerCommand("zyraxon.openCliTerminal", () => openCliTerminal(context)),
+    vscode.commands.registerCommand("zyraxon.addFilepathToTerminal", () => addActiveFile()),
+    { dispose: () => stopServer() },
+  )
+}
 
-  const openTerminalDisposable = vscode.commands.registerCommand("zyraxon.openTerminal", async () => {
-    // An zyraxon terminal already exists => focus it
-    const existingTerminal = vscode.window.terminals.find((t) => t.name === TERMINAL_NAME)
-    if (existingTerminal) {
-      existingTerminal.show()
-      return
-    }
+export function deactivate() {
+  stopServer()
+}
 
-    await openTerminal()
-  })
+// The whole application ships as a single binary per platform (server + embedded
+// web UI + API + agent runtime). The extension only locates it, runs it, and
+// points a webview at it, so nothing has to be installed on the user's machine.
+function platformKey() {
+  const arch = process.arch
+  if (process.platform === "darwin") return arch === "arm64" ? "zyraxon-darwin-arm64" : "zyraxon-darwin-x64"
+  if (process.platform === "linux") return arch === "arm64" ? "zyraxon-linux-arm64" : "zyraxon-linux-x64"
+  if (process.platform === "win32") return arch === "arm64" ? "zyraxon-windows-arm64" : "zyraxon-windows-x64"
+  return `zyraxon-${process.platform}-${arch}`
+}
 
-  let addFilepathDisposable = vscode.commands.registerCommand("zyraxon.addFilepathToTerminal", async () => {
-    const fileRef = getActiveFile()
-    if (!fileRef) {
-      return
-    }
+function binaryPath(context: vscode.ExtensionContext) {
+  const name = process.platform === "win32" ? "zyraxon.exe" : "zyraxon"
+  return [
+    path.join(context.extensionPath, "bin", name),
+    path.join(context.extensionPath, "bin", platformKey(), name),
+  ].find((candidate) => fs.existsSync(candidate))
+}
 
-    const terminal = vscode.window.activeTerminal
-    if (!terminal) {
-      return
-    }
+function workspaceCwd() {
+  return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? os.homedir()
+}
 
-    if (terminal.name === TERMINAL_NAME) {
-      // @ts-ignore
-      const port = terminal.creationOptions.env?.["_EXTENSION_ZYRAXON_PORT"]
-      port ? await appendPrompt(parseInt(port), fileRef) : terminal.sendText(fileRef, false)
-      terminal.show()
-    }
-  })
-
-  context.subscriptions.push(openNewTerminalDisposable, openTerminalDisposable, addFilepathDisposable)
-
-  async function openTerminal() {
-    // Create a new terminal in split screen
-    const port = Math.floor(Math.random() * (65535 - 16384 + 1)) + 16384
-    const terminal = vscode.window.createTerminal({
-      name: TERMINAL_NAME,
-      iconPath: {
-        light: vscode.Uri.file(context.asAbsolutePath("images/button-dark.svg")),
-        dark: vscode.Uri.file(context.asAbsolutePath("images/button-light.svg")),
-      },
-      location: {
-        viewColumn: vscode.ViewColumn.Beside,
-        preserveFocus: false,
-      },
-      env: {
-        _EXTENSION_ZYRAXON_PORT: port.toString(),
-        ZYRAXON_CALLER: "vscode",
-      },
+function freePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const probe = net.createServer()
+    probe.on("error", reject)
+    probe.listen(0, "127.0.0.1", () => {
+      const address = probe.address()
+      const port = typeof address === "object" && address ? address.port : 0
+      probe.close(() => (port ? resolve(port) : reject(new Error("no free port available"))))
     })
+  })
+}
 
-    terminal.show()
-    terminal.sendText(`zyraxon --port ${port}`)
+async function ping(port: number) {
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/`)
+    return response.ok
+  } catch {
+    return false
+  }
+}
 
-    const fileRef = getActiveFile()
-    if (!fileRef) {
-      return
+async function waitForServer(port: number) {
+  const deadline = Date.now() + START_TIMEOUT_MS
+  while (Date.now() < deadline) {
+    if (await ping(port)) return
+    await new Promise((resolve) => setTimeout(resolve, 250))
+  }
+  throw new Error(`ZYRAXON server did not start on port ${port}`)
+}
+
+async function ensureServer(context: vscode.ExtensionContext) {
+  if (serverProcess && serverPort && (await ping(serverPort))) return serverPort
+
+  stopServer()
+
+  const binary = binaryPath(context)
+  if (!binary) {
+    throw new Error(`ZYRAXON server binary not found in this extension for ${platformKey()}`)
+  }
+  if (process.platform !== "win32") fs.chmodSync(binary, 0o755)
+
+  const port = await freePort()
+  const child = spawn(binary, ["serve", "--port", String(port)], {
+    cwd: workspaceCwd(),
+    env: { ...process.env, ZYRAXON_CALLER: "vscode" },
+    stdio: ["ignore", "pipe", "pipe"],
+  })
+  child.on("exit", () => {
+    if (serverProcess === child) {
+      serverProcess = undefined
+      serverPort = undefined
     }
+  })
 
-    // Wait for the terminal to be ready
-    let tries = 10
-    let connected = false
-    do {
-      await new Promise((resolve) => setTimeout(resolve, 200))
-      try {
-        await fetch(`http://localhost:${port}/app`)
-        connected = true
-        break
-      } catch {}
+  serverProcess = child
+  serverPort = port
+  await waitForServer(port)
+  return port
+}
 
-      tries--
-    } while (tries > 0)
+function stopServer() {
+  if (serverProcess) {
+    try {
+      serverProcess.kill()
+    } catch {}
+  }
+  serverProcess = undefined
+  serverPort = undefined
+}
 
-    // If connected, append the prompt to the terminal
-    if (connected) {
-      await appendPrompt(port, `In ${fileRef}`)
-      terminal.show()
-    }
+function appHtml(port: number) {
+  const origin = `http://127.0.0.1:${port}`
+  return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; frame-src ${origin} http://localhost:${port}; style-src 'unsafe-inline';"
+    />
+    <style>
+      html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+      iframe { border: 0; width: 100%; height: 100%; display: block; }
+    </style>
+  </head>
+  <body>
+    <iframe src="${origin}/" allow="clipboard-read; clipboard-write"></iframe>
+  </body>
+</html>`
+}
+
+async function openApp(context: vscode.ExtensionContext, forceNew: boolean) {
+  const port = await ensureServer(context)
+  if (appPanel && !forceNew) {
+    appPanel.reveal(appPanel.viewColumn ?? vscode.ViewColumn.Beside)
+    return
   }
 
-  async function appendPrompt(port: number, text: string) {
-    await fetch(`http://localhost:${port}/tui/append-prompt`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ text }),
-    })
+  appPanel?.dispose()
+  const panel = vscode.window.createWebviewPanel("zyraxon.app", "ZYRAXON", vscode.ViewColumn.Beside, {
+    enableScripts: true,
+    retainContextWhenHidden: true,
+  })
+  panel.webview.html = appHtml(port)
+  panel.onDidDispose(() => {
+    if (appPanel === panel) appPanel = undefined
+  })
+  appPanel = panel
+}
+
+function openCliTerminal(context: vscode.ExtensionContext) {
+  const existing = vscode.window.terminals.find((terminal) => terminal.name === TERMINAL_NAME)
+  if (existing) {
+    existing.show()
+    return
   }
 
-  function getActiveFile() {
-    const activeEditor = vscode.window.activeTextEditor
-    if (!activeEditor) {
-      return
-    }
-
-    const document = activeEditor.document
-    const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri)
-    if (!workspaceFolder) {
-      return
-    }
-
-    // Get the relative path from workspace root
-    const relativePath = vscode.workspace.asRelativePath(document.uri)
-    let filepathWithAt = `@${relativePath}`
-
-    // Check if there's a selection and add line numbers
-    const selection = activeEditor.selection
-    if (!selection.isEmpty) {
-      // Convert to 1-based line numbers
-      const startLine = selection.start.line + 1
-      const endLine = selection.end.line + 1
-
-      if (startLine === endLine) {
-        // Single line selection
-        filepathWithAt += `#L${startLine}`
-      } else {
-        // Multi-line selection
-        filepathWithAt += `#L${startLine}-${endLine}`
-      }
-    }
-
-    return filepathWithAt
+  const binary = binaryPath(context)
+  if (!binary) {
+    void vscode.window.showErrorMessage(`ZYRAXON binary not found for ${platformKey()}`)
+    return
   }
+
+  const terminal = vscode.window.createTerminal({
+    name: TERMINAL_NAME,
+    cwd: workspaceCwd(),
+    env: { ZYRAXON_CALLER: "vscode" },
+  })
+  terminal.show()
+  terminal.sendText(`"${binary}"`)
+}
+
+async function addActiveFile() {
+  const fileRef = getActiveFile()
+  if (!fileRef) return
+
+  if (serverPort && (await ping(serverPort))) {
+    try {
+      await fetch(`http://127.0.0.1:${serverPort}/tui/append-prompt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: fileRef }),
+      })
+      appPanel?.reveal()
+      return
+    } catch {}
+  }
+
+  vscode.window.activeTerminal?.sendText(fileRef, false)
+}
+
+function getActiveFile() {
+  const activeEditor = vscode.window.activeTextEditor
+  if (!activeEditor) return
+
+  const document = activeEditor.document
+  const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri)
+  if (!workspaceFolder) return
+
+  const relativePath = vscode.workspace.asRelativePath(document.uri)
+  let filepathWithAt = `@${relativePath}`
+
+  const selection = activeEditor.selection
+  if (!selection.isEmpty) {
+    const startLine = selection.start.line + 1
+    const endLine = selection.end.line + 1
+    filepathWithAt += startLine === endLine ? `#L${startLine}` : `#L${startLine}-${endLine}`
+  }
+
+  return filepathWithAt
 }
