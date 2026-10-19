@@ -134,6 +134,7 @@
     },
     "packages/client": {
       "name": "@zyraxon-ai/client",
+      "version": "19.0.6",
       "dependencies": {
         "@zyraxon-ai/protocol": "workspace:*",
         "@zyraxon-ai/schema": "workspace:*",
@@ -629,6 +630,7 @@
     },
     "packages/protocol": {
       "name": "@zyraxon-ai/protocol",
+      "version": "19.0.6",
       "dependencies": {
         "@zyraxon-ai/schema": "workspace:*",
         "effect": "catalog:",
@@ -641,6 +643,7 @@
     },
     "packages/schema": {
       "name": "@zyraxon-ai/schema",
+      "version": "19.0.6",
       "dependencies": {
         "effect": "catalog:",
       },

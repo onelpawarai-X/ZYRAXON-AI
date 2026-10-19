@@ -1,27 +1,32 @@
-<# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
-   Copyright (c) 2026 onelpawarai. All rights reserved. #>
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
 
 <#
 .SYNOPSIS
-    ZYRAXON AI — All-in-One Package Publisher
-    Publishes all 12 @zyraxon-ai/* packages to npm in correct dependency order.
+    ZYRAXON AI - All-in-One Package Publisher
+    Publishes all 12 @zyraxon-ai/* packages to npm in dependency order.
 
 .DESCRIPTION
-    This script:
-    1. Resolves all catalog: and workspace:* references to real versions
-    2. Removes "private": true from all packages
-    3. Adds tsconfig.build.json where missing
-    4. Compiles TypeScript to dist/
-    5. Publishes each package to npm
+    For each package this script:
+      1. Resolves catalog: and workspace:* references to real versions
+         (the catalog is read from the root package.json, never hardcoded)
+      2. Drops "private", sets the version, rewrites exports to ./dist
+      3. Compiles TypeScript to dist/ with tsc  (no bun required)
+      4. Publishes to npm with --access public
+
+    Every file it touches is restored in a finally block, so the working tree
+    is left exactly as it was found. The repo's exports point at ./src on
+    purpose - that is how Bun consumes the monorepo - so the rewrite is only
+    ever temporary.
 
 .NOTES
     Run from the ZYRAXON-AI project root directory.
-    Requires: Node.js, npm, TypeScript
+    Requires: Node.js, npm, TypeScript. Bun is NOT required.
     Author: OMG / Lx Sayidi (ZYRAXON AI)
 #>
 
 param(
-    [string]$Version = "19.0.5",
+    [string]$Version = "19.0.6",
     [string]$NpmToken = "",
     [switch]$DryRun
 )
@@ -38,204 +43,227 @@ function Write-Log {
     Add-Content -Path $LogFile -Value $logMessage
 }
 
+# Read the root workspace catalog once. Adding a dependency to the catalog is
+# then enough for it to resolve here too.
+function Get-Catalog {
+    $root = Get-Content (Join-Path $ProjectRoot "package.json") -Raw | ConvertFrom-Json
+    $catalog = @{}
+    $root.workspaces.catalog.PSObject.Properties | ForEach-Object {
+        $catalog[$_.Name] = $_.Value
+    }
+    return $catalog
+}
+
+$Catalog = Get-Catalog
+
 function Resolve-CatalogDeps {
     param([string]$PackageDir)
+
     $pkgJson = Join-Path $PackageDir "package.json"
-    $content = Get-Content $pkgJson -Raw
-    $pkg = $content | ConvertFrom-Json
-
-    # Catalog versions (from root package.json)
-    $catalog = @{
-        "effect"                    = "4.0.0-beta.83"
-        "drizzle-orm"               = "1.0.0-rc.2"
-        "drizzle-kit"               = "1.0.0-rc.2"
-        "cross-spawn"               = "7.0.6"
-        "zod"                       = "4.1.8"
-        "diff"                      = "8.0.2"
-        "typescript"                = "5.8.2"
-        "@effect/opentelemetry"     = "4.0.0-beta.83"
-        "@effect/platform-node"     = "4.0.0-beta.83"
-        "@effect/sql-sqlite-bun"    = "4.0.0-beta.83"
-        "@lydell/node-pty"          = "0.4.8"
-        "@tsconfig/bun"             = "1.0.9"
-        "@tsconfig/node22"          = "22.0.2"
-        "@types/bun"                = "1.3.13"
-        "@types/cross-spawn"        = "6.0.6"
-        "@types/node"               = "24.12.2"
-        "@types/semver"             = "7.7.1"
-        "@typescript/native-preview" = "7.0.0-dev.20251207.1"
-    }
-
+    $pkg = Get-Content $pkgJson -Raw | ConvertFrom-Json
     $changed = $false
 
-    # Fix dependencies
-    if ($pkg.dependencies) {
-        $deps = @{}
-        $pkg.dependencies.PSObject.Properties | ForEach-Object {
+    foreach ($section in @("dependencies", "devDependencies", "peerDependencies")) {
+        if (-not $pkg.PSObject.Properties[$section]) { continue }
+        $table = @{}
+        $pkg.$section.PSObject.Properties | ForEach-Object {
             $name = $_.Name
             $val = $_.Value
             if ($val -eq "catalog:") {
-                if ($catalog.ContainsKey($name)) {
-                    $deps[$name] = $catalog[$name]
+                if ($Catalog.ContainsKey($name)) {
+                    $table[$name] = $Catalog[$name]
                     $changed = $true
                 } else {
-                    $deps[$name] = $val
+                    $table[$name] = $val
                     Write-Log "  WARNING: catalog key '$name' not found, keeping as-is" "Yellow"
                 }
             } elseif ($val -eq "workspace:*") {
-                $deps[$name] = "^$Version"
+                $table[$name] = "^$Version"
                 $changed = $true
             } else {
-                $deps[$name] = $val
+                $table[$name] = $val
             }
         }
-        $pkg.dependencies = $deps
-    }
-
-    # Fix devDependencies
-    if ($pkg.devDependencies) {
-        $devDeps = @{}
-        $pkg.devDependencies.PSObject.Properties | ForEach-Object {
-            $name = $_.Name
-            $val = $_.Value
-            if ($val -eq "catalog:") {
-                if ($catalog.ContainsKey($name)) {
-                    $devDeps[$name] = $catalog[$name]
-                    $changed = $true
-                } else {
-                    $devDeps[$name] = $val
-                    Write-Log "  WARNING: catalog key '$name' not found in devDeps" "Yellow"
-                }
-            } elseif ($val -eq "workspace:*") {
-                $devDeps[$name] = "^$Version"
-                $changed = $true
-            } else {
-                $devDeps[$name] = $val
-            }
-        }
-        $pkg.devDependencies = $devDeps
+        $pkg.$section = $table
     }
 
     if ($changed) {
-        $json = $pkg | ConvertTo-Json -Depth 10
-        Set-Content -Path $pkgJson -Value $json -Encoding UTF8
+        Set-Content -Path $pkgJson -Value ($pkg | ConvertTo-Json -Depth 20) -Encoding UTF8
         Write-Log "  Fixed catalog/workspace references" "Green"
     }
 }
 
-function Ensure-BuildConfig {
-    param([string]$PackageDir)
-    $tsconfigPath = Join-Path $PackageDir "tsconfig.build.json"
-    $pkgJsonPath = Join-Path $PackageDir "package.json"
-    $pkg = Get-Content $pkgJsonPath -Raw | ConvertFrom-Json
-
-    # Skip if already has tsconfig.build.json or doesn't need compilation
-    if (Test-Path $tsconfigPath) { return }
-    if (-not (Test-Path (Join-Path $PackageDir "src"))) { return }
-
-    $tsconfig = @{
-        '$schema' = "https://json.schemastore.org/tsconfig"
-        compilerOptions = @{
-            target = "ESNext"
-            module = "ESNext"
-            moduleResolution = "bundler"
-            lib = @("ESNext", "DOM", "DOM.Iterable")
-            outDir = "./dist"
-            rootDir = "./src"
-            declaration = $true
-            declarationMap = $true
-            sourceMap = $true
-            skipLibCheck = $true
-            noCheck = $true
-            strict = $false
-            esModuleInterop = $true
-            forceConsistentCasingInFileNames = $true
-            resolveJsonModule = $true
-            isolatedModules = $true
-        }
-        include = @("src/**/*.ts")
-        exclude = @("node_modules", "dist")
+function Convert-ExportValue {
+    param($Value)
+    if ($Value -is [string] -and $Value -like "./src/*") {
+        $stem = $Value.Substring(6)          # drop "./src/"
+        if ($stem.EndsWith(".ts")) { $stem = $stem.Substring(0, $stem.Length - 3) }
+        return [ordered]@{ types = "./dist/$stem.d.ts"; default = "./dist/$stem.js" }
     }
-
-    $tsconfig | ConvertTo-Json -Depth 5 | Set-Content -Path $tsconfigPath -Encoding UTF8
-    Write-Log "  Created tsconfig.build.json" "Green"
+    return $Value
 }
 
 function Ensure-PublishReady {
     param([string]$PackageDir)
+
     $pkgJsonPath = Join-Path $PackageDir "package.json"
     $pkg = Get-Content $pkgJsonPath -Raw | ConvertFrom-Json
     $changed = $false
 
-    # Remove private flag
     if ($pkg.PSObject.Properties['private']) {
         $pkg.PSObject.Properties.Remove('private')
         $changed = $true
     }
 
-    # Set version
     if ($pkg.version -ne $Version) {
-        $pkg.version = $Version
+        $pkg | Add-Member -NotePropertyName version -NotePropertyValue $Version -Force
         $changed = $true
     }
 
-    # Ensure exports point to dist/ if src/ files are referenced
+    # main/types so classic resolvers find the compiled entry.
+    $pkg | Add-Member -NotePropertyName main -NotePropertyValue "./dist/index.js" -Force
+    $pkg | Add-Member -NotePropertyName types -NotePropertyValue "./dist/index.d.ts" -Force
+
     if ($pkg.exports) {
-        $exports = $pkg.exports
-        $exports.PSObject.Properties | ForEach-Object {
-            $val = $_.Value
-            if ($val -is [string] -and $val -like "./src/*") {
-                $newVal = $val -replace '\.\/src\/', './dist/' -replace '\.ts$', '.js'
-                $_.Value = $newVal
-                $changed = $true
-            }
+        $exports = [ordered]@{}
+        $pkg.exports.PSObject.Properties | ForEach-Object {
+            $exports[$_.Name] = Convert-ExportValue $_.Value
         }
         $pkg.exports = $exports
+        $changed = $true
     }
 
-    # Ensure files array includes dist and README
     if ($pkg.PSObject.Properties['files']) {
         $files = @($pkg.files)
         if ($files -notcontains "dist") { $files += "dist"; $changed = $true }
-        if ($files -notcontains "README.md") { $files += "README.md"; $changed = $true }
         $pkg.files = $files
+    } else {
+        $pkg | Add-Member -NotePropertyName files -NotePropertyValue @("dist") -Force
+        $changed = $true
     }
 
-    # Add build script if missing
     if ($pkg.scripts -and -not $pkg.scripts.PSObject.Properties['build']) {
-        if (Test-Path (Join-Path $PackageDir "src")) {
-            $pkg.scripts | Add-Member -NotePropertyName "build" -NotePropertyValue "tsc --project tsconfig.build.json"
-            $pkg.scripts | Add-Member -NotePropertyName "prepublishOnly" -NotePropertyValue "npm run build"
-            $changed = $true
-        }
+        $pkg.scripts | Add-Member -NotePropertyName build -NotePropertyValue "tsc --project tsconfig.build.json"
+        $changed = $true
+    }
+    if ($pkg.scripts) {
+        $pkg.scripts | Add-Member -NotePropertyName prepublishOnly -NotePropertyValue "npm run build" -Force
     }
 
     if ($changed) {
-        $json = $pkg | ConvertTo-Json -Depth 10
-        Set-Content -Path $pkgJsonPath -Value $json -Encoding UTF8
+        Set-Content -Path $pkgJsonPath -Value ($pkg | ConvertTo-Json -Depth 20) -Encoding UTF8
     }
+}
+
+function Ensure-BuildConfig {
+    param([string]$PackageDir)
+
+    $tsconfigPath = Join-Path $PackageDir "tsconfig.build.json"
+    if (Test-Path $tsconfigPath) { return $false }
+    if (-not (Test-Path (Join-Path $PackageDir "src"))) { return $false }
+
+    $tsconfig = [ordered]@{
+        '$schema'       = "https://json.schemastore.org/tsconfig"
+        compilerOptions = [ordered]@{
+            target                           = "ESNext"
+            module                           = "ESNext"
+            moduleResolution                 = "bundler"
+            lib                              = @("ESNext", "DOM", "DOM.Iterable")
+            outDir                           = "./dist"
+            rootDir                          = "./src"
+            declaration                      = $true
+            declarationMap                   = $true
+            sourceMap                        = $true
+            skipLibCheck                     = $true
+            noCheck                          = $true
+            strict                           = $false
+            esModuleInterop                  = $true
+            forceConsistentCasingInFileNames = $true
+            resolveJsonModule                = $true
+            isolatedModules                  = $true
+        }
+        include         = @("src/**/*.ts")
+        exclude         = @("node_modules", "dist")
+    }
+
+    $tsconfig | ConvertTo-Json -Depth 5 | Set-Content -Path $tsconfigPath -Encoding UTF8
+    Write-Log "  Created tsconfig.build.json" "Green"
+    return $true
+}
+
+# protocol: makeDefaultApi lost its explicit return type, so tsc cannot
+# serialize the inferred type into api.d.ts (TS7056). Restoring the annotation
+# the package shipped with in 19.0.5 fixes declaration emit.
+function Apply-BuildPatches {
+    param([string]$Name, [string]$PackageDir)
+
+    if ($Name -ne "@zyraxon-ai/protocol") { return }
+
+    $apiPath = Join-Path $PackageDir "src/api.ts"
+    if (-not (Test-Path $apiPath)) { return }
+    $text = Get-Content $apiPath -Raw
+
+    $old = @'
+export const makeDefaultApi = <
+  LocationId extends HttpApiMiddleware.AnyId,
+  LocationService,
+  SessionLocationId extends HttpApiMiddleware.AnyId,
+  SessionLocationService,
+>(options: {
+  readonly locationMiddleware: Context.Key<LocationId, LocationService>
+  readonly sessionLocationMiddleware: Context.Key<SessionLocationId, SessionLocationService>
+}) => makeApiFromGroup(EventGroup, options.locationMiddleware, options.sessionLocationMiddleware)
+'@
+
+    $new = @'
+export const makeDefaultApi: <
+  LocationId extends HttpApiMiddleware.AnyId,
+  LocationService,
+  SessionLocationId extends HttpApiMiddleware.AnyId,
+  SessionLocationService,
+>(options: {
+  readonly locationMiddleware: Context.Key<LocationId, LocationService>
+  readonly sessionLocationMiddleware: Context.Key<SessionLocationId, SessionLocationService>
+}) => ReturnType<typeof makeApiFromGroup> = <
+  LocationId extends HttpApiMiddleware.AnyId,
+  LocationService,
+  SessionLocationId extends HttpApiMiddleware.AnyId,
+  SessionLocationService,
+>(options: {
+  readonly locationMiddleware: Context.Key<LocationId, LocationService>
+  readonly sessionLocationMiddleware: Context.Key<SessionLocationId, SessionLocationService>
+}) => makeApiFromGroup(EventGroup, options.locationMiddleware, options.sessionLocationMiddleware)
+'@
+
+    if ($text.Contains($new)) {
+        Write-Log "  build patch already applied: src/api.ts" "Green"
+        return
+    }
+    if (-not $text.Contains($old)) {
+        Write-Log "  WARNING: build patch target not found in src/api.ts" "Yellow"
+        return
+    }
+    Set-Content -Path $apiPath -Value $text.Replace($old, $new) -Encoding UTF8
+    Write-Log "  applied build patch: src/api.ts" "Green"
 }
 
 function Publish-Package {
     param(
         [string]$Name,
         [string]$Dir,
-        [string[]]$DependsOn = @()
+        [string]$PackageDir
     )
 
     Write-Log ""
-    Write-Log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" "Cyan"
+    Write-Log "-----------------------------------------------" "Cyan"
     Write-Log "  Publishing: $Name@$Version" "Cyan"
-    Write-Log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" "Cyan"
+    Write-Log "-----------------------------------------------" "Cyan"
 
-    $packageDir = Join-Path $ProjectRoot $Dir
-
-    if (-not (Test-Path $packageDir)) {
+    if (-not (Test-Path $PackageDir)) {
         Write-Log "  SKIP: Directory not found: $Dir" "Yellow"
-        return $false
+        return $true
     }
 
-    # Check if already published
     try {
         $existing = npm view "$Name@$Version" version 2>$null
         if ($existing -eq $Version) {
@@ -244,107 +272,136 @@ function Publish-Package {
         }
     } catch {}
 
-    # Step 1: Resolve catalog/workspace references
-    Write-Log "  [1/5] Resolving dependencies..." "White"
-    Resolve-CatalogDeps -PackageDir $packageDir
-
-    # Step 2: Ensure publish-ready (version, exports, private flag)
-    Write-Log "  [2/5] Preparing package.json..." "White"
-    Ensure-PublishReady -PackageDir $packageDir
-
-    # Step 3: Ensure tsconfig.build.json exists
-    Write-Log "  [3/5] Checking build config..." "White"
-    Ensure-BuildConfig -PackageDir $packageDir
-
-    # Step 4: Clean old dist
-    $distDir = Join-Path $packageDir "dist"
-    if (Test-Path $distDir) {
-        Remove-Item -Recurse -Force $distDir
+    # Snapshot everything this may change, and restore it in the finally block.
+    $pkgJson = Join-Path $PackageDir "package.json"
+    $apiJson = Join-Path $PackageDir "src/api.ts"
+    $backup = @{
+        pkg     = Get-Content $pkgJson -Raw
+        api     = if (Test-Path $apiJson) { Get-Content $apiJson -Raw } else { $null }
+        created = $false
     }
+    $tsconfigPath = Join-Path $PackageDir "tsconfig.build.json"
 
-    # Step 5: Publish
-    Write-Log "  [4/5] Publishing to npm..." "White"
-    if ($DryRun) {
-        Write-Log "  DRY RUN: Would publish $Name@$Version" "Magenta"
-        return $true
-    }
-
-    Push-Location $packageDir
     try {
-        $output = npm publish --access public 2>&1 | Out-String
-        if ($LASTEXITCODE -eq 0) {
-            Write-Log "  [5/5] SUCCESS: $Name@$Version published!" "Green"
-            $true
-        } else {
+        Write-Log "  [1/5] Resolving dependencies..." "White"
+        Resolve-CatalogDeps -PackageDir $PackageDir
+
+        Write-Log "  [2/5] Preparing package.json..." "White"
+        Ensure-PublishReady -PackageDir $PackageDir
+
+        Write-Log "  [3/5] Checking build config..." "White"
+        $backup.created = Ensure-BuildConfig -PackageDir $PackageDir
+
+        Write-Log "  [4/5] Applying build patches..." "White"
+        Apply-BuildPatches -Name $Name -PackageDir $PackageDir
+
+        $distDir = Join-Path $PackageDir "dist"
+        if (Test-Path $distDir) { Remove-Item -Recurse -Force $distDir }
+
+        Write-Log "  [4/5] Compiling with tsc..." "White"
+        Push-Location $PackageDir
+        try {
+            $buildOutput = npm run build 2>&1 | Out-String
+            if ($LASTEXITCODE -ne 0) {
+                Write-Log "  FAILED: build`n$buildOutput" "Red"
+                return $false
+            }
+        } finally {
+            Pop-Location
+        }
+
+        if (-not (Test-Path $distDir) -or -not (Get-ChildItem $distDir -ErrorAction SilentlyContinue)) {
+            Write-Log "  FAILED: build produced no dist output" "Red"
+            return $false
+        }
+
+        if ($DryRun) {
+            Write-Log "  DRY RUN: built $((Get-ChildItem $distDir -Recurse).Count) files" "Magenta"
+            return $true
+        }
+
+        Write-Log "  [5/5] Publishing to npm..." "White"
+        Push-Location $PackageDir
+        try {
+            $output = npm publish --access public --tag latest 2>&1 | Out-String
+            if ($LASTEXITCODE -eq 0) {
+                Write-Log "  SUCCESS: $Name@$Version published!" "Green"
+                return $true
+            }
             Write-Log "  FAILED: $output" "Red"
-            $false
+            return $false
+        } finally {
+            Pop-Location
         }
     } finally {
-        Pop-Location
+        # Restore the working tree. This is why the script is safe to run on a
+        # checkout that Bun and the desktop builds depend on.
+        Set-Content -Path $pkgJson -Value $backup.pkg -Encoding UTF8 -NoNewline
+        if ($null -ne $backup.api) {
+            Set-Content -Path $apiJson -Value $backup.api -Encoding UTF8 -NoNewline
+        }
+        if ($backup.created) {
+            Remove-Item -Force $tsconfigPath -ErrorAction SilentlyContinue
+        }
     }
 }
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ----------------------------------------------------------------
 # MAIN
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ----------------------------------------------------------------
 
 Write-Host ""
-Write-Host "╔═══════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║     ZYRAXON AI — All-in-One Package Publisher            ║" -ForegroundColor Cyan
-Write-Host "║     Version: $Version                                        ║" -ForegroundColor Cyan
-Write-Host "╚═══════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+Write-Host "===============================================" -ForegroundColor Cyan
+Write-Host "     ZYRAXON AI - All-in-One Package Publisher" -ForegroundColor Cyan
+Write-Host "     Version: $Version" -ForegroundColor Cyan
+Write-Host "===============================================" -ForegroundColor Cyan
 Write-Host ""
 
-if ($DryRun) {
-    Write-Log "DRY RUN MODE — no packages will be published" "Magenta"
-}
+if ($DryRun) { Write-Log "DRY RUN MODE - no packages will be published" "Magenta" }
+if ($NpmToken) { $env:NODE_AUTH_TOKEN = $NpmToken }
 
-# Clear log
 "" | Set-Content -Path $LogFile -Encoding UTF8
-
 $startTime = Get-Date
 
-# Publish in dependency order
+# Dependency order: a package is only published after everything it imports.
 $packages = @(
-    @{ Name = "@zyraxon-ai/schema";                 Dir = "packages/schema" },
-    @{ Name = "@zyraxon-ai/http-recorder";          Dir = "packages/http-recorder" },
-    @{ Name = "@zyraxon-ai/effect-drizzle-sqlite";  Dir = "packages/effect-drizzle-sqlite" },
-    @{ Name = "@zyraxon-ai/effect-sqlite-node";     Dir = "packages/effect-sqlite-node" },
-    @{ Name = "@zyraxon-ai/protocol";               Dir = "packages/protocol" },
-    @{ Name = "@zyraxon-ai/llm";                    Dir = "packages/llm" },
-    @{ Name = "@zyraxon-ai/sdk";                    Dir = "packages/sdk/js" },
-    @{ Name = "@zyraxon-ai/plugin";                 Dir = "packages/plugin" },
-    @{ Name = "@zyraxon-ai/core";                   Dir = "packages/core" },
-    @{ Name = "@zyraxon-ai/client";                 Dir = "packages/client" },
-    @{ Name = "@zyraxon-ai/server";                 Dir = "packages/server" },
-    @{ Name = "@zyraxon-ai/sdk-next";               Dir = "packages/sdk-next" }
+    @{ Name = "@zyraxon-ai/schema";                Dir = "packages/schema" },
+    @{ Name = "@zyraxon-ai/http-recorder";         Dir = "packages/http-recorder" },
+    @{ Name = "@zyraxon-ai/effect-drizzle-sqlite"; Dir = "packages/effect-drizzle-sqlite" },
+    @{ Name = "@zyraxon-ai/effect-sqlite-node";    Dir = "packages/effect-sqlite-node" },
+    @{ Name = "@zyraxon-ai/protocol";              Dir = "packages/protocol" },
+    @{ Name = "@zyraxon-ai/llm";                   Dir = "packages/llm" },
+    @{ Name = "@zyraxon-ai/sdk";                   Dir = "packages/sdk/js" },
+    @{ Name = "@zyraxon-ai/plugin";                Dir = "packages/plugin" },
+    @{ Name = "@zyraxon-ai/core";                  Dir = "packages/core" },
+    @{ Name = "@zyraxon-ai/client";                Dir = "packages/client" },
+    @{ Name = "@zyraxon-ai/server";                Dir = "packages/server" },
+    @{ Name = "@zyraxon-ai/sdk-next";              Dir = "packages/sdk-next" }
 )
 
 $results = @()
 foreach ($pkg in $packages) {
-    $ok = Publish-Package -Name $pkg.Name -Dir $pkg.Dir
+    $packageDir = Join-Path $ProjectRoot $pkg.Dir
+    $ok = Publish-Package -Name $pkg.Name -Dir $pkg.Dir -PackageDir $packageDir
     $results += @{ Name = $pkg.Name; Success = $ok }
 }
 
-# Summary
-$endTime = Get-Date
-$elapsed = $endTime - $startTime
+$elapsed = (Get-Date) - $startTime
 
 Write-Host ""
-Write-Host "╔═══════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║                    PUBLISH SUMMARY                        ║" -ForegroundColor Cyan
-Write-Host "╚═══════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+Write-Host "===============================================" -ForegroundColor Cyan
+Write-Host "                PUBLISH SUMMARY" -ForegroundColor Cyan
+Write-Host "===============================================" -ForegroundColor Cyan
 Write-Host ""
 
 $successCount = 0
 $failCount = 0
-
 foreach ($r in $results) {
     if ($r.Success) {
-        Write-Host "  ✓ $($r.Name)@$Version" -ForegroundColor Green
+        Write-Host "  OK   $($r.Name)@$Version" -ForegroundColor Green
         $successCount++
     } else {
-        Write-Host "  ✗ $($r.Name)@$Version" -ForegroundColor Red
+        Write-Host "  FAIL $($r.Name)@$Version" -ForegroundColor Red
         $failCount++
     }
 }

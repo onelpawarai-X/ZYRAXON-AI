@@ -1,12 +1,19 @@
 {
   "name": "zyraxon",
-  "displayName": "zyraxon",
-  "description": "zyraxon for VS Code",
-  "version": "1.18.3",
-  "publisher": "sst-dev",
+  "displayName": "ZYRAXON AI",
+  "description": "ZYRAXON AI — Ultimate AI assistant for VS Code. Chat, coding, terminal and 888 tools across 63 categories in one extension.",
+  "version": "19.0.6",
+  "publisher": "zyraxon",
+  "author": {
+    "name": "onelpawarai"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/onelpawarai/ZYRAXON-AI"
+    "url": "https://github.com/onelpawarai-X/ZYRAXON-AI"
+  },
+  "homepage": "https://zyraxonai.lovable.app",
+  "bugs": {
+    "url": "https://github.com/onelpawarai-X/ZYRAXON-AI/issues"
   },
   "license": "SEE LICENSE IN LICENSE",
   "icon": "images/icon.png",
@@ -17,8 +24,26 @@
   "engines": {
     "vscode": "^1.94.0"
   },
+  "extensionKind": [
+    "workspace"
+  ],
   "categories": [
+    "AI",
+    "Programming Languages",
+    "Machine Learning",
+    "Snippets",
+    "Linters",
     "Other"
+  ],
+  "keywords": [
+    "ai",
+    "ai-assistant",
+    "copilot",
+    "chat",
+    "agent",
+    "code-completion",
+    "refactor",
+    "zyraxon"
   ],
   "activationEvents": [],
   "main": "./dist/extension.js",
@@ -26,7 +51,7 @@
     "commands": [
       {
         "command": "zyraxon.openTerminal",
-        "title": "Open zyraxon",
+        "title": "Open ZYRAXON",
         "icon": {
           "light": "images/button-dark.svg",
           "dark": "images/button-light.svg"
@@ -34,11 +59,15 @@
       },
       {
         "command": "zyraxon.openNewTerminal",
-        "title": "Open zyraxon in new tab",
+        "title": "Open ZYRAXON in New Tab",
         "icon": {
           "light": "images/button-dark.svg",
           "dark": "images/button-light.svg"
         }
+      },
+      {
+        "command": "zyraxon.openCliTerminal",
+        "title": "Open ZYRAXON Terminal"
       },
       {
         "command": "zyraxon.addFilepathToTerminal",

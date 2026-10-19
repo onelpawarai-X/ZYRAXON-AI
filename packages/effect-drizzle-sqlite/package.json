@@ -4,7 +4,6 @@
   "name": "@zyraxon-ai/effect-drizzle-sqlite",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE",
-  "private": true,
   "scripts": {
     "typecheck": "tsgo --noEmit"
   },
