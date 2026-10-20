@@ -1,4 +1,4 @@
-## ZYRAXON AI v19.0.7
+## ZYRAXON AI v19.0.6
 
 **One of the most capable open-source agent engines in the world — fully open, and it runs on your own machine.**
 
@@ -69,7 +69,7 @@ ZYRAXON ships with a self-healing system. Missing tool? It finds one. Failing te
 
 ---
 
-### What is new in v19.0.7
+### What is new in v19.0.6
 
 - **Media normalisation — any file, any model.** Large audio and video are normalised before they reach the model, so a two-hour recording or an hour of video is no longer rejected. Tested against real files.
 - **MCP Hub — verified integrations on one screen.** This release adds the local Telegram server, plus app-based setup guides for Facebook Pages, Instagram, WhatsApp, YouTube, Gmail, and Google Drive/Docs/Sheets/Slides/Calendar/Chat/Search.
