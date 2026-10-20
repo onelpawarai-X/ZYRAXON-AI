@@ -56,6 +56,10 @@ export const ModelsCommand = effectCmd({
     }
 
     const ids = Object.keys(providers).sort((a, b) => {
+      const aIsHouse = a === "zyraxon"
+      const bIsHouse = b === "zyraxon"
+      if (aIsHouse && !bIsHouse) return -1
+      if (!aIsHouse && bIsHouse) return 1
       const aIsOpencode = a.startsWith("opencode")
       const bIsOpencode = b.startsWith("opencode")
       if (aIsOpencode && !bIsOpencode) return -1

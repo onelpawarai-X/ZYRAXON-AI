@@ -125,7 +125,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
     })
 
     const validModel = (model: ModelKey) => {
-      if (model.providerID === "local" || model.providerID === "opencode") return true
+      if (model.providerID === "local" || model.providerID === "opencode" || model.providerID === "zyraxon") return true
       const provider = providers.all().get(model.providerID)
       return !!provider?.models[model.modelID] && connected().has(model.providerID)
     }
@@ -191,8 +191,18 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
     }
 
     const defaultModel = () => {
-      // First try opencode free models (Big Pickle, MiMo, etc.)
+      // ZYRAXON is the house provider and is pinned on top, so its models are
+      // the first choice for a new session before any other provider.
       const allProviders = Array.from(providers.all().values())
+      const zyraxonProvider = allProviders.find((p) => p.id === "zyraxon")
+      if (zyraxonProvider) {
+        const first = Object.values(zyraxonProvider.models)[0]
+        if (first) {
+          const model = { providerID: "zyraxon", modelID: first.id }
+          if (validModel(model)) return model
+        }
+      }
+      // Then opencode free models (Big Pickle, MiMo, etc.)
       const opencodeProvider = allProviders.find((p) => p.id === "opencode")
       if (opencodeProvider) {
         const freeModels = Object.values(opencodeProvider.models).filter(
