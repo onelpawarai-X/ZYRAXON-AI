@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import type { AppEntry } from "../catalog/seed";
 import { McpClient } from "./client";
 import { resolveApp, type Resolution } from "./resolve";

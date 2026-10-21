@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 export type AuthKind = "none" | "oauth" | "token" | "local";
 /**
  * How a server wants to be connected, in the order the user should meet them.
