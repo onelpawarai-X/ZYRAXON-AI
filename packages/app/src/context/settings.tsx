@@ -59,6 +59,16 @@ export interface Settings {
     voiceRealtime?: boolean
     /** Which model to talk with, when it is not simply the one selected in the composer. */
     voiceRealtimeModel?: string
+    /**
+     * Which speech engine reads the answer aloud.
+     *
+     * `builtin` is the local Edge Neural server the desktop process starts, and
+     * is what the app has always used. `provider` is the ZYRAXON provider's own
+     * streaming endpoint, which needs no key and also works in a plain browser.
+     * They are alternatives, never simultaneous: two voices reading the same
+     * reply is the failure this switch exists to prevent.
+     */
+    voiceEngine?: "builtin" | "provider"
     voiceLanguage?: string
     voiceGender?: string
     voiceRate?: number
@@ -215,6 +225,7 @@ const defaultSettings: Settings = {
     voiceAutoSpeak: true,
     voiceRealtime: false,
     voiceRealtimeModel: "",
+    voiceEngine: "builtin",
     voiceLanguage: "en-US",
   },
   appearance: {
@@ -501,6 +512,10 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         voiceRealtimeModel: withFallback(() => store.general?.voiceRealtimeModel, ""),
         setVoiceRealtimeModel(value: string) {
           setStore("general", "voiceRealtimeModel", value)
+        },
+        voiceEngine: withFallback(() => store.general?.voiceEngine, "builtin" as const),
+        setVoiceEngine(value: "builtin" | "provider") {
+          setStore("general", "voiceEngine", value)
         },
         voiceLanguage: withFallback(() => store.general?.voiceLanguage, "en-US"),
         setVoiceLanguage(value: string) {

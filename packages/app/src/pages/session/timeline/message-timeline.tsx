@@ -76,6 +76,7 @@ import { sessionTitle } from "@/utils/session-title"
 import { scheduleConnectedMeasure } from "./measure"
 import { observeElementOffsetReconnectAware } from "./observe-element-offset"
 import { createTimelineProjection } from "./projection"
+import { detectSpeechLocale, providerSpeechRequest } from "@/utils/provider-tts"
 import { MessageComment, SummaryDiff, TimelineRow, TimelineRowMap } from "./rows"
 import { MediaProcessingIndicator } from "./media-processing"
 import { filterVirtualIndexes } from "./virtual-items"
@@ -864,6 +865,7 @@ export function MessageTimeline(props: {
   }
 
   // TTS text: strip thinking blocks only, keep ALL languages (Bengali + English)
+  const ttsExtractCache = new Map<string, { raw: string; out: string }>()
   function extractTTSText(msgId: string): string {
     const syncData = sync().data
     const parts = syncData.part[msgId] ?? []
@@ -871,15 +873,22 @@ export function MessageTimeline(props: {
     // its text too would play two voices over each other. Exactly one of the two
     // owns the reply.
     if (parts.some((part) => part.type === "file" && (part as any).mime?.startsWith("audio/"))) return ""
-    let text = ""
+    let raw = ""
     for (const part of parts) {
       // Only the answer gets spoken. Reasoning parts are the model's private
       // thinking, and letting them through meant the voice read its own
       // deliberation back over the top of the reply it was about to finish.
       if (part.type === "reasoning") continue
-      if (part.type === "text" && "text" in part) text += (part as any).text
+      if (part.type === "text" && "text" in part) raw += (part as any).text
     }
-    text = stripThinkingBlocks(text)
+    // The 80 ms poll asks for this on every tick, and the cleaning below is about
+    // twenty passes over the whole reply. That made the cost grow with the length
+    // of the answer while most ticks had nothing new to clean. Comparing the raw
+    // text first means a tick with no new words costs one concatenation and no
+    // regex at all.
+    const cached = ttsExtractCache.get(msgId)
+    if (cached && cached.raw === raw) return cached.out
+    let text = stripThinkingBlocks(raw)
     // Strip reasoning/review blocks that aren't meant to be spoken
     text = text.replace(/\[REVIEW\][\s\S]*?\[\/REVIEW\]/gi, "")
     text = text.replace(/\[TOOL_CALL\][\s\S]*?\[\/TOOL_CALL\]/gi, "")
@@ -893,6 +902,7 @@ export function MessageTimeline(props: {
     text = text.replace(/<tool_result>[\s\S]*?<\/tool_result>/gi, "")
     text = text.replace(/\{[^{}]*"tool"[\s\S]*?\}/g, "")
     text = text.replace(/\n{3,}/g, "\n\n").trim()
+    ttsExtractCache.set(msgId, { raw, out: text })
     return text
   }
 
@@ -900,6 +910,9 @@ export function MessageTimeline(props: {
   let ttsServerHealthy = true
   let ttsLastHealthCheck = 0
   async function checkTTSServer(): Promise<boolean> {
+    // The provider endpoint is remote; the local restart path does not exist for
+    // it, and probing it on a health cadence would add a request per reply.
+    if (settings.general.voiceEngine?.() === "provider") return true
     const now = Date.now()
     if (now - ttsLastHealthCheck < 10000) return ttsServerHealthy
     ttsLastHealthCheck = now
@@ -922,6 +935,15 @@ export function MessageTimeline(props: {
   // Send TTS to server — queue-based, NEVER drops text
   async function sendTTSText(text: string) {
     if (!text || text.trim().length === 0) return
+    // The provider engine is remote and keyless, so it is reachable from both the
+    // desktop app and a plain browser — it takes the same serial queue as the
+    // built-in server and never needs the browser-synthesis fallback.
+    if (settings.general.voiceEngine?.() === "provider") {
+      ttsPendingText.push(text)
+      if (ttsFetching) return
+      flushTTSPending()
+      return
+    }
     // Outside Electron there is no local Edge TTS server to call, and the fetch
     // below simply failed silently — the speaker looked enabled and said nothing.
     // The platform's own speech synthesiser fills that gap so the reply is still
@@ -968,6 +990,12 @@ export function MessageTimeline(props: {
   let ttsPrefetch: { promise: Promise<Response | null>; controller: AbortController } | null = null
 
   function startTTSPrefetch(chunk: string) {
+    // The provider engine has its own endpoint and picks the voice from the
+    // text's language, so the local server's gender/lang query does not apply.
+    if (settings.general.voiceEngine?.() === "provider") {
+      const locale = settings.general.voiceLanguage?.() || "auto"
+      return providerSpeechRequest(chunk, locale === "auto" ? detectSpeechLocale(chunk) : locale)
+    }
     const gender = settings.general.voiceGender?.() === "male" ? "m" : "f"
     const voiceLang = settings.general.voiceLanguage?.() || "en-US"
     const lang = voiceLang.split("-")[0] || "en"
@@ -1150,28 +1178,39 @@ export function MessageTimeline(props: {
   }
 
   // EFFECT 1: Reactive — fires when messages or parts change
+  //
+  // This used to build one string of every message id and every text length in
+  // the whole session on each run, then join it, purely to decide whether
+  // anything had changed. That is O(total text) work per streaming token, and it
+  // was the single largest source of typing lag: the cost grew with the length
+  // of the conversation while the only new information was one word. The signal
+  // is now just the active message and the length of its text, which is exactly
+  // what the speaker needs and is O(1) to read.
   createEffect(on(
     () => {
+      const activeID = activeMessageID()
+      if (!activeID) return ""
       const byParent = assistantMessagesByParent()
-      const partIds: string[] = []
-      if (byParent) {
-        for (const [, messages] of byParent) {
-          for (const msg of messages) {
-            if (msg.role === "assistant") {
-              partIds.push(msg.id)
-              const parts = sync().data.part[msg.id]
-              if (parts) {
-                for (const p of parts) {
-                  if (p.type === "text" && "text" in p) {
-                    partIds.push(`${msg.id}:${(p as any).text?.length || 0}`)
-                  }
-                }
-              }
-            }
+      if (!byParent) return ""
+      let length = 0
+      let id = ""
+      for (const [, messages] of byParent) {
+        for (const msg of messages) {
+          if (msg.role !== "assistant") continue
+          if (msg.parentID !== activeID) continue
+          const parts = sync().data.part[msg.id]
+          if (!parts) continue
+          let text = 0
+          for (const p of parts) {
+            if (p.type === "text" && "text" in p) text += (p as any).text?.length || 0
+          }
+          if (text > length) {
+            length = text
+            id = msg.id
           }
         }
       }
-      return { byParent, partKey: partIds.join(",") }
+      return `${id}:${length}`
     },
     () => {
       processTTSForMessages()
@@ -1943,6 +1982,7 @@ export function MessageTimeline(props: {
                   showAssistantCopyPartID={assistantCopyPartID(row().userMessageID)}
                   turnDurationMs={turnDurationMs(row().userMessageID)}
                   useV2Actions={settings.general.newLayoutDesigns()}
+                  autoplayAudio={activeMessageID() === row().userMessageID && settings.general.voiceAutoSpeak()}
                   defaultOpen={defaultOpen()}
                   toolOpen={toolOpen[part().id] ?? defaultOpen()}
                   onToolOpenChange={(open) => setToolOpen(part().id, open)}

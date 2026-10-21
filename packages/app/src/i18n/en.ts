@@ -1268,6 +1268,11 @@ export const dict = {
     "Talk directly to the selected model — it listens and answers in the same breath. Turning this on stops the separate TTS voice, because hearing both at once overlaps them.",
   "settings.voice.autoSpeak.title": "Auto-speak responses",
   "settings.voice.autoSpeak.description": "AI responses are spoken aloud by the built-in voice",
+  "settings.voice.engine.title": "Speech engine",
+  "settings.voice.engine.description":
+    "Which voice reads the answer aloud. The built-in voice runs on this device; the provider voice streams from ZYRAXON and works in a browser too.",
+  "settings.voice.engine.builtin": "Built-in",
+  "settings.voice.engine.provider": "ZYRAXON provider",
   "settings.voice.gender.title": "Voice gender",
   "settings.voice.gender.description": "Select male or female voice for TTS output",
   "settings.voice.gender.male": "Male",

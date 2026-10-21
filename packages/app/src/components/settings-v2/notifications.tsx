@@ -7,9 +7,14 @@ import { Switch } from "@zyraxon-ai/ui/v2/switch-v2"
 import { useLanguage } from "@/context/language"
 import { LANGUAGES } from "@/i18n/languages"
 import { useSettings } from "@/context/settings"
+import { createProviderSpeaker } from "@/utils/provider-tts"
 import { SettingsListV2 } from "./parts/list"
 import { SettingsRowV2 } from "./parts/row"
 import "./settings-v2.css"
+
+/** One speaker for the settings panel, so repeated test taps replace each other
+ *  instead of layering up. */
+const providerTestSpeaker = createProviderSpeaker()
 
 function NotificationsSection() {
   const language = useLanguage()
@@ -108,6 +113,28 @@ function VoiceSection() {
         </SettingsRowV2>
 
         <SettingsRowV2
+          title={language.t("settings.voice.engine.title")}
+          description={language.t("settings.voice.engine.description")}
+        >
+          <div data-action="settings-voice-engine" class="flex gap-2">
+            <ButtonV2
+              size="normal"
+              variant={settings.general.voiceEngine() === "builtin" ? "contrast" : "neutral"}
+              onClick={() => settings.general.setVoiceEngine("builtin")}
+            >
+              {language.t("settings.voice.engine.builtin")}
+            </ButtonV2>
+            <ButtonV2
+              size="normal"
+              variant={settings.general.voiceEngine() === "provider" ? "contrast" : "neutral"}
+              onClick={() => settings.general.setVoiceEngine("provider")}
+            >
+              {language.t("settings.voice.engine.provider")}
+            </ButtonV2>
+          </div>
+        </SettingsRowV2>
+
+        <SettingsRowV2
           title={language.t("settings.voice.gender.title")}
           description={language.t("settings.voice.gender.description")}
         >
@@ -171,9 +198,13 @@ function VoiceSection() {
             variant="neutral"
             onClick={() => {
               try {
-                const lang = settings.general.voiceLanguage()?.split("-")[0] || "en"
                 const testText = language.t("settings.voice.test.sentence")
-                void lang
+                if (settings.general.voiceEngine() === "provider") {
+                  // The provider engine speaks from the renderer, so the test goes
+                  // through it directly rather than the desktop IPC bridge.
+                  providerTestSpeaker.speak(testText)
+                  return
+                }
                 ;(window as any).api?.voiceTTSSpeak?.(testText)
               } catch (e) {
                 console.error("[TTS-TEST] Failed:", e)

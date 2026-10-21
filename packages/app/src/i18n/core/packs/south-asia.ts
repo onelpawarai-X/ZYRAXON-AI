@@ -200,6 +200,11 @@ export const pack: CorePack = {
       "নির্বাচিত মডেলের সাথে সরাসরি কথা বলুন — সে শুনতেই উত্তর দেয়। এটি চালু করলে আলাদা TTS ভয়েস বন্ধ হয়ে যায়, কারণ দুটো একসাথে বাজলে আওয়াজ ওঠে-পড়ে।",
     "settings.voice.autoSpeak.title": "উত্তর স্বয়ংক্রিয়ভাবে পড়ুন",
     "settings.voice.autoSpeak.description": "AI-এর উত্তর বিল্ট-ইন ভয়েসে শোনানো হবে",
+    "settings.voice.engine.title": "কণ্ঠের ইঞ্জিন",
+    "settings.voice.engine.description":
+      "কোন কণ্ঠ উত্তরটি পড়ে শোনাবে। বিল্ট-ইন কণ্ঠ এই ডিভাইসেই চলে; প্রোভাইডার কণ্ঠ ZYRAXON থেকে সরাসরি স্ট্রিম করে এবং ব্রাউজারেও কাজ করে।",
+    "settings.voice.engine.builtin": "বিল্ট-ইন",
+    "settings.voice.engine.provider": "ZYRAXON প্রোভাইডার",
     "settings.voice.gender.title": "ভয়েসের লিঙ্গ",
     "settings.voice.gender.description": "TTS আউটপুটে পুরুষ নাকি নারী কণ্ঠ ব্যবহার হবে",
     "settings.voice.gender.male": "পুরুষ",
@@ -440,6 +445,11 @@ export const pack: CorePack = {
       "নির্বাচিত মডেলের সাথে সরাসরি কথা বলুন — সে শুনতেই উত্তর দেয়। এটি চালু করলে আলাদা TTS ভয়েস বন্ধ হয়ে যায়, কারণ দুটো একসাথে বাজলে আওয়াজ ওঠে-পড়ে।",
     "settings.voice.autoSpeak.title": "উত্তর স্বয়ংক্রিয়ভাবে পড়ুন",
     "settings.voice.autoSpeak.description": "AI-এর উত্তর বিল্ট-ইন ভয়েসে শোনানো হবে",
+    "settings.voice.engine.title": "কণ্ঠের ইঞ্জিন",
+    "settings.voice.engine.description":
+      "কোন কণ্ঠ উত্তরটি পড়ে শোনাবে। বিল্ট-ইন কণ্ঠ এই ডিভাইসেই চলে; প্রোভাইডার কণ্ঠ ZYRAXON থেকে সরাসরি স্ট্রিম করে এবং ব্রাউজারেও কাজ করে।",
+    "settings.voice.engine.builtin": "বিল্ট-ইন",
+    "settings.voice.engine.provider": "ZYRAXON প্রোভাইডার",
     "settings.voice.gender.title": "ভয়েসের লিঙ্গ",
     "settings.voice.gender.description": "TTS আউটপুটে পুরুষ নাকি নারী কণ্ঠ ব্যবহার হবে",
     "settings.voice.gender.male": "পুরুষ",
@@ -678,8 +688,13 @@ export const pack: CorePack = {
     "settings.voice.realtime.title": "मॉडल से रियल-टाइम बातचीत",
     "settings.voice.realtime.description":
       "चुने हुए मॉडल से सीधे बात करें — वह सुनते ही जवाब देता है। इसे चालू करने पर अलग TTS आवाज़ बंद हो जाती है, क्योंकि दोनों एक साथ बोलें तो आवाज़ें गुंजती हैं।",
-    "settings.voice.autoSpeak.title": "जवाब अपने आप बोलें",
+    "settings.voice.autoSpeak.title": "उत्तर स्वतः बोलें",
     "settings.voice.autoSpeak.description": "AI के जवाब अंतर्निहित आवाज़ में सुनाए जाएँगे",
+    "settings.voice.engine.title": "आवाज़ इंजन",
+    "settings.voice.engine.description":
+      "कौन-सी आवाज़ जवाब पढ़कर सुनाएगी। अंतर्निहित आवाज़ इसी डिवाइस पर चलती है; प्रोवाइडर आवाज़ ZYRAXON से सीधे स्ट्रीम करती है और ब्राउज़र में भी काम करती है।",
+    "settings.voice.engine.builtin": "अंतर्निहित",
+    "settings.voice.engine.provider": "ZYRAXON प्रोवाइडर",
     "settings.voice.gender.title": "आवाज़ का लिंग",
     "settings.voice.gender.description": "TTS आउटपुट में पुरुष या महिला की आवाज़ चुनें",
     "settings.voice.gender.male": "पुरुष",
