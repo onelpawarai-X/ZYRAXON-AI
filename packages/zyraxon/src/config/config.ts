@@ -226,7 +226,7 @@ const layer = Layer.effect(
         ),
       )
       const parsed = yield* Effect.try({ try: () => ConfigParse.jsonc(expanded, source), catch: (err) => err })
-      const data = yield* Effect.try({ try: () => ConfigParse.schema(ConfigV1.Info, normalizeLoadedConfig(parsed), source), catch: (err) => err })
+      const data = yield* Effect.try({ try: () => ConfigParse.schema(ConfigV1.Info, ConfigParse.normalizeAgentAlias(normalizeLoadedConfig(parsed)), source), catch: (err) => err })
       if (!("path" in options)) return data
 
       yield* Effect.promise(() => resolveLoadedPlugins(data, options.path))

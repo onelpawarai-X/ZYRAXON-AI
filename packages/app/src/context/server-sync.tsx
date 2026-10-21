@@ -36,7 +36,7 @@ import { formatServerError } from "@/utils/server-errors"
 import { queryOptions, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/solid-query"
 import { createRefreshQueue } from "./global-sync/queue"
 import { directoryKey } from "./global-sync/utils"
-import { PathKey } from "@/utils/path-key"
+import { PathKey, pathKey } from "@/utils/path-key"
 import { createDirSyncContext } from "./directory-sync"
 import { createSimpleContext } from "@zyraxon-ai/ui/context"
 import { NormalizedProviderListResponse } from "@zyraxon-ai/session-ui/context"
@@ -469,16 +469,34 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
     },
   }
 
+  // Agents are cached in each directory's child store, so invalidating the query alone
+  // leaves the mode selector stale. Re-read the list and write it back per directory.
+  async function refreshAgents() {
+    for (const directory of Object.keys(children.children)) {
+      const key = pathKey(directory)
+      const data = await queryClient.fetchQuery(queryOptionsApi.agents(key)).catch(() => undefined)
+      if (!data) continue
+      children.child(key, { bootstrap: false })[1]("agent", reconcile(data, { merge: false }))
+    }
+  }
+
   const updateConfigMutation = useMutation(() => ({
     mutationFn: (config: Config) => serverSDK.client.global.config.update({ config }),
-    onSuccess: () => {
-      bootstrap.refetch()
+    onSuccess: async () => {
+      // Invalidate before refetching bootstrap: ensureQueryData only refetches a
+      // stale entry, so a fresh agents cache would otherwise survive and leave the
+      // mode selector showing the list from before the save.
+      queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === serverSDK.scope && query.queryKey[2] === "agents",
+      })
       // Invalidate all provider queries so newly configured custom providers
       // appear immediately in the available provider list across all directories.
       queryClient.invalidateQueries({ queryKey: [serverSDK.scope, null, "providers"] })
       queryClient.invalidateQueries({
         predicate: (query) => query.queryKey[0] === serverSDK.scope && query.queryKey[2] === "providers",
       })
+      await refreshAgents()
+      bootstrap.refetch()
     },
   }))
 

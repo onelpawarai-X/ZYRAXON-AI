@@ -1,5 +1,3 @@
-// Copyright (c) 2026 onelpawarai. All rights reserved.
-
 import type { AppEntry } from "../catalog/seed";
 import { type McpRuntime } from "../lib/connect";
 import type { Resolution } from "../lib/resolve";

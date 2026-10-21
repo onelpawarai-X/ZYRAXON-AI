@@ -1,5 +1,3 @@
-// Copyright (c) 2026 onelpawarai. All rights reserved.
-
 import type { AppEntry, AuthTier } from "./catalog/seed";
 import { connectApp, countTools, describe, toServerConfig, type ConnectionState, type McpRuntime } from "./lib/connect";
 import { McpClient } from "./lib/client";

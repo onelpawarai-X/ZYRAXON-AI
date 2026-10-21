@@ -31,6 +31,9 @@ import * as OtelTracer from "@effect/opentelemetry/Tracer"
 import { LLMAISDK } from "./llm/ai-sdk"
 import { LLMNativeRuntime } from "./llm/native-runtime"
 import { LLMRequestPrep } from "./llm/request"
+import { ModelV2 } from "@zyraxon-ai/core/model"
+import { ZyraxonFailover } from "@/provider/zyraxon-failover"
+import { errorMessage } from "@/util/error"
 
 export const OUTPUT_TOKEN_MAX = ProviderTransform.OUTPUT_TOKEN_MAX
 
@@ -382,19 +385,65 @@ const live: Layer.Layer<
               (ctrl) => Effect.sync(() => ctrl.abort()),
             )
 
-            const result = yield* run({ ...input, abort: ctrl.signal })
+            const runOnce = (model: Provider.Model) =>
+              Effect.gen(function* () {
+                const result = yield* run({ ...input, model, abort: ctrl.signal })
 
-            if (result.type === "native") return result.stream
+                if (result.type === "native") return result.stream
 
-            // Adapter seam: both runtimes expose the same LLMEvent stream. Native
-            // already returns one; AI SDK streams are converted here.
-            const state = LLMAISDK.adapterState()
-            return Stream.fromAsyncIterable(result.result.fullStream, (e) =>
-              e instanceof Error ? e : new Error(String(e)),
-            ).pipe(
-              Stream.mapEffect((event) => LLMAISDK.toLLMEvents(state, event)),
-              Stream.flatMap((events) => Stream.fromIterable(events)),
-            )
+                // Adapter seam: both runtimes expose the same LLMEvent stream. Native
+                // already returns one; AI SDK streams are converted here.
+                const state = LLMAISDK.adapterState()
+                return Stream.fromAsyncIterable(result.result.fullStream, (e) =>
+                  e instanceof Error ? e : new Error(String(e)),
+                ).pipe(
+                  Stream.mapEffect((event) => LLMAISDK.toLLMEvents(state, event)),
+                  Stream.flatMap((events) => Stream.fromIterable(events)),
+                )
+              })
+
+            // Failover: a ZYRAXON model that dies is retried on the next-fastest
+            // ZYRAXON model instead of surfacing an error the user cannot act on.
+            // Every other provider keeps exactly one attempt — see the failover
+            // module for why swapping a paid provider's model would be a lie.
+            const chain = ZyraxonFailover.zyraxonFailoverChain(input.model.providerID, input.model.id)
+            if (chain.length === 1) return yield* runOnce(input.model)
+
+            // Abort state is shared by the chain: the first attempt that dies
+            // leaves `ctrl` untouched, and only a real user abort (checked below)
+            // stops the chain.
+            let lastError: unknown
+            const attempt = (index: number): Stream.Stream<LLMEvent, unknown> => {
+              if (index >= chain.length) return Stream.fail(lastError)
+              const modelID = chain[index]
+              return Stream.unwrap(
+                Effect.gen(function* () {
+                  // Resolve through the provider so each retry carries that
+                  // model's own api/options/capabilities, not the failed one's.
+                  const model = yield* provider.getModel(input.model.providerID, ModelV2.ID.make(modelID))
+                  return yield* runOnce(model)
+                }),
+              ).pipe(
+                Stream.catchIf(
+                  (error) => ZyraxonFailover.shouldFailover(error, ctrl.signal.aborted),
+                  (error) =>
+                    Stream.unwrap(
+                      Effect.gen(function* () {
+                        lastError = error
+                        yield* Effect.logWarning("zyraxon model failed; trying next", {
+                          "session.id": input.sessionID,
+                          failed: modelID,
+                          next: chain[index + 1],
+                          error: errorMessage(error),
+                        })
+                        return attempt(index + 1)
+                      }),
+                    ),
+                ),
+              )
+            }
+
+            return attempt(0)
           }),
         ),
       )

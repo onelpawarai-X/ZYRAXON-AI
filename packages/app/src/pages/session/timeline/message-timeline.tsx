@@ -1070,6 +1070,9 @@ export function MessageTimeline(props: {
   const mountedMessageIDs = new Set<string>()
   let mountedSnapshotDone = false
   let ttsProcessingGuard = false
+  // Set by the streaming signal, cleared by the poll. The poll is the only place
+  // that runs the text cleaning, so a tick with no new words does no work at all.
+  let ttsDirty = false
   // Track last TTS chunk per message to prevent duplicate sends across retries
   const ttsLastChunkHash = new Map<string, string>()
   // Real-time pacing: while the AI is still writing, flush short chunks as soon as
@@ -1101,6 +1104,11 @@ export function MessageTimeline(props: {
       }
       for (const id of ttsSpokenIds) { mountedMessageIDs.add(id) }
     }
+
+    // Nothing new streamed since the last poll, so there is no new text to clean
+    // or speak. This is what keeps an idle tick free.
+    if (!ttsDirty) return
+    ttsDirty = false
 
     for (const [, messages] of byParent) {
       for (const msg of messages) {
@@ -1189,30 +1197,40 @@ export function MessageTimeline(props: {
     () => {
       const activeID = activeMessageID()
       if (!activeID) return ""
-      const byParent = assistantMessagesByParent()
-      if (!byParent) return ""
+      // Only the turn the model is writing to can grow on a streaming tick, so
+      // reading that one turn straight out of the map is O(1). Walking every
+      // assistant message in the session made this signal's own cost grow with
+      // the length of the conversation, once per token.
+      const messages = assistantMessagesByParent().get(activeID)
+      if (!messages) return ""
       let length = 0
       let id = ""
-      for (const [, messages] of byParent) {
-        for (const msg of messages) {
-          if (msg.role !== "assistant") continue
-          if (msg.parentID !== activeID) continue
-          const parts = sync().data.part[msg.id]
-          if (!parts) continue
-          let text = 0
-          for (const p of parts) {
-            if (p.type === "text" && "text" in p) text += (p as any).text?.length || 0
-          }
-          if (text > length) {
-            length = text
-            id = msg.id
-          }
+      let complete = true
+      for (const msg of messages) {
+        if (msg.role !== "assistant") continue
+        const parts = sync().data.part[msg.id]
+        if (!parts) continue
+        let text = 0
+        for (const p of parts) {
+          if (p.type === "text" && "text" in p) text += (p as any).text?.length || 0
+        }
+        if (text > length) {
+          length = text
+          id = msg.id
+          // A reply that has just stopped streaming still needs its trailing
+          // sentences spoken, so the transition to complete is part of the key —
+          // otherwise the signal would not change and that final flush is lost.
+          complete = typeof msg.time?.completed === "number"
         }
       }
-      return `${id}:${length}`
+      return `${id}:${length}:${complete ? 1 : 0}`
     },
     () => {
-      processTTSForMessages()
+      // Marking dirty rather than cleaning here moves the ~20 regex passes in
+      // extractTTSText onto the 80ms poll cadence instead of running them for
+      // every streaming token. 80ms is far below what a listener can notice, and
+      // the main thread stops paying an O(reply length) cost per word.
+      ttsDirty = true
     }
   ))
 

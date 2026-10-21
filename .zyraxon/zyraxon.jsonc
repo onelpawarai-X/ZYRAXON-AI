@@ -50,25 +50,25 @@
   },
   "agents": {
     "apex": {
-      "model": "zyraxon/big-pickle",
+      "model": "zyraxon/zyraxon-apex",
       "maxTokens": 200000,
       "temperature": 0.3,
       "description": "APEX PREDATOR mode — maximum power with 888 tools, self-healing, and autonomous operation"
     },
     "beast": {
-      "model": "zyraxon/big-pickle",
+      "model": "zyraxon/zyraxon-titan",
       "maxTokens": 200000,
       "temperature": 0.3,
       "description": "Beast mode — deep coding with aggressive file operations and auto-testing"
     },
     "dark-emperor": {
-      "model": "zyraxon/big-pickle",
+      "model": "zyraxon/zyraxon-quantum",
       "maxTokens": 200000,
       "temperature": 0.3,
       "description": "DARK EMPEROR — ultra mode with all 8 ULTRA tools, code generation, deployment, and debugging"
     },
     "pro": {
-      "model": "zyraxon/big-pickle",
+      "model": "zyraxon/zyraxon-codex",
       "maxTokens": 200000,
       "temperature": 0.3,
       "description": "PRO mode — strict code quality, security scanning, and documentation"

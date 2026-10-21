@@ -1,5 +1,3 @@
-// Copyright (c) 2026 onelpawarai. All rights reserved.
-
 export type AuthKind = "none" | "oauth" | "token" | "local";
 /**
  * How a server wants to be connected, in the order the user should meet them.
@@ -80,6 +78,14 @@ export interface AppEntry {
      */
     via?: string;
     /**
+     * How a pasted token is sent, for the vendors that reject Default Bearer.
+     *
+     * Verifired by calling each endpoint with a dummy credential: HasData and Green API
+     * answer tools/call with `x-api-key`, and the rest accept `Authorization: Bearer`.
+     * Omitted means Bearer, which is what the large majority of servers want.
+     */
+    auth?: "bearer" | "x-api-key";
+    /**
      * True when the server registers clients dynamically, so the user is asked for
      * nothing at all. Set only where a registration_endpoint was found.
      */
@@ -93,6 +99,21 @@ export interface AppEntry {
         command: string;
         args: string[];
     };
+    /**
+     * The credentials a fetched local server reads from its environment.
+     *
+     * Each entry names one variable the server expects and the value the user pastes
+     * for it. A vendor that issues a single token wants one entry; Reddit wants three
+     * (client id, secret, refresh token) because that is what its server reads. The
+     * panel renders one box per entry, so the form is always exactly as long as the
+     * server's own requirements — no more, no less.
+     */
+    env?: {
+        key: string;
+        label: string;
+        placeholder?: string;
+        secret?: boolean;
+    }[];
 }
 /**
  * An app's real brand mark.

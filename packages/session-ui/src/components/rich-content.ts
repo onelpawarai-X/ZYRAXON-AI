@@ -379,10 +379,19 @@ function renderNotebookBlocks(root: HTMLElement) {
 // MASTER RENDER
 // ═══════════════════════════════════════════════════════════════
 
-export function renderAllRichContent(root: HTMLElement) {
-  renderMermaidBlocks(root)
-  renderHTMLBlocks(root)
-  renderSVGBlocks(root)
+export function renderAllRichContent(root: HTMLElement, streaming = false) {
+  // A live preview is a whole document loaded into a fresh iframe, and an SVG or
+  // Mermaid diagram is a full parse-and-layout. Rebuilding any of them once per
+  // streamed token is what made a reply containing HTML or a diagram feel like it
+  // was crawling: the frame was torn down and reloaded for every word. Nothing is
+  // lost by waiting — the block is replaced the moment streaming ends, which is
+  // when anyone could have finished reading it anyway. The cheap text-level work
+  // still runs, so the reply keeps its styling as it arrives.
+  if (!streaming) {
+    renderMermaidBlocks(root)
+    renderHTMLBlocks(root)
+    renderSVGBlocks(root)
+  }
   renderVideoBlocks(root)
   renderAudioBlocks(root)
   renderNotebookBlocks(root)

@@ -490,7 +490,7 @@ function makeImagesExpandable(root: HTMLDivElement) {
   }
 }
 
-function decorate(root: HTMLDivElement, labels: CopyLabels) {
+function decorate(root: HTMLDivElement, labels: CopyLabels, streaming: boolean) {
   const blocks = Array.from(root.querySelectorAll("pre"))
   for (const block of blocks) {
     ensureCodeWrapper(block, labels)
@@ -498,7 +498,7 @@ function decorate(root: HTMLDivElement, labels: CopyLabels) {
   autoLinkBareUrls(root)
   embedYouTube(root)
   makeImagesExpandable(root)
-  renderAllRichContent(root)
+  renderAllRichContent(root, streaming)
   if (!document.body.hasAttribute("data-new-layout")) return
   markInlineCode(root)
   markCodeLinks(root)
@@ -714,7 +714,7 @@ export function Markdown(
     })
     activeCodeKeys.clear()
     nextCodeKeys.forEach((key) => activeCodeKeys.add(key))
-    content.forEach((block, index) => updateBlock(container, index, block, labels))
+    content.forEach((block, index) => updateBlock(container, index, block, labels, local.streaming ?? false))
     while (container.children.length > content.length) {
       const child = container.lastElementChild
       if (!child) break
@@ -725,9 +725,12 @@ export function Markdown(
       .querySelectorAll<HTMLElement>('[data-slot="markdown-copy-button"]')
       .forEach((button) => setCopyState(button, labels, button.dataset.copied === "true"))
 
-    // Render rich content (Mermaid, HTML, SVG, Video, Audio) for code blocks
-    // This must run AFTER code blocks are created so pre > code.language-X exists
-    renderAllRichContent(container)
+    // Render rich content (Mermaid, HTML, SVG, Video, Audio) for code blocks.
+    // This must run AFTER code blocks are created so pre > code.language-X exists.
+    // `streaming` is read here so this effect re-runs when the reply settles, which
+    // is when the HTML preview and the diagram are rendered for the first time —
+    // doing it per token instead tore down and reloaded the frame for every word.
+    renderAllRichContent(container, local.streaming ?? false)
 
     if (!copyCleanup)
       copyCleanup = setupCodeCopy(container, () => ({
@@ -819,7 +822,13 @@ function disposeCode(key: string) {
   disposeStreamingCode(key)
 }
 
-function updateBlock(container: HTMLDivElement, index: number, block: RenderedBlock, labels: CopyLabels) {
+function updateBlock(
+  container: HTMLDivElement,
+  index: number,
+  block: RenderedBlock,
+  labels: CopyLabels,
+  streaming: boolean,
+) {
   const current = container.children[index]
   if (block.mode === "code") {
     updateCodeBlock(container, current, block, labels)
@@ -829,16 +838,28 @@ function updateBlock(container: HTMLDivElement, index: number, block: RenderedBl
     current instanceof HTMLDivElement &&
     current.dataset.markdownKey === block.key &&
     current.dataset.markdownHash === block.hash
-  )
+  ) {
+    // A block that settled while it was still streaming was rendered with rich
+    // content held back. Its hash stops changing at that point, so the early
+    // return would skip the final pass and leave the HTML preview and the diagram
+    // permanently unrendered. Only the rich content pass is re-run here — the rest
+    // of the decoration already happened, and repeating it would add a second copy
+    // button to every code block.
+    if (!streaming && current.dataset.markdownRich !== "true") {
+      current.dataset.markdownRich = "true"
+      renderAllRichContent(current, false)
+    }
     return
+  }
 
   const next = document.createElement("div")
   next.dataset.markdownBlock = ""
   next.dataset.markdownKey = block.key
   next.dataset.markdownHash = block.hash
+  next.dataset.markdownRich = streaming ? "false" : "true"
   next.style.display = "contents"
   next.innerHTML = block.html
-  decorate(next, labels)
+  decorate(next, labels, streaming)
 
   if (!(current instanceof HTMLDivElement)) {
     container.appendChild(next)

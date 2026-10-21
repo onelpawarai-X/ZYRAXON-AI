@@ -152,6 +152,10 @@ var env = Object.assign({}, process.env, {
 
 var child = spawn(pythonCmd, [runPy].concat(process.argv.slice(2)), {
     stdio: 'inherit',
+    // On Windows the spawned Python otherwise gets its own console window, which
+    // both flashes on screen and outlives the host when it is detached. stdio
+    // stays inherited so the MCP JSON-RPC stream reaches the parent untouched.
+    windowsHide: true,
     env: env
 });
 

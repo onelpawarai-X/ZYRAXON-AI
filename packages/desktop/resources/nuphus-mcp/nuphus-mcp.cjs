@@ -82,6 +82,9 @@ if (libDir) {
 try {
   execFileSync(binPath, process.argv.slice(2), {
     stdio: 'inherit',
+    // The native binary is a console-subsystem executable on Windows, so without
+    // this it allocates its own console window and can outlive a detached host.
+    windowsHide: true,
     env: Object.assign({}, process.env),
   });
 } catch (e) {

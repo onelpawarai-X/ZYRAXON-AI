@@ -30,7 +30,7 @@ import { McpOAuthCallback } from "./oauth-callback"
 import { McpAuth } from "./auth"
 import { EventV2Bridge } from "@/event-v2-bridge"
 import { TuiEvent } from "@/server/tui-event"
-import { Cause, Effect, Exit, Layer, Context, Schema, Stream } from "effect"
+import { Cause, Effect, Exit, Layer, Context, Ref, Schema, Stream } from "effect"
 import { EffectBridge } from "@/effect/bridge"
 import { InstanceState } from "@/effect/instance-state"
 import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process"
@@ -1090,7 +1090,22 @@ const layer = Layer.effect(
       }
     }
 
-    const state = yield* InstanceState.make<State>(
+    // MCP servers come from global config, so every directory sharing that config must
+    // share one set of child processes. Keying the cache by a config signature instead of
+    // by instance directory is what stops a fresh set of servers spawning per project.
+    const mcpSignature = (config: Record<string, McpEntry>) =>
+      JSON.stringify(
+        Object.entries(config)
+          .filter((entry): entry is [string, ConfigMCPV1.Info] => isMcpConfigured(entry[1]))
+          .sort((a, b) => a[0].localeCompare(b[0])),
+      )
+
+    // The state cache is process-global, so nothing else tears a superseded entry down.
+    // Track the signature whose servers are running and close them before switching, or a
+    // config save would leave the previous generation of child processes alive forever.
+    const activeSignature = yield* Ref.make<string | undefined>(undefined)
+
+    const state = yield* InstanceState.makeKeyed<State>(
       Effect.fn("MCP.state")(function* () {
         const cfg = yield* cfgSvc.get()
         const bridge = yield* EffectBridge.make()
@@ -1162,6 +1177,21 @@ const layer = Layer.effect(
       }),
     )
 
+    // Resolve the shared MCP state for the current config. Every directory whose
+    // config resolves to the same signature gets the same child processes back. When the
+    // signature moves, the superseded entry is closed first so its servers do not leak.
+    const currentState = Effect.fnUntraced(function* () {
+      const cfg = yield* cfgSvc.get()
+      const signature = mcpSignature(cfg.mcp ?? {})
+      const active = yield* Ref.get(activeSignature)
+      if (active !== undefined && active !== signature) {
+        yield* InstanceState.invalidateKeyed(state, active)
+        yield* Ref.set(activeSignature, undefined)
+      }
+      yield* Ref.set(activeSignature, signature)
+      return yield* InstanceState.getKeyed(state, signature)
+    })
+
     function closeClient(s: State, name: string) {
       const client = s.clients[name]
       delete s.clients[name]
@@ -1192,7 +1222,7 @@ const layer = Layer.effect(
     })
 
     const status = Effect.fn("MCP.status")(function* () {
-      const s = yield* InstanceState.get(state)
+      const s = yield* currentState()
 
       const cfg = yield* cfgSvc.get()
       const config = cfg.mcp ?? {}
@@ -1211,12 +1241,12 @@ const layer = Layer.effect(
     })
 
     const clients = Effect.fn("MCP.clients")(function* () {
-      const s = yield* InstanceState.get(state)
+      const s = yield* currentState()
       return s.clients
     })
 
     const instructions = Effect.fn("MCP.instructions")(function* () {
-      const s = yield* InstanceState.get(state)
+      const s = yield* currentState()
       return Object.entries(s.instructions)
         .filter(([name]) => s.status[name]?.status === "connected")
         .sort(([a], [b]) => a.localeCompare(b))
@@ -1228,7 +1258,7 @@ const layer = Layer.effect(
     })
 
     const createAndStore = Effect.fn("MCP.createAndStore")(function* (name: string, mcp: ConfigMCPV1.Info) {
-      const s = yield* InstanceState.get(state)
+      const s = yield* currentState()
       const result = yield* create(name, mcp)
 
       s.status[name] = result.status
@@ -1242,7 +1272,7 @@ const layer = Layer.effect(
     })
 
     const add = Effect.fn("MCP.add")(function* (name: string, mcp: ConfigMCPV1.Info) {
-      const s = yield* InstanceState.get(state)
+      const s = yield* currentState()
       s.config[name] = mcp
       yield* createAndStore(name, mcp)
       return { status: s.status }
@@ -1255,7 +1285,7 @@ const layer = Layer.effect(
 
     const disconnect = Effect.fn("MCP.disconnect")(function* (name: string) {
       yield* requireMcpConfig(name)
-      const s = yield* InstanceState.get(state)
+      const s = yield* currentState()
       yield* closeClient(s, name)
       delete s.clients[name]
       s.status[name] = { status: "disabled" }
@@ -1268,7 +1298,7 @@ const layer = Layer.effect(
 
     const tools = Effect.fn("MCP.tools")(function* () {
       const result: Record<string, McpTool> = {}
-      const s = yield* InstanceState.get(state)
+      const s = yield* currentState()
 
       const cfg = yield* cfgSvc.get()
       const config = cfg.mcp ?? {}
@@ -1317,12 +1347,12 @@ const layer = Layer.effect(
     }
 
     const prompts = Effect.fn("MCP.prompts")(function* () {
-      return yield* collectFromConnected(yield* InstanceState.get(state), McpCatalog.prompts, "prompts")
+      return yield* collectFromConnected(yield* currentState(), McpCatalog.prompts, "prompts")
     })
 
     const resources = Effect.fn("MCP.resources")(function* (clientName?: string) {
       return yield* collectFromConnected(
-        yield* InstanceState.get(state),
+        yield* currentState(),
         McpCatalog.resources,
         "resources",
         (resource) => resource.uri,
@@ -1332,7 +1362,7 @@ const layer = Layer.effect(
 
     const resourceTemplates = Effect.fn("MCP.resourceTemplates")(function* (clientName?: string) {
       return yield* collectFromConnected(
-        yield* InstanceState.get(state),
+        yield* currentState(),
         McpCatalog.resourceTemplates,
         "resource templates",
         (template) => template.uriTemplate,
@@ -1346,7 +1376,7 @@ const layer = Layer.effect(
       label: string,
       meta?: Record<string, unknown>,
     ) {
-      const s = yield* InstanceState.get(state)
+      const s = yield* currentState()
       const client = s.clients[clientName]
       if (!client) {
         yield* Effect.logWarning(`client not found for ${label}`, { clientName })
@@ -1391,7 +1421,7 @@ const layer = Layer.effect(
     })
 
     const getMcpConfig = Effect.fnUntraced(function* (mcpName: string) {
-      const s = yield* InstanceState.get(state)
+      const s = yield* currentState()
       if (s.config[mcpName]) return s.config[mcpName]
 
       const cfg = yield* cfgSvc.get()
@@ -1799,7 +1829,7 @@ const layer = Layer.effect(
           return { status: "failed", error: "Failed to get tools" } satisfies Status
         }
 
-        const s = yield* InstanceState.get(state)
+        const s = yield* currentState()
         yield* auth.clearOAuthState(mcpName)
         return yield* storeClient(s, mcpName, client, listed, client.getInstructions()?.trim(), mcpConfig.timeout)
       }
@@ -1906,9 +1936,7 @@ const layer = Layer.effect(
     })
 
     const getAuthStatus = Effect.fn("MCP.getAuthStatus")(function* (mcpName: string) {
-      const runtimeConfig = (yield* InstanceState.has(state))
-        ? (yield* InstanceState.get(state)).config[mcpName]
-        : undefined
+      const runtimeConfig = (yield* currentState()).config[mcpName]
       const mcpConfig = runtimeConfig ?? (yield* cfgSvc.get()).mcp?.[mcpName]
       if (!mcpConfig || !isMcpConfigured(mcpConfig) || mcpConfig.type !== "remote") return "not_authenticated"
       const entry = yield* auth.getForUrl(mcpName, mcpConfig.url)

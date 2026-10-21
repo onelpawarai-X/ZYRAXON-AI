@@ -49,6 +49,50 @@ export const get = <A, E, R>(self: InstanceState<A, E, R>) =>
     return yield* ScopedCache.get(self.cache, yield* directory)
   })
 
+/**
+ * A cache keyed by an arbitrary string instead of the instance directory.
+ *
+ * Use this for process-wide resources that are defined by global configuration
+ * rather than by the project being opened. MCP servers are the motivating case:
+ * their definitions come from one config file, so keying them by directory spawned
+ * a fresh set of child processes for every project visited. Keying by a config
+ * signature lets every directory share the same servers.
+ */
+export const makeKeyed = <A, E = never, R = never>(
+  init: (key: string) => Effect.Effect<A, E, R | Scope.Scope>,
+): Effect.Effect<InstanceState<A, E, Exclude<R, Scope.Scope>>, never, R | Scope.Scope> =>
+  Effect.gen(function* () {
+    const cache = yield* ScopedCache.make<string, A, E, R>({
+      capacity: Number.POSITIVE_INFINITY,
+      lookup: (key) => init(key),
+    })
+
+    return {
+      [TypeId]: TypeId,
+      cache,
+    }
+  })
+
+export const getKeyed = <A, E, R>(self: InstanceState<A, E, R>, key: string) =>
+  Effect.gen(function* () {
+    return yield* ScopedCache.get(self.cache, key)
+  })
+
+export const useKeyed = <A, E, R, B>(self: InstanceState<A, E, R>, key: string, select: (value: A) => B) =>
+  Effect.map(getKeyed(self, key), select)
+
+export const hasKeyed = <A, E, R>(self: InstanceState<A, E, R>, key: string) =>
+  ScopedCache.has(self.cache, key)
+
+export const invalidateKeyed = <A, E, R>(self: InstanceState<A, E, R>, key: string) =>
+  ScopedCache.invalidate(self.cache, key)
+
+export const useEffectKeyed = <A, E, R, B, E2, R2>(
+  self: InstanceState<A, E, R>,
+  key: string,
+  select: (value: A) => Effect.Effect<B, E2, R2>,
+) => Effect.flatMap(getKeyed(self, key), select)
+
 export const use = <A, E, R, B>(self: InstanceState<A, E, R>, select: (value: A) => B) => Effect.map(get(self), select)
 
 export const useEffect = <A, E, R, B, E2, R2>(
