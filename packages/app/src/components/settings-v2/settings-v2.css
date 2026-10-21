@@ -1677,6 +1677,61 @@
   margin: 0;
 }
 
+/* Per-row actions. Export and Delete sit on the right of each agent row, so they
+   read as small, quiet text actions that only gain weight on hover, instead of
+   competing with the row title. */
+.zy-agents-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.zy-agents-row-action {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  padding: 5px 8px;
+  border-radius: 6px;
+  color: var(--text-weak, rgb(255 255 255 / 0.5));
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.zy-agents-row-action:hover {
+  background: rgb(255 255 255 / 0.06);
+  color: var(--text-strong, rgb(255 255 255 / 0.9));
+}
+
+.zy-agents-row-action:focus-visible {
+  outline: 2px solid var(--border-focus, rgb(255 255 255 / 0.4));
+  outline-offset: 1px;
+}
+
+.zy-agents-row-action[data-action="settings-agents-delete"]:hover {
+  color: rgb(255 140 140);
+}
+
+/* The panel doubles as the import target: dropping an exported file anywhere in
+   the section registers it. The dashed outline is always faintly present so the
+   affordance is discoverable, and it brightens while a file is over the panel. */
+.zy-agents-dropzone {
+  border: 1px dashed transparent;
+  border-radius: 10px;
+  transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.zy-agents-dropzone--active {
+  border-color: var(--border-focus, rgb(255 255 255 / 0.35));
+  background: rgb(255 255 255 / 0.04);
+}
+
+.zy-agents-drop-hint {
+  margin: 12px 2px 0;
+}
+
 /* ─── Docked settings ────────────────────────────────────────────────────────
    Settings is docked to the app edge instead of floating over it. The host layer
    is a flex row that pushes the panel flush to the trailing edge with no scrim,

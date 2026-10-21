@@ -199,6 +199,14 @@ const icons = {
     viewBox: "0 0 20 20",
     body: `<rect x="2.25" y="3.25" width="15.5" height="13.5" rx="2.25" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 8.25L7.75 10.5L5.5 12.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 12.75H14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
   },
+  upload: {
+    viewBox: "0 0 16 16",
+    body: `<path d="M8 10.5V2.5M8 2.5L5 5.5M8 2.5L11 5.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.5 10.5V12.5C2.5 13.0523 2.94772 13.5 3.5 13.5H12.5C13.0523 13.5 13.5 13.0523 13.5 12.5V10.5" stroke="currentColor" stroke-linecap="round"/>`,
+  },
+  download: {
+    viewBox: "0 0 16 16",
+    body: `<path d="M8 2.5V10.5M8 10.5L5 7.5M8 10.5L11 7.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.5 10.5V12.5C2.5 13.0523 2.94772 13.5 3.5 13.5H12.5C13.0523 13.5 13.5 13.0523 13.5 12.5V10.5" stroke="currentColor" stroke-linecap="round"/>`,
+  },
   "terminal-active": {
     viewBox: "0 0 20 20",
     body: `<rect x="2.25" y="3.25" width="15.5" height="13.5" rx="2.25" fill="currentColor" fill-opacity="0.12" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 8.25L7.75 10.5L5.5 12.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 12.75H14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
