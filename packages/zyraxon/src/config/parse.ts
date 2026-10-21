@@ -7,6 +7,24 @@ import { Cause, Exit, Schema as EffectSchema, SchemaIssue } from "effect"
 import type { DeepMutable } from "@zyraxon-ai/core/schema"
 import { InvalidError, JsonError } from "@zyraxon-ai/core/v1/config/error"
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+/**
+ * `agents` is the name the documented config and the settings panel use, while the
+ * loader schema keys on `agent`. Accepting both keeps a hand-written `agents` block
+ * from being dropped as an unrecognized key, which silently ignored custom agents.
+ */
+export function normalizeAgentAlias(data: unknown) {
+  if (!isRecord(data)) return data
+  const agents = data.agents
+  if (!isRecord(agents)) return data
+  const { agents: _agents, ...rest } = data
+  const explicit = isRecord(data.agent) ? data.agent : {}
+  return { ...rest, agent: { ...agents, ...explicit } }
+}
+
 export function jsonc(text: string, filepath: string): unknown {
   const errors: JsoncParseError[] = []
   const data = parseJsoncImpl(text, errors, { allowTrailingComma: true })
