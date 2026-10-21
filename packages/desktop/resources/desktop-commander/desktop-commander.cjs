@@ -46,6 +46,9 @@ if (!indexJs) {
 var nodeExe = findNode();
 var child = spawn(nodeExe, [indexJs], {
   stdio: ['pipe', 'pipe', 'pipe'],
+  // A stdio server must never own a visible console. On Windows the missing flag
+  // produced a second window, and a detached host left it running as an orphan.
+  windowsHide: true,
   env: Object.assign({}, process.env, {
     NODE_OPTIONS: '--experimental-vm-modules',
     DESKTOP_COMMANDER_NO_ANALYTICS: '1'

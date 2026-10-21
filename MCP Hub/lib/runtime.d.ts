@@ -1,5 +1,3 @@
-// Copyright (c) 2026 onelpawarai. All rights reserved.
-
 import type { McpRuntime, McpStatusEntry } from "./connect";
 /** The slice of the generated client the Hub actually drives. */
 export interface McpClientLike {

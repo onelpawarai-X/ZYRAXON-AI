@@ -1,5 +1,3 @@
-// Copyright (c) 2026 onelpawarai. All rights reserved.
-
 import type { AppEntry } from "../catalog/seed";
 import { McpClient } from "./client";
 import { resolveApp, type Resolution } from "./resolve";
@@ -102,7 +100,7 @@ export interface McpRuntime {
     openUrl: (url: string) => Promise<void>;
 }
 /** Build the ZYRAXON config entry for an app. */
-export declare function toServerConfig(app: AppEntry, token?: string, clientId?: string, clientSecret?: string): McpLocalConfig | McpRemoteConfig | Record<string, never>;
+export declare function toServerConfig(app: AppEntry, token?: string, clientId?: string, clientSecret?: string, env?: Record<string, string>): McpLocalConfig | McpRemoteConfig | Record<string, never>;
 /**
  * Watch one server until it reaches a state worth acting on.
  *
@@ -130,6 +128,14 @@ export interface ConnectOptions {
     clientId?: string;
     /** the secret, where the console showed one next to the ID */
     clientSecret?: string;
+    /**
+     * Values for the environment variables a fetched local server reads.
+     *
+     * Keyed by the variable name the catalog declares, so the panel can collect one box
+     * per entry without knowing which server is behind it. They are written into the
+     * server's config as its `environment` and never leave the machine.
+     */
+    env?: Record<string, string>;
     /** report intermediate states so a card can say "check your browser" */
     onProgress?: (state: ConnectionState) => void;
 }

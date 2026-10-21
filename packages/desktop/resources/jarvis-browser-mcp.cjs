@@ -126,6 +126,10 @@ function launchPlaywrightMCP(extraArgs) {
 
   var child = spawn(nodeExec, fullArgs, {
     stdio: ['pipe', 'pipe', 'pipe'],
+    // Without windowsHide a Windows stdio server flashes its own console window
+    // and, when the host is detached, can survive as an orphan instead of dying
+    // with the parent. The host's stdio pipes are the only channel we want.
+    windowsHide: true,
     env: Object.assign({}, process.env, { NODE_PATH: result.nodeModules }),
   });
 
