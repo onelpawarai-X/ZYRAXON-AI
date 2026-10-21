@@ -205,6 +205,12 @@ export interface MessagePartProps {
   showAssistantCopyPartID?: string | null
   turnDurationMs?: number
   useV2Actions?: boolean
+  /**
+   * Whether a media part the assistant produced should start playing on its own.
+   * Opt-in: anything other than `true` leaves it paused, so a render site that
+   * does not know the speech setting can never start an old message talking.
+   */
+  autoplayAudio?: boolean
 }
 
 function MessageActionButton(
@@ -278,13 +284,23 @@ const textSegmenter =
 
 // Advance `index` to the next grapheme boundary so the streaming pacer never
 // slices mid-cluster (breaks Bengali conjuncts/combining marks and ZWJ emoji).
+//
+// Segmenting the whole text on every tick made this O(length of reply) per
+// frame, so the cost of the pacer grew with the answer and was a direct part of
+// the lag felt while a long reply streamed. Only the few characters around the
+// cut point can affect it, so a bounded window is segmented instead — the result
+// is identical and the work is constant.
 function graphemeCeil(text: string, index: number) {
   if (index >= text.length) return text.length
   if (!textSegmenter) return index
-  for (const part of textSegmenter.segment(text)) {
-    if (part.index + part.segment.length >= index) return part.index + part.segment.length
+  const from = Math.max(0, index - 32)
+  const to = Math.min(text.length, index + 32)
+  const window = text.slice(from, to)
+  for (const part of textSegmenter.segment(window)) {
+    const end = from + part.index + part.segment.length
+    if (end >= index) return end
   }
-  return text.length
+  return index
 }
 
 function createPacedValue(getValue: () => string, live?: () => boolean) {
@@ -833,6 +849,9 @@ export function renderable(part: PartType, showReasoningSummaries = true) {
   }
   if (part.type === "text") return !!part.text?.trim()
   if (part.type === "reasoning") return showReasoningSummaries && !!part.text?.trim()
+  // Only media the model produced is worth a row. A plain file part carries no
+  // visible body, so rendering it would leave an empty gap in the timeline.
+  if (part.type === "file") return part.mime.startsWith("audio/") || part.mime.startsWith("video/")
   return !!PART_MAPPING[part.type]
 }
 
@@ -1629,6 +1648,7 @@ export function Part(props: MessagePartProps) {
         showAssistantCopyPartID={props.showAssistantCopyPartID}
         turnDurationMs={props.turnDurationMs}
         useV2Actions={props.useV2Actions}
+        autoplayAudio={props.autoplayAudio}
       />
     </Show>
   )
@@ -1882,6 +1902,67 @@ export function MessageDivider(props: { label: string }) {
 PART_MAPPING["compaction"] = function CompactionPartDisplay() {
   const i18n = useI18n()
   return <MessageDivider label={i18n.t("ui.messagePart.compaction")} />
+}
+
+/**
+ * A file the assistant itself produced — most importantly its own spoken audio.
+ *
+ * This renderer is what makes a speech-to-speech model audible. The part always
+ * existed in the session, but nothing was registered for the `file` type, and
+ * `renderable` decides visibility by looking up `PART_MAPPING[part.type]` — so
+ * every audio the model spoke was silently dropped before it could reach an
+ * <audio> element. Registering it here is the whole difference between a model
+ * that talks and a user who hears it.
+ *
+ * Playback follows the same rule as the text-to-speech voice: it is audible only
+ * while the speaker is enabled, so a reply is never heard twice. The element is
+ * created once and its source swapped, because re-creating it on every stream
+ * update would restart the clip from the beginning.
+ */
+PART_MAPPING["file"] = function FilePartDisplay(props) {
+  const part = () => props.part as FilePart
+  const kind = () =>
+    part().mime.startsWith("audio/") ? "audio" : part().mime.startsWith("video/") ? "video" : "file"
+  // A signal, not a plain variable: the ref is assigned after the first render,
+  // so an effect reading a plain variable would run once while it was still
+  // undefined and never fire again — the audio would exist but never start.
+  const [element, setElement] = createSignal<HTMLMediaElement>()
+
+  createEffect(() => {
+    if (kind() !== "audio") return
+    const el = element()
+    const url = part().url
+    if (!el || !url) return
+    // Opt-in, not opt-out: playback starts only where the caller explicitly asked
+    // for it. The other render sites for a part do not know whether speech is
+    // enabled, so treating silence as the default is what keeps an old message
+    // from talking on its own. Controls stay, so a click can still play it.
+    if (props.autoplayAudio !== true) return
+    // The browser may refuse playback until the page has been interacted with;
+    // the controls remain, so a refusal is recoverable rather than lost audio.
+    void el.play().catch(() => {})
+  })
+
+  return (
+    <Show when={kind() !== "file"}>
+      <div data-slot="assistant-media-part" data-type={kind()}>
+        <Show
+          when={kind() === "audio"}
+          fallback={
+            <video
+              ref={setElement}
+              src={part().url}
+              controls
+              preload="metadata"
+              data-slot="assistant-media-video"
+            />
+          }
+        >
+          <audio ref={setElement} src={part().url} controls preload="auto" data-slot="assistant-media-audio" />
+        </Show>
+      </div>
+    </Show>
+  )
 }
 
 PART_MAPPING["text"] = function TextPartDisplay(props) {

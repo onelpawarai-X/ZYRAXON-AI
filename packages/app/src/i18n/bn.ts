@@ -645,6 +645,11 @@ export const dict = {
   "settings.voice.realtime.description": "নির্বাচিত মডেলের সঙ্গে সরাসরি কথা বলুন — এটি শুনে একই শ্বাসে উত্তর দেয়। এটি চালু করলে আলাদা TTS কণ্ঠ বন্ধ হয়ে যায়, কারণ দুটো একসঙ্গে শুনলে সেগুলো মিশে যায়।",
   "settings.voice.autoSpeak.title": "উত্তর স্বয়ংক্রিয়ভাবে বলুন",
   "settings.voice.autoSpeak.description": "AI-এর উত্তর অন্তর্নির্মিত কণ্ঠে উচ্চস্বরে পড়া হয়",
+  "settings.voice.engine.title": "কণ্ঠের ইঞ্জিন",
+  "settings.voice.engine.description":
+    "কোন কণ্ঠ উত্তরটি পড়ে শোনাবে। বিল্ট-ইন কণ্ঠ এই ডিভাইসেই চলে; প্রোভাইডার কণ্ঠ ZYRAXON থেকে সরাসরি স্ট্রিম করে এবং ব্রাউজারেও কাজ করে।",
+  "settings.voice.engine.builtin": "বিল্ট-ইন",
+  "settings.voice.engine.provider": "ZYRAXON প্রোভাইডার",
   "settings.voice.gender.title": "কণ্ঠের লিঙ্গ",
   "settings.voice.gender.description": "TTS আউটপুটের জন্য পুরুষ বা নারী কণ্ঠ বাছুন",
   "settings.voice.gender.male": "পুরুষ",
