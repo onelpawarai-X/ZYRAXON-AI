@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // `@npmcli/config` is CommonJS and Node's ESM lexer cannot see its named exports,
 // while Bun can. Re-export them through createRequire so the module graph loads.
 import { createRequire } from "node:module"

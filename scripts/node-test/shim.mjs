@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 import { test as ntest, describe as ndescribe, it as nit } from "node:test"
 export { ntest as test, ndescribe as describe, nit as it }
 
