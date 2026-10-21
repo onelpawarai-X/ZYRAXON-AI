@@ -213,6 +213,22 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         },
       }
     }),
+    // The house provider is keyless: its endpoint answers without any
+    // credential. Without a loader here it never lands in `providers`, so it
+    // never appears in the connected set and the picker demotes it to
+    // "add more models". `apiKey: "public"` mirrors the opencode free tier,
+    // which needs a non-empty value to build a client at all.
+    zyraxon: Effect.fnUntraced(function* (input: Info) {
+      const env = yield* dep.env()
+      const hasKey = input.env.some((item) => env[item]) || Boolean(yield* dep.auth(input.id))
+      return {
+        autoload: Object.keys(input.models).length > 0,
+        options: {
+          ...(hasKey ? {} : { apiKey: "public" }),
+          headers: { "User-Agent": freeTierUserAgent() },
+        },
+      }
+    }),
     openai: () =>
       Effect.succeed({
         autoload: false,
