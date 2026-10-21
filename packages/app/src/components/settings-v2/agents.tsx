@@ -19,6 +19,14 @@ import { useLayout } from "@/context/layout"
 import { showToast } from "@/utils/toast"
 import { SettingsListV2 } from "./parts/list"
 import { SettingsRowV2 } from "./parts/row"
+import {
+  createDragTracker,
+  downloadAgentFile,
+  isFileDrag,
+  parseAgentFile,
+  toConfigEntry,
+  type AgentConfigEntry,
+} from "./agent-port"
 import "./settings-v2.css"
 
 /**
@@ -37,14 +45,7 @@ type AgentRow = {
   description?: string
   mode: string
   model?: string
-}
-
-/** The shape the global config stores per agent, keyed by agent name. */
-type AgentConfigEntry = {
-  description?: string
-  mode?: "subagent" | "primary" | "all"
   prompt?: string
-  model?: string
   temperature?: number
 }
 
@@ -59,6 +60,7 @@ export const SettingsAgentsV2: Component = () => {
   const dialog = useDialog()
 
   const [reloadKey, setReloadKey] = createSignal(0)
+  const [dragging, setDragging] = createSignal(false)
 
   const directory = createMemo(
     () => layout.home.selection().directory ?? layout.projects.list()[0]?.worktree ?? "",
@@ -82,6 +84,8 @@ export const SettingsAgentsV2: Component = () => {
           description: typeof entry.description === "string" ? entry.description : undefined,
           mode: typeof entry.mode === "string" ? entry.mode : "all",
           model: model?.modelID ? `${model.providerID ?? ""}/${model.modelID}` : undefined,
+          prompt: typeof entry.prompt === "string" ? entry.prompt : undefined,
+          temperature: typeof entry.temperature === "number" ? entry.temperature : undefined,
         }
       })
   })
@@ -117,7 +121,15 @@ export const SettingsAgentsV2: Component = () => {
         <h2 class="settings-v2-tab-title">{language.t("settings.tab.agents")}</h2>
       </div>
       <div class="settings-v2-tab-body">
-        <div class="settings-v2-section">
+        <div
+          class="settings-v2-section zy-agents-dropzone"
+          classList={{ "zy-agents-dropzone--active": dragging() }}
+          data-action="settings-agents-dropzone"
+          onDragEnter={onDragEnter}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          onDrop={(event) => void onDrop(event)}
+        >
           <div class="zy-agents-head">
             <div class="zy-agents-heading">
               <h3 class="zy-agents-title">{language.t("settings.agents.title")}</h3>
@@ -130,6 +142,15 @@ export const SettingsAgentsV2: Component = () => {
               <ButtonV2 size="small" variant="neutral" icon="plus" onClick={createAgent}>
                 {language.t("settings.agents.create.action")}
               </ButtonV2>
+              <ButtonV2
+                size="small"
+                variant="neutral"
+                icon="upload"
+                data-action="settings-agents-import"
+                onClick={importAgent}
+              >
+                {language.t("settings.agents.import")}
+              </ButtonV2>
             </div>
           </div>
 
@@ -140,14 +161,22 @@ export const SettingsAgentsV2: Component = () => {
                   title={agent.name}
                   description={agent.description ?? language.t("settings.agents.rules.at", { path: configPath() })}
                 >
-                  <div class="settings-v2-inline">
+                  <div class="zy-agents-row-actions">
                     <Tag variant="neutral">{agent.mode}</Tag>
                     <Show when={agent.model}>
                       <span class="settings-v2-mono">{agent.model}</span>
                     </Show>
                     <button
                       type="button"
-                      class="settings-v2-path-button"
+                      class="zy-agents-row-action"
+                      data-action="settings-agents-export"
+                      onClick={() => exportAgent(agent)}
+                    >
+                      {language.t("settings.agents.export")}
+                    </button>
+                    <button
+                      type="button"
+                      class="zy-agents-row-action"
                       data-action="settings-agents-delete"
                       onClick={() => void deleteAgent(agent.name)}
                     >
@@ -158,6 +187,7 @@ export const SettingsAgentsV2: Component = () => {
               )}
             </For>
           </SettingsListV2>
+          <p class="zy-agents-hint zy-agents-drop-hint">{language.t("settings.agents.dropHint")}</p>
         </div>
       </div>
     </>
@@ -170,6 +200,102 @@ export const SettingsAgentsV2: Component = () => {
     delete next[name]
     await serverSync().updateConfig({ agent: next })
     reload()
+  }
+
+  /**
+   * Write the agent out as a portable file. The list already carries the prompt,
+   * so the export is the same data the panel shows; nothing is read from disk and
+   * the agent is never modified, which keeps a share from having side effects.
+   */
+  function exportAgent(agent: AgentRow) {
+    try {
+      downloadAgentFile({
+        name: agent.name,
+        description: agent.description,
+        mode: (agent.mode as "primary" | "subagent" | "all") ?? "all",
+        model: agent.model,
+        temperature: agent.temperature,
+        prompt: agent.prompt,
+      })
+      showToast({ title: language.t("settings.agents.exported"), variant: "success" })
+    } catch {
+      showToast({ title: language.t("settings.agents.export.error") })
+    }
+  }
+
+  /**
+   * Read a portable file back in. The picker is a hidden file input so the same
+   * code path works in the desktop shell and a browser, and the parsed agent is
+   * merged into the global config the panel and the CLI both read. An existing
+   * agent of the same name is replaced, which is what a re-import should do.
+   */
+  function importAgent() {
+    const input = document.createElement("input")
+    input.type = "file"
+    input.accept = ".json,application/json"
+    input.addEventListener("change", async () => {
+      const file = input.files?.[0]
+      if (!file) return
+      await importFile(file)
+    })
+    input.click()
+  }
+
+  /**
+   * Take the text of a dropped or picked file and register it as an agent. Both
+   * the picker and the drop zone funnel through here so there is one place that
+   * validates, one place that writes, and one place that reports failure.
+   */
+  async function importFile(file: File) {
+    try {
+      const parsed = parseAgentFile(await file.text())
+      if (!parsed.ok) {
+        showToast({ title: language.t("settings.agents.import.error") })
+        return
+      }
+      const current = (serverSync().data.config.agent ?? {}) as Record<string, AgentConfigEntry>
+      await serverSync().updateConfig({
+        agent: { ...current, [parsed.file.name]: toConfigEntry(parsed.file) },
+      })
+      showToast({ title: language.t("settings.agents.imported"), variant: "success" })
+      reload()
+    } catch {
+      showToast({ title: language.t("settings.agents.import.error") })
+    }
+  }
+
+  /**
+   * A dropped file is the shortest path from "someone sent me an agent" to "it is
+   * mine", so the whole list doubles as a drop target. The tracker keeps the
+   * highlight steady while the pointer moves across the rows inside the panel,
+   * which otherwise fire dragleave on every child.
+   */
+  const drag = createDragTracker()
+
+  function onDragEnter(event: DragEvent) {
+    if (!isFileDrag(event.dataTransfer?.types)) return
+    event.preventDefault()
+    drag.enter()
+    setDragging(true)
+  }
+
+  function onDragOver(event: DragEvent) {
+    if (!isFileDrag(event.dataTransfer?.types)) return
+    event.preventDefault()
+    event.dataTransfer!.dropEffect = "copy"
+  }
+
+  function onDragLeave() {
+    if (drag.leave()) setDragging(false)
+  }
+
+  async function onDrop(event: DragEvent) {
+    drag.reset()
+    setDragging(false)
+    const file = event.dataTransfer?.files?.[0]
+    if (!file) return
+    event.preventDefault()
+    await importFile(file)
   }
 }
 

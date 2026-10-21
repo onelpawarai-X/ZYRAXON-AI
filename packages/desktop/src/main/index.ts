@@ -33,6 +33,7 @@ import {
   spawnLocalServer,
   type SidecarListener,
 } from "./server"
+import { decideRestart } from "./server-supervisor"
 import { setupAutoUpdater, showUpdaterDialog } from "./updater"
 import { safeWebContentsURL } from "./window-state"
 import {
@@ -468,52 +469,84 @@ const main = Effect.gen(function* () {
   // NOTE: Effect.forkChild does NOT run the child fiber in this environment.
   // Using plain async/await instead to ensure sidecar actually spawns.
   void (async () => {
-    try {
-      logger.log("sidecar connection started", { url })
+    let attempt = 0
+    let readyResolved = false
 
-      ensureLoopbackNoProxy()
-      useEnvProxy()
+    // The sidecar is a child process and can die on its own (OOM kill, crash,
+    // machine waking from sleep). Without a supervisor an exit only produced a
+    // log line, so the server stayed down while the UI kept polling a dead port
+    // — the "server keeps stopping and starting" report. Each exit now schedules
+    // a bounded, backed-off restart, and a deliberate stop or app quit never
+    // restarts.
+    const runServer = async (): Promise<void> => {
+      try {
+        logger.log("sidecar connection started", { url })
 
-      logger.log("spawning sidecar", { url })
-      const { listener, health } = await spawnLocalServer(hostname, port, password, {
-        userDataPath: app.getPath("userData"),
-        onStdout: (message) => {
-          console.log("[Main] Server stdout:", message)
-          writeLog("server", "stdout", { message })
-        },
-        onStderr: (message) => {
-          console.error("[Main] Server stderr:", message)
-          writeLog("server", "stderr", { message }, "warn")
-        },
-        onExit: (code) => {
-          console.error("[Main] Server exited with code:", code)
-          writeLog("utility", "sidecar exited", { code }, "warn")
-        },
-      })
-      server = listener
-      setDefaultServerUrl(url)
-      logger.log("sidecar spawned successfully, resolving server ready")
-      Effect.runSync(Deferred.succeed(serverReady, { url, username: "zyraxon", password } as ServerReadyData))
+        ensureLoopbackNoProxy()
+        useEnvProxy()
 
-      if (process.platform === "win32") {
-        void wslServers.initialize().catch((error) => logger.error("wsl server initialization failed", error))
+        logger.log("spawning sidecar", { url })
+        const { listener, health } = await spawnLocalServer(hostname, port, password, {
+          userDataPath: app.getPath("userData"),
+          onStdout: (message) => {
+            console.log("[Main] Server stdout:", message)
+            writeLog("server", "stdout", { message })
+          },
+          onStderr: (message) => {
+            console.error("[Main] Server stderr:", message)
+            writeLog("server", "stderr", { message }, "warn")
+          },
+          onExit: (code) => {
+            console.error("[Main] Server exited with code:", code)
+            writeLog("utility", "sidecar exited", { code }, "warn")
+            if (server !== listener) return
+            server = null
+            const decision = decideRestart({ attempt: ++attempt, quitting: isQuitting, stoppedDeliberately: false })
+            if (!decision.restart) {
+              logger.error("sidecar will not be restarted", decision.reason)
+              return
+            }
+            logger.warn("restarting sidecar after unexpected exit", { attempt, delayMs: decision.delayMs })
+            setTimeout(() => void runServer(), decision.delayMs)
+          },
+        })
+        server = listener
+        setDefaultServerUrl(url)
+        logger.log("sidecar spawned successfully, resolving server ready")
+        if (!readyResolved) {
+          readyResolved = true
+          Effect.runSync(Deferred.succeed(serverReady, { url, username: "zyraxon", password } as ServerReadyData))
+        }
+
+        if (process.platform === "win32") {
+          void wslServers.initialize().catch((error) => logger.error("wsl server initialization failed", error))
+        }
+
+        logger.log("waiting for sidecar health check")
+        await health.wait.catch((e) => {
+          console.error("[Main] Sidecar health check failed:", String(e))
+          logger.error("sidecar health check failed", String(e))
+        })
+
+        // A healthy start resets the backoff so a long-lived server that dies
+        // once months later still gets the full retry budget.
+        attempt = 0
+
+        // Automation never relaunches a closed app and never closes one itself. It runs only
+        // while the person keeps the app open, alongside the live agent.
+
+        logger.log("loading task finished")
+      } catch (error) {
+        console.error("[Main] Sidecar failed to start:", error)
+        logger.error("sidecar failed to start", String(error))
+        if (!readyResolved) {
+          readyResolved = true
+          Effect.runSync(Deferred.fail(serverReady, error))
+        }
       }
-
-      logger.log("waiting for sidecar health check")
-      await health.wait.catch((e) => {
-        console.error("[Main] Sidecar health check failed:", String(e))
-        logger.error("sidecar health check failed", String(e))
-      })
-
-      // Automation never relaunches a closed app and never closes one itself. It runs only
-      // while the person keeps the app open, alongside the live agent.
-
-      logger.log("loading task finished")
-    } catch (error) {
-      console.error("[Main] Sidecar failed to start:", error)
-      logger.error("sidecar failed to start", String(error))
-      Effect.runSync(Deferred.fail(serverReady, error))
     }
+
+    await runServer()
   })()
 
   // Deferred net log — moved here so it never blocks window creation

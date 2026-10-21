@@ -2,7 +2,6 @@
 
 import { Config } from "@/config/config"
 import { GlobalBus, type GlobalEvent as GlobalBusEvent } from "@/bus/global"
-import { EffectBridge } from "@/effect/bridge"
 import { EventV2 } from "@zyraxon-ai/core/event"
 import { Installation } from "@/installation"
 import { disposeAllInstancesAndEmitGlobalDisposed } from "@/server/global-lifecycle"
@@ -71,7 +70,6 @@ export const globalHandlers = HttpApiBuilder.group(RootHttpApi, "global", (handl
   Effect.gen(function* () {
     const config = yield* Config.Service
     const installation = yield* Installation.Service
-    const bridge = yield* EffectBridge.make()
 
     const health = Effect.fn("GlobalHttpApi.health")(function* () {
       return { healthy: true as const, version: InstallationVersion }
@@ -87,7 +85,11 @@ export const globalHandlers = HttpApiBuilder.group(RootHttpApi, "global", (handl
 
     const configUpdate = Effect.fn("GlobalHttpApi.configUpdate")(function* (ctx) {
       const result = yield* config.updateGlobal(ctx.payload)
-      if (result.changed) bridge.fork(disposeAllInstancesAndEmitGlobalDisposed({ swallowErrors: true }))
+      // Disposal is awaited, not forked. The client refetches the agent list the
+      // moment this response lands, and a forked disposal would still be tearing
+      // instances down at that point, so the refetch would read the cached config
+      // from before the write and the newly saved agent would look missing.
+      if (result.changed) yield* disposeAllInstancesAndEmitGlobalDisposed({ swallowErrors: true })
       return result.info
     })
 

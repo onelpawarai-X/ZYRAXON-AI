@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 /**
  * The setup guide for every app, in every language the panel offers.
  *

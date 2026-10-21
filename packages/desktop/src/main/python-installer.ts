@@ -7,7 +7,8 @@ import { join } from "node:path"
 import { homedir } from "node:os"
 import { execFile } from "node:child_process"
 import { promisify } from "node:util"
-import { createWriteStream } from "node:fs"
+import { downloadFile } from "./download"
+import { runPrivileged } from "./privileged"
 
 const execFileAsync = promisify(execFile)
 
@@ -17,6 +18,10 @@ const INSTALL_TIMEOUT = 120_000 // 2 minutes for download + install
 const DETECT_TIMEOUT = 3000 // 3s per detection attempt (async, non-blocking)
 
 const PYTHON_VERSION = "3.12.8"
+
+function reportProgress(percent: number) {
+  process.stdout.write(`\r[Python Installer] Downloading... ${percent}%`)
+}
 
 interface PythonInfo {
   path: string
@@ -93,41 +98,6 @@ async function detectSystemPython(): Promise<PythonInfo | null> {
 }
 
 /**
- * Download file with streaming
- */
-async function downloadFile(url: string, dest: string): Promise<void> {
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error(`Download failed: ${response.status} ${response.statusText}`)
-  }
-
-  const fileStream = createWriteStream(dest)
-  const reader = response.body?.getReader()
-  if (!reader) throw new Error("No response body")
-
-  let received = 0
-  const total = Number(response.headers.get("content-length")) || 0
-
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    fileStream.write(value)
-    received += value.length
-
-    if (total > 0) {
-      const pct = Math.round((received / total) * 100)
-      process.stdout.write(`\r[Python Installer] Downloading... ${pct}%`)
-    }
-  }
-
-  fileStream.end()
-  await new Promise<void>((resolve, reject) => {
-    fileStream.on("finish", resolve)
-    fileStream.on("error", reject)
-  })
-}
-
-/**
  * Install Python on Windows (embeddable package)
  */
 async function installPythonWindows(): Promise<PythonInfo> {
@@ -141,7 +111,7 @@ async function installPythonWindows(): Promise<PythonInfo> {
   const url = `https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-embed-amd64.zip`
   console.log(`[Python Installer] Downloading Python ${PYTHON_VERSION} for Windows...`)
 
-  await downloadFile(url, zipPath)
+  await downloadFile(url, zipPath, { onProgress: reportProgress })
   console.log("\n[Python Installer] Extracting...")
 
   await execFileAsync("powershell", [
@@ -164,7 +134,7 @@ async function installPythonWindows(): Promise<PythonInfo> {
   const getPipPath = join(PYTHON_DIR, "get-pip.py")
   try {
     console.log("[Python Installer] Installing pip...")
-    await downloadFile("https://bootstrap.pypa.io/get-pip.py", getPipPath)
+    await downloadFile("https://bootstrap.pypa.io/get-pip.py", getPipPath, { onProgress: reportProgress })
     await execFileAsync(pythonExe, [getPipPath], {
       timeout: 60_000,
       cwd: PYTHON_DIR,
@@ -226,10 +196,8 @@ async function installPythonMacOS(): Promise<PythonInfo> {
   console.log("[Python Installer] Downloading Python from python.org...")
   const dmgPath = join(PYTHON_DIR, "python.dmg")
   const url = `https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-macos11.pkg`
-  await downloadFile(url, dmgPath)
-  await execFileAsync("sudo", ["installer", "-pkg", dmgPath, "-target", "/"], {
-    timeout: INSTALL_TIMEOUT,
-  })
+  await downloadFile(url, dmgPath, { onProgress: reportProgress })
+  await runPrivileged(["installer", "-pkg", dmgPath, "-target", "/"], { timeoutMs: INSTALL_TIMEOUT })
   writeFileSync(PYTHON_MARKER, PYTHON_VERSION, "utf8")
   return { path: "/usr/local/bin/python3.12", version: PYTHON_VERSION, available: true }
 }
@@ -246,21 +214,18 @@ async function installPythonLinux(): Promise<PythonInfo> {
   // system packages are part of being able to run at all, not an optional extra.
   try {
     console.log("[Python Installer] Installing AT-SPI prerequisites via apt...")
-    await execFileAsync("sudo", [
-      "apt-get", "install", "-y", "-qq",
-      "python3-gi", "gir1.2-atspi-2.0", "at-spi2-core",
-    ], { timeout: INSTALL_TIMEOUT })
+    await runPrivileged(["apt-get", "install", "-y", "-qq", "python3-gi", "gir1.2-atspi-2.0", "at-spi2-core"], {
+      timeoutMs: INSTALL_TIMEOUT,
+    })
   } catch {}
 
   // Try apt
   try {
     console.log("[Python Installer] Installing Python via apt...")
-    await execFileAsync("sudo", [
-      "apt-get", "update", "-qq",
-    ], { timeout: 30_000 })
-    await execFileAsync("sudo", [
-      "apt-get", "install", "-y", "-qq", "python3.12", "python3.12-venv", "python3-pip",
-    ], { timeout: INSTALL_TIMEOUT })
+    await runPrivileged(["apt-get", "update", "-qq"], { timeoutMs: 30_000 })
+    await runPrivileged(["apt-get", "install", "-y", "-qq", "python3.12", "python3.12-venv", "python3-pip"], {
+      timeoutMs: INSTALL_TIMEOUT,
+    })
     const { stdout } = await execFileAsync("which", ["python3.12"], {
       encoding: "utf8", timeout: 5000,
     })
@@ -272,9 +237,7 @@ async function installPythonLinux(): Promise<PythonInfo> {
   // Try yum
   try {
     console.log("[Python Installer] Installing Python via yum...")
-    await execFileAsync("sudo", [
-      "yum", "install", "-y", "python3.12", "python3.12-pip",
-    ], { timeout: INSTALL_TIMEOUT })
+    await runPrivileged(["yum", "install", "-y", "python3.12", "python3.12-pip"], { timeoutMs: INSTALL_TIMEOUT })
     const { stdout } = await execFileAsync("which", ["python3.12"], {
       encoding: "utf8", timeout: 5000,
     })
@@ -285,9 +248,7 @@ async function installPythonLinux(): Promise<PythonInfo> {
   // Try dnf
   try {
     console.log("[Python Installer] Installing Python via dnf...")
-    await execFileAsync("sudo", [
-      "dnf", "install", "-y", "python3.12", "python3.12-pip",
-    ], { timeout: INSTALL_TIMEOUT })
+    await runPrivileged(["dnf", "install", "-y", "python3.12", "python3.12-pip"], { timeoutMs: INSTALL_TIMEOUT })
     const { stdout } = await execFileAsync("which", ["python3.12"], {
       encoding: "utf8", timeout: 5000,
     })
