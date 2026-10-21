@@ -76,7 +76,7 @@ import { sessionTitle } from "@/utils/session-title"
 import { scheduleConnectedMeasure } from "./measure"
 import { observeElementOffsetReconnectAware } from "./observe-element-offset"
 import { createTimelineProjection } from "./projection"
-import { detectSpeechLocale, providerSpeechRequest } from "@/utils/provider-tts"
+import { providerSpeechRequest, resolveSpeechLocale } from "@/utils/provider-tts"
 import { MessageComment, SummaryDiff, TimelineRow, TimelineRowMap } from "./rows"
 import { MediaProcessingIndicator } from "./media-processing"
 import { filterVirtualIndexes } from "./virtual-items"
@@ -993,8 +993,7 @@ export function MessageTimeline(props: {
     // The provider engine has its own endpoint and picks the voice from the
     // text's language, so the local server's gender/lang query does not apply.
     if (settings.general.voiceEngine?.() === "provider") {
-      const locale = settings.general.voiceLanguage?.() || "auto"
-      return providerSpeechRequest(chunk, locale === "auto" ? detectSpeechLocale(chunk) : locale)
+      return providerSpeechRequest(chunk, resolveSpeechLocale(chunk, settings.general.voiceLanguage?.()))
     }
     const gender = settings.general.voiceGender?.() === "male" ? "m" : "f"
     const voiceLang = settings.general.voiceLanguage?.() || "en-US"

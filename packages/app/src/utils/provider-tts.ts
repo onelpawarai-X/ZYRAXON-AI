@@ -57,8 +57,34 @@ export function detectSpeechLocale(text: string): string | undefined {
 }
 
 /**
+ * The locale to request for `text`, given the user's configured language.
+ *
+ * The script of the text always beats the setting. A voice that does not cover
+ * the text's script does not fail loudly — the endpoint answers `200` with an
+ * `audio/mpeg` header and a zero-byte body — so sending Bengali letters to an
+ * English voice produces silence that looks exactly like success. Honouring the
+ * setting here would therefore make the provider engine appear broken for every
+ * non-Latin reply, which is the one case it exists to serve.
+ *
+ * The setting still applies to Latin-script text, where any Latin voice can read
+ * it. `auto` means the caller has no preference, so the endpoint picks its own
+ * default rather than being handed a locale it must match.
+ */
+export function resolveSpeechLocale(text: string, preferred?: string): string | undefined {
+  const detected = detectSpeechLocale(text)
+  if (detected) return detected
+  if (!preferred || preferred === "auto") return undefined
+  // The endpoint's voices are keyed by language, not by region.
+  return preferred.split("-")[0] || undefined
+}
+
+/**
  * A request whose body is the spoken audio, in the same shape the built-in
  * engine's prefetch returns so both engines share one playback path.
+ *
+ * A zero-byte body is reported as a failure rather than passed on as a response,
+ * because it is indistinguishable from a real one by status or content type and
+ * would otherwise play as silent success.
  */
 export function providerSpeechRequest(
   text: string,
@@ -73,7 +99,14 @@ export function providerSpeechRequest(
     body: JSON.stringify({ text, locale: locale ?? detectSpeechLocale(text) }),
     signal: controller.signal,
   })
-    .then((resp) => (resp.ok ? resp : null))
+    .then((resp) => {
+      if (!resp.ok) return null
+      // A declared empty length is a definite miss; an undeclared one is checked
+      // by the caller, which is the only place the body may be consumed once.
+      const length = resp.headers.get("content-length")
+      if (length === "0") return null
+      return resp
+    })
     .catch(() => null)
   return { promise, controller }
 }
@@ -95,10 +128,14 @@ export function createProviderSpeaker() {
     try {
       while (!stopped && queue.length > 0) {
         const piece = queue.shift()!
-        const { promise } = providerSpeechRequest(piece)
+        const { promise } = providerSpeechRequest(piece, resolveSpeechLocale(piece))
         const resp = await promise
         if (!resp || stopped) continue
-        const url = URL.createObjectURL(await resp.blob())
+        const blob = await resp.blob()
+        // A zero-byte body is the endpoint's silent miss; playing it would look
+        // like success while nothing is heard.
+        if (blob.size === 0) continue
+        const url = URL.createObjectURL(blob)
         const el = new Audio(url)
         audio = el
         await new Promise<void>((resolve) => {
