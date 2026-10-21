@@ -463,6 +463,17 @@ function renderKatexToken(token: Tokens.Generic) {
   })
 }
 
+/**
+ * Shiki returns `<pre class="shiki ..."><code>...` with the fence language gone.
+ * Rich content is discovered by `pre > code.language-html` (and the SVG and
+ * Mermaid equivalents), so without this the HTML preview and the diagrams
+ * disappeared the moment a reply stopped streaming and its final parse landed.
+ * The class is put back on the `<code>` shiki emits so detection survives.
+ */
+function withLanguageClass(html: string, language: string) {
+  return html.replace(/<code(?=[\s>])/, `<code class="language-${language}"`)
+}
+
 function renderMathExpressions(html: string): string {
   // Split on code/pre/kbd tags to avoid processing their contents
   const codeBlockPattern = /(<(?:pre|code|kbd)[^>]*>[\s\S]*?<\/(?:pre|code|kbd)>)/gi
@@ -512,7 +523,7 @@ async function highlightCodeBlocks(html: string): Promise<string> {
       theme: "ZYRAXON",
       tabindex: false,
     })
-    result = result.replace(fullMatch, () => highlighted)
+    result = result.replace(fullMatch, () => withLanguageClass(highlighted, language))
   }
 
   return result
@@ -547,11 +558,12 @@ export const { use: useMarked, provider: MarkedProvider } = createSimpleContext(
           if (!highlighter.getLoadedLanguages().includes(lang)) {
             await highlighter.loadLanguage(lang as BundledLanguage)
           }
-          return highlighter.codeToHtml(code, {
+          const highlighted = highlighter.codeToHtml(code, {
             lang: lang || "text",
             theme: "ZYRAXON",
             tabindex: false,
           })
+          return withLanguageClass(highlighted, lang || "text")
         },
       }),
     )
