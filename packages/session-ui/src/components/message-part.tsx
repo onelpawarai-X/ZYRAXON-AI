@@ -207,7 +207,8 @@ export interface MessagePartProps {
   useV2Actions?: boolean
   /**
    * Whether a media part the assistant produced should start playing on its own.
-   * False keeps a replayed or historical message silent.
+   * Opt-in: anything other than `true` leaves it paused, so a render site that
+   * does not know the speech setting can never start an old message talking.
    */
   autoplayAudio?: boolean
 }
@@ -1932,9 +1933,11 @@ PART_MAPPING["file"] = function FilePartDisplay(props) {
     const el = element()
     const url = part().url
     if (!el || !url) return
-    // Autoplay only while speech is enabled. A replayed or historical message
-    // stays silent so an old answer cannot start talking on its own.
-    if (props.autoplayAudio === false) return
+    // Opt-in, not opt-out: playback starts only where the caller explicitly asked
+    // for it. The other render sites for a part do not know whether speech is
+    // enabled, so treating silence as the default is what keeps an old message
+    // from talking on its own. Controls stay, so a click can still play it.
+    if (props.autoplayAudio !== true) return
     // The browser may refuse playback until the page has been interacted with;
     // the controls remain, so a refusal is recoverable rather than lost audio.
     void el.play().catch(() => {})
