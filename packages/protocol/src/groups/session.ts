@@ -1,6 +1,7 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import { SessionMessage } from "@zyraxon-ai/schema/session-message"
+import { SessionPort } from "@zyraxon-ai/schema/session-port"
 import { SessionInput } from "@zyraxon-ai/schema/session-input"
 import { PromptInput } from "@zyraxon-ai/schema/prompt-input"
 import { Session } from "@zyraxon-ai/schema/session"
@@ -92,6 +93,68 @@ export const SessionHistoryQuery = Schema.Struct({
   limit: Schema.NumberFromString.pipe(Schema.decodeTo(SessionHistoryLimit), Schema.optional),
   after: Schema.NumberFromString.pipe(Schema.decodeTo(NonNegativeInt), Schema.optional),
 })
+
+const SessionPortSession = Schema.Struct({
+  id: Schema.String,
+  project_id: Schema.String,
+  parent_id: Schema.NullOr(Schema.String).pipe(Schema.optional),
+  title: Schema.String,
+  agent: Schema.NullOr(Schema.String).pipe(Schema.optional),
+  model: Schema.NullOr(
+    Schema.Struct({
+      id: Schema.String,
+      providerID: Schema.String,
+      variant: Schema.String.pipe(Schema.optional),
+    }),
+  ).pipe(Schema.optional),
+  cost: Schema.Finite,
+  tokens_input: Schema.Finite,
+  tokens_output: Schema.Finite,
+  tokens_reasoning: Schema.Finite,
+  tokens_cache_read: Schema.Finite,
+  tokens_cache_write: Schema.Finite,
+  time_created: Schema.Finite,
+  time_updated: Schema.Finite,
+  time_archived: Schema.NullOr(Schema.Finite).pipe(Schema.optional),
+}).annotate({ identifier: "SessionPortSession" })
+
+const SessionPortPart = Schema.Struct({
+  id: Schema.String,
+  time_created: Schema.Finite,
+  data: Schema.Json,
+}).annotate({ identifier: "SessionPortPart" })
+
+const SessionPortMessage = Schema.Struct({
+  id: Schema.String,
+  type: Schema.String,
+  seq: Schema.Finite,
+  time_created: Schema.Finite,
+  data: Schema.Json,
+  parts: Schema.Array(SessionPortPart),
+}).annotate({ identifier: "SessionPortMessage" })
+
+export const SessionPortBundle = Schema.Struct({
+  // `kind` and `version` are the document's identity. Pinning them to the exact
+  // values we emit means a well-formed JSON file that belongs to another tool, or
+  // one written by a future bundle format, is refused at the HTTP boundary instead
+  // of silently importing as an empty session.
+  kind: Schema.Literal(SessionPort.KIND),
+  version: Schema.Literal(SessionPort.VERSION),
+  exportedAt: Schema.Finite,
+  session: SessionPortSession,
+  messages: Schema.Array(SessionPortMessage),
+}).annotate({ identifier: "SessionPortBundle" })
+
+export const SessionImportPayload = Schema.Struct({
+  bundle: SessionPortBundle,
+  location: Location.Ref.pipe(Schema.optional),
+})
+
+export const SessionImportResult = Schema.Struct({
+  id: Session.ID,
+  restored: Schema.Finite,
+  skipped: Schema.Finite,
+}).annotate({ identifier: "SessionImportResult" })
 
 const SessionsQueryCursor = SessionsCursor.annotate({
   description: "Opaque pagination cursor returned as cursor.previous or cursor.next in the previous response.",
@@ -372,6 +435,35 @@ export const makeSessionGroup = <I extends HttpApiMiddleware.AnyId, S>(sessionLo
             description: "Retrieve one projected message owned by the Session.",
           }),
         ),
+    )
+    .add(
+      HttpApiEndpoint.get("session.export", "/api/session/:sessionID/export", {
+        params: { sessionID: Session.ID },
+        success: SessionPortBundle,
+        error: [SessionNotFoundError, UnknownError],
+      })
+        .middleware(sessionLocationMiddleware)
+        .annotateMerge(
+          OpenApi.annotations({
+            identifier: "v2.session.export",
+            summary: "Export session",
+            description: "Read a session and every durable message it owns as one portable bundle.",
+          }),
+        ),
+    )
+    .add(
+      HttpApiEndpoint.post("session.import", "/api/session/import", {
+        payload: SessionImportPayload,
+        success: SessionImportResult,
+        error: [InvalidRequestError, UnknownError],
+      }).annotateMerge(
+        OpenApi.annotations({
+          identifier: "v2.session.import",
+          summary: "Import session",
+          description:
+            "Create a new session from a portable bundle and restore its conversation so the imported history is visible to the next turn.",
+        }),
+      ),
     )
     .annotateMerge(
       OpenApi.annotations({

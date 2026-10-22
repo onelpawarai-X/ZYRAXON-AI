@@ -37,6 +37,10 @@ import type {
   SessionsInterruptOutput,
   SessionsMessageInput,
   SessionsMessageOutput,
+  SessionsExportInput,
+  SessionsExportOutput,
+  SessionsImportInput,
+  SessionsImportOutput,
   MessagesListInput,
   MessagesListOutput,
   ModelsListInput,
@@ -500,6 +504,29 @@ export function make(options: ClientOptions) {
           },
           requestOptions,
         ).then((value) => value.data),
+      export: (input: SessionsExportInput, requestOptions?: RequestOptions) =>
+        request<SessionsExportOutput>(
+          {
+            method: "GET",
+            path: `/api/session/${encodeURIComponent(input.sessionID)}/export`,
+            successStatus: 200,
+            declaredStatuses: [404, 500, 400, 401],
+            empty: false,
+          },
+          requestOptions,
+        ),
+      import: (input: SessionsImportInput, requestOptions?: RequestOptions) =>
+        request<SessionsImportOutput>(
+          {
+            method: "POST",
+            path: `/api/session/import`,
+            body: { bundle: input["bundle"], location: input["location"] },
+            successStatus: 200,
+            declaredStatuses: [400, 500, 401],
+            empty: false,
+          },
+          requestOptions,
+        ),
     },
     messages: {
       list: (input: MessagesListInput, requestOptions?: RequestOptions) =>

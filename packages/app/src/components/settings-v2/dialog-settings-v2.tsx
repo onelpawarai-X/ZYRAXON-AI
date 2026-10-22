@@ -21,6 +21,7 @@ import { SettingsAppearanceV2 } from "./appearance"
 import { SettingsNotificationsV2 } from "./notifications"
 import { SettingsLanguageV2 } from "./language"
 import { SettingsAgentsV2 } from "./agents"
+import { SettingsSessionsV2 } from "./sessions"
 import { SettingsExtensionsV2 } from "./extensions-v2"
 import { SettingsStorageV2 } from "./storage"
 import { SettingsSecurityV2 } from "./security"
@@ -39,6 +40,7 @@ type Section =
   | "notifications"
   | "shortcuts"
   | "agents"
+  | "sessions"
   | "servers"
   | "providers"
   | "models"
@@ -79,6 +81,7 @@ const GROUPS: readonly { title: string; items: readonly { section: Section; icon
     title: "settings.section.app",
     items: [
       { section: "agents", icon: "zy-sessions" },
+      { section: "sessions", icon: "zy-sessions" },
       { section: "extensions", icon: "zy-plugins" },
       { section: "storage", icon: "zy-repositories" },
     ],
@@ -203,6 +206,9 @@ export const DialogSettings: Component<{
         </TabsV2.Content>
         <TabsV2.Content value="agents" class="settings-v2-panel">
           <SettingsAgentsV2 />
+        </TabsV2.Content>
+        <TabsV2.Content value="sessions" class="settings-v2-panel">
+          <SettingsSessionsV2 />
         </TabsV2.Content>
         <TabsV2.Content value="servers" class="settings-v2-panel">
           <SettingsServersV2 />

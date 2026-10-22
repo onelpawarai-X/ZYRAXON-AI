@@ -1755,6 +1755,118 @@ export type SessionsMessageOutput = {
       }
 }["data"]
 
+export type SessionsExportInput = { readonly sessionID: { readonly sessionID: string }["sessionID"] }
+
+export type SessionsExportOutput = {
+  readonly kind: "zyraxon-session-port"
+  readonly version: 1
+  readonly exportedAt: number
+  readonly session: {
+    readonly id: string
+    readonly project_id: string
+    readonly parent_id?: string | null | undefined
+    readonly title: string
+    readonly agent?: string | null | undefined
+    readonly model?:
+      | { readonly id: string; readonly providerID: string; readonly variant?: string | undefined }
+      | null
+      | undefined
+    readonly cost: number
+    readonly tokens_input: number
+    readonly tokens_output: number
+    readonly tokens_reasoning: number
+    readonly tokens_cache_read: number
+    readonly tokens_cache_write: number
+    readonly time_created: number
+    readonly time_updated: number
+    readonly time_archived?: number | null | undefined
+  }
+  readonly messages: ReadonlyArray<{
+    readonly id: string
+    readonly type: string
+    readonly seq: number
+    readonly time_created: number
+    readonly data: JsonValue
+  }>
+}
+
+export type SessionsImportInput = {
+  readonly bundle: {
+    readonly bundle: {
+      readonly kind: "zyraxon-session-port"
+      readonly version: 1
+      readonly exportedAt: number
+      readonly session: {
+        readonly id: string
+        readonly project_id: string
+        readonly parent_id?: string | null | null
+        readonly title: string
+        readonly agent?: string | null | null
+        readonly model?: {
+          readonly id: string
+          readonly providerID: string
+          readonly variant?: string | null
+        } | null | null
+        readonly cost: number
+        readonly tokens_input: number
+        readonly tokens_output: number
+        readonly tokens_reasoning: number
+        readonly tokens_cache_read: number
+        readonly tokens_cache_write: number
+        readonly time_created: number
+        readonly time_updated: number
+        readonly time_archived?: number | null | null
+      }
+      readonly messages: ReadonlyArray<{
+        readonly id: string
+        readonly type: string
+        readonly seq: number
+        readonly time_created: number
+        readonly data: JsonValue
+      }>
+    }
+    readonly location?: { readonly directory: string; readonly workspaceID?: string } | null
+  }["bundle"]
+  readonly location?: {
+    readonly bundle: {
+      readonly kind: "zyraxon-session-port"
+      readonly version: 1
+      readonly exportedAt: number
+      readonly session: {
+        readonly id: string
+        readonly project_id: string
+        readonly parent_id?: string | null | null
+        readonly title: string
+        readonly agent?: string | null | null
+        readonly model?: {
+          readonly id: string
+          readonly providerID: string
+          readonly variant?: string | null
+        } | null | null
+        readonly cost: number
+        readonly tokens_input: number
+        readonly tokens_output: number
+        readonly tokens_reasoning: number
+        readonly tokens_cache_read: number
+        readonly tokens_cache_write: number
+        readonly time_created: number
+        readonly time_updated: number
+        readonly time_archived?: number | null | null
+      }
+      readonly messages: ReadonlyArray<{
+        readonly id: string
+        readonly type: string
+        readonly seq: number
+        readonly time_created: number
+        readonly data: JsonValue
+      }>
+    }
+    readonly location?: { readonly directory: string; readonly workspaceID?: string } | null
+  }["location"]
+}
+
+export type SessionsImportOutput = { readonly id: string; readonly restored: number; readonly skipped: number }
+
 export type MessagesListInput = {
   readonly sessionID: { readonly sessionID: string }["sessionID"]
   readonly limit?: {
