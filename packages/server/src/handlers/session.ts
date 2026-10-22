@@ -1,6 +1,10 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import { SessionV2 } from "@zyraxon-ai/core/session"
+import { Database } from "@zyraxon-ai/core/database/database"
+import { AgentV2 } from "@zyraxon-ai/core/agent"
+import { buildBundle } from "@zyraxon-ai/schema/session-port"
+import { SessionPortStore } from "@zyraxon-ai/core/session/port"
 import { DateTime, Effect, Stream } from "effect"
 import { HttpApiBuilder, HttpApiSchema } from "effect/unstable/httpapi"
 import { Api } from "../api"
@@ -381,6 +385,50 @@ export const SessionHandler = HttpApiBuilder.group(Api, "server.session", (handl
             messageID: ctx.params.messageID,
             message: `Message not found: ${ctx.params.messageID}`,
           })
+        }),
+      )
+      .handle(
+        "session.export",
+        Effect.fn(function* (ctx) {
+          const { db } = yield* Database.Service
+          const read = yield* SessionPortStore.readSession(db, ctx.params.sessionID).pipe(
+            Effect.catchTag("SessionPort.NotFoundError", () =>
+              Effect.fail(
+                new SessionNotFoundError({
+                  sessionID: ctx.params.sessionID,
+                  message: `Session not found: ${ctx.params.sessionID}`,
+                }),
+              ),
+            ),
+          )
+          return buildBundle({ session: read.session, messages: read.messages })
+        }),
+      )
+      .handle(
+        "session.import",
+        Effect.fn(function* (ctx) {
+          const { db } = yield* Database.Service
+          const now = Date.now()
+          const requested = ctx.payload.location?.directory
+          // A blank directory is not a directory. The panel can send an empty
+          // string when it has not resolved the selected project yet, and an empty
+          // path would be rejected by the filesystem layer as an invalid absolute
+          // path — turning a recoverable "we do not know where yet" into a 500.
+          const directory =
+            requested && requested.trim().length > 0 ? AbsolutePath.make(requested) : AbsolutePath.make(process.cwd())
+          const agent = ctx.payload.bundle.session.agent
+          const created = yield* session.create({
+            agent: agent ? AgentV2.ID.make(agent) : undefined,
+            location: { directory, workspaceID: ctx.payload.location?.workspaceID },
+          })
+          yield* SessionPortStore.rename(db, created.id, ctx.payload.bundle.session.title)
+          const appended = yield* SessionPortStore.appendMessages(db, {
+            sessionID: created.id,
+            sourceID: ctx.payload.bundle.session.id,
+            messages: ctx.payload.bundle.messages,
+            now,
+          })
+          return { id: created.id, restored: appended.restored, skipped: appended.skipped }
         }),
       )
   }),

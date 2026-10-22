@@ -17,6 +17,7 @@ import { SettingsMcpV2, SettingsPluginsV2 } from "@/components/settings-v2/exten
 import { SettingsNotificationsV2 } from "@/components/settings-v2/notifications"
 import { SettingsLanguageV2 } from "@/components/settings-v2/language"
 import { SettingsAgentsV2 } from "@/components/settings-v2/agents"
+import { SettingsSessionsV2 } from "@/components/settings-v2/sessions"
 import { SettingsExtensionsV2 } from "@/components/settings-v2/extensions-v2"
 import { SettingsStorageV2 } from "@/components/settings-v2/storage"
 import { SettingsSecurityV2 } from "@/components/settings-v2/security"
@@ -34,6 +35,7 @@ const SECTION_VALUES = [
   "notifications",
   "shortcuts",
   "agents",
+  "sessions",
   "servers",
   "providers",
   "models",
@@ -76,6 +78,7 @@ export const SettingsRoute: Component = () => {
         { value: "notifications", label: language.t("settings.tab.notifications"), icon: "bubble-5" },
         { value: "shortcuts", label: language.t("settings.tab.shortcuts"), icon: "keyboard" },
         { value: "agents", label: language.t("settings.tab.agents"), icon: "comment" },
+        { value: "sessions", label: language.t("settings.tab.sessions"), icon: "zy-sessions" },
       ],
     },
     {
@@ -178,6 +181,9 @@ export const SettingsRoute: Component = () => {
         </TabsV2.Content>
         <TabsV2.Content value="agents" class="settings-v2-panel">
           <SettingsAgentsV2 />
+        </TabsV2.Content>
+        <TabsV2.Content value="sessions" class="settings-v2-panel">
+          <SettingsSessionsV2 />
         </TabsV2.Content>
         <TabsV2.Content value="servers" class="settings-v2-panel">
           <SettingsServersV2 />

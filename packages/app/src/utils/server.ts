@@ -8,6 +8,16 @@ export function authTokenFromCredentials(input: { username?: string; password: s
   return btoa(`${input.username ?? "zyraxon"}:${input.password}`)
 }
 
+/** The Authorization header for a server connection with credentials, or nothing when there are none. */
+export function authHeadersForServer(
+  server: Pick<ServerConnection.HttpBase, "username" | "password">,
+): Record<string, string> {
+  if (!server.password) return {}
+  return {
+    Authorization: `Basic ${authTokenFromCredentials({ username: server.username, password: server.password })}`,
+  }
+}
+
 export function authFromToken(token: string | null) {
   const decoded = decode64(token ?? undefined)
   if (!decoded) return
@@ -25,12 +35,7 @@ export function createSdkForServer({
 }: Omit<NonNullable<Parameters<typeof createZyraxonClient>[0]>, "baseUrl"> & {
   server: ServerConnection.HttpBase
 }) {
-  const auth = (() => {
-    if (!server.password) return
-    return {
-      Authorization: `Basic ${authTokenFromCredentials({ username: server.username, password: server.password })}`,
-    }
-  })()
+  const auth = authHeadersForServer(server)
 
   return createZyraxonClient({
     ...config,

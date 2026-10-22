@@ -984,6 +984,92 @@ const scenarios: Scenario[] = [
     }))
     .json(200, data(object)),
   http.protected
+    .get("/api/session/{sessionID}/export", "v2.session.export")
+    .seeded((ctx) => ctx.session({ title: "Export session" }))
+    .at((ctx) => ({
+      path: route("/api/session/{sessionID}/export", { sessionID: ctx.state.id }),
+      headers: ctx.headers(),
+    }))
+    .json(200, (body, ctx) => {
+      object(body)
+      check(body.kind === "zyraxon-session-port", "export should carry the session-port kind")
+      check(body.version === 1, "export should carry the current bundle version")
+      object(body.session)
+      check(body.session.id === ctx.state.id, "export should carry the requested session")
+      check(body.session.title === "Export session", "export should carry the session title")
+      array(body.messages)
+    }),
+  http.protected
+    .get("/api/session/{sessionID}/export", "v2.session.export.missing")
+    .at((ctx) => ({
+      path: route("/api/session/{sessionID}/export", { sessionID: "ses_httpapi_missing" }),
+      headers: ctx.headers(),
+    }))
+    .json(404, object, "status"),
+  http.protected
+    .post("/api/session/import", "v2.session.import")
+    .at((ctx) => ({
+      path: "/api/session/import",
+      headers: { ...ctx.headers(), "content-type": "application/json" },
+      body: {
+        bundle: {
+          kind: "zyraxon-session-port",
+          version: 1,
+          exportedAt: 0,
+          session: {
+            id: "ses_httpapi_imported",
+            project_id: "prj_httpapi_imported",
+            title: "Imported session",
+            cost: 0,
+            tokens_input: 0,
+            tokens_output: 0,
+            tokens_reasoning: 0,
+            tokens_cache_read: 0,
+            tokens_cache_write: 0,
+            time_created: 0,
+            time_updated: 0,
+          },
+          messages: [],
+        },
+      },
+    }))
+    .json(200, (body) => {
+      object(body)
+      check(typeof body.id === "string" && body.id.startsWith("ses"), "import should return a fresh session id")
+      check(body.restored === 0, "an empty bundle should restore no messages")
+      check(body.skipped === 0, "an empty bundle should skip no messages")
+    }),
+  http.protected
+    .post("/api/session/import", "v2.session.import.invalid")
+    .at((ctx) => ({
+      path: "/api/session/import",
+      headers: { ...ctx.headers(), "content-type": "application/json" },
+      // Every field is present and correctly typed; only the document identity is
+      // foreign. This must be refused rather than imported as an empty session.
+      body: {
+        bundle: {
+          kind: "not-ours",
+          version: 1,
+          exportedAt: 0,
+          session: {
+            id: "ses_httpapi_foreign",
+            project_id: "prj_httpapi_foreign",
+            title: "Foreign",
+            cost: 0,
+            tokens_input: 0,
+            tokens_output: 0,
+            tokens_reasoning: 0,
+            tokens_cache_read: 0,
+            tokens_cache_write: 0,
+            time_created: 0,
+            time_updated: 0,
+          },
+          messages: [],
+        },
+      },
+    }))
+    .json(400, object, "status"),
+  http.protected
     .post("/api/session/{sessionID}/agent", "v2.session.switchAgent")
     .seeded((ctx) => ctx.session({ title: "Switch agent" }))
     .at((ctx) => ({
