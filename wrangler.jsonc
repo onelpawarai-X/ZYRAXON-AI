@@ -1,0 +1,7 @@
+{
+  "name": "zyraxon-ais",
+  "compatibility_date": "2026-10-23",
+  "assets": {
+    "directory": "./packages/app/dist"
+  }
+}
