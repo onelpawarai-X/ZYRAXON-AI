@@ -171,11 +171,13 @@ jobs:
         shell: bash
         # bun on Windows intermittently fails to apply patches/@ai-sdk/*.patch
         # with "renaming changes to cache dir: ENOTEMPTY", leaving a half-written
-        # patched-package cache entry behind. Clear that entry and retry; a later
-        # attempt succeeds. Seen on the windows-2025 arm64 runner.
+        # patched-package cache entry behind. The hoisted linker writes patched
+        # packages straight into node_modules instead of renaming them into the
+        # shared cache, which is how the setup-bun action avoids this on Windows.
+        # Keep the retry as a belt-and-braces fallback.
         run: |
           for attempt in 1 2 3; do
-            if bun install --frozen-lockfile; then exit 0; fi
+            if bun install --linker hoisted --frozen-lockfile; then exit 0; fi
             echo "::warning::bun install failed on attempt $attempt; clearing patched-package cache and retrying"
             rm -rf node_modules
             rm -rf "$BUN_INSTALL_CACHE_DIR"/*openai-compatible* "$BUN_INSTALL_CACHE_DIR"/*ai-sdk*
