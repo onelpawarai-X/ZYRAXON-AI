@@ -7,10 +7,9 @@
 # the runner that can actually build that platform, then attaches its own assets
 # to the same GitHub release.
 #
-# The per-platform workflows (release-linux.yml, release-macos.yml,
-# release-windows.yml) remain for retrying a single platform in isolation. This
-# file is the "cut a release" entry point: run it once and all three platforms
-# land on the release together.
+# This file is the only release entry point: run it once and every platform
+# lands on the release together. To retry a single platform, re-run just that
+# job from the Actions UI instead of keeping a separate workflow.
 name: Release (All platforms)
 
 on:
@@ -137,6 +136,13 @@ jobs:
     timeout-minutes: 90
     env:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      # Bun 1.3.14 cannot rename across volumes on Windows. `bun build --compile`
+      # extracts the target runtime beside the working tree and then moves it into
+      # the install cache; with the cache on C: and the workspace on D: that move
+      # fails with "Failed to extract executable for 'bun-<os>-<arch>-<version>'".
+      # Keeping the cache on the workspace volume makes the move intra-volume.
+      # See oven-sh/bun#43446 (fixed upstream in 1.4.2; this repo pins 1.3.14).
+      BUN_INSTALL_CACHE_DIR: ${{ github.workspace }}/.bun-cache
     steps:
       - name: Check out
         uses: actions/checkout@v4
@@ -155,11 +161,11 @@ jobs:
           # Bun patching a partially-written package directory, which fails on
           # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
           path: |
-            ~/.bun/install/cache
+            ${{ github.workspace }}/.bun-cache
             ~/AppData/Local/electron/Cache
             ~/AppData/Local/electron-builder/Cache
-          key: release-all-windows-${{ matrix.arch }}-v2-${{ hashFiles('bun.lock') }}
-          restore-keys: release-all-windows-${{ matrix.arch }}-v2-
+          key: release-all-windows-${{ matrix.arch }}-v3-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-windows-${{ matrix.arch }}-v3-
 
       - name: Install dependencies
         shell: bash
@@ -172,7 +178,7 @@ jobs:
             if bun install --frozen-lockfile; then exit 0; fi
             echo "::warning::bun install failed on attempt $attempt; clearing patched-package cache and retrying"
             rm -rf node_modules
-            rm -rf "$HOME/.bun/install/cache"/*openai-compatible* "$HOME/.bun/install/cache"/*ai-sdk*
+            rm -rf "$BUN_INSTALL_CACHE_DIR"/*openai-compatible* "$BUN_INSTALL_CACHE_DIR"/*ai-sdk*
             sleep 10
           done
           echo "::error::bun install failed after 3 attempts"
