@@ -50,7 +50,6 @@ jobs:
           # so it does not need node_modules. Skipping the install keeps this job off
           # the Windows patch step, which is where it used to fail (see setup-bun).
           install-deps: "false"
-          bun-version: latest
 
       - name: Check catalog shape
         run: bun run "MCP Hub/scripts/verify-catalog.mjs"
@@ -83,11 +82,9 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
         with:
-          # Bun 1.4.0 fixed the Windows patch race (oven-sh/bun#33646) that the repo's
-          # pinned 1.3.14 still hits with ENOTEMPTY, and this job is the one that has
-          # to install. Use the same fixed Bun the release workflows use; the retry in
-          # setup-bun stays as a second line of defence.
-          bun-version: latest
+          # Bun comes from the version pinned in package.json, so this job installs
+          # with the same Bun the release workflows do. The retry in setup-bun stays
+          # as a second line of defence against the Windows patch race.
 
       - name: Install uv
         uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6

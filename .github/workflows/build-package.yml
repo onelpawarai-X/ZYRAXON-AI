@@ -65,7 +65,6 @@ jobs:
           # The Windows patch race during bun install is what setup-bun retries;
           # release-all.yml installs by hand, so this workflow is the one that
           # exercises the hardened path.
-          bun-version: latest
           install-flags: --frozen-lockfile
 
       - name: Install Linux packaging tools

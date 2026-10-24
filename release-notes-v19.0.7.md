@@ -63,6 +63,12 @@ Every API key, token and password is filtered out before anything is sent to an 
 
 ---
 
+### 🩹 Self-healing
+
+ZYRAXON ships with a self-healing system. Missing tool? It finds one. Failing test? It fixes it. Code that will not run? It works on it. Every session is persisted, so a machine restart does not lose your work — the next run picks up from exactly where it stopped.
+
+---
+
 ### ✨ What is new in v19.0.7 — session export and import
 
 **Your conversations are now yours to carry.**
@@ -93,42 +99,6 @@ Until now a conversation lived in the database of the machine that created it, s
 **It works from the CLI too.** `zyraxon export <sessionID>` writes the same data as JSON to stdout, and `zyraxon import <file>` reads it back. The import command also accepts a share URL, so a session can be handed over as a link as well as a file.
 
 **Who this is for.** People who work across more than one computer. People moving from one install to another. People who want to keep an old piece of work on the shelf. People who want to hand a conversation to someone else.
-
----
-
-### ✨ v19.0.7-এ নতুন — সেশন এক্সপোর্ট ও ইমপোর্ট
-
-**আপনার কথোপকথন এখন আপনার হাতেই।**
-
-ভাবুন তো, এক বছর ধরে আপনি কৃত্রিম বুদ্ধিমত্তার সাথে কাজ করছেন। প্রতিদিনের কথা, প্রতিদিনের কাজ, প্রতিটি সিদ্ধান্ত — সব জমা হয়েছে এক জায়গায়। হঠাৎ আপনাকে অন্য শহরে যেতে হবে, ল্যাপটপটা সাথে নেওয়া সম্ভব নয়। কিন্তু আপনার সেই পুরো কথোপকথনটাই আপনার দরকার।
-
-এখন আর চিন্তা নেই।
-
-**এক্সপোর্ট।** সেটিংস খুলে সেশন তালিকায় যান, যেকোনো কথোপকথনের পাশে এক্সপোর্ট চাপুন। ZYRAXON পুরো সেশনটা — শিরোনাম, প্রতিটি বার্তা, প্রতিটি অংশ, খরচ ও টোকেনের হিসাব — একটা ফাইলে লিখে দেয়, যার নাম হয় কথোপকথনের নাম অনুযায়ী এবং শেষে থাকে `.zyraxon-session.json`।
-
-**যেখানে খুশি রাখুন।** গুগল ড্রাইভ, পেনড্রাইভ, নিজের ইমেইলে, ক্লাউড ফোল্ডারে, অন্য কম্পিউটারে। এটা একটা সাধারণ ফাইল, ধরে রাখার জন্য ZYRAXON লাগবে না।
-
-**ইমপোর্ট।** নতুন কম্পিউটারে গিয়ে সেটিংস খুলুন, সেশনে যান, ইমপোর্ট চাপুন — অথবা ফাইলটা সরাসরি টেনে ফেলে দিন। ZYRAXON নতুন সেশন তৈরি করে তার পুরো ইতিহাস ফিরিয়ে আনে। সহকারী আগের কথা মনে রাখে, কারণ বার্তাগুলো সত্যিকারের বার্তা হিসেবেই ফিরে আসে — শুধু সারমর্ম বা প্রম্পটে আটকানো প্রতিলিপি হিসেবে নয়।
-
-**কীভাবে ব্যবহার করবেন**
-
-১. সেটিংস খুলুন।
-২. সেশন তালিকায় যান।
-৩. যেকোনো কথোপকথনের পাশে এক্সপোর্ট চাপুন — ফাইলটি নামবে।
-৪. ফাইলটি নিরাপদ কোথাও রেখে দিন।
-৫. নতুন জায়গায় গিয়ে ইমপোর্ট চাপুন এবং ফাইলটি বেছে নিন, অথবা টেনে ফেলে দিন।
-৬. সেশনটি সাথে সাথে ফিরে আসবে এবং খুলে যাবে।
-
-**ফাইলে কী থাকে।** সেশনের সারি এবং তার প্রতিটি স্থায়ী বার্তা, ঠিক যেমনটা ডেটাবেজে থাকে — তাই ইমপোর্টে কথোপকথন কোনো তথ্য হারিয়ে না গিয়ে ফিরে আসে। ফাইলটা ঢোকার সময় যাচাই করা হয়: আমাদের নিজের ফরম্যাট না হলে পরিষ্কার কারণে ফিরিয়ে দেওয়া হয়, স্ট্যাক ট্রেস নয়। ইমপোর্টে আইডি নতুন করে বসানো হয়, তাই কথোপকথনের ভেতরের সব রেফারেন্স নিজের সারির পাশে চলে যায় — এমন কোনো বার্তার দিকে কখনো ইশারা করে না যা আর নেই।
-
-**কমান্ড লাইন থেকেও চলে।** `zyraxon export <sessionID>` একই তথ্য JSON হিসেবে বের করে, আর `zyraxon import <file>` সেটা ফিরিয়ে আনে। ইমপোর্ট কমান্ড একটা শেয়ার লিংকও নিতে পারে, তাই ফাইলের পাশাপাশি লিংক দিয়েও সেশন হাতবদল করা যায়।
-
-**কাদের জন্য।** যাঁরা একাধিক কম্পিউটারে কাজ করেন। যাঁরা এক ইনস্টল থেকে আরেক ইনস্টলে যান। যাঁরা পুরনো কাজ তাকে রাখতে চান। যাঁরা কাউকে একটা সেশন দিতে চান।
-
----
-### 🩹 Self-healing
-
-ZYRAXON ships with a self-healing system. Missing tool? It finds one. Failing test? It fixes it. Code that will not run? It works on it. Every session is persisted, so a machine restart does not lose your work — the next run picks up from exactly where it stopped.
 
 ---
 
@@ -204,10 +174,11 @@ The CLI is built and attached for all three systems in the same release.
 |:---------|:-----|
 | Linux | `zyraxon-linux-x64.tar.gz`, `zyraxon-linux-arm64.tar.gz` |
 | Linux (musl) | `zyraxon-linux-x64-musl.tar.gz`, `zyraxon-linux-arm64-musl.tar.gz` |
-| macOS | `zyraxon-darwin-x64.zip`, `zyraxon-darwin-arm64.zip` |
-| Windows | `zyraxon-windows-x64.zip`, `zyraxon-windows-arm64.zip` |
+| Linux (baseline) | `zyraxon-linux-x64-baseline.tar.gz`, `zyraxon-linux-x64-baseline-musl.tar.gz` |
+| macOS | `zyraxon-darwin-x64.zip`, `zyraxon-darwin-arm64.zip`, `zyraxon-darwin-x64-baseline.zip` |
+| Windows | `zyraxon-windows-x64.zip`, `zyraxon-windows-arm64.zip`, `zyraxon-windows-x64-baseline.zip` |
 
-Each archive holds one flat binary named `zyraxon`. Unpack it, put it on your `PATH`, and run `zyraxon`. Every archive in this release is checked before upload to make sure it holds exactly that one file.
+Each archive holds one flat binary named `zyraxon`. Unpack it, put it on your `PATH`, and run `zyraxon`. The `baseline` archives are for older CPUs without AVX2 support. Every archive in this release is checked before upload to make sure it holds exactly that one file.
 
 ### 🔗 Links
 
@@ -217,14 +188,9 @@ Each archive holds one flat binary named `zyraxon`. Unpack it, put it on your `P
 
 ### 🎬 Watch ZYRAXON in action
 
-Two short films ship with this release. Both are attached to the release, in the assets list.
+**[▶ Watch the ZYRAXON demo in 4K](https://github.com/onelpawarai-X/zyraxon-studio/releases/download/1111/demo-4k.mp4)**
 
-| Video | Language | File |
-|:------|:---------|:-----|
-| ZYRAXON in action | English | `ZYRAXON-VIRAL-EN.mp4` |
-| ZYRAXON in action | বাংলা | `ZYRAXON-VIRAL-BN.mp4` |
-
-1080p, 30fps, just under four minutes. Download the one you want, or both.
+No download needed — the link opens the video directly.
 
 ### License
 
