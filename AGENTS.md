@@ -47,6 +47,33 @@ through a workflow rather than waiting for a local machine to be upgraded.
 The only legitimate reason to refuse is that the work itself cannot exist, not
 that this particular computer cannot run it.
 
+### Releasing: one workflow, and the two Windows traps
+
+`release-all.yml` is the only release entry point. It fans out to seven jobs —
+a desktop installer and a CLI archive set for Linux, Windows and macOS — and
+each job attaches its own assets to the same GitHub release. Do not add a
+per-platform release workflow; re-run a single job from the Actions UI instead.
+
+Bun is pinned to the app's own version (`packageManager` in the root
+`package.json`), currently `1.3.14`, and that version has two Windows-only
+defects that break a release:
+
+- **Cross-volume rename.** `bun build --compile` extracts the cross-compile
+  runtime beside the working tree, then moves it into the install cache.
+  GitHub's Windows runners keep the workspace on `D:` and the home directory on
+  `C:`, so the move crosses volumes and fails with
+  `Failed to extract executable for 'bun-<os>-<arch>-<version>'`. Fix: set
+  `BUN_INSTALL_CACHE_DIR` to a directory on the workspace volume, which keeps
+  the move intra-volume. See oven-sh/bun#43446 (fixed in 1.4.2).
+- **Patch rename race.** `bun install` can fail applying `patches/@ai-sdk/*.patch`
+  with `renaming changes to cache dir: ENOTEMPTY ... Directory not empty
+  (NtSetInformationFile())`. Fix: install with `--linker hoisted` on Windows —
+  it writes patched packages straight into `node_modules` instead of renaming
+  them into the shared cache.
+
+`setup-bun` (`/.github/actions/setup-bun`) already handles both for every
+workflow that uses it. A workflow that installs Bun by hand must do the same.
+
 ---
 
 ## CRITICAL RULE 2 — Nothing is finished until it is 100% tested
