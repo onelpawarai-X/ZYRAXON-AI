@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/license-ZSL--X%202.0.0-black)](./LICENSE)
 
 **ZYRAXON AI** brings the full ZYRAXON agent into Visual Studio Code — AI chat, code
-generation, refactoring, terminal control, and **888 tools across 67 categories**, plus
+generation, refactoring, terminal control, and **888+ tools across 67 categories**, plus
 **108 verified MCP integrations**, in one extension.
 
 The extension bundles the native ZYRAXON runtime for your platform. On first launch it
@@ -20,7 +20,7 @@ nothing extra needs to be installed separately.
 - **Editor context** — your current selection and active file are shared with ZYRAXON automatically.
 - **File reference shortcuts** — insert `@File#L37-42` style references at the cursor.
 - **Terminal integration** — run the ZYRAXON CLI in an integrated terminal.
-- **888 tools** — 67 categories spanning coding, refactoring, tests, docs, system
+- **888+ tools** — 67 categories spanning coding, refactoring, tests, docs, system
   automation, vehicles, aviation, marine, robotics, security, and more.
 
 ## Commands

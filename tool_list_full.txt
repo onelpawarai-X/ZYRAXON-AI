@@ -1,4 +1,4 @@
-ZYRAXON TOOLS (67 categories, 807 categorized tools; 888 registered in total):
+ZYRAXON TOOLS (888+ registered across 67 categories; 807 of them carry a registry category):
 
 [vehicles] (56):
   - Boat Connect

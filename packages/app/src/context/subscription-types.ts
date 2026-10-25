@@ -10,7 +10,9 @@ export interface SubscriptionPlan {
   durationDays: number | null
   description: string
   features: string[]
-  toolCount: number
+  /** Numeric below ultra; the ultra tier renders as "888+" because the
+   *  runtime injects more than the tier map's 888 entries. */
+  toolCount: number | string
   memoryOptimization: string
   maxAgents: number
   maxProjects: string
@@ -509,14 +511,14 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       "Early Access to New Features",
       "Memory (10000 entries, 1GB cache)",
     ],
-    toolCount: 888,
+    toolCount: "888+",
     memoryOptimization: "Ultra (10000 entries, 1GB cache)",
     maxAgents: -1,
     maxProjects: "Unlimited + Team + Enterprise",
   },
 }
 
-export const TIER_STATS: Record<SubscriptionTier, { totalTools: number; categories: string[] }> = {
+export const TIER_STATS: Record<SubscriptionTier, { totalTools: number | string; categories: string[] }> = {
   free: {
     totalTools: 186,
     categories: ["Core AI", "Math", "Science", "Finance", "Data Science", "Security Basics", "Daily Life", "Memory", "Documents", "Tasks", "Captcha", "Subscription", "Acid/Base", "Chemistry", "Biology", "Life Tools", "System Info", "Web Search", "Nuphus Desktop", "Touchpoint Desktop"],
@@ -530,7 +532,7 @@ export const TIER_STATS: Record<SubscriptionTier, { totalTools: number; categori
     categories: ["Everything in Pro", "Space", "Industrial", "Infrastructure", "Security", "Survey", "Agriculture", "Marine", "Construction", "Physical Interface", "SDR", "Digital Twin", "Dashboard", "Alert", "Data Logger", "Remote Control", "Predictive Maintenance", "Decision Support", "Authorization", "Extended AI", "Engineering", "Advanced Security", "CDP Browser", "Computer Control", "Site Builder"],
   },
   ultra: {
-    totalTools: 888,
+    totalTools: "888+",
     categories: ["Everything in Max", "Singularity", "Guardian", "Universal Command Engine", "Ultra Tools", "Self-Improvement"],
   },
 }
