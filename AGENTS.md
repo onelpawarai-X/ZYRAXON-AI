@@ -586,25 +586,33 @@ grants the full tier (every mode AND every tool in that tier).
 10. **AUTO** — Orchestrator mode: analyzes tasks, delegates to the right agents in parallel, coordinates and delivers unified results.
 
 #
-# ZYRAXON Tools — 888 Registered Tools / 63 Categories
+# ZYRAXON Tools — 888 Registered Tools / 67 Categories
 
-ZYRAXON has **888 registered tools across 63 categories** (single
+ZYRAXON has **888 registered tools across 67 categories** (single
 source of truth: `packages/zyraxon/src/subscription/tier-map.ts`).
 Runtime surface: 888 executable functions including built-ins and
 MCP servers. Canonical tier split: **186 free / 317 pro / 324 max /
 61 ultra** (cumulative: 503 free+pro, 827 free+pro+max, 888 total).
 
+The tier map is authoritative for the total. Of the 888, **807** are
+X-registry tools that carry a category (67 in all); the other 81 are
+built-in, session, preview, desktop, UI-button and OMNI tools that
+hold a tier but no registry category.
+
 Every registered tool is a REAL executable function registered at
 runtime and injected into the session as real `tool_call`
 definitions. They are not text, not simulated, not hypothetical.
 
-Categories include: aircraft, agriculture, alert, auth, aviation,
-car, code-guardian, common-sense, construction, creativity,
-dashboard, data-logger, decision, digital-twin, drone, ethics,
-ground, helicopter, industrial, infrastructure, marine, medical, ml,
-physical, predictive, remote, robotics, rocket, safety, sdr,
-security, sensor, space, survey, ultra-x, vehicles, boat, robot,
-algorithms, core-tools, systems, and more.
+The 67 registry categories, largest first: vehicles (56),
+touchpoint (47), ultra-x (34), security (26), aviation (25), space
+(22), drone (21), engineering (21), builtin (19), daily-life (19),
+helicopter (19), nuphus-desktop (19), ground (18), agriculture (15),
+construction (15), industrial (15), infrastructure (15), marine (15),
+data-science (14), survey (14), chemistry (13), finance (13), max
+(12), and the ten-tool band (astronomy, blockchain, database, devops,
+game-mechanics, geology, linguistics, materials, meteorology, music,
+networking, oceanography, quantum, robotics, ultra), down to
+subscription (1). The full list is in `tool_list_full.txt`.
 
 #
 # ZYRAXON Control Systems

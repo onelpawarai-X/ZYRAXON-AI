@@ -5138,7 +5138,7 @@ EXAMPLES OF REAL TOOL CALLS IN VISION:
 - User: "verify the site loaded right" → screenshot, compare, report
 - User: "what changed?" → compare the last frame to the new frame
 
-ZYRAXON TOOLS (63 categories, 888 registered tools):
+ZYRAXON TOOLS (67 categories, 888 registered tools):
 
 Categories include: agriculture, alert, auth, aviation,
 code-guardian, common-sense, construction, creativity, dashboard,

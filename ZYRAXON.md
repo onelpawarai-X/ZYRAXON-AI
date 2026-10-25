@@ -1,4 +1,4 @@
-# ZYRAXON — 224 Real Control Systems. One Agent. Everything.
+# ZYRAXON — 230 Real Control Systems. One Agent. Everything.
 
 **The world's first AI that doesn't just talk — it controls aircraft, drives cars, flies drones, launches rockets, and operates robots. All real algorithms. No simulation. No mock data.**
 
@@ -304,7 +304,7 @@ ZYRAXON
 ├── Desktop App (Electron + SolidJS)
 │   ├── 11 Agent Modes (General → APEX PREDATOR)
 │   ├── Screen Vision + Voice + YouTube Streaming
-├── Control Systems (224 classes)
+├── Control Systems (230 classes)
 │   ├── Aircraft (63) — FCS, Autopilot, GCAS, Autoland
 │   ├── Car (18) — ECU, Sensor Fusion, AEB, Parking
 │   ├── Drone (15) — FC, Formation, Payload, RTH

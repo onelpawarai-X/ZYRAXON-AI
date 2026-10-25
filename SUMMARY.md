@@ -224,7 +224,7 @@ bun run --cwd packages/desktop bun run package:mac
 8. **Vision** - AI's Eyes (screen capture + analysis)
 9. **Pro Builder** - Website creation intelligence
 
-## Control Systems (888 tools)
+## Control Systems (230 classes)
 
 ### Categories
 - Aircraft (63 tools) — FCS, Autopilot, GCAS, TCAS, Autoland

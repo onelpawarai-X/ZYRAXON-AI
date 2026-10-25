@@ -1,387 +1,942 @@
-ZYRAXON TOOLS (63 categories, 888 registered tools):
+ZYRAXON TOOLS (67 categories, 807 categorized tools; 888 registered in total):
 
-[agriculture] (15):
-  - Add Soil Sample
-  - Get Soil Recommendation
-  - Get Soil Heatmap
-  - Add Crop Field
-  - Update Crop Growth
-  - Predict Crop Yield
-  - Set Irrigation Zone
-  - Start Irrigation
-  - Get Water Usage
-  - Add Pest Observation
-  - Get Pest Risk
-  - Get Pest Recommendation
-  - Set Harvest Field
-  - Plan Harvest Schedule
-  - Get Optimal Harvest Date
-[alert] (4):
-  - Alert Create
-  - Notification Add Channel
-  - Escalation Create Policy
-  - Anomaly Alerter Add
-[auth] (6):
-  - RBAC Add Role
-  - Auth Add User
-  - Policy Add
-  - Access Log
-  - Token Create
-  - Certificate Generate
+[vehicles] (56):
+  - Boat Connect
+  - Boat Emergency Stop
+  - Boat Set Heading
+  - Boat Navigate To
+  - Boat Set Throttle
+  - Car Clear DTCs
+  - Car Set Climate
+  - Car Connect
+  - Car Read DTCs
+  - Car Get Fuel Level
+  - Car Honk Horn
+  - Car Flash Lights
+  - Car Lock Doors
+  - Car Get RPM
+  - Car Get Speed
+  - Car Start Engine
+  - Car Stop Engine
+  - Car Unlock Doors
+  - Drone Arm
+  - Drone Set Attitude
+  - Drone Connect
+  - Drone Disarm
+  - Drone Emergency Stop
+  - Drone Fly To Position
+  - Drone Set Geofence
+  - Drone Land
+  - Drone Set Mode
+  - Drone Return to Launch
+  - Drone Set Speed
+  - Drone Takeoff
+  - Drone Fly Waypoint Mission
+  - Create Car in Fleet
+  - Create Drone in Fleet
+  - Create Rocket in Fleet
+  - Disconnect All Vehicles
+  - Emergency Stop All Vehicles
+  - Get Fleet Telemetry
+  - Rocket Abort
+  - Rocket Connect
+  - Rocket Start Countdown
+  - Rocket Engine Control
+  - Rocket Deploy Fairing
+  - Rocket Launch
+  - Rocket Deploy Payload
+  - Rocket Stage Separation
+  - Rocket Set Throttle
+  - Rocket Set Trajectory
+  - Satellite Point Antenna
+  - Satellite Set Attitude
+  - Satellite Take Picture
+  - Satellite Connect
+  - Satellite Activate Deorbit
+  - Satellite Adjust Orbit
+  - Satellite Enter Safe Mode
+  - Satellite Deploy Solar Panels
+  - Satellite Fire Thruster
+
+[touchpoint] (47):
+  - Touchpoint: Raw Action
+  - Touchpoint: Activate Window
+  - Touchpoint: Apps
+  - Touchpoint: Chrome Profiles
+  - Touchpoint: Click
+  - Touchpoint: Click At
+  - Touchpoint: Close Tab
+  - Touchpoint: Close Window
+  - Touchpoint: Configure
+  - Touchpoint: Diagnostics
+  - Touchpoint: Double Click
+  - Touchpoint: Double Click At
+  - Touchpoint: Drag
+  - Touchpoint: Element At
+  - Touchpoint: Elements
+  - Touchpoint: Find
+  - Touchpoint: Find Window
+  - Touchpoint: Focus
+  - Touchpoint: Fullscreen
+  - Touchpoint: Get Element
+  - Touchpoint: Hotkey
+  - Touchpoint: List Tabs
+  - Touchpoint: Minimize Window
+  - Touchpoint: Monitor Count
+  - Touchpoint: Mouse Move
+  - Touchpoint: Move Window
+  - Touchpoint: New Tab
+  - Touchpoint: Open Chrome Profile
+  - Touchpoint: Press Key
+  - Touchpoint: Read Text
+  - Touchpoint: Resize Window
+  - Touchpoint: Right Click
+  - Touchpoint: Right Click At
+  - Touchpoint: Screenshot
+  - Touchpoint: Screenshot Window
+  - Touchpoint: Scroll
+  - Touchpoint: Select Text
+  - Touchpoint: Select Range
+  - Touchpoint: Set Numeric
+  - Touchpoint: Set Value
+  - Touchpoint: Snapshot
+  - Touchpoint: Switch Tab
+  - Touchpoint: Type Text
+  - Touchpoint: Wait For
+  - Touchpoint: Wait For App
+  - Touchpoint: Wait For Window
+  - Touchpoint: Windows
+
+[ultra-x] (34):
+  - Consciousness List Agents
+  - Consciousness Start Collaboration
+  - Consciousness Register Agent
+  - Consciousness Transfer Knowledge
+  - Emotion Get Adaptation
+  - Emotion Analyze Text
+  - Emotion Get Mood Trend
+  - Memory Palace Connect
+  - Memory Palace Query
+  - Memory Palace Stats
+  - Memory Palace Store
+  - Omni Creator Create
+  - Omni Creator Projects
+  - Omni Creator Templates
+  - Reality Bridge Control Device
+  - Reality Bridge Register Device
+  - Reality Bridge Activate Scene
+  - Reality Bridge Create Scene
+  - Reality Bridge Get States
+  - Reality Analyzer Results
+  - Reality Analyze Scenario
+  - Self-Evolving Analyze Code
+  - Self-Evolving Suggest Refactor
+  - Self-Evolving Evolution Trend
+  - Singularity Evolution Steps
+  - Singularity Self-Heal
+  - Singularity Learn
+  - Singularity Process Request
+  - Singularity State
+  - Time Manipulator Bug Patterns
+  - Time Manipulator Evolution
+  - Time Manipulator Predict
+  - Time Manipulator Snapshot
+  - Time Manipulator Timeline
+
+[security] (26):
+  - Check Access
+  - Grant Access
+  - Revoke Access
+  - Block IP Address
+  - Detect Brute Force
+  - Probe Host Ports
+  - Decrypt Data
+  - Encrypt Data
+  - Hash Data
+  - Arm Intrusion Zone
+  - Check Intrusion Breach
+  - Set Intrusion Zone
+  - Caesar Cipher
+  - CVSS Score Calculator
+  - Randomness Entropy Analyzer
+  - Firewall Rule Analyzer
+  - Hash Identifier
+  - Malware Signature Detector
+  - Password Strength Analyzer
+  - Port Scanner
+  - SSL Certificate Checker
+  - Subnet Calculator
+  - XOR Encryption
+  - Add Surveillance Camera
+  - Detect Motion
+  - Set Recording
+
 [aviation] (25):
   - ATC Connect
-  - ATC Disconnect
-  - ATC Tune Frequency
-  - ATC Set Squawk
-  - ATC Request Clearance
-  - ATC Read Back
   - ATC Declare Emergency
-  - Parse METAR
-  - Check Turbulence
-  - Check Icing Conditions
-  - Get Winds Aloft
-  - Add NOTAM
-  - Get NOTAMs by Airport
-  - Check Runway NOTAMs
-  - Set Runway Condition
-  - Calculate Landing Distance
-  - Get Braking Recommendation
-  - TCAS Detect Traffic
-  - TCAS Calculate Resolution
-  - Pilot Request Override
-  - Pilot Release Override
-  - Set Cabin Altitude
+  - ATC Disconnect
+  - ATC Read Back
+  - ATC Request Clearance
+  - ATC Set Squawk
+  - ATC Tune Frequency
   - Detect Decompression
+  - Set Cabin Altitude
   - Add Engine
   - Check Engine Health
-[code-guardian] (4):
-  - Code Guardian Scan
-  - Code Guardian AI Context
-  - Code Guardian Status
-  - Code Guardian Clear
-[common-sense] (6):
-  - Reasoning Add Fact
-  - Causal Add Link
-  - World Model Add Object
-  - Context Set
-  - Analogy Add
-  - Spatial Add Object
-[construction] (15):
-  - Set Excavator Arm
-  - Set Excavator Bucket
-  - Excavator Dig
-  - Set Crane Boom
-  - Set Crane Trolley
-  - Check Crane Wind
-  - Set Concrete Ratio
-  - Start Concrete Mix
-  - Get Concrete Consistency
-  - Set Survey Drone Site
-  - Capture Survey Photos
-  - Get Survey 3D Model
-  - Set Bulldozer Blade
-  - Bulldozer Push
-  - Get Bulldozer Grade
-[creativity] (5):
-  - Idea Add Concept
-  - Innovation Add Technology
-  - Design Thinking Create
-  - Pattern Add
-  - Constraint Relax Add Problem
-[dashboard] (5):
-  - Dashboard Create Panel
-  - Chart Create
-  - Status Add Metric
-  - Real-Time Stream Create
-  - Widget Create
-[data-logger] (5):
-  - TimeSeries Create
-  - Event Log
-  - Audit Record
-  - Export CSV
-  - Storage Allocate
-[decision] (6):
-  - Decision Add Option
-  - Scenario Analyzer Create
-  - Risk Add
-  - Tradeoff Add
-  - Decision Tree Create
-  - Causal Add Variable
-[digital-twin] (5):
-  - Digital Twin Create
-  - Physics Add Body
-  - Scenario Create
-  - Sync Add Source
-  - Sim Scheduler Add Task
+  - Add NOTAM
+  - Check Runway NOTAMs
+  - Get NOTAMs by Airport
+  - Pilot Release Override
+  - Pilot Request Override
+  - Calculate Landing Distance
+  - Get Braking Recommendation
+  - Set Runway Condition
+  - TCAS Calculate Resolution
+  - TCAS Detect Traffic
+  - Check Icing Conditions
+  - Check Turbulence
+  - Get Winds Aloft
+  - Parse METAR
+
+[space] (22):
+  - Add Satellite to Constellation
+  - Get Constellation Coverage
+  - Get Revisit Time
+  - Calculate Deorbit Burn
+  - Get Deorbit Window
+  - Get Eclipse Power Budget
+  - Predict Eclipse
+  - Add Ground Station
+  - Get Next Pass
+  - Schedule Ground Station Pass
+  - Calculate Launch Window
+  - Check Launch Constraints
+  - Get Next Launch Window
+  - Confirm Payload Orbit
+  - Create Payload
+  - Deploy Payload
+  - Deploy Stage Chutes
+  - Separate Stage
+  - Stage Touchdown
+  - Check Thermal Limits
+  - Monitor Thermal
+  - Predict Heat Flux
+
 [drone] (21):
+  - Assign Delivery Drone
+  - Create Delivery Shipment
+  - Track Delivery
   - Add Geofence Zone
   - Check Geofence Position
   - Get Geofence Violations
-  - Update Wind from IMU
-  - Update Wind from GPS
-  - Get Wind Vector
   - Add 3D Obstacle
-  - Get Avoidance Vector
   - Find Safe Path
+  - Get Avoidance Vector
+  - Plan Grid Search
+  - Plan Spiral Search
+  - Set SAR Area
+  - Get Spray Coverage
+  - Plan Spray Swath
+  - Set Spray Field
   - Add Swarm Drone
   - Swarm Consensus
   - Swarm Leader Election
-  - Create Delivery Shipment
-  - Assign Delivery Drone
-  - Track Delivery
-  - Set Spray Field
-  - Plan Spray Swath
-  - Get Spray Coverage
-  - Set SAR Area
-  - Plan Grid Search
-  - Plan Spiral Search
-[ethics] (5):
-  - Ethics Add Principle
-  - Bias Add Dataset
-  - Fairness Add Model
-  - Transparency Add Decision
-  - Safety Validate Action
-[ground] (18):
-  - V2X Connect
-  - V2X Send V2V
-  - V2X Send V2I
-  - Add Pedestrian
-  - Predict Pedestrian Path
-  - Pedestrian Risk Assessment
-  - Set Traffic Signal
-  - Traffic Should Proceed
-  - Get Recommended Speed
-  - Update Driver Metrics
-  - Get Driver Alertness
-  - Get Driver Fatigue
-  - Update Road Friction
-  - Detect Road Hazard
-  - Get Road Recommendation
-  - Calculate Time-to-Collision
-  - Should Brake
-  - Should Evade
+  - Get Wind Vector
+  - Update Wind from GPS
+  - Update Wind from IMU
+
+[engineering] (21):
+  - Battery Life Calculator
+  - Beam Deflection Calculator
+  - Buckling Load Calculator
+  - Concrete Mix Design
+  - Filter Design Calculator
+  - Flow Rate Calculator
+  - Gear Ratio Calculator
+  - Heat Exchanger Calculator
+  - Impedance Calculator
+  - Mohr's Circle Calculator
+  - Motor Efficiency Calculator
+  - Pipe Flow Head Loss
+  - Power Factor Correction
+  - Resonance Frequency Calculator
+  - Reynolds Number Calculator
+  - Stress-Strain Calculator
+  - Thermal Stress Calculator
+  - Three-Phase Power Calculator
+  - Torsion Calculator
+  - Transformer Calculator
+  - Vibration Frequency Calculator
+
+[builtin] (19):
+  - API Tester
+  - Apply Patch
+  - Code Analyzer
+  - Code Mode
+  - External Directory
+  - GitHub Connect
+  - MCP Web Search
+  - Media Fetch
+  - Plan
+  - Screen Vision
+  - Self Evolve
+  - Site Create
+  - Site Domain
+  - Site Preview
+  - Site Publish
+  - Site Unpublish
+  - SVG Generate
+  - System Info
+  - Task
+
+[daily-life] (19):
+  - Age Calculator
+  - Aspect Ratio Calculator
+  - BMI Calculator
+  - Calorie Needs Calculator
+  - Color Converter
+  - Date Difference Calculator
+  - Loan EMI Calculator
+  - Fuel Efficiency Calculator
+  - GST Calculator
+  - Heart Rate Zones Calculator
+  - Running Pace Calculator
+  - Pixel to REM Converter
+  - Savings Goal Planner
+  - Temperature Converter
+  - Text Statistics Analyzer
+  - Tip Calculator
+  - Unit Converter
+  - Wind Chill Calculator
+  - Words Per Minute Calculator
+
 [helicopter] (19):
-  - Set Rotor Collective
-  - Set Rotor Cyclic
-  - Set Rotor Pedal
-  - Get Rotor RPM
-  - Check Rotor Health
-  - Set Hover Target
-  - Get Hover Position Error
-  - Get Hover Correction
-  - Attach External Load
-  - Detach External Load
-  - Compensate Load Swing
   - Detect Power Loss
   - Initiate Autorotation
   - Maintain Autorotation
   - Get Weather Correction
   - Get Crosswind Component
-  - Plan VTOL Takeoff
-  - Plan VTOL Landing
+  - Get Hover Correction
+  - Get Hover Position Error
+  - Set Hover Target
+  - Attach External Load
+  - Compensate Load Swing
+  - Detach External Load
+  - Get Rotor RPM
+  - Check Rotor Health
+  - Set Rotor Collective
+  - Set Rotor Cyclic
+  - Set Rotor Pedal
   - Get VTOL Energy
+  - Plan VTOL Landing
+  - Plan VTOL Takeoff
+
+[nuphus-desktop] (19):
+  - Nuphus: Browser Click
+  - Nuphus: Browser Cookies
+  - Nuphus: Browser Execute JS
+  - Nuphus: Browser Navigate
+  - Nuphus: Browser Screenshot
+  - Nuphus: Browser Snapshot
+  - Nuphus: Browser Type
+  - Nuphus: Click
+  - Nuphus: Clipboard Get
+  - Nuphus: Clipboard Set
+  - Nuphus: Drag
+  - Nuphus: Focus Window
+  - Nuphus: Hotkey
+  - Nuphus: List Windows
+  - Nuphus: Mouse Move
+  - Nuphus: OCR
+  - Nuphus: Screenshot
+  - Nuphus: Scroll
+  - Nuphus: Type Text
+
+[ground] (18):
+  - Calculate Time-to-Collision
+  - Should Brake
+  - Should Evade
+  - Get Driver Alertness
+  - Get Driver Fatigue
+  - Update Driver Metrics
+  - Add Pedestrian
+  - Predict Pedestrian Path
+  - Pedestrian Risk Assessment
+  - Detect Road Hazard
+  - Get Road Recommendation
+  - Update Road Friction
+  - Get Recommended Speed
+  - Set Traffic Signal
+  - Traffic Should Proceed
+  - V2X Connect
+  - V2X Send V2I
+  - V2X Send V2V
+
+[agriculture] (15):
+  - Add Crop Field
+  - Predict Crop Yield
+  - Update Crop Growth
+  - Get Optimal Harvest Date
+  - Plan Harvest Schedule
+  - Set Harvest Field
+  - Get Water Usage
+  - Set Irrigation Zone
+  - Start Irrigation
+  - Add Pest Observation
+  - Get Pest Recommendation
+  - Get Pest Risk
+  - Add Soil Sample
+  - Get Soil Heatmap
+  - Get Soil Recommendation
+
+[construction] (15):
+  - Get Bulldozer Grade
+  - Bulldozer Push
+  - Set Bulldozer Blade
+  - Get Concrete Consistency
+  - Set Concrete Ratio
+  - Start Concrete Mix
+  - Capture Survey Photos
+  - Get Survey 3D Model
+  - Set Survey Drone Site
+  - Check Crane Wind
+  - Set Crane Boom
+  - Set Crane Trolley
+  - Excavator Dig
+  - Set Excavator Arm
+  - Set Excavator Bucket
+
 [industrial] (15):
-  - Connect PLC
-  - Read PLC Register
-  - Write PLC Register
-  - Add SCADA Sensor
-  - Update SCADA Sensor Value
-  - Check SCADA Limits
+  - Get CNC Status
   - Load CNC Program
   - Start CNC
   - Stop CNC
-  - Get CNC Status
-  - Set Robot Joint
-  - Move Robot Linear
-  - Get Robot Kinematics
   - Start Conveyor
   - Stop Conveyor
+  - Connect PLC
+  - Read PLC Register
+  - Write PLC Register
+  - Get Robot Kinematics
+  - Move Robot Linear
+  - Set Robot Joint
+  - Add SCADA Sensor
+  - Check SCADA Limits
+  - Update SCADA Sensor Value
+
 [infrastructure] (15):
+  - Activate Fire Suppression
+  - Detect Heat
+  - Detect Smoke
+  - Get HVAC Efficiency
+  - Set HVAC Humidity
+  - Set HVAC Temperature
   - Add Power Generator
   - Add Power Load
   - Get Power Balance
-  - Set Water Flow Rate
-  - Set Water pH
-  - Get Water Quality
-  - Set HVAC Temperature
-  - Set HVAC Humidity
-  - Get HVAC Efficiency
-  - Detect Smoke
-  - Detect Heat
-  - Activate Fire Suppression
+  - Railway Emergency Stop
   - Set Railway Signal
   - Set Train Speed
-  - Railway Emergency Stop
+  - Get Water Quality
+  - Set Water Flow Rate
+  - Set Water pH
+
 [marine] (15):
-  - Add Sonar Target
-  - Get Sonar Targets
-  - Classify Sonar Target
-  - Add Navigation Waypoint
-  - Set Navigation Route
-  - Get Navigation ETA
-  - Add Hull Sensor
-  - Check Hull Integrity
-  - Detect Hull Leak
   - Calculate Anchor Scope
   - Drop Anchor
   - Retrieve Anchor
   - Add Ballast Tank
   - Fill Ballast Tank
   - Get Ballast Stability
-[medical] (9):
-  - Update Vital Signs
-  - Get All Vitals
-  - Check Vital Alerts
-  - Add Medication
-  - Check Drug Interactions
-  - Get Contraindications
-  - Set Patient
-  - Update Patient Vitals
-  - Get Patient Alert Level
-[ml] (6):
-  - Vision Detect
-  - NLP Analyze
-  - Prediction Add Dataset
-  - Classifier Add Class
-  - Anomaly Add Metric
-  - RL Create State
-[physical] (8):
-  - Arduino Connect
-  - Arduino Digital Write
-  - Arduino Analog Read
-  - Raspberry Pi Connect
-  - RPi GPIO Read
-  - CAN Bus Connect
-  - CAN Send Frame
-  - I2C Read Byte
-[predictive] (6):
-  - Failure Predictor Add
-  - Maintenance Add Task
-  - Spare Parts Add
-  - Vibration Add Sensor
-  - Oil Analysis Add Sample
-  - Thermal Trend Add Sensor
-[remote] (6):
-  - WebSocket Start
-  - REST Add Route
-  - Network Auth Add Client
-  - Remote Session Connect
-  - Command Register
-  - Heartbeat Start
-[safety] (7):
-  - FailSafe Add Rule
-  - Watchdog Start
-  - Emergency Activate
-  - Redundancy Add Channel
-  - FMEA Add Component
-  - Safety Interlock Add
-  - Circuit Breaker Add
-[sdr] (7):
-  - SDR Connect
-  - SDR FFT
-  - WiFi Scan
-  - Bluetooth Scan
-  - LoRa Connect
-  - GPS Connect
-  - Signal Analyze
-[security] (15):
-  - Add Surveillance Camera
-  - Detect Motion
-  - Set Recording
-  - Grant Access
-  - Revoke Access
-  - Check Access
-  - Set Intrusion Zone
-  - Arm Intrusion Zone
-  - Check Intrusion Breach
-  - Detect Port Scan
-  - Detect Brute Force
-  - Block IP Address
-  - Encrypt Data
-  - Decrypt Data
-  - Hash Data
-[sensor] (8):
-  - LiDAR Connect
-  - LiDAR Point Cloud
-  - Camera Connect
-  - Radar Connect
-  - IMU Connect
-  - IMU Acceleration
-  - Ultrasonic Connect
-  - Thermal Connect
-[space] (22):
-  - Calculate Launch Window
-  - Get Next Launch Window
-  - Check Launch Constraints
-  - Add Ground Station
-  - Schedule Ground Station Pass
-  - Get Next Pass
-  - Separate Stage
-  - Deploy Stage Chutes
-  - Stage Touchdown
-  - Create Payload
-  - Deploy Payload
-  - Confirm Payload Orbit
-  - Calculate Deorbit Burn
-  - Get Deorbit Window
-  - Add Satellite to Constellation
-  - Get Constellation Coverage
-  - Get Revisit Time
-  - Predict Eclipse
-  - Get Eclipse Power Budget
-  - Monitor Thermal
-  - Check Thermal Limits
-  - Predict Heat Flux
+  - Add Hull Sensor
+  - Check Hull Integrity
+  - Detect Hull Leak
+  - Add Navigation Waypoint
+  - Get Navigation ETA
+  - Set Navigation Route
+  - Add Sonar Target
+  - Classify Sonar Target
+  - Get Sonar Targets
+
+[data-science] (14):
+  - Confusion Matrix Calculator
+  - Cosine Similarity Calculator
+  - Distance Calculator
+  - Information Entropy Calculator
+  - Gini Impurity Calculator
+  - Gradient Descent Optimizer
+  - K-Means Clustering
+  - Monte Carlo Integration
+  - Multiple Linear Regression
+  - Data Normalizer
+  - Sigmoid Function Calculator
+  - Softmax Calculator
+  - Data Standardizer
+  - TF-IDF Calculator
+
 [survey] (14):
   - Add LiDAR Point
   - Downsample LiDAR
   - Get LiDAR Volume
-  - Set RTK Position
-  - Get RTK Accuracy
-  - Get RTK Fix Quality
-  - Measure Distance
-  - Measure Angle
-  - Set Drone Mapper Flight
   - Add Mapper Photo
   - Generate 3D Model
+  - Set Drone Mapper Flight
+  - Get RTK Accuracy
+  - Get RTK Fix Quality
+  - Set RTK Position
   - Add Seismic Sensor
   - Detect P-Wave
   - Get Seismic Magnitude
-[ultra-x] (37):
+  - Measure Angle
+  - Measure Distance
+
+[chemistry] (13):
+  - Strong Acid pH Calculator
+  - Weak Acid pH Calculator
+  - Titration Calculator
+  - Buffer pH Calculator
+  - Dilution Calculator
+  - Electrochemistry Calculator
+  - Gas Laws Calculator
+  - Half-Life Calculator
+  - Limiting Reagent Calculator
+  - Molar Mass Calculator
+  - Moles Calculator
+  - Nernst Equation Calculator
+  - Percent Composition Calculator
+
+[finance] (13):
+  - Annuity Calculator
+  - Stock Beta Calculator
+  - Black-Scholes Option Pricing
+  - Bond Price Calculator
+  - Compound Interest Calculator
+  - Dividend Discount Model
+  - IRR Calculator
+  - Mortgage Calculator
+  - NPV Calculator
+  - Present Value Calculator
+  - ROI Calculator
+  - Sharpe Ratio Calculator
+  - Stock Valuation (Gordon Growth)
+
+[max] (12):
+  - CDP Connect to Chrome
+  - CDP Disconnect
+  - Computer Click
+  - Computer Desktop Info
+  - Computer Drag
+  - Computer Key Press
+  - Computer List Windows
+  - Computer Move Mouse
+  - Computer Open App
+  - Computer Screenshot
+  - Computer Scroll
+  - Computer Type Text
+
+[astronomy] (10):
+  - Angular Separation
+  - Escape Velocity
+  - Gravitational Force
+  - Habitable Zone Calculator
+  - Julian Date Calculator
+  - Stellar Luminosity
+  - Orbital Period Calculator
+  - Distance from Parallax
+  - Redshift Calculator
+  - Sidereal Time Calculator
+
+[blockchain] (10):
+  - Mining Difficulty Adjuster
+  - Block Reward Calculator
+  - Difficulty Target
+  - Gas Estimator
+  - Impermanent Loss Calculator
+  - Merkle Root Calculator
+  - Nonce Calculator
+  - SHA-256 Hash
+  - Staking Daily Rate
+  - Transaction Fee Estimator
+
+[database] (10):
+  - Table Bloat Estimator
+  - Buffer Pool Hit Rate
+  - Query Complexity Estimator
+  - Query Execution Time Estimator
+  - Connection Pool Sizing
+  - Replication Lag Impact
+  - Index Selectivity Calculator
+  - Sharding Distribution Analyzer
+  - Transaction Throughput Estimator
+  - Vacuum Frequency Advisor
+
+[devops] (10):
+  - Availability Calculator
+  - Container Resource Efficiency
+  - Deployment Success Rate
+  - Log Error Rate
+  - Infrastructure Cost Estimator
+  - MTBF Calculator
+  - MTTR Calculator
+  - CI/CD Pipeline Duration
+  - Auto-Scaling Threshold Checker
+  - SLA Compliance Checker
+
+[game-mechanics] (10):
+  - Armor Damage Reduction
+  - Effective Cooldown Calculator
+  - DPS Calculator
+  - Expected Damage Calculator
+  - Expected Loot Calculator
+  - Cumulative Loot Drop Chance
+  - Movement Speed Calculator
+  - Total XP to Level Calculator
+  - Time-to-Kill Calculator
+  - XP Requirement Calculator
+
+[geology] (10):
+  - Bearing Capacity Calculator
+  - Erosion Rate Calculator
+  - Geothermal Gradient
+  - Mohs Hardness Classifier
+  - Permeability Estimator
+  - Plate Velocity Calculator
+  - Porosity Calculator
+  - Radiometric Dating
+  - Rock Type Classifier
+  - Seismic Density Estimator
+
+[linguistics] (10):
+  - Edit Distance Calculator
+  - Text Entropy Calculator
+  - Flesch-Kincaid Readability
+  - Morpheme Counter
+  - N-gram Frequency Analysis
+  - POS Tag Distribution Estimator
+  - Syllable Counter
+  - TF-IDF Document Similarity
+  - Type-Token Ratio
+  - Zipf's Law Predictor
+
+[materials] (10):
+  - Brinell Hardness Calculator
+  - Bulk Modulus Calculator
+  - Composite Modulus Calculator
+  - Creep Rate Calculator
+  - Fatigue Life Estimator
+  - Stress Intensity Factor
+  - Shear Modulus Calculator
+  - Thermal Expansion Strain
+  - Thermal Stress Calculator
+  - Young's Modulus Calculator
+
+[meteorology] (10):
+  - Cloud Base Height
+  - Dew Point Calculator
+  - Heat Index Calculator
+  - Mixing Ratio Calculator
+  - Potential Evapotranspiration
+  - Pressure at Altitude
+  - Atmospheric Stability Class
+  - Virtual Temperature
+  - Visibility from Extinction
+  - Wind Chill Calculator
+
+[music] (10):
+  - Beat Frequency Calculator
+  - Chord Ratio Calculator
+  - Doppler Shift Calculator
+  - Duration to BPM
+  - Frequency to Note
+  - Interval Ratio Calculator
+  - Note to Frequency
+  - Scale Frequency Generator
+  - Tempo to ms/beat
+  - Tuning Table Generator
+
+[networking] (10):
+  - Bandwidth Delay Product
+  - Broadcast Address Calculator
+  - CIDR to Subnet Mask
+  - Integer to IP
+  - IP to Integer
+  - Jitter Calculator
+  - Subnet Mask to CIDR
+  - Network Address Calculator
+  - TCP Throughput Estimator
+  - Usable Hosts Calculator
+
+[oceanography] (10):
+  - Chlorophyll from Fluorescence
+  - Coriolis Parameter
+  - Seawater Density
+  - Ekman Depth Calculator
+  - Mixed Layer Depth
+  - Rossby Number
+  - Sound Speed in Seawater
+  - Tidal Force Calculator
+  - Wave Period Calculator
+  - Deep Water Wave Speed
+
+[quantum] (10):
+  - Bloch Sphere Coords
+  - Circuit Depth
+  - CNOT Gate
+  - Concurrence
+  - Gate Decomposition Depth
+  - Von Neumann Entropy
+  - Quantum Fidelity
+  - Hadamard Gate
+  - Rx Gate Matrix
+  - Shor Period Finding
+
+[robotics] (10):
+  - Robot Dynamics
+  - Forward Kinematics
+  - Path Heuristic
+  - Inverse Kinematics
+  - Jacobian Matrix
+  - Manipulability Index
+  - PID Controller
+  - Pose Error
+  - Sensor Fusion
+  - Workspace Volume
+
+[ultra] (10):
+  - Ultra AutoDeploy
+  - Ultra Code Review
+  - Ultra CodeGen
+  - Ultra Performance
+  - Ultra Quantum
+  - Ultra Refactor
+  - Ultra Security Sweep
+  - Ultra Test Gen
+  - View Behavior Rules
+  - Learn from Task
+
+[biology] (9):
+  - DNA to RNA Transcription
+  - GC Content Calculator
+  - Hardy-Weinberg Equilibrium
+  - Hill Equation Calculator
+  - Michaelis-Menten Kinetics
+  - Population Growth Model
+  - Punnett Square
+  - Shannon Diversity Index
+  - Simpson Diversity Index
+
+[medical] (9):
+  - Add Medication
+  - Check Drug Interactions
+  - Get Contraindications
+  - Check Vital Alerts
+  - Get All Vitals
+  - Update Vital Signs
+  - Get Patient Alert Level
+  - Set Patient
+  - Update Patient Vitals
+
+[mathematics] (8):
+  - Combinatorics Calculator
+  - Derivative Calculator
+  - Geometry Calculator
+  - Gradient Calculator
+  - Integral Calculator
+  - Matrix Operations
+  - Prime Number Tools
+  - Statistics Calculator
+
+[physical] (8):
+  - Arduino Analog Read
+  - Arduino Connect
+  - Arduino Digital Write
+  - CAN Bus Connect
+  - CAN Send Frame
+  - I2C Read Byte
+  - Raspberry Pi Connect
+  - RPi GPIO Read
+
+[pro] (8):
+  - Data Extract from File
+  - Image Edit
+  - OCR Text Recognition
+  - Media Probe
+  - Video Process
+  - Plan Create Task
+  - Plan Execute Step
+  - Plan Status
+
+[sensor] (8):
+  - Camera Connect
+  - IMU Connect
+  - IMU Acceleration
+  - LiDAR Connect
+  - LiDAR Point Cloud
+  - Radar Connect
+  - Thermal Connect
+  - Ultrasonic Connect
+
+[daily-task] (7):
+  - Create Daily Task
+  - Delete Daily Task
+  - List Daily Tasks
+  - Run Daily Task Now
+  - Scheduler Status
+  - Start Daily Task Scheduler
+  - Enable/Disable Daily Task
+
+[memory] (7):
+  - Append to Memory
+  - Create Memory
+  - Delete Memory
+  - Read Memory
+  - Search Memory
+  - Update Memory
+  - View Memory
+
+[safety] (7):
+  - Circuit Breaker Add
+  - Emergency Activate
+  - FailSafe Add Rule
+  - FMEA Add Component
+  - Safety Interlock Add
+  - Redundancy Add Channel
+  - Watchdog Start
+
+[sdr] (7):
+  - Bluetooth Scan
+  - GPS Connect
+  - LoRa Connect
+  - SDR Connect
+  - SDR FFT
+  - Signal Analyze
+  - WiFi Scan
+
+[auth] (6):
+  - Access Log
+  - Auth Add User
+  - Certificate Generate
+  - Policy Add
+  - RBAC Add Role
+  - Token Create
+
+[common-sense] (6):
+  - Analogy Add
+  - Causal Add Link
+  - Context Set
+  - Reasoning Add Fact
+  - Spatial Add Object
+  - World Model Add Object
+
+[decision] (6):
+  - Causal Add Variable
+  - Decision Add Option
+  - Risk Add
+  - Scenario Analyzer Create
+  - Tradeoff Add
+  - Decision Tree Create
+
+[ml] (6):
+  - Anomaly Add Metric
+  - Classifier Add Class
+  - NLP Analyze
+  - Prediction Add Dataset
+  - RL Create State
+  - Vision Detect
+
+[predictive] (6):
+  - Failure Predictor Add
+  - Maintenance Add Task
+  - Oil Analysis Add Sample
+  - Spare Parts Add
+  - Thermal Trend Add Sensor
+  - Vibration Add Sensor
+
+[remote] (6):
+  - Network Auth Add Client
+  - Command Register
+  - Heartbeat Start
+  - Remote Session Connect
+  - REST Add Route
+  - WebSocket Start
+
+[creativity] (5):
+  - Design Thinking Create
+  - Idea Add Concept
+  - Innovation Add Technology
+  - Pattern Add
+  - Constraint Relax Add Problem
+
+[dashboard] (5):
+  - Chart Create
+  - Dashboard Create Panel
+  - Status Add Metric
+  - Real-Time Stream Create
+  - Widget Create
+
+[data-logger] (5):
+  - Audit Record
+  - Event Log
+  - Export CSV
+  - Storage Allocate
+  - TimeSeries Create
+
+[digital-twin] (5):
+  - Physics Add Body
+  - Scenario Create
+  - Scheduler Add Task
+  - Sync Add Source
+  - Digital Twin Create
+
+[documents] (5):
+  - Count Words
+  - Create Document
+  - Edit Document
+  - Markdown to HTML
+  - Read Document
+
+[ethics] (5):
+  - Bias Add Dataset
+  - Ethics Add Principle
+  - Fairness Add Model
+  - Safety Validate Action
+  - Transparency Add Decision
+
+[physics] (5):
+  - Electromagnetism Calculator
+  - Classical Mechanics
+  - Relativity Calculator
+  - Thermodynamics Calculator
+  - Wave Mechanics Calculator
+
+[universal-command] (5):
+  - UCE Get Context
+  - List UCE Devices
+  - UCE Command History
   - Universal Command Process
-  - Universal Command Devices
-  - Universal Command History
-  - Reality Bridge Register Device
-  - Reality Bridge Control Device
-  - Reality Bridge Get States
-  - Reality Bridge Create Scene
-  - Reality Bridge Activate Scene
-  - Omni Creator Create
-  - Omni Creator Templates
-  - Omni Creator Projects
-  - Time Manipulator Timeline
-  - Time Manipulator Snapshot
-  - Time Manipulator Evolution
-  - Time Manipulator Predict
-  - Time Manipulator Bug Patterns
-  - Consciousness Register Agent
-  - Consciousness Transfer Knowledge
-  - Consciousness Start Collaboration
-  - Consciousness List Agents
-  - Self-Evolving Analyze Code
-  - Self-Evolving Suggest Refactor
-  - Self-Evolving Evolution Trend
-  - Emotion Analyze Text
-  - Emotion Get Adaptation
-  - Emotion Get Mood Trend
-  - Memory Palace Store
-  - Memory Palace Query
-  - Memory Palace Stats
-  - Memory Palace Connect
-  - Reality Simulate Scenario
-  - Reality Simulator Results
-  - Singularity Process Request
-  - Singularity Self-Heal
-  - Singularity Learn
-  - Singularity State
-  - Singularity Evolution Steps
+  - UCE Register Device
+
+[alert] (4):
+  - Alert Create
+  - Anomaly Alerter Add
+  - Escalation Create Policy
+  - Notification Add Channel
+
+[captcha] (4):
+  - Click Captcha Checkbox
+  - Detect Captcha Type
+  - Input Captcha Text
+  - Solve Image Captcha
+
+[code-guardian] (4):
+  - Code Guardian Clear
+  - Code Guardian AI Context
+  - Code Guardian Scan
+  - Code Guardian Status
+
+[skills] (3):
+  - Create Skill
+  - Delete Skill
+  - List Skills
+
+[subscription] (1):
+  - Subscription Status

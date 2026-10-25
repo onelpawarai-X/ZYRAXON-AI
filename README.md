@@ -75,7 +75,7 @@ Every number below is counted from the source tree, not estimated.
 | **Tools** | 888 | each one registered with a required tier |
 | **MCP integrations** | 108 | every app probed by hand before being listed |
 | **Agent modes** | 11 | from scoped exploration to full autonomy |
-| **Tool categories** | 63 | aircraft, marine, finance, medical, robotics, and more |
+| **Tool categories** | 67 | aircraft, marine, finance, medical, robotics, and more |
 | **Bundled local MCP servers** | 4 | ship with the app, nothing to install |
 
 ### Tools by tier
@@ -102,10 +102,13 @@ active, and new means the tools that specific tier adds on top of the one below.
 | `free + pro + max` | 827 | 324 |
 | `free + pro + max + ultra` | 888 | 61 |
 
-The 888 tools span 63 categories. The largest are vehicles (56), ultra-x (34),
-security (26), aviation (25), space (22), drone (21), engineering (21),
-helicopter (19), daily-life (19) and builtin (19), followed by ground,
-industrial, infrastructure, agriculture, marine and construction at 15 each.
+The 888 tools are counted from the tier map, the single source of truth for the
+whole catalog. Of those, 807 are X-registry tools with a category, and they span
+67 categories. The largest are vehicles (56), touchpoint (47), ultra-x (34),
+security (26), aviation (25), space (22), drone (21), engineering (21), builtin
+(19), daily-life (19), helicopter (19) and nuphus-desktop (19), followed by
+ground (18), then agriculture, construction, industrial, infrastructure and
+marine at 15 each.
 
 ### One agent that does everything
 
@@ -130,34 +133,56 @@ by hand.
 Everything above sits behind one model choice and one permission model, and it
 runs the same on Windows, macOS and Linux.
 
+### The control system
+
+Behind the control tools sits a control system, not a list of labels. Each
+vehicle and machine family ships its own module — flight control (FCS,
+autopilot, autoland, TCAS), engine and fuel management, ground vehicles (ECU,
+ABS, ESC, lane keeping), drones (motor mixer, flight controller, formation,
+return-to-home), marine (dynamic positioning, radar, AIS, COLREGS), rockets
+(GNC, orbit, propulsion, launch sequencer) and robots (inverse kinematics, SLAM,
+force control) — plus the shared math every one of them runs on: PID, Kalman
+filters, A*, FFT, graph search and matrix solvers.
+
+The loop is the same across families: read telemetry and sensors, run the
+control law, drive the actuators, then report state back. A fleet-wide watchdog
+and an emergency stop sit above all of them, so a single command can halt every
+connected machine. The full module list is in
+[`ZYRAXON.md`](ZYRAXON.md).
+
 ### Every category, and how many tools each one holds
 
-All 63 categories, with the number of tools inside each. The counts are read
-straight from the registry (`packages/zyraxon/src/x/x-tool-registry.ts`).
+All 67 categories, with the number of tools inside each. The counts are read
+straight from the registry (`packages/zyraxon/src/x/x-tool-registry.ts`), which
+holds 807 of the 888 registered tools; the remaining 81 are the built-in,
+session, preview, desktop, UI-button and OMNI tools that carry a tier but no
+registry category.
 
 | Category | Tools | Category | Tools | Category | Tools |
 |:--|--:|:--|--:|:--|--:|
-| vehicles | 56 | blockchain | 10 | safety | 7 |
-| ultra-x | 34 | database | 10 | sdr | 7 |
-| security | 26 | devops | 10 | auth | 6 |
-| aviation | 25 | game-mechanics | 10 | common-sense | 6 |
-| space | 22 | geology | 10 | decision | 6 |
-| drone | 21 | linguistics | 10 | ml | 6 |
-| engineering | 21 | materials | 10 | predictive | 6 |
-| builtin | 19 | meteorology | 10 | remote | 6 |
-| daily-life | 19 | music | 10 | creativity | 5 |
-| helicopter | 19 | networking | 10 | dashboard | 5 |
-| ground | 18 | oceanography | 10 | data-logger | 5 |
-| agriculture | 15 | quantum | 10 | digital-twin | 5 |
-| construction | 15 | robotics | 10 | documents | 5 |
-| industrial | 15 | biology | 9 | ethics | 5 |
-| infrastructure | 15 | medical | 9 | physics | 5 |
-| marine | 15 | mathematics | 8 | universal-command | 5 |
-| data-science | 14 | physical | 8 | alert | 4 |
-| survey | 14 | sensor | 8 | captcha | 4 |
-| chemistry | 13 | ultra | 8 | code-guardian | 4 |
-| finance | 13 | daily-task | 7 | skills | 3 |
-| astronomy | 10 | memory | 7 | subscription | 1 |
+| vehicles | 56 | astronomy | 10 | safety | 7 |
+| touchpoint | 47 | blockchain | 10 | sdr | 7 |
+| ultra-x | 34 | database | 10 | auth | 6 |
+| security | 26 | devops | 10 | common-sense | 6 |
+| aviation | 25 | game-mechanics | 10 | decision | 6 |
+| space | 22 | geology | 10 | ml | 6 |
+| drone | 21 | linguistics | 10 | predictive | 6 |
+| engineering | 21 | materials | 10 | remote | 6 |
+| builtin | 19 | meteorology | 10 | creativity | 5 |
+| daily-life | 19 | music | 10 | dashboard | 5 |
+| helicopter | 19 | networking | 10 | data-logger | 5 |
+| nuphus-desktop | 19 | oceanography | 10 | digital-twin | 5 |
+| ground | 18 | quantum | 10 | documents | 5 |
+| agriculture | 15 | robotics | 10 | ethics | 5 |
+| construction | 15 | ultra | 10 | physics | 5 |
+| industrial | 15 | biology | 9 | universal-command | 5 |
+| infrastructure | 15 | medical | 9 | alert | 4 |
+| marine | 15 | mathematics | 8 | captcha | 4 |
+| data-science | 14 | physical | 8 | code-guardian | 4 |
+| survey | 14 | pro | 8 | skills | 3 |
+| chemistry | 13 | sensor | 8 | subscription | 1 |
+| finance | 13 | daily-task | 7 |  |  |
+| max | 12 | memory | 7 |  |  |
 
 ### How the MCP catalog connects
 

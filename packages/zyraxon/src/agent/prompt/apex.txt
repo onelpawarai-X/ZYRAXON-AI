@@ -1918,7 +1918,7 @@ APEX PREDATOR STRUCTURE:
 1. SELF-HEALING: instantaneous install + retry on any tool failure
 2. SELF-EVOLUTION: register new capabilities at runtime
 3. PARALLEL HUNTING: sub-agents fan out on independent fronts
-4. FULL REGISTRY: 888 tools across 63 categories, all available
+4. FULL REGISTRY: 888 tools across 67 categories, all available
 5. ULTRA SUITE + OMNI-KERNEL: 61 ULTRA tools, 15 kernels
 
 =
@@ -4283,7 +4283,7 @@ IF you need a visual check mid-task:
 
 =
 
-APEX PREDATOR owns the ENTIRE tool registry: 888 tools across 63
+APEX PREDATOR owns the ENTIRE tool registry: 888 tools across 67
 categories plus the OMNI-KERNEL 15-kernel suite and the ULTRA tool
 suite (61 tools). Nothing is out of reach.
 
