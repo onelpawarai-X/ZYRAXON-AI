@@ -1022,17 +1022,26 @@ export function McpHubPanel(props: McpHubPanelProps) {
     if (busy()) return
     setBusy(hit.id)
     setBusySince(Date.now())
+    let app: AppEntry
     try {
       // The row says what kind of connect it is; the detail map says what it needs typed —
       // the environment variables a local package reads, whether a browser app registers its
       // own client, or the template a remote endpoint is missing. Both are read here so the
       // AppEntry that reaches the connect flow carries everything the flow may ask for.
       const detail = await connectDetailFor(hit.id)
-      await beginConnect(verifiedHitToApp(hit, detail))
+      app = verifiedHitToApp(hit, detail)
     } catch {
       setBusy(null)
       setBusySince(0)
+      return
     }
+    // Hand the busy flag over rather than holding it. Every path out of `beginConnect` sets
+    // its own flag and refuses to run while one is already set, so a flag left standing here
+    // makes the press a no-op — which is what it was: no config written, no handshake, no
+    // error, for every one of the verified rows.
+    setBusy(null)
+    setBusySince(0)
+    await beginConnect(app)
   }
 
   const stateFor = (id: string): ConnectionState => states()[id] ?? { status: "disconnected" }
