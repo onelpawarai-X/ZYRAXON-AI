@@ -254,6 +254,7 @@ export const dict = {
   "prompt.placeholder.normal": 'Froe wat och elo... "{{example}}"',
   "prompt.placeholder.simple": "Froe wat och elo...",
   "prompt.placeholder.summarizeComments": "Kommentare zesummefaassen…",
+  "prompt.disclaimer": "ZYRAXON AI can make mistakes. Please double-check important information.",
   "prompt.placeholder.summarizeComment": "Kommentar zesummefaassen…",
   "prompt.mode.shell": "Shell",
   "prompt.mode.normal": "Froen",

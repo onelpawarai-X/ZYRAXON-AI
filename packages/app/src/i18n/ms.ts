@@ -905,6 +905,7 @@ export const dict = {
   "status.popover.action.manageServers": "Urus pelayan",
   "lsp.tooltip.none": "Tiada pelayan LSP",
   "lsp.label.connected": "{{count}} LSP",
+  "prompt.disclaimer": "ZYRAXON AI can make mistakes. Please double-check important information.",
   "prompt.loading": "Memuatkan prompt...",
   "terminal.loading": "Memuatkan terminal...",
   "terminal.title": "Terminal",

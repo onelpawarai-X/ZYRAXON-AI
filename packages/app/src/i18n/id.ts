@@ -905,6 +905,7 @@ export const dict = {
   "status.popover.action.manageServers": "Kelola server",
   "lsp.tooltip.none": "Tidak ada server LSP",
   "lsp.label.connected": "{{count}} LSP",
+  "prompt.disclaimer": "ZYRAXON AI can make mistakes. Please double-check important information.",
   "prompt.loading": "Memuat prompt...",
   "terminal.loading": "Memuat terminal...",
   "terminal.title": "Terminal",

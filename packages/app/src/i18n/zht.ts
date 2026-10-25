@@ -244,6 +244,7 @@ export const dict = {
   "prompt.placeholder.normal": '隨便問點什麼... "{{example}}"',
   "prompt.placeholder.simple": "隨便問點什麼...",
   "prompt.placeholder.summarizeComments": "摘要評論…",
+  "prompt.disclaimer": "ZYRAXON AI can make mistakes. Please double-check important information.",
   "prompt.placeholder.summarizeComment": "摘要這則評論…",
   "prompt.mode.shell": "Shell",
   "prompt.mode.normal": "Prompt",

@@ -239,6 +239,7 @@ export const dict = {
   "prompt.placeholder.normal": 'Questionatz qualque coma... "{{example}}"',
   "prompt.placeholder.simple": "Questionatz qualque coma...",
   "prompt.placeholder.summarizeComments": "Resumir los comentaris…",
+  "prompt.disclaimer": "ZYRAXON AI can make mistakes. Please double-check important information.",
   "prompt.placeholder.summarizeComment": "Resumir lo comentari…",
   "prompt.mode.shell": "Coquilha",
   "prompt.mode.normal": "Questionar",

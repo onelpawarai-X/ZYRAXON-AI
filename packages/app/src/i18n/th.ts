@@ -244,6 +244,7 @@ export const dict = {
   "prompt.placeholder.normal": 'ถามอะไรก็ได้... "{{example}}"',
   "prompt.placeholder.simple": "ถามอะไรก็ได้...",
   "prompt.placeholder.summarizeComments": "สรุปความคิดเห็น…",
+  "prompt.disclaimer": "ZYRAXON AI can make mistakes. Please double-check important information.",
   "prompt.placeholder.summarizeComment": "สรุปความคิดเห็น…",
   "prompt.mode.shell": "เชลล์",
   "prompt.mode.normal": "พรอมต์",

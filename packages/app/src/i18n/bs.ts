@@ -245,6 +245,7 @@ export const dict = {
   "prompt.placeholder.normal": 'Pitaj bilo šta... "{{example}}"',
   "prompt.placeholder.simple": "Pitaj bilo šta...",
   "prompt.placeholder.summarizeComments": "Sažmi komentare…",
+  "prompt.disclaimer": "ZYRAXON AI can make mistakes. Please double-check important information.",
   "prompt.placeholder.summarizeComment": "Sažmi komentar…",
   "prompt.mode.shell": "Shell",
   "prompt.mode.normal": "Prompt",

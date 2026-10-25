@@ -904,6 +904,7 @@ export const dict = {
   "status.popover.action.manageServers": "Διαχείριση διακομιστών",
   "lsp.tooltip.none": "Κανένας διακομιστής LSP",
   "lsp.label.connected": "{{count}} LSP",
+  "prompt.disclaimer": "ZYRAXON AI can make mistakes. Please double-check important information.",
   "prompt.loading": "Φόρτωση ερωτήματος...",
   "terminal.loading": "Φόρτωση τερματικού...",
   "terminal.title": "Τερματικό",

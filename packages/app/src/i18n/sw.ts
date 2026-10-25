@@ -905,6 +905,7 @@ export const dict = {
   "status.popover.action.manageServers": "Simba seva",
   "lsp.tooltip.none": "Hakuna seva ya LSP",
   "lsp.label.connected": "{{count}} LSP",
+  "prompt.disclaimer": "ZYRAXON AI can make mistakes. Please double-check important information.",
   "prompt.loading": "Inapakia agizo...",
   "terminal.loading": "Inapakia terminali...",
   "terminal.title": "Terminali",

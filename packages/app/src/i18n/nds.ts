@@ -254,6 +254,7 @@ export const dict = {
   "prompt.placeholder.normal": 'Fragen wat ok dat is... "{{example}}"',
   "prompt.placeholder.simple": "Fragen wat ok dat is...",
   "prompt.placeholder.summarizeComments": "Bemärkungen tosummenfaten…",
+  "prompt.disclaimer": "ZYRAXON AI can make mistakes. Please double-check important information.",
   "prompt.placeholder.summarizeComment": "Bemärking tosummenfaten…",
   "prompt.mode.shell": "Shell",
   "prompt.mode.normal": "Fragen",

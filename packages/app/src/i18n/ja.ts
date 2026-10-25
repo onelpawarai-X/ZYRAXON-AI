@@ -226,6 +226,7 @@ export const dict = {
   "prompt.placeholder.normal": '何でも聞いてください... "{{example}}"',
   "prompt.placeholder.simple": "何でも聞いてください...",
   "prompt.placeholder.summarizeComments": "コメントを要約…",
+  "prompt.disclaimer": "ZYRAXON AI can make mistakes. Please double-check important information.",
   "prompt.placeholder.summarizeComment": "コメントを要約…",
   "prompt.mode.shell": "シェル",
   "prompt.mode.normal": "プロンプト",

@@ -906,6 +906,7 @@ export const dict = {
   "status.popover.action.manageServers": "Servers beheren",
   "lsp.tooltip.none": "Geen LSP-servers",
   "lsp.label.connected": "{{count}} LSP",
+  "prompt.disclaimer": "ZYRAXON AI can make mistakes. Please double-check important information.",
   "prompt.loading": "Prompt laden...",
   "terminal.loading": "Terminal laden...",
   "terminal.title": "Terminal",

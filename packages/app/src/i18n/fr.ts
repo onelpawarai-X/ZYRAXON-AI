@@ -230,6 +230,7 @@ export const dict = {
   "prompt.placeholder.normal": "Demandez n'importe quoi... \"{{example}}\"",
   "prompt.placeholder.simple": 'Demandez n\'importe quoi...',
   "prompt.placeholder.summarizeComments": "Résumer les commentaires…",
+  "prompt.disclaimer": "ZYRAXON AI can make mistakes. Please double-check important information.",
   "prompt.placeholder.summarizeComment": "Résumer le commentaire…",
   "prompt.mode.shell": "Shell",
   "prompt.mode.normal": "Prompt",

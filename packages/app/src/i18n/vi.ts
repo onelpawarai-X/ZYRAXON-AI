@@ -906,6 +906,7 @@ export const dict = {
   "status.popover.action.manageServers": "Quản lý máy chủ",
   "lsp.tooltip.none": "Không có máy chủ LSP",
   "lsp.label.connected": "{{count}} LSP",
+  "prompt.disclaimer": "ZYRAXON AI can make mistakes. Please double-check important information.",
   "prompt.loading": "Đang tải câu lệnh...",
   "terminal.loading": "Đang tải terminal...",
   "terminal.title": "Terminal",

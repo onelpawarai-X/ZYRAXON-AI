@@ -216,6 +216,7 @@ export const dict = {
   "prompt.placeholder.normal": '무엇이든 물어보세요... "{{example}}"',
   "prompt.placeholder.simple": "무엇이든 물어보세요...",
   "prompt.placeholder.summarizeComments": "댓글 요약…",
+  "prompt.disclaimer": "ZYRAXON AI can make mistakes. Please double-check important information.",
   "prompt.placeholder.summarizeComment": "댓글 요약…",
   "prompt.mode.shell": "셸",
   "prompt.mode.normal": "프롬프트",

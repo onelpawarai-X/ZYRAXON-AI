@@ -113,6 +113,12 @@ export function PromptInputV2Composer(props: PromptInputV2ComposerProps) {
           />
         }
       />
+      <p
+        data-component="prompt-disclaimer"
+        class="px-1.5 text-11-regular text-text-weak text-center pointer-events-none select-none"
+      >
+        {language.t("prompt.disclaimer")}
+      </p>
     </div>
   )
 }

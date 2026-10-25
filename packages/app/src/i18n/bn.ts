@@ -238,6 +238,7 @@ export const dict = {
   "prompt.placeholder.simple": "যা জানতে চান জিজ্ঞেস করুন...",
   "prompt.placeholder.summarizeComments": "মন্তব্যগুলো সারসংক্ষেপ করুন…",
   "prompt.placeholder.summarizeComment": "মন্তব্য সারসংক্ষেপ করুন…",
+  "prompt.disclaimer": "ZYRAXON AI ভুল করতে পারে। গুরুত্বপূর্ণ তথ্য নিজে যাচাই করে নিন।",
   "prompt.mode.shell": "শেল",
   "prompt.mode.normal": "প্রম্পট",
   "prompt.mode.shell.exit": "বন্ধ করতে esc",

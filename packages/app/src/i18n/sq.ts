@@ -905,6 +905,7 @@ export const dict = {
   "status.popover.action.manageServers": "Menaxho serverat",
   "lsp.tooltip.none": "Asnjë server LSP",
   "lsp.label.connected": "{{count}} LSP",
+  "prompt.disclaimer": "ZYRAXON AI can make mistakes. Please double-check important information.",
   "prompt.loading": "Duke u ngarkuar prompti...",
   "terminal.loading": "Duke u ngarkuar terminali...",
   "terminal.title": "Terminali",

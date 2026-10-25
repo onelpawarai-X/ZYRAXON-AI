@@ -254,6 +254,7 @@ export const dict = {
   "prompt.placeholder.normal": 'פֿראג עפּעס... "{{example}}"',
   "prompt.placeholder.simple": "פֿראג עפּעס...",
   "prompt.placeholder.summarizeComments": "באַמערקונגען צוזאמענפאסען…",
+  "prompt.disclaimer": "ZYRAXON AI can make mistakes. Please double-check important information.",
   "prompt.placeholder.summarizeComment": "באַמערקונג צוזאמענפאסען…",
   "prompt.mode.shell": "שעל",
   "prompt.mode.normal": "פֿראגען",

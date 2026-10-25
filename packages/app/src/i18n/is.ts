@@ -254,6 +254,7 @@ export const dict = {
   "prompt.placeholder.normal": 'Spyrðu hvað sem er... "{{example}}"',
   "prompt.placeholder.simple": "Spyrðu hvað sem er...",
   "prompt.placeholder.summarizeComments": "Samdráa athugasemdir…",
+  "prompt.disclaimer": "ZYRAXON AI can make mistakes. Please double-check important information.",
   "prompt.placeholder.summarizeComment": "Samdráa athugasemd…",
   "prompt.mode.shell": "Skel",
   "prompt.mode.normal": "Spyrja",

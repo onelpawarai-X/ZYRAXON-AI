@@ -1847,6 +1847,12 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
           </div>
         </DockTray>
       </Show>
+      <p
+        data-component="prompt-disclaimer"
+        class="px-1.5 pt-1 text-11-regular text-text-weak text-center pointer-events-none select-none"
+      >
+        {language.t("prompt.disclaimer")}
+      </p>
     </div>
   )
 }

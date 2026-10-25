@@ -254,6 +254,7 @@ export const dict = {
   "prompt.placeholder.normal": 'Vra enigiets... "{{example}}"',
   "prompt.placeholder.simple": "Vra enigiets...",
   "prompt.placeholder.summarizeComments": "Vat kommentare saam…",
+  "prompt.disclaimer": "ZYRAXON AI can make mistakes. Please double-check important information.",
   "prompt.placeholder.summarizeComment": "Vat kommentaar saam…",
   "prompt.mode.shell": "Skil",
   "prompt.mode.normal": "Vra",
