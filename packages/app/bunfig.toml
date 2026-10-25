@@ -2,4 +2,4 @@
 
 [test]
 root = "./src"
-preload = ["./happydom.ts"]
+preload = ["./happydom.ts", "./solid-web-preload.ts"]
