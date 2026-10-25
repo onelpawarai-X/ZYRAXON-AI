@@ -152,6 +152,36 @@ and an emergency stop sit above all of them, so a single command can halt every
 connected machine. The full module list is in
 [`ZYRAXON.md`](ZYRAXON.md).
 
+### What ZYRAXON controls, and what stays with you
+
+If something can be controlled through code, an API or a command interface,
+ZYRAXON can drive it: it plans the task, sends the commands, reads the feedback
+and monitors the result, with sub-agents working in parallel under one
+supervising agent.
+
+That is the sense in which the control tools are real, and the line is worth
+drawing precisely. For any target that exposes a programmable interface — a
+flight controller over MAVLink, a vehicle bus over CAN, a PLC over Modbus, a
+browser over CDP, or the operating system over its own APIs — the agent can hold
+the loop itself: read telemetry and sensors, run the control law, drive the
+actuator, then check what came back. On those targets we rate the agent at
+better than 95% reliable end to end, and it can be corrected and re-run until
+the job is done.
+
+Some parts stay with the operator. Physical actions such as holding the steering
+wheel or pressing the pedals, and fast real-time control loops that belong to
+the vehicle's own controller, are not handled by the model. Those belong to the
+person on the machine, or to the hardware controller that already owns them.
+
+Closing the loop at that level needs a capable model. A strong frontier model
+does it unaided; if you would rather use a provider you already trust, attach
+your own model key (BYOK) and the agent runs on that model instead. A hosted
+subscription from our own provider is on the roadmap for when the project grows
+into it — until then BYOK covers the same ground.
+
+Test every vehicle and machine tool in a simulator first, and use real hardware
+only with proper safety measures.
+
 ### Every category, and how many tools each one holds
 
 All 67 categories, with the number of tools inside each. The counts are read
