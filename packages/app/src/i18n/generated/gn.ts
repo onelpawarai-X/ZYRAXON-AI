@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Código fuente, oguenohẽva ha emisión rastreador",
   "settings.about.tagline": "Ko mundo-pegua agente de automatización opa mba'e peteĩme",
   "settings.about.description.title": "ZYRAXON rehegua",
-  "settings.about.description": "ZYRAXON haꞌehína agente automatización opaite mbaꞌe peteĩme ko yvy ape ári — peteĩ instalación ohai ha omondova código, omboguatáva ne máquina ha navegador, ombojoajúva 108 aplicación MCP verificado, ocontroláva mbaꞌyrumýi ha robot, ha omonguꞌe peteĩ bucle visión pantalla en vivo rehegua, Windows, macOS ha Linux-pe peteĩcha. Omopu’ãva’ekue ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON haꞌehína agente automatización opaite mbaꞌe peteĩme ko yvy ape ári — peteĩ instalación ohai ha omondova código, omboguatáva ne máquina ha navegador, ombojoajúva 8,200+ aplicación MCP verificado, ocontroláva mbaꞌyrumýi ha robot, ha omonguꞌe peteĩ bucle visión pantalla en vivo rehegua, Windows, macOS ha Linux-pe peteĩcha. Omopu’ãva’ekue ZYRAXON Inc.",
   "settings.about.version": "Je'eháicha",
   "settings.about.platform": "Pyendavusu",
   "settings.about.links.title": "Umi enlace",

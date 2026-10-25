@@ -13,7 +13,7 @@ export const deployAws = $app.stage === awsStage
 // ZYRAXON-specific configuration
 export const zyraxonConfig = {
   version: "1.14.0",
-  mcpToolsCount: 108,
+  mcpToolsCount: 8202,
   streamingEnabled: true,
   selfHealingEnabled: true,
   memorySystemEnabled: true,

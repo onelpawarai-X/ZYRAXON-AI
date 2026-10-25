@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "මූලාශ්‍ර කේතය, නිකුතු සහ නිකුත් කිරීමේ ට්‍රැකර්",
   "settings.about.tagline": "ලෝකයේ සියල්ලෙන් එක ස්වයංක්‍රීයකරණ නියෝජිතයා",
   "settings.about.description.title": "ZYRAXON ගැන",
-  "settings.about.description": "ZYRAXON යනු ලොව සියලුම-එක් ස්වයංක්‍රීයකරණ නියෝජිතයා වේ - එක් ස්ථාපනයකි, කේතය ලිවීම සහ නැව්ගත කිරීම, ඔබේ යන්ත්‍රය සහ බ්‍රවුසරය ධාවනය කරයි, සත්‍යාපිත MCP යෙදුම් 108 ක් සම්බන්ධ කරයි, වාහන සහ රොබෝවරුන් පාලනය කරයි, සහ Windows, macOS සහ Linux මත සජීවී තිර දර්ශන ලූපයක් ධාවනය කරයි. ඉදිකරන ලද්දේ ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON යනු ලොව සියලුම-එක් ස්වයංක්‍රීයකරණ නියෝජිතයා වේ - එක් ස්ථාපනයකි, කේතය ලිවීම සහ නැව්ගත කිරීම, ඔබේ යන්ත්‍රය සහ බ්‍රවුසරය ධාවනය කරයි, සත්‍යාපිත MCP යෙදුම් 8,200+ ක් සම්බන්ධ කරයි, වාහන සහ රොබෝවරුන් පාලනය කරයි, සහ Windows, macOS සහ Linux මත සජීවී තිර දර්ශන ලූපයක් ධාවනය කරයි. ඉදිකරන ලද්දේ ZYRAXON Inc.",
   "settings.about.version": "අනුවාදය",
   "settings.about.platform": "වේදිකාව",
   "settings.about.links.title": "සබැඳි",

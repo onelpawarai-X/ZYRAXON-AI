@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Kode sumber, sékrési sareng tracker masalah",
   "settings.about.tagline": "Agén automation sadaya-dina-hiji di dunya",
   "settings.about.description.title": "Ngeunaan ZYRAXON",
-  "settings.about.description": "ZYRAXON mangrupikeun agén otomatisasi sadaya-dina-hiji di dunya - hiji pamasangan anu nyerat sareng ngirim kode, ngajalankeun mesin sareng browser anjeun, nyambungkeun 108 aplikasi MCP anu diverifikasi, ngadalikeun kendaraan sareng robot, sareng ngajalankeun loop visi layar langsung, dina Windows, macOS sareng Linux. Diwangun ku ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON mangrupikeun agén otomatisasi sadaya-dina-hiji di dunya - hiji pamasangan anu nyerat sareng ngirim kode, ngajalankeun mesin sareng browser anjeun, nyambungkeun 8,200+ aplikasi MCP anu diverifikasi, ngadalikeun kendaraan sareng robot, sareng ngajalankeun loop visi layar langsung, dina Windows, macOS sareng Linux. Diwangun ku ZYRAXON Inc.",
   "settings.about.version": "Vérsi",
   "settings.about.platform": "Platform",
   "settings.about.links.title": "Tumbu",

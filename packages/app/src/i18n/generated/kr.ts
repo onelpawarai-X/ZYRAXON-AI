@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Lamba fərtəbe-a, kwaltədə-a lamar trackerbe-a",
   "settings.about.tagline": "Dunyalan awo kǝlanzǝn cidajinma samma-suro-falben",
   "settings.about.description.title": "Kǝla ZYRAXONben",
-  "settings.about.description": "ZYRAXON də shima awo do ne dunya samma son awo kəlanzə lan cidajin ma — fal do ne code ruwojin ma kuru maara njiye ro suwudin ma, mashin nzə-a browser-a dəga sudin, apps MCP ye 108 tawatkata ma kəljin, moto-a robot-a kaltəyin, kuru awo do ne live screen vision loop lan bowotin ma dəga sudin, Windows lan, macOS lan kuru Linux lan. Zyraxon Inc ye garzəna.",
+  "settings.about.description": "ZYRAXON də shima awo do ne dunya samma son awo kəlanzə lan cidajin ma — fal do ne code ruwojin ma kuru maara njiye ro suwudin ma, mashin nzə-a browser-a dəga sudin, apps MCP ye 8,200+ tawatkata ma kəljin, moto-a robot-a kaltəyin, kuru awo do ne live screen vision loop lan bowotin ma dəga sudin, Windows lan, macOS lan kuru Linux lan. Zyraxon Inc ye garzəna.",
   "settings.about.version": "Jilidə",
   "settings.about.platform": "Faraskəram",
   "settings.about.links.title": "Kǝltǝram",

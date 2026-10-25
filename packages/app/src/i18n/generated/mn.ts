@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Эх код, хувилбарууд болон асуудал хянагч",
   "settings.about.tagline": "Дэлхийн бүх төрлийн автоматжуулалтын төлөөлөгч",
   "settings.about.description.title": "ZYRAXON-ийн тухай",
-  "settings.about.description": "ZYRAXON бол Windows, macOS болон Linux дээр код бичиж, илгээх, таны машин болон хөтчийг жолоодох, баталгаажсан 108 MCP програмыг холбох, тээврийн хэрэгсэл, роботуудыг удирдах, дэлгэцийн шууд харах циклийг ажиллуулдаг нэг суулгац юм. ZYRAXON Inc барьсан.",
+  "settings.about.description": "ZYRAXON бол Windows, macOS болон Linux дээр код бичиж, илгээх, таны машин болон хөтчийг жолоодох, баталгаажсан 8,200+ MCP програмыг холбох, тээврийн хэрэгсэл, роботуудыг удирдах, дэлгэцийн шууд харах циклийг ажиллуулдаг нэг суулгац юм. ZYRAXON Inc барьсан.",
   "settings.about.version": "Хувилбар",
   "settings.about.platform": "Платформ",
   "settings.about.links.title": "Холбоосууд",

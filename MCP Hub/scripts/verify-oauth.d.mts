@@ -1,9 +1,9 @@
-import type { AppEntry } from "../catalog/seed.ts";
-export declare function parseArgs(argv: string[]): {
-    help: boolean;
-    strict: boolean;
+#!/usr/bin/env node
+export declare function parseArgs(argv: any): {
+    help: any;
+    strict: any;
     apps: number | undefined;
-    json: string | undefined;
+    json: any;
 };
-export declare const USAGE: string;
-export declare function main(argv: string[]): Promise<void>;
+export declare const USAGE = "Verify OAuth discovery for the whole browser catalog.\n\n  --apps <n>     only the first n apps\n  --strict       fail when an app signs in on a different host\n  --json <path>  write the full result set to a file\n  --help         show this text\n";
+export declare function main(argv: any): Promise<void>;

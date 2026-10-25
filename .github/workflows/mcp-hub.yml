@@ -54,6 +54,15 @@ jobs:
       - name: Check catalog shape
         run: bun run "MCP Hub/scripts/verify-catalog.mjs"
 
+      # The curated apps above are 108 hand-written entries. The verified catalog is the
+      # layer that grows — 8,094 rows produced by three scripts from a registry snapshot
+      # and two live passes — and until this step existed nothing checked it. Two real
+      # generator bugs shipped through that gap: every `url_input` row was filtered out as
+      # dead, and every browser app was reported as needing a client ID. This reads the
+      # generated modules with no network and fails on the first inconsistency.
+      - name: Check the verified catalog
+        run: bun run "MCP Hub/scripts/verify-verified.mjs"
+
   # A local card promises that a command exists and answers an MCP initialize. That
   # promise is platform-specific — `npx` is a shim on Windows, `uvx` resolves from a
   # different place on macOS — so it is only proven by starting the real server on

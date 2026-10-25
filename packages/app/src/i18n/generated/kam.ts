@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Msimbo wa chanzo, matoleo na kifuatiliaji cha toleo",
   "settings.about.tagline": "Wakala wa otomatiki wa yote kwa moja ulimwenguni",
   "settings.about.description.title": "Kuhusu ZYRAXON",
-  "settings.about.description": "ZYRAXON ndiye wakala wa kiotomatiki wa kila kitu ulimwenguni - kisakinishi kimoja ambacho huandika na kusafirisha msimbo, kuendesha mashine na kivinjari chako, huunganisha programu 108 za MCP zilizoidhinishwa, kudhibiti magari na roboti, na kuendesha kitanzi cha maono ya skrini moja kwa moja, kwenye Windows, macOS na Linux sawa. Iliyoundwa na ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON ndiye wakala wa kiotomatiki wa kila kitu ulimwenguni - kisakinishi kimoja ambacho huandika na kusafirisha msimbo, kuendesha mashine na kivinjari chako, huunganisha programu 8,200+ za MCP zilizoidhinishwa, kudhibiti magari na roboti, na kuendesha kitanzi cha maono ya skrini moja kwa moja, kwenye Windows, macOS na Linux sawa. Iliyoundwa na ZYRAXON Inc.",
   "settings.about.version": "Toleo",
   "settings.about.platform": "Jukwaa",
   "settings.about.links.title": "Viungo",

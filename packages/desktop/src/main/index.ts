@@ -16,6 +16,7 @@ import contextMenu from "electron-context-menu"
 import type { ServerReadyData, PreviewState } from "../preload/types"
 import { checkAppExists, resolveAppPath } from "./apps"
 import { CHANNEL } from "./constants"
+import { disableBundledDefaults } from "./mcp-defaults"
 import { registerIpcHandlers, sendDeepLinks, sendMenuCommand, broadcastPreviewState, closeCloudAgentWindow } from "./ipc"
 import { forwardInitializationFailure } from "./initialization"
 import { exportDebugLogs, initCrashReporter, initLogging, startNetLog, write as writeLog } from "./logging"
@@ -627,7 +628,7 @@ const main = Effect.gen(function* () {
           "jarvis-browser": {
             "type": "local",
             "command": ["node", "__RESOURCES_PATH__/jarvis-browser-mcp.cjs", "--headless", "--browser", "chrome", "--no-sandbox"],
-            "enabled": true,
+            "enabled": false,
             "timeout": 30000,
             "environment": {
               "PLAYWRIGHT_MCP_HEADLESS": "true"
@@ -636,14 +637,14 @@ const main = Effect.gen(function* () {
           "nuphus-desktop": {
             "type": "local",
             "command": ["node", "__RESOURCES_PATH__/nuphus-mcp/nuphus-mcp.cjs"],
-            "enabled": true,
+            "enabled": false,
             "timeout": 30000,
             "environment": {}
           },
           "touchpoint-mcp": {
             "type": "local",
             "command": ["node", "__RESOURCES_PATH__/touchpoint-mcp/touchpoint-mcp.cjs"],
-            "enabled": true,
+            "enabled": false,
             "timeout": 30000,
             "environment": {
               "TOUCHPOINT_MODE": "no-vision"
@@ -652,7 +653,7 @@ const main = Effect.gen(function* () {
           "desktop-commander": {
             "type": "local",
             "command": ["node", "__RESOURCES_PATH__/desktop-commander/desktop-commander.cjs"],
-            "enabled": true,
+            "enabled": false,
             "timeout": 60000,
             "environment": {
               "DESKTOP_COMMANDER_NO_ANALYTICS": "1"
@@ -686,6 +687,22 @@ const main = Effect.gen(function* () {
               logger.info(`added ${name} to MCP config`, { path: configPath })
             }
           }
+          // One-time switch-off of the bundled servers. Earlier versions wrote these four
+          // with `enabled: true`, so an existing install still starts them — a headless
+          // Chrome included — on every session, and changing only the shipped default
+          // would not reach those configs. The marker file keeps it to one run, so a user
+          // who turns one back on afterwards keeps it on.
+          const migrationMarker = join(configDir, ".mcp-defaults-disabled")
+          if (!existsSync(migrationMarker)) {
+            const disabled = disableBundledDefaults(parsed, defaultConfig.mcp)
+            if (disabled.length > 0) {
+              changed = true
+              logger.info("disabled bundled MCP servers an earlier version had switched on", { disabled })
+            }
+            mkdirSync(configDir, { recursive: true })
+            writeFileSync(migrationMarker, "bundled MCP servers are opt-in as of this version\n", "utf-8")
+          }
+
           // Fix broken paths (hardcoded absolute paths into deleted dirs, asar, etc.)
           for (const [name, def] of Object.entries(defaultConfig.mcp)) {
             const existingCmd = parsed.mcp[name]?.command

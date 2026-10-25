@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Upprunakóði, útgáfur og tölublað",
   "settings.about.tagline": "Heimsins allt-í-einn sjálfvirknimiðill",
   "settings.about.description.title": "Um ZYRAXON",
-  "settings.about.description": "ZYRAXON er allt-í-einn sjálfvirkni umboðsmaður heimsins - ein uppsetning sem skrifar og sendir kóða, keyrir vélina þína og vafra, tengir 108 staðfest MCP öpp, stjórnar ökutækjum og vélmenni og keyrir sjónlykkju í beinni skjá, á Windows, macOS og Linux jafnt. Smíðaður af ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON er allt-í-einn sjálfvirkni umboðsmaður heimsins - ein uppsetning sem skrifar og sendir kóða, keyrir vélina þína og vafra, tengir 8,200+ staðfest MCP öpp, stjórnar ökutækjum og vélmenni og keyrir sjónlykkju í beinni skjá, á Windows, macOS og Linux jafnt. Smíðaður af ZYRAXON Inc.",
   "settings.about.version": "Útgáfa",
   "settings.about.platform": "Pallur",
   "settings.about.links.title": "Tenglar",

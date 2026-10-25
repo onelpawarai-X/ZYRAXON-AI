@@ -24,7 +24,7 @@ export const api = new sst.cloudflare.Worker("Api", {
     WEB_DOMAIN: domain,
     // ZYRAXON environment variables
     ZYRAXON_VERSION: "1.14.0",
-    ZYRAXON_MCP_TOOLS_COUNT: "108",
+    ZYRAXON_MCP_TOOLS_COUNT: "8202",
     ZYRAXON_STREAMING_ENABLED: "true",
     ZYRAXON_SELF_HEALING_ENABLED: "true",
     ZYRAXON_MEMORY_SYSTEM_ENABLED: "true",

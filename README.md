@@ -16,7 +16,7 @@ Members receive the latest unlock codes from the community. Codes are **only** s
 
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=700&size=26&duration=4500&pause=1200&color=00D4FF&center=true&vCenter=true&width=820&lines=Not+just+talk.+Build%2C+code%2C+deploy%2C+think%2C+act.;A+coding+agent+that+drives+your+machine.;888%2B+tools.+108+verified+MCP+integrations." alt="Typing" />
+<img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=700&size=26&duration=4500&pause=1200&color=00D4FF&center=true&vCenter=true&width=820&lines=Not+just+talk.+Build%2C+code%2C+deploy%2C+think%2C+act.;A+coding+agent+that+drives+your+machine.;888%2B+tools.+8%2C200%2B+verified+MCP+integrations." alt="Typing" />
 
 <br/>
 
@@ -37,7 +37,7 @@ Members receive the latest unlock codes from the community. Codes are **only** s
 <br/>
 
 <a href="https://zyraxonai.lovable.app"><img alt="Website" src="https://img.shields.io/badge/Website-00D4FF?style=flat-square&logo=googlechrome&logoColor=001018" /></a>
-<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><img alt="Release" src="https://img.shields.io/badge/Release-v19.0.7-00D4FF?style=flat-square&logo=github&logoColor=001018" /></a>
+<a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><img alt="Release" src="https://img.shields.io/badge/Release-v19.0.8-00D4FF?style=flat-square&logo=github&logoColor=001018" /></a>
 <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/onelpawarai-X/ZYRAXON-AI/total?style=flat-square&logo=github&logoColor=001018&color=00D4FF" /></a>
 <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/onelpawarai-X/ZYRAXON-AI?style=flat-square&logo=github&logoColor=001018&color=00D4FF" /></a>
 <a href="https://github.com/onelpawarai-X/ZYRAXON-AI/blob/main/CONTRIBUTING.md"><img alt="Contributing" src="https://img.shields.io/badge/PRs_welcome-yes-00D4FF?style=flat-square" /></a>
@@ -73,7 +73,7 @@ Every number below is counted from the source tree, not estimated.
 | | Count | |
 |---|---:|---|
 | **Tools** | 888+ | each one registered with a required tier |
-| **MCP integrations** | 108 | every app probed by hand before being listed |
+| **MCP integrations** | 8,200+ | every app probed by hand before being listed |
 | **Agent modes** | 11 | from scoped exploration to full autonomy |
 | **Tool categories** | 67 | aircraft, marine, finance, medical, robotics, and more |
 | **Bundled local MCP servers** | 4 | ship with the app, nothing to install |
@@ -123,7 +123,7 @@ by hand.
 - **Write** — read, edit, patch, grep, glob and run commands across a whole repo.
 - **Reach** — browse, scrape, fill forms and take screenshots through a real
   browser, with a snapshot the agent can act on.
-- **Connect** — 108 MCP integrations, so GitHub, Figma, Notion, Slack, Stripe,
+- **Connect** — 8,200+ MCP integrations, so GitHub, Figma, Notion, Slack, Stripe,
   Linear and Google Workspace are usable the moment you sign in.
 - **Control** — aircraft, cars, drones, boats, rockets, robots and industrial
   systems, with real control laws rather than names.
@@ -290,7 +290,7 @@ change from rippling into the UI.
 | **Capability**                |                                     **ZYRAXON**                                     |   **Cursor**   |   **Copilot**  |    **Devin**    | **Claude Code** | **Windsurf** |
 | :---------------------------- | :---------------------------------------------------------------------------------: | :------------: | :------------: | :-------------: | :-------------: | :----------: |
 | **Full Desktop Control**      |                   **● FULL**<br>Click · Type · Scroll · Open Apps                   |        —       |        —       | ◐ Cloud Browser |        —        |       —      |
-| **108 MCP Applications**     | **● CONNECTED ECOSYSTEM**<br>108 Applications · MCP Connectors · External Services |      ◐ MCP     |      ◐ MCP     |      ◐ MCP      |      ◐ MCP      |     ◐ MCP    |
+| **8,200+ MCP Applications**     | **● CONNECTED ECOSYSTEM**<br>8,200+ Applications · MCP Connectors · External Services |      ◐ MCP     |      ◐ MCP     |      ◐ MCP      |      ◐ MCP      |     ◐ MCP    |
 | **888+ Control Tools**        |          **● NATIVE TOOL LAYER**<br>Automation · System · Browser · Control         |        —       |      ◐ MCP     |      ◐ MCP      |    ◐ Limited    |     ◐ MCP    |
 | **Vehicle & Machine Control** |        **● 56 TOOLS**<br>Aircraft · Cars · Drones · Boats · Rockets · Robots       |        —       |        —       |        —        |        —        |       —      |
 | **Autonomous Flight**         |                   **● FULL**<br>Autoland · GCAS · TCAS · Approach                   |        —       |        —       |        —        |        —        |       —      |
@@ -314,7 +314,7 @@ change from rippling into the UI.
 
 ### ZYRAXON
 
-**108 MCP Applications**
+**8,200+ MCP Applications**
 **888+ Control Tools**
 **25+ AI Providers**
 **50,000+ Persistent Memories**

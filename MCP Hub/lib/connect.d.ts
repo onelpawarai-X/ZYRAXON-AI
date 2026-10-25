@@ -1,10 +1,9 @@
-// Copyright (c) 2026 onelpawarai. All rights reserved.
-
 import type { AppEntry } from "../catalog/seed";
-import { McpClient } from "./client";
-import { resolveApp, type Resolution } from "./resolve";
+import { type Resolution } from "./resolve";
 import type { McpLocalConfig, McpRemoteConfig } from "./runtime";
-export { McpClient, resolveApp };
+export { McpClient } from "./client";
+export { resolveApp } from "./resolve";
+export { fillEndpoint, needsFullUrl } from "./endpoint";
 export type { Resolution };
 export type ConnectionState = {
     status: "disconnected";
@@ -12,6 +11,19 @@ export type ConnectionState = {
     status: "connecting";
 } | {
     status: "needs_auth";
+} | {
+    /**
+     * The server is up and wants a sign-in, but it will not register a client on its
+     * own, so the sign-in cannot even be built without a client ID the user has to
+     * create in the vendor's console.
+     *
+     * This is a state of its own rather than a failure because it is actionable: the
+     * panel opens the client dialog, the user pastes an ID, and the same connect is
+     * retried. Reporting it as `failed` is what used to leave these apps permanently
+     * broken — the dialog never opened because nothing ever asked for the ID.
+     */
+    status: "needs_client_id";
+    error?: string;
 } | {
     status: "connected";
     toolCount: number;
@@ -102,7 +114,7 @@ export interface McpRuntime {
     openUrl: (url: string) => Promise<void>;
 }
 /** Build the ZYRAXON config entry for an app. */
-export declare function toServerConfig(app: AppEntry, token?: string, clientId?: string, clientSecret?: string, env?: Record<string, string>): McpLocalConfig | McpRemoteConfig | Record<string, never>;
+export declare function toServerConfig(app: AppEntry, token?: string, clientId?: string, clientSecret?: string, env?: Record<string, string>, instanceUrl?: string): McpLocalConfig | McpRemoteConfig | Record<string, never>;
 /**
  * Watch one server until it reaches a state worth acting on.
  *
@@ -140,6 +152,15 @@ export interface ConnectOptions {
     env?: Record<string, string>;
     /** report intermediate states so a card can say "check your browser" */
     onProgress?: (state: ConnectionState) => void;
+    /**
+     * The value that fills a `{placeholder}` in a `url_input` endpoint.
+     *
+     * The registry records servers like `https://{your-host}/mcp`, which is a real shape but
+     * not a URL anyone can press Connect on. The panel collects the host and passes it here;
+     * `toServerConfig` substitutes it into the template. Without this those rows had no flow
+     * at all and were mapped to the browser sign-in they do not have.
+     */
+    instanceUrl?: string;
 }
 /**
  * Connect an app and return the state its card should render.

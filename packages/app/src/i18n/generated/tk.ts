@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Çeşme kody, goýberýän we yzarlaýjy",
   "settings.about.tagline": "Dünýäde birmeňzeş awtomatlaşdyryş agenti",
   "settings.about.description.title": "ZYRAXON hakda",
-  "settings.about.description": "ZYRAXON dünýäde hemme zady awtomatlaşdyrýan agentdir - kod ýazýan we iberýän, enjamyňyzy we brauzeriňizi sürýän, 108 tassyklanan MCP programmasyny birleşdirýän, ulaglara we robotlara gözegçilik edýän we Windows, macOS we Linux ýaly göni ekran görmek aýlawyny işleýän bir gurnama. ZYRAXON Inc. tarapyndan guruldy",
+  "settings.about.description": "ZYRAXON dünýäde hemme zady awtomatlaşdyrýan agentdir - kod ýazýan we iberýän, enjamyňyzy we brauzeriňizi sürýän, 8,200+ tassyklanan MCP programmasyny birleşdirýän, ulaglara we robotlara gözegçilik edýän we Windows, macOS we Linux ýaly göni ekran görmek aýlawyny işleýän bir gurnama. ZYRAXON Inc. tarapyndan guruldy",
   "settings.about.version": "Wersiýa",
   "settings.about.platform": "Platforma",
   "settings.about.links.title": "Salgylar",

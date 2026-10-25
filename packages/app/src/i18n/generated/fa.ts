@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "کد منبع، انتشارات و ردیاب مسئله",
   "settings.about.tagline": "نماینده اتوماسیون همه کاره در جهان",
   "settings.about.description.title": "درباره ZYRAXON",
-  "settings.about.description": "ZYRAXON عامل اتوماسیون یکپارچه جهان است - یک نصب که کد می نویسد و ارسال می کند، ماشین و مرورگر شما را هدایت می کند، 108 برنامه MCP تأیید شده را به هم متصل می کند، وسایل نقلیه و ربات ها را کنترل می کند و یک حلقه دید زنده صفحه نمایش را به طور یکسان در Windows، macOS و Linux اجرا می کند. ساخته شده توسط ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON عامل اتوماسیون یکپارچه جهان است - یک نصب که کد می نویسد و ارسال می کند، ماشین و مرورگر شما را هدایت می کند، 8,200+ برنامه MCP تأیید شده را به هم متصل می کند، وسایل نقلیه و ربات ها را کنترل می کند و یک حلقه دید زنده صفحه نمایش را به طور یکسان در Windows، macOS و Linux اجرا می کند. ساخته شده توسط ZYRAXON Inc.",
   "settings.about.version": "نسخه",
   "settings.about.platform": "پلت فرم",
   "settings.about.links.title": "پیوندها",

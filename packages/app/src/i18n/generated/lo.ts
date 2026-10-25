@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "ລະຫັດແຫຼ່ງ, ການປ່ອຍແລະອອກຕິດຕາມ",
   "settings.about.tagline": "ຕົວແທນອັດຕະໂນມັດທັງຫມົດໃນຫນຶ່ງຂອງໂລກ",
   "settings.about.description.title": "ກ່ຽວກັບ ZYRAXON",
-  "settings.about.description": "ZYRAXON ແມ່ນຕົວແທນລະບົບອັດຕະໂນມັດທັງໝົດຂອງໂລກ — ການຕິດຕັ້ງດຽວທີ່ຂຽນ ແລະສົ່ງລະຫັດ, ຂັບເຄື່ອງ ແລະຕົວທ່ອງເວັບຂອງທ່ານ, ເຊື່ອມຕໍ່ 108 ແອັບ MCP ທີ່ຢັ້ງຢືນແລ້ວ, ຄວບຄຸມຍານພາຫະນະ ແລະຫຸ່ນຍົນ, ແລະແລ່ນການເບິ່ງໜ້າຈໍສົດ, ຢູ່ໃນ Windows, macOS ແລະ Linux ຄືກັນ. ສ້າງໂດຍ ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON ແມ່ນຕົວແທນລະບົບອັດຕະໂນມັດທັງໝົດຂອງໂລກ — ການຕິດຕັ້ງດຽວທີ່ຂຽນ ແລະສົ່ງລະຫັດ, ຂັບເຄື່ອງ ແລະຕົວທ່ອງເວັບຂອງທ່ານ, ເຊື່ອມຕໍ່ 8,200+ ແອັບ MCP ທີ່ຢັ້ງຢືນແລ້ວ, ຄວບຄຸມຍານພາຫະນະ ແລະຫຸ່ນຍົນ, ແລະແລ່ນການເບິ່ງໜ້າຈໍສົດ, ຢູ່ໃນ Windows, macOS ແລະ Linux ຄືກັນ. ສ້າງໂດຍ ZYRAXON Inc.",
   "settings.about.version": "ຮຸ່ນ",
   "settings.about.platform": "ເວທີ",
   "settings.about.links.title": "ລິ້ງຄ໌",

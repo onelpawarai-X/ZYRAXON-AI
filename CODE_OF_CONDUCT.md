@@ -44,7 +44,7 @@ This Code of Conduct is adapted from the [Contributor Covenant](https://www.cont
 
 ### What We Build
 
-ZYRAXON is an all-in-one AI desktop agent with 888+ tools and 108 MCP integrations, YouTube streaming, self-healing, and cross-platform support. We welcome contributions that enhance these capabilities.
+ZYRAXON is an all-in-one AI desktop agent with 888+ tools and 8,200+ MCP integrations, YouTube streaming, self-healing, and cross-platform support. We welcome contributions that enhance these capabilities.
 
 ### How to Contribute
 

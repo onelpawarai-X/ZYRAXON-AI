@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Madda koodii, gadhiisuu fi hordofaa dhimmaa",
   "settings.about.tagline": "Ergamaa otoomaatikii hunda-tokko addunyaa",
   "settings.about.description.title": "Waa'ee ZYRAXON",
-  "settings.about.description": "ZYRAXON addunyaa irratti bakka bu’aa otoomaatikii hunda-tokko ta’eedha — install tokko kan koodii barreessu fi ergu, maashinii fi browser keessan kan oofu, appii MCP mirkanaa’e 108 kan walqunnamsiisu, konkolaataa fi roobootii kan to’atu, fi live screen vision loop kan hojjetu, Windows, macOS fi Linux irratti walqixa. Kan ijaarame ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON addunyaa irratti bakka bu’aa otoomaatikii hunda-tokko ta’eedha — install tokko kan koodii barreessu fi ergu, maashinii fi browser keessan kan oofu, appii MCP mirkanaa’e 8,200+ kan walqunnamsiisu, konkolaataa fi roobootii kan to’atu, fi live screen vision loop kan hojjetu, Windows, macOS fi Linux irratti walqixa. Kan ijaarame ZYRAXON Inc.",
   "settings.about.version": "Gosa",
   "settings.about.platform": "Waltajjii",
   "settings.about.links.title": "Hidhamtoota",

@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Source code, releases yan issue tracker",
   "settings.about.tagline": "I ahenten automation ni' todu-gi-unu gi i mundo",
   "settings.about.description.title": "Put ZYRAXON",
-  "settings.about.description": "I ZYRAXON i ahenten automation ni' todu-gi-unu gi i mundo — un inestotba ni' ha tuge' yan ha na'hanao i kodu, ha na'hanao i makina-mu yan i browser-mu, ha konne' 108 na MCP apps, ha na'kontrola i kareta yan i robot siha, yan ha na'lå'la' i live screen vision loop, gi Windows, macOS yan Linux parehu. Ma fa'tinas ni' ZYRAXON Inc.",
+  "settings.about.description": "I ZYRAXON i ahenten automation ni' todu-gi-unu gi i mundo — un inestotba ni' ha tuge' yan ha na'hanao i kodu, ha na'hanao i makina-mu yan i browser-mu, ha konne' 8,200+ na MCP apps, ha na'kontrola i kareta yan i robot siha, yan ha na'lå'la' i live screen vision loop, gi Windows, macOS yan Linux parehu. Ma fa'tinas ni' ZYRAXON Inc.",
   "settings.about.version": "Betsion",
   "settings.about.platform": "Satgi",
   "settings.about.links.title": "Link siha",

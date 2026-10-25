@@ -228,7 +228,7 @@ Before stabilizing the client API:
 
 - ZYRAXON extends the session runtime with additional **Context Sources** for:
   - YouTube streaming state (capture mode, audio mode, quality, RTMP status)
-  - MCP integrations registry (108 apps across the catalog)
+  - MCP integrations registry (8,200+ apps across the catalog)
   - Self-healing action history and status
   - Memory system state (zyraxon.db, auto-injection)
   - Tor network connectivity and anonymity status

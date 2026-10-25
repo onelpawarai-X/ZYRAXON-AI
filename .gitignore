@@ -78,3 +78,23 @@ agent-work/
 # --- Python bytecode from bundled MCP servers -------------------------
 __pycache__/
 *.pyc
+
+# --- MCP Hub catalog intermediates -------------------------------------
+# The harvest pages, the normalized registry snapshot and the verification logs
+# are inputs to the build, not product: 277 MB of raw registry pages sit here
+# after a run, and every file is reproducible by re-running the scripts in
+# MCP Hub/scripts. The catalog the app ships is catalog/verified-index.ts, which
+# is generated from these and is tracked.
+MCP Hub/data/
+
+# --- Local tooling state -----------------------------------------------
+# Editor/agent scratch directories and the small databases the local MCP
+# servers keep. They are per-machine state, not product, and none of them
+# belongs in a release tarball.
+.cursor/
+.oura/
+.rsi/
+quickpeek.config.json
+reviews.db
+safe-ssh-mcp.log
+zenbrain.db

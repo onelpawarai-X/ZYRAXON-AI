@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Kod mar chakruok, golo kod luwo weche",
   "settings.about.tagline": "Ajent mar piny mangima matiyo gi gik moko duto e achiel",
   "settings.about.description.title": "Kuom Zyraxon",
-  "settings.about.description": "ZYRAXON en ng’at ma keto gik moko duto e piny mangima — ng’at achiel ma keto kod ma ndiko kendo oro kod, ma riembo masin mari kod brausa, ma tudruok gi program 108 ma MCP osetimne adier, ma rito gari kod robot, kendo ma tiyo gi ng’at ma neno gik moko e wang’e, e Windows, macOS kod Linux kaka gimoro achiel. Ne oger gi ziraxon inc.",
+  "settings.about.description": "ZYRAXON en ng’at ma keto gik moko duto e piny mangima — ng’at achiel ma keto kod ma ndiko kendo oro kod, ma riembo masin mari kod brausa, ma tudruok gi program 8,200+ ma MCP osetimne adier, ma rito gari kod robot, kendo ma tiyo gi ng’at ma neno gik moko e wang’e, e Windows, macOS kod Linux kaka gimoro achiel. Ne oger gi ziraxon inc.",
   "settings.about.version": "Kido",
   "settings.about.platform": "Kuma oting'ore gi malo ma jok mawuoyo chung'e",
   "settings.about.links.title": "Tudruok",

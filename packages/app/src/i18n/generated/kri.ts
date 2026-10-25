@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Sos kod, rilis ɛn ishu traka",
   "settings.about.tagline": "Di wɔl in ɔl-in-wan ɔtomɛshɔn ɛjɛn",
   "settings.about.description.title": "Na bɔt ZYRAXON",
-  "settings.about.description": "ZYRAXON na di wɔl in ɔl-in-wan ɔtomɛshɔn ɛjɛn — wan instɔl we de rayt ɛn ship kɔd, drayv yu mashin ɛn brawza, kɔnɛkt 108 MCP ap dɛn we dɛn dɔn chɛk, kɔntrol motoka ɛn rɔbɔt dɛn, ɛn rɔn layv skrin vishɔn lɔp, pan Windows, macOS ɛn Linux ɔl tu. Na ZYRAXON Inc. bin bil am.",
+  "settings.about.description": "ZYRAXON na di wɔl in ɔl-in-wan ɔtomɛshɔn ɛjɛn — wan instɔl we de rayt ɛn ship kɔd, drayv yu mashin ɛn brawza, kɔnɛkt 8,200+ MCP ap dɛn we dɛn dɔn chɛk, kɔntrol motoka ɛn rɔbɔt dɛn, ɛn rɔn layv skrin vishɔn lɔp, pan Windows, macOS ɛn Linux ɔl tu. Na ZYRAXON Inc. bin bil am.",
   "settings.about.version": "Dis wan",
   "settings.about.platform": "Stej",
   "settings.about.links.title": "Links dɛn we de",

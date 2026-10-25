@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Koodhka isha, sii daynta iyo soo saarida raadraacayaasha",
   "settings.about.tagline": "Wakiilka otomaatiga ah ee aduunka oo dhan",
   "settings.about.description.title": "Ku saabsan ZYRAXON",
-  "settings.about.description": "ZYRAXON waa wakiilka otomaatiga ah ee adduunka oo dhan - mid rakiba oo qora oo soo rara koodka, kaxeeya mashiinkaaga iyo biraawsarkaaga, isku xidha 108 apps MCP oo la hubiyay, waxa uu xakameeyaa baabuurta iyo robots-ka, oo uu ku shaqeeyaa wareegga aragga shaashadda tooska ah, ee Windows, macOS iyo Linux si isku mid ah. Waxaa dhisay ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON waa wakiilka otomaatiga ah ee adduunka oo dhan - mid rakiba oo qora oo soo rara koodka, kaxeeya mashiinkaaga iyo biraawsarkaaga, isku xidha 8,200+ apps MCP oo la hubiyay, waxa uu xakameeyaa baabuurta iyo robots-ka, oo uu ku shaqeeyaa wareegga aragga shaashadda tooska ah, ee Windows, macOS iyo Linux si isku mid ah. Waxaa dhisay ZYRAXON Inc.",
   "settings.about.version": "Nooca",
   "settings.about.platform": "Platform",
   "settings.about.links.title": "Xiriirinta",

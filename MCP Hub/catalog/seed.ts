@@ -30,7 +30,7 @@
 // Nothing here is written from memory. If a vendor moves an endpoint, the probe
 // finds the new one or the entry goes.
 
-export type AuthKind = "none" | "oauth" | "token" | "local"
+export type AuthKind = "none" | "oauth" | "token" | "local" | "instance"
 
 /**
  * How a server wants to be connected, in the order the user should meet them.
@@ -49,6 +49,25 @@ export interface AppEntry {
   kind: AuthKind
   /** remote MCP endpoint, when the app is reached over the network */
   url?: string
+  /**
+   * A remote endpoint still holding a `{placeholder}`, for kind === "instance".
+   *
+   * The registry records some servers as `https://{your-host}/mcp`, which is a real,
+   * reachable shape but not a URL anyone can press Connect on. The placeholder names the
+   * value only the user has — their own host, tenant or workspace — and the panel asks for
+   * it, substitutes it, and connects to the result. Without this the card either failed or,
+   * worse, was mapped to the browser flow and asked for a sign-in that does not exist.
+   */
+  urlTemplate?: string
+  /**
+   * True when the vendor issues OAuth clients only from its own console.
+   *
+   * Set from the live verification: a browser app is marked here when its server answered
+   * with no registration endpoint, so ZYRAXON cannot register a client itself and the user
+   * must create one. The panel opens the client dialog for exactly these apps, and goes
+   * straight to the browser for every other one.
+   */
+  needsClientId?: boolean
   /** where the user goes to create a token, when kind === "token" */
   tokenUrl?: string
   /**
@@ -136,7 +155,16 @@ export interface AppEntry {
    * panel renders one box per entry, so the form is always exactly as long as the
    * server's own requirements — no more, no less.
    */
-  env?: { key: string; label: string; placeholder?: string; secret?: boolean }[]
+  env?: { key: string; label: string; placeholder?: string; secret?: boolean; url?: string }[]
+  /**
+   * The server's own website, and its source repository.
+   *
+   * Both come from the registry entry rather than from the probe, and they are what the
+   * Details panel links to so a person can read what a server does before connecting it.
+   * They are also the fallback page for a credential the vendor described without a link.
+   */
+  website?: string
+  repository?: string
 }
 
 /**

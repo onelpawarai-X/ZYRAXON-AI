@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "ምንጪ ኮድ፣ ምውጻእን ጉዳይ ትራከርን።",
   "settings.about.tagline": "ናይ ዓለምና ኩሉ ኣብ ሓደ ኣውቶማቲክ ወኪል",
   "settings.about.description.title": "ብዛዕባ ZYRAXON",
-  "settings.about.description": "ZYRAXON ኣብ ዓለምና ኩሉ ኣብ ሓደ ዝኾነ ኣውቶማቲክ ወኪል እዩ — ሓደ ኮድ ዝጽሕፍን ዝሰድድን፣ ማሽንካን መርበብ ሓበሬታኻን ዝዝውር፣ 108 ዝተረጋገጹ MCP ኣፕስ ዘራኽብ፣ ተሽከርከርትን ሮቦታትን ዝቆጻጸር፣ ከምኡ’ውን ቀጥታዊ ስክሪን ቪዥን ሉፕ ዘካይድ፣ ኣብ ዊንዶውስ፣ ማኮኤስን ሊኑክስን ብማዕረ ዝሰርሕ ኢንስታል እዩ። ብ ZYRAXON Inc ዝተሃንጸ እዩ።",
+  "settings.about.description": "ZYRAXON ኣብ ዓለምና ኩሉ ኣብ ሓደ ዝኾነ ኣውቶማቲክ ወኪል እዩ — ሓደ ኮድ ዝጽሕፍን ዝሰድድን፣ ማሽንካን መርበብ ሓበሬታኻን ዝዝውር፣ 8,200+ ዝተረጋገጹ MCP ኣፕስ ዘራኽብ፣ ተሽከርከርትን ሮቦታትን ዝቆጻጸር፣ ከምኡ’ውን ቀጥታዊ ስክሪን ቪዥን ሉፕ ዘካይድ፣ ኣብ ዊንዶውስ፣ ማኮኤስን ሊኑክስን ብማዕረ ዝሰርሕ ኢንስታል እዩ። ብ ZYRAXON Inc ዝተሃንጸ እዩ።",
   "settings.about.version": "ሕታም",
   "settings.about.platform": "ንድፊ",
   "settings.about.links.title": "መላግቦታት",

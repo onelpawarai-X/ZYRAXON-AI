@@ -1,5 +1,3 @@
-// Copyright (c) 2026 onelpawarai. All rights reserved.
-
 /**
  * One item of tool output.
  *

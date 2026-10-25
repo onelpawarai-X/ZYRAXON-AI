@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Изворниот код, изданија и следење на проблеми",
   "settings.about.tagline": "Светски агент за автоматизација се-во-едно",
   "settings.about.description.title": "За ZYRAXON",
-  "settings.about.description": "ZYRAXON е светски агент за автоматизација се-во-едно - една инсталација што пишува и испраќа код, ја вози вашата машина и прелистувач, поврзува 108 потврдени MCP апликации, контролира возила и роботи и води циклус за гледање екран во живо, подеднакво на Windows, macOS и Linux. Изграден од ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON е светски агент за автоматизација се-во-едно - една инсталација што пишува и испраќа код, ја вози вашата машина и прелистувач, поврзува 8,200+ потврдени MCP апликации, контролира возила и роботи и води циклус за гледање екран во живо, подеднакво на Windows, macOS и Linux. Изграден од ZYRAXON Inc.",
   "settings.about.version": "Верзија",
   "settings.about.platform": "Платформа",
   "settings.about.links.title": "Врски",

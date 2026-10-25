@@ -1,10 +1,10 @@
-import type { AppEntry } from "../catalog/seed.ts";
-export declare function parseArgs(argv: string[]): {
-    help: boolean;
+#!/usr/bin/env node
+export declare function parseArgs(argv: any): {
+    help: any;
     apps: number;
     only: number | undefined;
 };
-export declare const USAGE: string;
+export declare const USAGE = "Smoke test the Hub against live servers.\n\n  --apps <n>   how many of each kind to try (default 1)\n  --only <k>   just one kind: open, oauth, token or local\n  --help       show this text\n";
 /**
  * A runtime that records what the connector asked for instead of holding real servers.
  *
@@ -17,19 +17,27 @@ export declare const USAGE: string;
  * would never return turns the test into a conversation with itself.
  */
 export declare function recordingRuntime(): {
-    calls: (string | undefined)[][];
-    statuses: () => Promise<Record<string, never>>;
+    calls: any[];
+    statuses: () => Promise<{}>;
     toolNames: () => Promise<never[]>;
-    connect: (name: string) => Promise<void>;
-    addServer: (name: string) => Promise<{
+    connect: (name: any) => Promise<void>;
+    addServer: (name: any) => Promise<{
         status: string;
         tools: number;
     }>;
-    authenticate: (name: string) => Promise<void>;
-    disconnect: (name: string) => Promise<void>;
+    authenticate: (name: any) => Promise<void>;
+    disconnect: (name: any) => Promise<void>;
 };
 /** One open server, end to end: initialize, then a real tool list. */
-export declare function smokeOpen(app: AppEntry): Promise<Record<string, unknown>>;
+export declare function smokeOpen(app: any): Promise<{
+    name: any;
+    url: any;
+    ms: number;
+    server: any;
+    protocol: string | undefined;
+    tools: number;
+    withinBudget: boolean;
+}>;
 /**
  * One OAuth server, as far as it can be checked without a human.
  *
@@ -39,5 +47,15 @@ export declare function smokeOpen(app: AppEntry): Promise<Record<string, unknown
  * "connected" and the test dutifully reported an app that demands a password as
  * connected. Nothing about the real server was exercised.
  */
-export declare function smokeOauth(app: AppEntry): Promise<Record<string, unknown>>;
-export declare function main(argv: string[]): Promise<void>;
+export declare function smokeOauth(app: any): Promise<{
+    name: any;
+    url: any;
+    ms: number;
+    authorizeHost: string;
+    crossHost: boolean;
+    crossHostSafe: boolean;
+    oneClick: boolean;
+    issuer: string | undefined;
+    withinBudget: boolean;
+}>;
+export declare function main(argv: any): Promise<void>;

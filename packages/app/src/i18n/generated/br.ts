@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Kod orin, embannadurioù ha heulier kudennoù",
   "settings.about.tagline": "Ajañs emgefre holl-en-unan ar bed",
   "settings.about.description.title": "Diwar-benn ZYRAXON",
-  "settings.about.description": "ZYRAXON eo an ajañs emgefreañ holl-en-unan er bed — ur staliadur a skriv hag a gas kod, a gas ho urzhiataer hag ho merdeer, a gevre 108 arload MCP kadarnaet, a reol ar c'hirri hag ar robotoù, hag a ra war-dro ur boukl gwel war ar skramm bev, war Windows, macOS ha Linux dreist-holl. Savet gant ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON eo an ajañs emgefreañ holl-en-unan er bed — ur staliadur a skriv hag a gas kod, a gas ho urzhiataer hag ho merdeer, a gevre 8,200+ arload MCP kadarnaet, a reol ar c'hirri hag ar robotoù, hag a ra war-dro ur boukl gwel war ar skramm bev, war Windows, macOS ha Linux dreist-holl. Savet gant ZYRAXON Inc.",
   "settings.about.version": "Doare",
   "settings.about.platform": "Savenn",
   "settings.about.links.title": "Liammoù",

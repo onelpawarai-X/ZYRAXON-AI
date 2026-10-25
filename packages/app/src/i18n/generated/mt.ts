@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Kodiċi tas-sors, rilaxxi u tracker tal-ħruġ",
   "settings.about.tagline": "L-aġent ta 'awtomazzjoni kollox f'wieħed fid-dinja",
   "settings.about.description.title": "Dwar ZYRAXON",
-  "settings.about.description": "ZYRAXON huwa l-aġent ta’ awtomazzjoni kollox f’wieħed fid-dinja — installazzjoni waħda li tikteb u tibgħat kodiċi, issuq il-magna u l-browser tiegħek, tgħaqqad 108 app MCP verifikata, tikkontrolla vetturi u robots, u tmexxi linja ta’ viżjoni fuq skrin dirett, fuq Windows, macOS u Linux bl-istess mod. Mibnija minn ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON huwa l-aġent ta’ awtomazzjoni kollox f’wieħed fid-dinja — installazzjoni waħda li tikteb u tibgħat kodiċi, issuq il-magna u l-browser tiegħek, tgħaqqad 8,200+ app MCP verifikata, tikkontrolla vetturi u robots, u tmexxi linja ta’ viżjoni fuq skrin dirett, fuq Windows, macOS u Linux bl-istess mod. Mibnija minn ZYRAXON Inc.",
   "settings.about.version": "Verżjoni",
   "settings.about.platform": "Pjattaforma",
   "settings.about.links.title": "Links",

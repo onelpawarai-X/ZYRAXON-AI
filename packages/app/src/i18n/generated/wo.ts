@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Kodu cosaan, génne ak toppukaayu jafe-jafe",
   "settings.about.tagline": "Agent automatisation all-in-one ci àdduna bi",
   "settings.about.description.title": "ZYRAXON",
-  "settings.about.description": "ZYRAXON mooy agent automatisation all-in-one ci àdduna bi - benn instalaasioŋ buy bind ak yónnee kode, dawal sa masin ak sa nawigatër, boole 108 aplikaasioŋu MCP yuñ firndeel, di doxal oto yi ak robot yi, ba noppi di doxal benn loop buy xool ekraŋ bi, ci Windows, macOS ak Linux ñoom ñaar. Zyraxon Inc moo ko tabax.",
+  "settings.about.description": "ZYRAXON mooy agent automatisation all-in-one ci àdduna bi - benn instalaasioŋ buy bind ak yónnee kode, dawal sa masin ak sa nawigatër, boole 8,200+ aplikaasioŋu MCP yuñ firndeel, di doxal oto yi ak robot yi, ba noppi di doxal benn loop buy xool ekraŋ bi, ci Windows, macOS ak Linux ñoom ñaar. Zyraxon Inc moo ko tabax.",
   "settings.about.version": "Xeet",
   "settings.about.platform": "Kayitu toftalu bataaxal",
   "settings.about.links.title": "Lëkkalekaay",

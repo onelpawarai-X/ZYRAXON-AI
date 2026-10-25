@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Kòd sous, degaje ak tracker pwoblèm",
   "settings.about.tagline": "Ajan automatisation tout-an-yon nan mond lan",
   "settings.about.description.title": "Konsènan ZYRAXON",
-  "settings.about.description": "ZYRAXON se ajan automatisation tout-an-yon nan mond lan — yon sèl enstalasyon ki ekri ak anbake kòd, kondwi machin ou ak navigatè, konekte 108 aplikasyon MCP verifye, kontwole machin ak robo, epi kouri yon bouk vizyon ekran an dirèk, sou Windows, macOS ak Linux menm jan. Konstwi pa ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON se ajan automatisation tout-an-yon nan mond lan — yon sèl enstalasyon ki ekri ak anbake kòd, kondwi machin ou ak navigatè, konekte 8,200+ aplikasyon MCP verifye, kontwole machin ak robo, epi kouri yon bouk vizyon ekran an dirèk, sou Windows, macOS ak Linux menm jan. Konstwi pa ZYRAXON Inc.",
   "settings.about.version": "Version",
   "settings.about.platform": "Platfòm",
   "settings.about.links.title": "Lyen",

@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Khoutu ya motswedi, ditokololo le selatedi sa kgang",
   "settings.about.tagline": "Sediriswa sa go itirisa sa lefatshe se se dirang dilo tsotlhe mo go se le sengwe",
   "settings.about.description.title": "Ka ga ZYRAXON",
-  "settings.about.description": "ZYRAXON ke moemedi wa lefatshe lotlhe wa go itirisa — go tsenya go le gongwe go go kwalang le go romela khoutu, go kgweetsa motšhini wa gago le sebatli, go golaganya ditiriso tsa MCP di le 108 tse di netefaditsweng, go laola dikoloi le diroboto, le go tsamaisa loop ya pono ya sekerini se se tshelang, mo Windows, macOS le Linux ka go tshwana. E agilwe ke ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON ke moemedi wa lefatshe lotlhe wa go itirisa — go tsenya go le gongwe go go kwalang le go romela khoutu, go kgweetsa motšhini wa gago le sebatli, go golaganya ditiriso tsa MCP di le 8,200+ tse di netefaditsweng, go laola dikoloi le diroboto, le go tsamaisa loop ya pono ya sekerini se se tshelang, mo Windows, macOS le Linux ka go tshwana. E agilwe ke ZYRAXON Inc.",
   "settings.about.version": "Thanolo",
   "settings.about.platform": "Seralo",
   "settings.about.links.title": "Dikgokagano",

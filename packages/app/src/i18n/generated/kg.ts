@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Kode ya kisina, kubasisa mpi kulanda mambu",
   "settings.about.tagline": "Nsadi ya automatisation ya ntoto ya mvimba",
   "settings.about.description.title": "Na yina me tala ZYRAXON",
-  "settings.about.description": "ZYRAXON kele agent ya automatisation ya ntoto ya mvimba — installation mosi yina ke sonikaka mpi ke tindaka bakode, ke nataka masini mpi navigateur na nge, ke vukisaka ba application MCP 108 yina bo me zikisaka, ke twadisaka bakamio mpi barobo, mpi ke salaka nzila ya kumona mambu na nzila ya écran en direct, na Windows, macOS mpi Linux mutindu mosi. Yau tungamaka na ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON kele agent ya automatisation ya ntoto ya mvimba — installation mosi yina ke sonikaka mpi ke tindaka bakode, ke nataka masini mpi navigateur na nge, ke vukisaka ba application MCP 8,200+ yina bo me zikisaka, ke twadisaka bakamio mpi barobo, mpi ke salaka nzila ya kumona mambu na nzila ya écran en direct, na Windows, macOS mpi Linux mutindu mosi. Yau tungamaka na ZYRAXON Inc.",
   "settings.about.version": "Versio",
   "settings.about.platform": "Estrade",
   "settings.about.links.title": "Banzila",

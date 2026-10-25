@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Codiç sorzint, versions e traçadôr dai problemis",
   "settings.about.tagline": "L’agjent di automatizazion dut-in-un dal mont",
   "settings.about.description.title": "A rivuart dal ZIRASSON",
-  "settings.about.description": "ZYRAXON al è l’agjent di automatizazion dut-in-un dal mont - une instalazion che e scriv e spedi codiç, e vuide la machine e il navigadôr, e coleghe 108 aplicazions MCP verificadis, e controle veicui e robots, e e fâs funzionâ un cicli di vision dal schermi in direte, su Windows, macOS e Linux compagn. Costruît di ZIRASSON Inc.",
+  "settings.about.description": "ZYRAXON al è l’agjent di automatizazion dut-in-un dal mont - une instalazion che e scriv e spedi codiç, e vuide la machine e il navigadôr, e coleghe 8,200+ aplicazions MCP verificadis, e controle veicui e robots, e e fâs funzionâ un cicli di vision dal schermi in direte, su Windows, macOS e Linux compagn. Costruît di ZIRASSON Inc.",
   "settings.about.version": "Version",
   "settings.about.platform": "Plateforme",
   "settings.about.links.title": "Colegaments",

@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Source code, ebifulumizibwa n'okulondoola ensonga",
   "settings.about.tagline": "Ekitongole ky’ensi yonna ekikola mu ngeri ey’obwengula (automation agent).",
   "settings.about.description.title": "Ebikwata ku ZYRAXON",
-  "settings.about.description": "ZYRAXON ye agenti y’ensi yonna ekola otomatiki — install emu ewandiika n’okusindika code, evuga ekyuma kyo ne browser, eyunga apps 108 eza MCP ezikakasibwa, efuga mmotoka ne robots, era ekola live screen vision loop, ku Windows, macOS ne Linux byonna. Yazimbibwa kkampuni ya ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON ye agenti y’ensi yonna ekola otomatiki — install emu ewandiika n’okusindika code, evuga ekyuma kyo ne browser, eyunga apps 8,200+ eza MCP ezikakasibwa, efuga mmotoka ne robots, era ekola live screen vision loop, ku Windows, macOS ne Linux byonna. Yazimbibwa kkampuni ya ZYRAXON Inc.",
   "settings.about.version": "Ekika",
   "settings.about.platform": "Ekifo",
   "settings.about.links.title": "Enkolagana",

@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Source code, dagiti mairuar ken isyu a tracker",
   "settings.about.tagline": "Ti amin-iti-maysa nga automation agent ti lubong",
   "settings.about.description.title": "Maipapan iti ZYRAXON",
-  "settings.about.description": "Ti ZYRAXON ti all-in-one automation agent iti lubong — maysa nga install nga agsurat ken mangipatulod iti code, mangmaneho iti makina ken browser-mo, mangikonektar iti 108 a naberipikado nga MCP apps, mangkontrol kadagiti lugan ken robot, ken mangpataray iti live screen vision loop, iti Windows, macOS ken Linux nga agpada. Inaramid ti ZYRAXON Inc.",
+  "settings.about.description": "Ti ZYRAXON ti all-in-one automation agent iti lubong — maysa nga install nga agsurat ken mangipatulod iti code, mangmaneho iti makina ken browser-mo, mangikonektar iti 8,200+ a naberipikado nga MCP apps, mangkontrol kadagiti lugan ken robot, ken mangpataray iti live screen vision loop, iti Windows, macOS ken Linux nga agpada. Inaramid ti ZYRAXON Inc.",
   "settings.about.version": "Bersion",
   "settings.about.platform": "Plataporma",
   "settings.about.links.title": "Dagiti silpo",

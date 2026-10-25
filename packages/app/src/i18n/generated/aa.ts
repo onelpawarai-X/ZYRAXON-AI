@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Raceena sirri, cabti kee caagid kattaata",
   "settings.about.tagline": "baadal inkih inki addat isih taamita awlaytu",
   "settings.about.description.title": "ZYRAKSOON wagittaama",
-  "settings.about.description": "ZYRAXON baadal inkih tan automation agent kinni — inki install kood yaktubeeh, ku maashiin kee browser geysiisak, 108 takke MCP apps geysiisak, merrayti kee robot lowsiisak, live screen vision loop geysiisak, Windows, macOS kee Linux inkih geysiisak. ZYRAKSOON Inc xissem.",
+  "settings.about.description": "ZYRAXON baadal inkih tan automation agent kinni — inki install kood yaktubeeh, ku maashiin kee browser geysiisak, 8,200+ takke MCP apps geysiisak, merrayti kee robot lowsiisak, live screen vision loop geysiisak, Windows, macOS kee Linux inkih geysiisak. ZYRAKSOON Inc xissem.",
   "settings.about.version": "Iyyenti exxa",
   "settings.about.platform": "Missoyna",
   "settings.about.links.title": "Yasgaarawi",

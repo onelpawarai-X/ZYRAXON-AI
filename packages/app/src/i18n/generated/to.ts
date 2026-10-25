@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Kouti ma'u'anga fakamatala, tukuange mo e tracker 'o e issue",
   "settings.about.tagline": "Ko e fakafofonga faka'otometiki 'o e mamani kotoa pe 'i he taha .",
   "settings.about.description.title": "Fekau'aki mo e ZYRAXON",
-  "settings.about.description": "ZYRAXON ko e fakafofonga 'o e mamani 'o e kotoa-'i he-taha 'o e 'otometiki — fokotu'u 'e taha 'oku tohi mo vaka 'a e code, faka'uli ho'o misini mo e browser, fakafehokotaki 'a e 108 fakamo'oni'i MCP apps, pule'i 'a e ngaahi me'alele mo e ngaahi ropota, pea lele ha screen mo'ui 'o e sio 'a e loop, 'i he Windows, macOS mo e Linux tatau pe. Naʻe langa ʻe he Zyraxon Inc.",
+  "settings.about.description": "ZYRAXON ko e fakafofonga 'o e mamani 'o e kotoa-'i he-taha 'o e 'otometiki — fokotu'u 'e taha 'oku tohi mo vaka 'a e code, faka'uli ho'o misini mo e browser, fakafehokotaki 'a e 8,200+ fakamo'oni'i MCP apps, pule'i 'a e ngaahi me'alele mo e ngaahi ropota, pea lele ha screen mo'ui 'o e sio 'a e loop, 'i he Windows, macOS mo e Linux tatau pe. Naʻe langa ʻe he Zyraxon Inc.",
   "settings.about.version": "Tatau",
   "settings.about.platform": "Siteisi",
   "settings.about.links.title": "Ngaahi fehokotaki'anga",

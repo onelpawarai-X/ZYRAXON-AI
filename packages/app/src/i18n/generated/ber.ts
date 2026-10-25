@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "ⴰⴽⴰⵔⴰⵎ ⵏ ⵓⵖⴱⴰⵍⵓ, ⵉⵥⴻⴹⵡⴰⵏ ⴷ ⵓⴹⴼⴰⵔ ⵏ ⵡⵓⴳⵓⵔⴻⵏ",
   "settings.about.tagline": "ⴰⴳⴻⵏⵜ ⵏ ⵓⵟⵓⵎⴰⵜⵉⴽ ⴷⴻⴳ ⵓⵎⴰⴹⴰⵍ ⴷⴻⴳ ⵢⵉⵡⴻⵏ",
   "settings.about.description.title": "ⵖⴻⴼ ZYRAXON",
-  "settings.about.description": "ZYRAXON ⴷ ⴰⴳⴻⵍⵍⵉⴷ ⵏ ⵜⵎⴰⵛⵉⵏⵉⵏ ⵏ ⵓⵎⴰⴹⴰⵍ ⴰⴽⴽ ⴷⴻⴳ ⵢⵉⵡⴻⵏ — ⵢⵉⵡⴻⵏ ⵏ ⵓⵙⴱⴻⴷⴷ ⵉ ⵢⴻⵜⵜⴰⵔⵓⵏ ⵢⴻⵔⵏⴰ ⵢⴻⵜⵜⵛⴻⴳⴳⵉⵄ ⴰⴽⴰⵔⴰⵎ, ⵢⴻⵜⵜⵃⴰⴷⴰⵔ ⵜⵎⴰⵛⵉⵏⵉⵏⵉⴽ ⴷ ⵓⵙⴻⵍⴽⵉⵎⵉⴽ, ⵉⵛⵓⴷⴷⴻⵏ 108 ⵏ ⵜⴻⵙⵏⴰⵍⵍⵓⵏⵉⵏ MCP ⵢⴻⵜⵜⵡⴰⵙⵇⴻⴷⵛⴻⵏ, ⵢⴻⵜⵜⴹⴰⴼⴰⵔ ⵜⵉⴽⴻⵔⵔⵓⵙⵉⵏ ⴷ ⵢⵉⵔⵓⴱⵓⵜ, ⵢⴻⵔⵏⴰ ⵢⴻⵜⵜⴹⴰⴼⴰⵔ ⵜⴰⵖⴻⵛⵜ ⵏ ⵜⵎⵓⵖⵍⵉ ⵏ ⵜⴼⴻⵍⵡⵉⵜ ⵙ ⵜⵉⴷⴻⵜ, ⴷⴻⴳ Windows, macOS ⴷ Linux ⴰⵎ ⵡⴰⴽⴽⴻⵏ. ⵢⴻⵜⵜⵡⴰⴱⵏⴰ ⵙⵖⵓⵔ Ziraksun Inc.",
+  "settings.about.description": "ZYRAXON ⴷ ⴰⴳⴻⵍⵍⵉⴷ ⵏ ⵜⵎⴰⵛⵉⵏⵉⵏ ⵏ ⵓⵎⴰⴹⴰⵍ ⴰⴽⴽ ⴷⴻⴳ ⵢⵉⵡⴻⵏ — ⵢⵉⵡⴻⵏ ⵏ ⵓⵙⴱⴻⴷⴷ ⵉ ⵢⴻⵜⵜⴰⵔⵓⵏ ⵢⴻⵔⵏⴰ ⵢⴻⵜⵜⵛⴻⴳⴳⵉⵄ ⴰⴽⴰⵔⴰⵎ, ⵢⴻⵜⵜⵃⴰⴷⴰⵔ ⵜⵎⴰⵛⵉⵏⵉⵏⵉⴽ ⴷ ⵓⵙⴻⵍⴽⵉⵎⵉⴽ, ⵉⵛⵓⴷⴷⴻⵏ 8,200+ ⵏ ⵜⴻⵙⵏⴰⵍⵍⵓⵏⵉⵏ MCP ⵢⴻⵜⵜⵡⴰⵙⵇⴻⴷⵛⴻⵏ, ⵢⴻⵜⵜⴹⴰⴼⴰⵔ ⵜⵉⴽⴻⵔⵔⵓⵙⵉⵏ ⴷ ⵢⵉⵔⵓⴱⵓⵜ, ⵢⴻⵔⵏⴰ ⵢⴻⵜⵜⴹⴰⴼⴰⵔ ⵜⴰⵖⴻⵛⵜ ⵏ ⵜⵎⵓⵖⵍⵉ ⵏ ⵜⴼⴻⵍⵡⵉⵜ ⵙ ⵜⵉⴷⴻⵜ, ⴷⴻⴳ Windows, macOS ⴷ Linux ⴰⵎ ⵡⴰⴽⴽⴻⵏ. ⵢⴻⵜⵜⵡⴰⴱⵏⴰ ⵙⵖⵓⵔ Ziraksun Inc.",
   "settings.about.version": "ⵜⴰⵙⴻⵏⴼⴻⵍⵜ",
   "settings.about.platform": "ⴰⴳⵏⴻⵏⵏⴰ",
   "settings.about.links.title": "ⴰⵙⵙⴰⵖⴻⵏ",

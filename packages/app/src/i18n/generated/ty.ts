@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Te waehere puna, te mau faaiteraa e te mau rave'a hi'opo'araa",
   "settings.about.tagline": "Te taata faatere no te mau mea atoa o te ao nei",
   "settings.about.description.title": "No ni'a i te ZYRAXON",
-  "settings.about.description": "O ZYRAXON te taata faatere no te mau mea atoa o te ao nei, te hoê rave'a no te papa'i e no te hapono i te mau waehere, no te faatere i ta outou mīhini e te rave'a hi'opo'araa, no te tuati e 108 faanahoraa MCP, no te faatere i te mau pereoo e te mau robots, e no te faatere i te hoê hi'oraa mata ora, i ni'a i te Windows, macOS, e Linux. Ua patuhia e ZYRAXON Inc.",
+  "settings.about.description": "O ZYRAXON te taata faatere no te mau mea atoa o te ao nei, te hoê rave'a no te papa'i e no te hapono i te mau waehere, no te faatere i ta outou mīhini e te rave'a hi'opo'araa, no te tuati e 8,200+ faanahoraa MCP, no te faatere i te mau pereoo e te mau robots, e no te faatere i te hoê hi'oraa mata ora, i ni'a i te Windows, macOS, e Linux. Ua patuhia e ZYRAXON Inc.",
   "settings.about.version": "Vārīti",
   "settings.about.platform": "Fare 'ōfa'i",
   "settings.about.links.title": "Ngā hononga",

@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Avota kods, izlaidumi un problēmu izsekotājs",
   "settings.about.tagline": "Pasaules viss vienā automatizācijas aģents",
   "settings.about.description.title": "Par ZYRAXON",
-  "settings.about.description": "ZYRAXON ir pasaules visaptverošs automatizācijas aģents — viena instalācija, kas raksta un nosūta kodu, vada jūsu iekārtu un pārlūkprogrammu, savieno 108 pārbaudītas MCP lietotnes, kontrolē transportlīdzekļus un robotus un palaiž tiešā ekrāna redzes cilpu gan operētājsistēmās Windows, gan MacOS, gan Linux. Uzcēla ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON ir pasaules visaptverošs automatizācijas aģents — viena instalācija, kas raksta un nosūta kodu, vada jūsu iekārtu un pārlūkprogrammu, savieno 8,200+ pārbaudītas MCP lietotnes, kontrolē transportlīdzekļus un robotus un palaiž tiešā ekrāna redzes cilpu gan operētājsistēmās Windows, gan MacOS, gan Linux. Uzcēla ZYRAXON Inc.",
   "settings.about.version": "Versija",
   "settings.about.platform": "Platforma",
   "settings.about.links.title": "Saites",

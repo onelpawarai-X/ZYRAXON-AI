@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Killeq kode, saqqummersitsinerit aamma issue-mik malinnaasoq",
   "settings.about.tagline": "Nunarsuarmi tamanut automatiserisoq",
   "settings.about.description.title": "ZYRAXON pillugu",
-  "settings.about.description": "ZYRAXON tassaavoq nunarsuarmi tamanut atatillugu automatiserings-agenti — installerneq ataaseq kode-nik allattartoq nassiussisartorlu, maskiinamik browser-imillu ingerlatsisartoq, MCP-app-inik uppernarsarneqarsimasunik 108-nik ataqatigiissitsisartoq, biilit robotillu aqutsisartoq, aammalu live screen vision loop-imik ingerlatsisartoq, Windows-imi, macOS-imi Linux-imilu aamma. ZYRAXON Inc-imit sananeqarpoq.",
+  "settings.about.description": "ZYRAXON tassaavoq nunarsuarmi tamanut atatillugu automatiserings-agenti — installerneq ataaseq kode-nik allattartoq nassiussisartorlu, maskiinamik browser-imillu ingerlatsisartoq, MCP-app-inik uppernarsarneqarsimasunik 8,200+-nik ataqatigiissitsisartoq, biilit robotillu aqutsisartoq, aammalu live screen vision loop-imik ingerlatsisartoq, Windows-imi, macOS-imi Linux-imilu aamma. ZYRAXON Inc-imit sananeqarpoq.",
   "settings.about.version": "Versioni",
   "settings.about.platform": "Platformi",
   "settings.about.links.title": "Linkit",

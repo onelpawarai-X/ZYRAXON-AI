@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Kod sumber, keluaran dan penjejak isu",
   "settings.about.tagline": "Ejen automasi semua-dalam-satu dunia",
   "settings.about.description.title": "Mengenai ZYRAXON",
-  "settings.about.description": "ZYRAXON ialah ejen automasi semua-dalam-satu dunia — satu pemasangan yang menulis dan menghantar kod, memacu mesin dan penyemak imbas anda, menyambungkan 108 apl MCP yang disahkan, mengawal kenderaan dan robot serta menjalankan gelung penglihatan skrin langsung, pada Windows, macOS dan Linux sama. Dibina oleh ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON ialah ejen automasi semua-dalam-satu dunia — satu pemasangan yang menulis dan menghantar kod, memacu mesin dan penyemak imbas anda, menyambungkan 8,200+ apl MCP yang disahkan, mengawal kenderaan dan robot serta menjalankan gelung penglihatan skrin langsung, pada Windows, macOS dan Linux sama. Dibina oleh ZYRAXON Inc.",
   "settings.about.version": "Versi",
   "settings.about.platform": "Platform",
   "settings.about.links.title": "Pautan",

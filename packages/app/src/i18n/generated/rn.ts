@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Kode y'inkomoko, ibisohoka n'ikibazo gikurikirana",
   "settings.about.tagline": "Igikoresho co kwikoresha kw'isi cose muri kimwe",
   "settings.about.description.title": "Ivyerekeye ZYRAXON",
-  "settings.about.description": "ZYRAXON ni umukozi w’ivy’ubuhinga bwose kw’isi — install imwe yandika kandi irungika kode, itwara imashini yawe n’umucukumbuzi, ihuza porogarama 108 za MCP zagenzuwe, igenzura imodoka n’amarobo, kandi ikoresha uruzitiro rw’ivyo umuntu abona ku rubuga, kuri Windows, macOS na Linux kimwe. Yubatswe na ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON ni umukozi w’ivy’ubuhinga bwose kw’isi — install imwe yandika kandi irungika kode, itwara imashini yawe n’umucukumbuzi, ihuza porogarama 8,200+ za MCP zagenzuwe, igenzura imodoka n’amarobo, kandi ikoresha uruzitiro rw’ivyo umuntu abona ku rubuga, kuri Windows, macOS na Linux kimwe. Yubatswe na ZYRAXON Inc.",
   "settings.about.version": "Version",
   "settings.about.platform": "Ikiraro",
   "settings.about.links.title": "Amahuza",

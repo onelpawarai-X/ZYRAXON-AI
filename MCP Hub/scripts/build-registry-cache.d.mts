@@ -1,9 +1,10 @@
-export declare function parseArgs(argv: string[]): {
-    help: boolean;
-    dryRun: boolean;
+#!/usr/bin/env node
+export declare function parseArgs(argv: any): {
+    help: any;
+    dryRun: any;
     pages: number | undefined;
 };
-export declare const USAGE: string;
+export declare const USAGE = "Rebuild the MCP registry cache.\n\n  --pages <n>   stop after n pages instead of walking the whole registry\n  --dry-run     report what would be written, without touching either file\n  --help        show this text\n";
 /**
  * One page of the registry.
  *
@@ -14,45 +15,22 @@ export declare const USAGE: string;
  * the literal string "null", which reads as "no more pages" and silently truncates the
  * cache to a single page.
  */
-export declare function fetchPage(cursor: string | undefined, limit?: number): Promise<{
-    servers: {
-        name: string | undefined;
-        title: string | undefined;
-        description: string | undefined;
-        version: string | undefined;
-        remote: boolean;
-        remotes: {
-            type: string | undefined;
-            url: string | undefined;
-        }[];
-    }[];
-    cursor: string | undefined;
+export declare function fetchPage(cursor: any, limit?: number): Promise<{
+    servers: any;
+    cursor: any;
 }>;
 /** Keep only what the Hub actually shows or searches on. */
-export declare function normalise(entry: unknown): {
-    name: string | undefined;
-    title: string | undefined;
-    description: string | undefined;
-    version: string | undefined;
+export declare function normalise(entry: any): {
+    name: any;
+    title: any;
+    description: any;
+    version: any;
     remote: boolean;
-    remotes: {
-        type: string | undefined;
-        url: string | undefined;
-    }[];
+    remotes: any;
 };
 /** Walk the registry, yielding one flat list at the end. */
-export declare function walk(maxPages: number | undefined): Promise<{
-    servers: {
-        name: string | undefined;
-        title: string | undefined;
-        description: string | undefined;
-        version: string | undefined;
-        remote: boolean;
-        remotes: {
-            type: string | undefined;
-            url: string | undefined;
-        }[];
-    }[];
+export declare function walk(maxPages: any): Promise<{
+    servers: any[];
     pages: number;
 }>;
-export declare function main(argv: string[]): Promise<void>;
+export declare function main(argv: any): Promise<void>;

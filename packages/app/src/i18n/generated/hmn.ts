@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Source code, tso tawm thiab teeb meem tracker",
   "settings.about.tagline": "Lub ntiaj teb tag nrho-hauv-ib tus neeg sawv cev automation",
   "settings.about.description.title": "Hais txog ZYRAXON",
-  "settings.about.description": "ZYRAXON yog lub ntiaj teb tag nrho-hauv-ib tus neeg sawv cev automation - ib qho kev teeb tsa uas sau thiab xa cov lej, tsav koj lub tshuab thiab browser, txuas 108 cov ntawv pov thawj MCP, tswj cov tsheb thiab cov neeg hlau, thiab khiav lub voj voog nyob hauv lub zeem muag, ntawm Windows, macOS thiab Linux ib yam nkaus. Tsim los ntawm ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON yog lub ntiaj teb tag nrho-hauv-ib tus neeg sawv cev automation - ib qho kev teeb tsa uas sau thiab xa cov lej, tsav koj lub tshuab thiab browser, txuas 8,200+ cov ntawv pov thawj MCP, tswj cov tsheb thiab cov neeg hlau, thiab khiav lub voj voog nyob hauv lub zeem muag, ntawm Windows, macOS thiab Linux ib yam nkaus. Tsim los ntawm ZYRAXON Inc.",
   "settings.about.version": "Version",
   "settings.about.platform": "Platform",
   "settings.about.links.title": "Txuas",

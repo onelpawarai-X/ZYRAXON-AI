@@ -10,7 +10,9 @@ import { allSeedApps, appIcon, browserApps, categories, docsByApp } from "../cat
 import { LANGUAGES, REDIRECT, catalogText, detectLanguage, guideFor, line } from "../catalog/guide"
 import { connectApp, describe, toServerConfig, type ConnectionState, type McpRuntime } from "../lib/connect"
 import type { Resolution } from "../lib/resolve"
+import { needsFullUrl } from "../lib/endpoint"
 import { searchRegistry, supportsZeroSetup, type RegistryServer } from "../lib/registry"
+import { connectDetailFor, connectStepFor, searchVerified, verifiedCount, verifiedHitToApp, VERIFICATION_LABELS, type VerifiedHit } from "../lib/verified-catalog"
 
 export interface McpHubPanelProps {
   runtime: McpRuntime
@@ -184,12 +186,14 @@ const IDLE_POLL_MS = 10_000
 const FLOW_BROWSER = "oauth"
 const FLOW_TOKEN = "token"
 const FLOW_SETUP = "setup"
+const FLOW_INSTANCE = "instance"
 const FLOW_DIRECT = "direct"
 
 function flowOf(app: AppEntry): string {
   // A fetched local server has no browser sign-in and no single pasted token: it reads
   // several credentials from its environment. It gets its own section so the card can
   // say what it will ask for before the dialog opens.
+  if (app.kind === "instance") return FLOW_INSTANCE
   if (app.kind === "local") return app.env && app.env.length > 0 ? FLOW_SETUP : FLOW_DIRECT
   if (app.kind === "oauth") return FLOW_BROWSER
   if (app.kind === "token") return FLOW_TOKEN
@@ -200,15 +204,17 @@ const FLOW_TITLE: Record<string, string> = {
   [FLOW_BROWSER]: "Sign in with your browser",
   [FLOW_TOKEN]: "Needs an access token",
   [FLOW_SETUP]: "Runs on your machine",
+  [FLOW_INSTANCE]: "Runs at your own address",
   [FLOW_DIRECT]: "Connect instantly",
 }
 const FLOW_HINT: Record<string, string> = {
   [FLOW_BROWSER]: "Opens Chrome, you press Allow, and it connects itself.",
   [FLOW_TOKEN]: "Paste a token once and it connects itself.",
   [FLOW_SETUP]: "Runs here from npm. Paste your own credentials once, nothing is brokered.",
+  [FLOW_INSTANCE]: "Enter the address of your own server, and it connects.",
   [FLOW_DIRECT]: "No sign-in at all. One click and it is live.",
 }
-const FLOW_ORDER = [FLOW_BROWSER, FLOW_TOKEN, FLOW_SETUP, FLOW_DIRECT]
+const FLOW_ORDER = [FLOW_BROWSER, FLOW_TOKEN, FLOW_SETUP, FLOW_INSTANCE, FLOW_DIRECT]
 
 export function McpHubPanel(props: McpHubPanelProps) {
   const apps = allSeedApps()
@@ -282,6 +288,18 @@ export function McpHubPanel(props: McpHubPanelProps) {
   const [clientIds, setClientIds] = createSignal<Record<string, { id: string; secret?: string }>>(readClientIds())
 
   /**
+   * The app whose own address is being collected, and the value typed.
+   *
+   * A `url_input` row is an endpoint template — `https://{your-host}/mcp` — so the address
+   * only the user has is the one thing that turns it into a URL. This dialog is that one
+   * field, and Continue connects to the substituted result.
+   */
+  const [instanceFor, setInstanceFor] = createSignal<AppEntry | null>(null)
+  const [instanceValue, setInstanceValue] = createSignal("")
+  /** addresses already supplied, so a reconnect is one press */
+  const [instanceUrls, setInstanceUrls] = createSignal<Record<string, string>>({})
+
+  /**
    * The app whose environment credentials are being collected, and the values typed.
    *
    * A server fetched from npm has no browser sign-in to offer, so Connect asks for the
@@ -330,7 +348,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
   const needsClientId = (entry: AppEntry) =>
     entry.kind === "oauth" && oneClick()[entry.id] !== undefined
       ? oneClick()[entry.id] === false
-      : Boolean(entry.consoleUrl) && entry.zeroSetup !== true
+      : entry.needsClientId === true || (Boolean(entry.consoleUrl) && entry.zeroSetup !== true)
 
   /** the app whose sign-in link is being built, so the button can say so */
   const [generating, setGenerating] = createSignal<string | null>(null)
@@ -370,6 +388,18 @@ export function McpHubPanel(props: McpHubPanelProps) {
   const [registryCount, setRegistryCount] = createSignal<number | undefined>(undefined)
 
   /**
+   * The verified catalog: servers that answered a real handshake, not ones that claimed to.
+   *
+   * Separate from the registry search above it, which queries the publisher's own index and
+   * can return an endpoint that no longer exists. This one only ever holds rows the verifier
+   * reached, so a card here can be pressed and connected.
+   */
+  const [verifiedTerm, setVerifiedTerm] = createSignal("")
+  const [verifiedHits, setVerifiedHits] = createSignal<VerifiedHit[]>([])
+  const [verifiedTotal, setVerifiedTotal] = createSignal<number | undefined>(undefined)
+  const [verifiedBusy, setVerifiedBusy] = createSignal(false)
+
+  /**
    * The language a Details card reads its guide in.
    *
    * Chosen once and remembered, so the guide a person starts in is the guide
@@ -393,6 +423,11 @@ export function McpHubPanel(props: McpHubPanelProps) {
     void (async () => {
       const { registryCount: count } = await import("../catalog/registry-cache")
       if (!stopped) setRegistryCount(count())
+    })()
+
+    void (async () => {
+      const total = await verifiedCount()
+      if (!stopped) setVerifiedTotal(total)
     })()
 
     onCleanup(() => {
@@ -628,6 +663,23 @@ export function McpHubPanel(props: McpHubPanelProps) {
       })
       setState(app.id, outcome)
 
+      /**
+       * The server answered that it will not register a client, so the sign-in cannot be
+       * built without an ID from the vendor's console.
+       *
+       * This is the branch that was missing. The runtime has always reported the condition,
+       * but nothing acted on it: the connect returned it, the card rendered it as a plain
+       * failure, and the client dialog was only ever opened for curated apps that happened to
+       * carry a `consoleUrl` — so every registry app that needs a client ID was permanently
+       * unconnectable. Asking for the ID here turns the dead end into the one step it is.
+       */
+      if (outcome.status === "needs_client_id") {
+        setClientFormId(clientIds()[app.id]?.id ?? "")
+        setClientFormSecret(clientIds()[app.id]?.secret ?? "")
+        setClientFormMode("connect")
+        setClientFormFor(resolved)
+      }
+
       // The card stays as it is: a refusal that really was about the client is
       // already covered by needsClientId, and surfacing the raw reason here is what
       // used to replace the whole card with an error.
@@ -694,6 +746,18 @@ export function McpHubPanel(props: McpHubPanelProps) {
    * is saved, Connect reuses it and goes straight to the handshake.
    */
   const beginConnect = (app: AppEntry) => {
+    // A server that lives at the user's own address cannot be reached until that address is
+    // known, so the one field is asked for before anything is written.
+    if (app.kind === "instance") {
+      const saved = instanceUrls()[app.id]
+      if (saved?.trim()) {
+        void connectWithInstance(app, saved)
+        return
+      }
+      setInstanceValue("")
+      setInstanceFor(app)
+      return
+    }
     if (app.env && app.env.length > 0) {
       const saved = envValues()[app.id]
       // A saved credential set is reused without asking again; the app only prompts when
@@ -777,6 +841,39 @@ export function McpHubPanel(props: McpHubPanelProps) {
     setEnvValues((prev) => ({ ...prev, [app.id]: values }))
     setEnvFormFor(null)
     void connectWithEnv(app, values)
+  }
+
+  /** Connect a server that lives at an address the user supplied. */
+  const connectWithInstance = async (app: AppEntry, address: string) => {
+    if (busy()) return
+    setInstanceUrls((prev) => ({ ...prev, [app.id]: address.trim() }))
+    busyIds.add(app.id)
+    setBusy(app.id)
+    setBusySince(Date.now())
+    setState(app.id, { status: "connecting" })
+    try {
+      setState(
+        app.id,
+        await connectApp(props.runtime, app, {
+          instanceUrl: address.trim(),
+          onProgress: (s) => setState(app.id, s),
+        }),
+      )
+    } finally {
+      busyIds.delete(app.id)
+      setBusy(null)
+      setBusySince(0)
+    }
+  }
+
+  /** Continue in the address dialog: remember the address and connect to it. */
+  const submitInstance = () => {
+    const app = instanceFor()
+    const address = instanceValue().trim()
+    if (!app || !address) return
+    setInstanceFor(null)
+    setInstanceValue("")
+    void connectWithInstance(app, address)
   }
 
   /** Connect a fetched local server with the credentials its environment expects. */
@@ -896,6 +993,48 @@ export function McpHubPanel(props: McpHubPanelProps) {
     setBusy(null)
   }
 
+  /**
+   * Browse or search the verified catalog.
+   *
+   * An empty box is a valid search here and lists the servers with the most tools, which
+   * is a useful front page: they are the ones with the most to offer and the ones the
+   * verifier got furthest into.
+   */
+  const runVerifiedSearch = async () => {
+    setVerifiedBusy(true)
+    try {
+      setVerifiedHits(await searchVerified(verifiedTerm(), 60))
+    } catch {
+      setVerifiedHits([])
+    }
+    setVerifiedBusy(false)
+  }
+
+  /**
+   * Connect one server from the verified catalog.
+   *
+   * The hit already carries the endpoint or the launch command, so the row is expressed as
+   * an AppEntry and handed to the same connect flow the curated cards use — a registry
+   * server is resolved, written and handshaken by exactly the code that already works,
+   * rather than by a second path that would need its own testing.
+   */
+  const connectVerified = async (hit: VerifiedHit) => {
+    if (busy()) return
+    setBusy(hit.id)
+    setBusySince(Date.now())
+    try {
+      // The row says what kind of connect it is; the detail map says what it needs typed —
+      // the environment variables a local package reads, whether a browser app registers its
+      // own client, or the template a remote endpoint is missing. Both are read here so the
+      // AppEntry that reaches the connect flow carries everything the flow may ask for.
+      const detail = await connectDetailFor(hit.id)
+      await beginConnect(verifiedHitToApp(hit, detail))
+    } catch {
+      setBusy(null)
+      setBusySince(0)
+    }
+  }
+
   const stateFor = (id: string): ConnectionState => states()[id] ?? { status: "disconnected" }
 
   const connectedCount = createMemo(() => {
@@ -951,7 +1090,7 @@ export function McpHubPanel(props: McpHubPanelProps) {
         <div class="flex flex-col">
           <span class="text-[17px] font-[600] tracking-[-0.2px]">MCP Connect</span>
           <span class="text-[12px] text-[var(--text-weak,#8b95ad)]">
-            {connectedCount()} connected · {apps.length} MCP servers/apps ready · {registryCaption(registryCount())}
+            {connectedCount()} connected · {apps.length} curated apps · {verifiedTotal()?.toLocaleString("en-US") ?? "…"} verified servers
           </span>
         </div>
         <Show when={props.onClose}>
@@ -1317,6 +1456,80 @@ export function McpHubPanel(props: McpHubPanelProps) {
             )}
           </For>
         </div>
+
+          {/* verified catalog — servers that answered a real handshake */}
+          <div class="flex flex-col gap-3 rounded-xl border border-[var(--mcp-border)] p-4">
+            <div class="flex items-baseline justify-between gap-3">
+              <span class="text-[13px] font-[600]">Verified servers</span>
+              <Show when={verifiedTotal() !== undefined}>
+                <span class="shrink-0 text-[11px] text-[var(--mcp-text-weak)]">
+                  {verifiedTotal()!.toLocaleString("en-US")} tested and answering
+                </span>
+              </Show>
+            </div>
+            {/* The distinction is the point of this list, so it is said before the box
+                rather than left for the user to infer from the word "verified". */}
+            <span class="text-[12px] text-[var(--mcp-text-weak)]">
+              Each one answered a real MCP handshake. Press Connect and it is added and
+              tested here — the card tells you what it will ask for first.
+            </span>
+            <div class="flex gap-2">
+              <input
+                value={verifiedTerm()}
+                onInput={(e) => setVerifiedTerm(e.currentTarget.value)}
+                onKeyDown={(e) => e.key === "Enter" && runVerifiedSearch()}
+                placeholder="e.g. postgres, notion, github — or leave empty to browse"
+                class="h-8 flex-1 rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
+              />
+              <button
+                type="button"
+                disabled={verifiedBusy()}
+                class="rounded-md px-3 py-1.5 text-[13px] disabled:opacity-50"
+                style={{ background: fill() }}
+                onClick={runVerifiedSearch}
+              >
+                {verifiedBusy() ? "Searching…" : "Browse"}
+              </button>
+            </div>
+            <For each={verifiedHits()}>
+              {(hit) => {
+                const step = connectStepFor(hit.connect_kind)
+                return (
+                  <div class="flex items-start justify-between gap-3 border-t border-[var(--mcp-border)] pt-2">
+                    <div class="flex min-w-0 flex-col gap-0.5">
+                      <span class="truncate text-[13px]">{hit.name}</span>
+                      <span class="truncate text-[11px] text-[var(--mcp-text-weak)]">
+                        {hit.tool_count} tools · {hit.category}
+                      </span>
+                      {/* What this server will ask for, before anything is pressed. */}
+                      <span class="text-[11px] text-[var(--mcp-text-weak)]">{step.what}</span>
+                      <Show when={step.needs}>
+                        <span class="text-[11px] text-amber-600 dark:text-amber-300">
+                          Have ready: {step.needs}
+                        </span>
+                      </Show>
+                    </div>
+                    <div class="flex shrink-0 flex-col items-end gap-1">
+                      <span class="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] text-emerald-600 dark:text-emerald-300">
+                        {VERIFICATION_LABELS[hit.verification] ?? hit.verification}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={busy() === hit.id}
+                        class="rounded-md px-3 py-1 text-[12px] font-[600] disabled:opacity-50"
+                        style={{ background: fill() }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = fillHover())}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = fill())}
+                        onClick={() => connectVerified(hit)}
+                      >
+                        {busy() === hit.id ? "Working…" : "Connect"}
+                      </button>
+                    </div>
+                  </div>
+                )
+              }}
+            </For>
+          </div>
         </div>
         </div>
       </Show>
@@ -1379,6 +1592,76 @@ export function McpHubPanel(props: McpHubPanelProps) {
                   onClick={submitToken}
                 >
                   Connect
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Show>
+
+      {/* instance dialog — for servers that live at the user's own address. The catalog
+          records these as an endpoint template, so the one value only the user has turns
+          it into a URL. Continue connects to the substituted result. */}
+      <Show when={instanceFor()}>
+        {(app) => (
+          <div
+            style={{
+              position: "fixed",
+              inset: "0",
+              "z-index": "2147483100",
+              display: "flex",
+              "align-items": "center",
+              "justify-content": "center",
+              background: overlayTint(),
+              padding: "1.5rem",
+              "pointer-events": "auto",
+            }}
+          >
+            <div
+              class="w-full max-w-[460px] rounded-xl border border-[var(--mcp-border-strong)] p-5"
+              style={{ background: raised(), "box-shadow": "0 24px 64px rgba(0,0,0,0.35)" }}
+            >
+              <div class="mb-1 text-[15px] font-[600]">Connect {app().name}</div>
+              <div class="mb-3 text-[12px] text-[var(--mcp-text-weak)]">
+                {instanceNeedsFullUrl(app()) ? (
+                  <>
+                    This endpoint holds more than one variable —{" "}
+                    <span class="select-all font-mono text-[11px]">{app().urlTemplate}</span> — so paste the complete
+                    URL your instance answers on, with every variable already filled in.
+                  </>
+                ) : (
+                  <>
+                    This server runs at your own address, so it needs the host only you have. ZYRAXON fills it into{" "}
+                    <span class="select-all font-mono text-[11px]">{app().urlTemplate}</span> and connects to the result.
+                  </>
+                )}
+              </div>
+              <input
+                value={instanceValue()}
+                onInput={(e) => setInstanceValue(e.currentTarget.value)}
+                onKeyDown={(e) => e.key === "Enter" && submitInstance()}
+                placeholder={instanceNeedsFullUrl(app()) ? "https://region.api.vendor.com/mcp/account-id" : "acme.example.com"}
+                class="mb-4 h-9 w-full rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
+              />
+              <div class="flex justify-end gap-2">
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5"
+                  onClick={() => {
+                    setInstanceFor(null)
+                    setInstanceValue("")
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] font-[600] disabled:opacity-50"
+                  disabled={!instanceValue().trim()}
+                  style={{ background: fill() }}
+                  onClick={submitInstance}
+                >
+                  Continue
                 </button>
               </div>
             </div>
@@ -1601,8 +1884,59 @@ export function McpHubPanel(props: McpHubPanelProps) {
 
               <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">{line(guideLang(), "endpoint")}</div>
               <div class="mb-4 select-all break-all rounded-md border border-[var(--mcp-border)] p-2 font-mono text-[11px]">
-                {app().url ?? app().command?.command ?? line(guideLang(), "endpointLocal")}
+                {app().urlTemplate ?? app().url ?? app().command?.command ?? line(guideLang(), "endpointLocal")}
               </div>
+
+              {/* Where the server lives. Every verified row that published a site or a
+                  repository gets both links, because "what is this and who runs it" is a
+                  question the Details panel exists to answer, not a bonus. */}
+              <Show when={app().website || app().repository}>
+                <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">
+                  {line(guideLang(), "serverLinks")}
+                </div>
+                <div class="mb-4 space-y-1 text-[12px]">
+                  <Show when={app().website}>
+                    <a class="block break-all underline" href={app().website} target="_blank" rel="noopener">
+                      {app().website}
+                    </a>
+                  </Show>
+                  <Show when={app().repository}>
+                    <a class="block break-all underline" href={app().repository} target="_blank" rel="noopener">
+                      {app().repository}
+                    </a>
+                  </Show>
+                </div>
+              </Show>
+
+              {/* What this server needs before it will run, and where to get it. One line per
+                  requirement, each with the page that issues it, so the user can go and fetch
+                  the value rather than guess. A server that needs nothing says so. */}
+              <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">
+                {line(guideLang(), "requirements")}
+              </div>
+              <ul class="mb-4 ml-4 list-disc space-y-1 text-[12px]">
+                <Show
+                  when={requirementsFor(app()).length > 0}
+                  fallback={<li>{line(guideLang(), "needsNothing")}</li>}
+                >
+                  <For each={requirementsFor(app())}>
+                    {(req) => (
+                      <li>
+                        <span class="font-[600]">{req.label}</span>
+                        {req.detail ? <span> — {req.detail}</span> : null}
+                        {req.href ? (
+                          <>
+                            {" "}
+                            <a class="underline" href={req.href} target="_blank" rel="noopener">
+                              {req.href}
+                            </a>
+                          </>
+                        ) : null}
+                      </li>
+                    )}
+                  </For>
+                </Show>
+              </ul>
 
               <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">{line(guideLang(), "howto")}</div>
               <ol class="mb-4 ml-4 list-decimal space-y-1 text-[12px]">
@@ -1725,3 +2059,88 @@ export function McpHubPanel(props: McpHubPanelProps) {
 }
 
 export { authLabel, supportsZeroSetup }
+
+/**
+ * True when one answer cannot complete the endpoint.
+ *
+ * Delegates to the shared helper so the dialog's copy and the config writer agree on what a
+ * multi-variable template means. Two different variables need two unrelated values, and the
+ * dialog collects one, so the address the user gives is the finished URL and the copy asks for
+ * that instead of a bare host.
+ */
+export function instanceNeedsFullUrl(app: AppEntry): boolean {
+  return needsFullUrl(app.urlTemplate ?? app.url ?? "")
+}
+
+/**
+ * What a server needs before it will run, and where the user goes to get it.
+ *
+ * The Details panel is where a person decides whether they can connect an app at all, so it
+ * has to name every value the connect will ask for and point at the page that issues it. A
+ * server that needs nothing says so outright rather than showing an empty list, because
+ * "nothing" is a fact worth stating: it is the difference between a press and a setup.
+ *
+ * The links are the vendor's own, and they are the ones the catalog records: a token page
+ * where the app has one, the developer console otherwise. Nothing is guessed — an app with
+ * neither shows the requirement without a link rather than a plausible-looking URL.
+ */
+export function requirementsFor(app: AppEntry): { label: string; detail?: string; href?: string }[] {
+  const out: { label: string; detail?: string; href?: string }[] = []
+
+  if (app.kind === "instance") {
+    out.push({
+      label: instanceNeedsFullUrl(app) ? "Your server's full URL" : "Your server's address",
+      detail: instanceNeedsFullUrl(app)
+        ? `paste the complete URL, filling every variable in ${app.urlTemplate ?? "the endpoint"}`
+        : "the host your own instance answers on, which ZYRAXON fills into the endpoint above",
+    })
+    return out
+  }
+
+  if (app.kind === "local" && app.env && app.env.length > 0) {
+    for (const entry of app.env) {
+      out.push({
+        label: entry.label,
+        ...(entry.placeholder ? { detail: entry.placeholder } : {}),
+        // The page this variable is issued on. Read from the variable's own description where
+        // the vendor wrote one, and from the server's site otherwise, so each box has its own
+        // link rather than the whole form sharing one.
+        ...(entry.url ?? app.consoleUrl ? { href: (entry.url ?? app.consoleUrl)! } : {}),
+      })
+    }
+    return out
+  }
+
+  if (app.kind === "token") {
+    out.push({
+      label: "An access key",
+      detail: "created in your own account and pasted once",
+      ...(app.tokenUrl ?? app.consoleUrl ? { href: (app.tokenUrl ?? app.consoleUrl)! } : {}),
+    })
+    return out
+  }
+
+  if (needsClientIdFor(app)) {
+    out.push({
+      label: "A client ID from the vendor's console",
+      detail: "created as an application, with the redirect URL the panel shows",
+      ...(app.consoleUrl ? { href: app.consoleUrl } : {}),
+    })
+    out.push({ label: "The client secret", detail: "only if the console shows one beside the ID" })
+    return out
+  }
+
+  return out
+}
+
+/**
+ * Whether an app needs a hand-made client ID.
+ *
+ * The catalog's verdict is the source here — it was measured by attempting the registration
+ * against the real server — with the hand-set `consoleUrl` flag as the fallback for a curated
+ * app whose registration was never probed.
+ */
+function needsClientIdFor(app: AppEntry): boolean {
+  if (app.kind !== "oauth") return false
+  return app.needsClientId === true || (Boolean(app.consoleUrl) && app.zeroSetup !== true)
+}

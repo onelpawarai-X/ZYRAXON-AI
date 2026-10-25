@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Khoutu ya mohlodi, e lokolla le taba tracker",
   "settings.about.tagline": "Moemedi wa go itiriša wa lefase ka moka-ka-e tee",
   "settings.about.description.title": "Mabapi le ZYRAXON",
-  "settings.about.description": "ZYRAXON ke lefatše tsohle-ka-e mong automation moemeli - e mong kenya hore ngola le likepe khoutu, khanna mochine oa hao le sebadi, hokahanya 108 netefalitsoeng MCP ditiriso tse dingwe, laola likoloi le liroboto, 'me matha phela skrine pono lupu, ka Windows, macOS le Linux ka ho tšoana. E agilwe ke ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON ke lefatše tsohle-ka-e mong automation moemeli - e mong kenya hore ngola le likepe khoutu, khanna mochine oa hao le sebadi, hokahanya 8,200+ netefalitsoeng MCP ditiriso tse dingwe, laola likoloi le liroboto, 'me matha phela skrine pono lupu, ka Windows, macOS le Linux ka ho tšoana. E agilwe ke ZYRAXON Inc.",
   "settings.about.version": "Bešene",
   "settings.about.platform": "Polatefomo",
   "settings.about.links.title": "Dikgokagano",

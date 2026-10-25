@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "ଉତ୍ସ କୋଡ୍, ରିଲିଜ୍ ଏବଂ ଟ୍ରାକର୍ ଇସ୍ୟୁ |",
   "settings.about.tagline": "ଦୁନିଆର ସର୍ବ-ଏକ-ସ୍ୱୟଂଚାଳିତ ଏଜେଣ୍ଟ |",
   "settings.about.description.title": "ZYRAXON ବିଷୟରେ",
-  "settings.about.description": "ZYRAXON ହେଉଛି ବିଶ୍ all ର ସର୍ବ-ଏକ-ସ୍ୱୟଂଚାଳିତ ଏଜେଣ୍ଟ - ଗୋଟିଏ ଇନଷ୍ଟଲ୍ ଯାହା କୋଡ୍ ଲେଖେ ଏବଂ ପଠାଏ, ତୁମର ମେସିନ୍ ଏବଂ ବ୍ରାଉଜର୍ ଡ୍ରାଇଭ୍ କରେ, 108 ଯାଞ୍ଚ ହୋଇଥିବା MCP ଆପ୍ସକୁ ସଂଯୋଗ କରେ, ଯାନ ଏବଂ ରୋବଟକୁ ନିୟନ୍ତ୍ରଣ କରେ, ଏବଂ ୱିଣ୍ଡୋଜ୍, ମାକୋସ୍ ଏବଂ ଲିନକ୍ସରେ ଏକ ଲାଇଭ୍ ସ୍କ୍ରିନ୍ ଭିଜନ୍ ଲୁପ୍ ଚଲାଇଥାଏ | ZYRAXON Inc. ଦ୍ୱାରା ନିର୍ମିତ |",
+  "settings.about.description": "ZYRAXON ହେଉଛି ବିଶ୍ all ର ସର୍ବ-ଏକ-ସ୍ୱୟଂଚାଳିତ ଏଜେଣ୍ଟ - ଗୋଟିଏ ଇନଷ୍ଟଲ୍ ଯାହା କୋଡ୍ ଲେଖେ ଏବଂ ପଠାଏ, ତୁମର ମେସିନ୍ ଏବଂ ବ୍ରାଉଜର୍ ଡ୍ରାଇଭ୍ କରେ, 8,200+ ଯାଞ୍ଚ ହୋଇଥିବା MCP ଆପ୍ସକୁ ସଂଯୋଗ କରେ, ଯାନ ଏବଂ ରୋବଟକୁ ନିୟନ୍ତ୍ରଣ କରେ, ଏବଂ ୱିଣ୍ଡୋଜ୍, ମାକୋସ୍ ଏବଂ ଲିନକ୍ସରେ ଏକ ଲାଇଭ୍ ସ୍କ୍ରିନ୍ ଭିଜନ୍ ଲୁପ୍ ଚଲାଇଥାଏ | ZYRAXON Inc. ଦ୍ୱାରା ନିର୍ମିତ |",
   "settings.about.version": "ସଂସ୍କରଣ",
   "settings.about.platform": "ପ୍ଲାଟଫର୍ମ |",
   "settings.about.links.title": "ଲିଙ୍କ୍",
