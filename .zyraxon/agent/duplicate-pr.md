@@ -27,7 +27,7 @@ Keep your response concise and actionable.
 
 ## ZYRAXON-specific PR categories
 
-- MCP integration PRs (108 apps)
+- MCP integration PRs (8,200+ apps)
 - YouTube streaming PRs (capture modes, audio modes, quality)
 - Self-healing PRs (auto-install, retry logic)
 - Memory system PRs (zyraxon.db, auto-injection)

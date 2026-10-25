@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Kod bɔyɔrɔ, bɔli ani gɛlɛya nɔfɛtagama",
   "settings.about.tagline": "Duniɲa ka ɔridinatɛri baarakɛla min be baara kɛ ni fɛɛn bɛɛ ye",
   "settings.about.description.title": "ZYRAXON koo la",
-  "settings.about.description": "ZYRAXON ye diɲɛ ka ɔridinatɛri baarakɛla ye min be baara kɛ ni fɛɛn bɛɛ ye — installation kelen min be kode sɛbɛ ani ka ci, k’i ka masin n’i ka navigatɛri boli, ka MCP porogramu 108 sɛgɛsɛgɛninw ɲɔgɔn minɛ, ka mobili ni robow kɔlɔsi, ani ka yɔrɔ dɔ labɛn min be mɔgɔw ɲɛɛ na, Windows, macOS ani Linux kan. ZYRAXON Inc lo y’a lɔ.",
+  "settings.about.description": "ZYRAXON ye diɲɛ ka ɔridinatɛri baarakɛla ye min be baara kɛ ni fɛɛn bɛɛ ye — installation kelen min be kode sɛbɛ ani ka ci, k’i ka masin n’i ka navigatɛri boli, ka MCP porogramu 8,200+ sɛgɛsɛgɛninw ɲɔgɔn minɛ, ka mobili ni robow kɔlɔsi, ani ka yɔrɔ dɔ labɛn min be mɔgɔw ɲɛɛ na, Windows, macOS ani Linux kan. ZYRAXON Inc lo y’a lɔ.",
   "settings.about.version": "Wɛrisiyɔn",
   "settings.about.platform": "Bɔlɔlɔ kan",
   "settings.about.links.title": "Linkiw",

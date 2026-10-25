@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Boarnekoade, releases en issue tracker",
   "settings.about.tagline": "De wrâld syn alles-yn-ien automatisearring agint",
   "settings.about.description.title": "Oer ZYRAXON",
-  "settings.about.description": "ZYRAXON is de alles-yn-ien automatisearringsagint fan 'e wrâld - ien ynstallaasje dy't koade skriuwt en ferstjoert, jo masine en blêder oandriuwt, 108 ferifiearre MCP-apps ferbynt, auto's en robots kontrolearret, en in live skermfisy-loop rint, op Windows, macOS en Linux. Boud troch ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON is de alles-yn-ien automatisearringsagint fan 'e wrâld - ien ynstallaasje dy't koade skriuwt en ferstjoert, jo masine en blêder oandriuwt, 8,200+ ferifiearre MCP-apps ferbynt, auto's en robots kontrolearret, en in live skermfisy-loop rint, op Windows, macOS en Linux. Boud troch ZYRAXON Inc.",
   "settings.about.version": "Ferzje",
   "settings.about.platform": "Perron",
   "settings.about.links.title": "Links",

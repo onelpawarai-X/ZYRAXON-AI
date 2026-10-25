@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Mã nguồn, bản phát hành và trình theo dõi vấn đề",
   "settings.about.tagline": "Đại lý tự động hóa tất cả trong một của thế giới",
   "settings.about.description.title": "Giới thiệu về ZYRAXON",
-  "settings.about.description": "ZYRAXON là tác nhân tự động hóa tất cả trong một của thế giới — một bản cài đặt viết và gửi mã, điều khiển máy và trình duyệt của bạn, kết nối 108 ứng dụng MCP đã được xác minh, điều khiển phương tiện và rô-bốt, đồng thời chạy vòng lặp hiển thị màn hình trực tiếp trên Windows, macOS và Linux. Được xây dựng bởi ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON là tác nhân tự động hóa tất cả trong một của thế giới — một bản cài đặt viết và gửi mã, điều khiển máy và trình duyệt của bạn, kết nối 8,200+ ứng dụng MCP đã được xác minh, điều khiển phương tiện và rô-bốt, đồng thời chạy vòng lặp hiển thị màn hình trực tiếp trên Windows, macOS và Linux. Được xây dựng bởi ZYRAXON Inc.",
   "settings.about.version": "Phiên bản",
   "settings.about.platform": "Nền tảng",
   "settings.about.links.title": "Liên kết",

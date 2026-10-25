@@ -6,7 +6,7 @@
 
 **ZYRAXON AI** brings the full ZYRAXON agent into Visual Studio Code — AI chat, code
 generation, refactoring, terminal control, and **888+ tools across 67 categories**, plus
-**108 verified MCP integrations**, in one extension.
+**8,200+ verified MCP integrations**, in one extension.
 
 The extension bundles the native ZYRAXON runtime for your platform. On first launch it
 starts a local server and opens the ZYRAXON web app in a panel beside your editor, so

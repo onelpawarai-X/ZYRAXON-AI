@@ -12,6 +12,14 @@ import { McpAuth } from "./auth"
 
 const OAUTH_CALLBACK_PORT = 19876
 const OAUTH_CALLBACK_PATH = "/mcp/oauth/callback"
+/**
+ * The path every guide and card tells the user to register with their provider.
+ *
+ * `OAUTH_CALLBACK_PATH` is what the listener was built with; this is what the catalog has
+ * always documented. Both are served by the listener so a provider redirecting to the
+ * documented path lands somewhere real instead of a 404.
+ */
+const OAUTH_CALLBACK_ALT_PATH = "/oauth/callback"
 
 export interface McpOAuthConfig {
   clientId?: string
@@ -274,7 +282,7 @@ export class McpOAuthPendingProvider extends McpOAuthProvider {
   }
 }
 
-export { OAUTH_CALLBACK_PORT, OAUTH_CALLBACK_PATH }
+export { OAUTH_CALLBACK_PORT, OAUTH_CALLBACK_PATH, OAUTH_CALLBACK_ALT_PATH }
 
 /**
  * Parse a redirect URI to extract port and path for the callback server.

@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Исходник, тахсыылар уонна боппуруостары кэтээн көрөр",
   "settings.about.tagline": "Аан дойдуга барыта бииргэ автоматизация агеннара",
   "settings.about.description.title": "ZYRAXON туһунан",
-  "settings.about.description": "ZYRAXON диэн аан дойдуга барыта бииргэ автоматизация агеннара — биир туруоруу, коду суруйар уонна ыытар, эн массыынаҕын уонна браузергын салайар, 108 бэрэбиэркэлэммит MCP приложениялары холбуур, массыыналары уонна роботтары салайар, уонна Windows, macOS уонна Linux ситимнэргэ быһа эфиргэ көрөр циклы ыытар. ZYRAXON Inc оҥорбута.",
+  "settings.about.description": "ZYRAXON диэн аан дойдуга барыта бииргэ автоматизация агеннара — биир туруоруу, коду суруйар уонна ыытар, эн массыынаҕын уонна браузергын салайар, 8,200+ бэрэбиэркэлэммит MCP приложениялары холбуур, массыыналары уонна роботтары салайар, уонна Windows, macOS уонна Linux ситимнэргэ быһа эфиргэ көрөр циклы ыытар. ZYRAXON Inc оҥорбута.",
   "settings.about.version": "Версия",
   "settings.about.platform": "Платформа",
   "settings.about.links.title": "Ссылкалар",

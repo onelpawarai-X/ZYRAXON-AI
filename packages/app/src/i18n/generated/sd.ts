@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "ماخذ ڪوڊ، رليز ۽ مسئلو ٽريڪٽر",
   "settings.about.tagline": "دنيا جي سڀ ۾ هڪ خودڪار ايجنٽ",
   "settings.about.description.title": "ZYRAXON بابت",
-  "settings.about.description": "ZYRAXON دنيا جو آل ان ون آٽوميشن ايجنٽ آهي - هڪ انسٽال جيڪو لکي ٿو ۽ ڪوڊ موڪلي ٿو، توهان جي مشين ۽ برائوزر کي هلائي ٿو، 108 تصديق ٿيل MCP ايپس کي ڳنڍي ٿو، گاڏين ۽ روبوٽس کي ڪنٽرول ڪري ٿو، ۽ هڪ لائيو اسڪرين ويزن لوپ هلائي ٿو، ونڊوز، macOS ۽ Linux تي هڪجهڙا. تعمير ٿيل ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON دنيا جو آل ان ون آٽوميشن ايجنٽ آهي - هڪ انسٽال جيڪو لکي ٿو ۽ ڪوڊ موڪلي ٿو، توهان جي مشين ۽ برائوزر کي هلائي ٿو، 8,200+ تصديق ٿيل MCP ايپس کي ڳنڍي ٿو، گاڏين ۽ روبوٽس کي ڪنٽرول ڪري ٿو، ۽ هڪ لائيو اسڪرين ويزن لوپ هلائي ٿو، ونڊوز، macOS ۽ Linux تي هڪجهڙا. تعمير ٿيل ZYRAXON Inc.",
   "settings.about.version": "نسخو",
   "settings.about.platform": "پليٽ فارم",
   "settings.about.links.title": "لنڪس",

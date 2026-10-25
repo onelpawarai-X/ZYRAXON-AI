@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Code source, ba sorties na tracker ya émission",
   "settings.about.tagline": "Agent ya automation nionso na moko ya mokili mobimba",
   "settings.about.description.title": "Na ntina na ZYRAXON",
-  "settings.about.description": "ZYRAXON ezali agent ya automation ya mokili mobimba — installation moko oyo ekomaka mpe etindi code, etambwisaka masini mpe navigateur na yo, ekangisaka ba applis MCP 108 oyo e vérifié, etambwisaka mituka mpe ba robots, mpe etambwisaka boucle ya vision écran en direct, na Windows, macOS mpe Linux ndenge moko. Etongamaki na ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON ezali agent ya automation ya mokili mobimba — installation moko oyo ekomaka mpe etindi code, etambwisaka masini mpe navigateur na yo, ekangisaka ba applis MCP 8,200+ oyo e vérifié, etambwisaka mituka mpe ba robots, mpe etambwisaka boucle ya vision écran en direct, na Windows, macOS mpe Linux ndenge moko. Etongamaki na ZYRAXON Inc.",
   "settings.about.version": "Ya",
   "settings.about.platform": "Esika",
   "settings.about.links.title": "Ba liens",

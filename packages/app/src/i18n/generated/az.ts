@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Mənbə kodu, buraxılışlar və məsələ izləyicisi",
   "settings.about.tagline": "Dünyanın hamısı bir yerdə avtomatlaşdırma agenti",
   "settings.about.description.title": "ZYRAXON haqqında",
-  "settings.about.description": "ZYRAXON dünyanın hamısı bir yerdə avtomatlaşdırma agentidir — kod yazan və göndərən, maşın və brauzerinizi idarə edən, 108 təsdiqlənmiş MCP tətbiqini birləşdirən, nəqliyyat vasitələrini və robotları idarə edən və eyni zamanda Windows, macOS və Linux-da canlı ekran görmə dövrəsini işlədən bir quraşdırma. ZYRAXON Inc tərəfindən tikilmişdir.",
+  "settings.about.description": "ZYRAXON dünyanın hamısı bir yerdə avtomatlaşdırma agentidir — kod yazan və göndərən, maşın və brauzerinizi idarə edən, 8,200+ təsdiqlənmiş MCP tətbiqini birləşdirən, nəqliyyat vasitələrini və robotları idarə edən və eyni zamanda Windows, macOS və Linux-da canlı ekran görmə dövrəsini işlədən bir quraşdırma. ZYRAXON Inc tərəfindən tikilmişdir.",
   "settings.about.version": "Versiya",
   "settings.about.platform": "Platforma",
   "settings.about.links.title": "Bağlantılar",

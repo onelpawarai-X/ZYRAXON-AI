@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Πηγαίος κώδικας, εκδόσεις και παρακολούθηση ζητημάτων",
   "settings.about.tagline": "Ο παγκόσμιος αντιπρόσωπος αυτοματισμού all-in-one",
   "settings.about.description.title": "Σχετικά με το ZYRAXON",
-  "settings.about.description": "Το ZYRAXON είναι ο παγκόσμιος πράκτορας αυτοματισμού all-in-one — μία εγκατάσταση που γράφει και αποστέλλει κώδικα, οδηγεί το μηχάνημά σας και το πρόγραμμα περιήγησής σας, συνδέει 108 επαληθευμένες εφαρμογές MCP, ελέγχει οχήματα και ρομπότ και εκτελεί έναν βρόχο ζωντανής προβολής οθόνης, σε Windows, macOS και Linux. Κατασκευάστηκε από την ZYRAXON Inc.",
+  "settings.about.description": "Το ZYRAXON είναι ο παγκόσμιος πράκτορας αυτοματισμού all-in-one — μία εγκατάσταση που γράφει και αποστέλλει κώδικα, οδηγεί το μηχάνημά σας και το πρόγραμμα περιήγησής σας, συνδέει 8,200+ επαληθευμένες εφαρμογές MCP, ελέγχει οχήματα και ρομπότ και εκτελεί έναν βρόχο ζωντανής προβολής οθόνης, σε Windows, macOS και Linux. Κατασκευάστηκε από την ZYRAXON Inc.",
   "settings.about.version": "Εκδοχή",
   "settings.about.platform": "Πλατφόρμα",
   "settings.about.links.title": "Εδαφος διά παιγνίδι γκολφ",

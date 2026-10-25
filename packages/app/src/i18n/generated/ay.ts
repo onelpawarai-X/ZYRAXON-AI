@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Código fuente, liberaciones ukat emisión tracker",
   "settings.about.tagline": "Uraqpachan taqi kunas mäkiw automatizacionan utji",
   "settings.about.description.title": "ZYRAXON tuqit yatxatañataki",
-  "settings.about.description": "ZYRAXON ukax uraqpachan agente de automatización taqi kuna — mä instalación ukax código qillqt’i ukat apayani, maquina ukat navegador ukaruw apnaqi, 108 MCP apps chiqapar uñjatanakaruw uñt’ayi, autos ukat robots ukanakaruw apnaqi, ukatx mä pantalla viva vision loop ukaruw apnaqi, Windows, macOS ukat Linux ukanakanx pachpakiw apnaqi. Ukax ZYRAXON Inc. ukan luratawa.",
+  "settings.about.description": "ZYRAXON ukax uraqpachan agente de automatización taqi kuna — mä instalación ukax código qillqt’i ukat apayani, maquina ukat navegador ukaruw apnaqi, 8,200+ MCP apps chiqapar uñjatanakaruw uñt’ayi, autos ukat robots ukanakaruw apnaqi, ukatx mä pantalla viva vision loop ukaruw apnaqi, Windows, macOS ukat Linux ukanakanx pachpakiw apnaqi. Ukax ZYRAXON Inc. ukan luratawa.",
   "settings.about.version": "Wirsyuna",
   "settings.about.platform": "Palataphurma",
   "settings.about.links.title": "Ukax mä link ukhamawa",

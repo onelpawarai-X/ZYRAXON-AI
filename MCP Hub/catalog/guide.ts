@@ -106,7 +106,7 @@ export const LANGUAGES: Language[] = [
  * The English source text. Every line a translation is keyed against lives here.
  *
  * The {braces} are filled in per app by the composer below, so one sentence
- * serves all 108 apps and a correction to the wording lands everywhere at once.
+ * serves all 8,200+ apps and a correction to the wording lands everywhere at once.
  */
 export const templates = {
   // headings and small labels
@@ -115,6 +115,14 @@ export const templates = {
   docs: "Documentation",
   endpoint: "Endpoint",
   endpointLocal: "runs on this machine",
+  requirements: "What you need, and where to get it",
+  serverLinks: "Server and source",
+  needsNothing: "Nothing. This server answers without a sign-in, a key or an account.",
+  needClientId: "A client ID from the vendor's own console",
+  needClientSecret: "The client secret that console shows beside it",
+  needToken: "An access key",
+  needInstance: "The address of your own server",
+  needEnv: "Credentials this package reads from its environment",
   howto: "How to connect",
   scopes: "Scopes requested",
   oauthClient: "OAuth client ID",

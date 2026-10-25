@@ -216,7 +216,7 @@ await sendToPostHog("download", {
 // ZYRAXON-specific stats tracking
 const zyraxonStats = {
   version: "1.14.0",
-  mcpToolsCount: 108,
+  mcpToolsCount: 8202,
   streamingEnabled: true,
   selfHealingEnabled: true,
   memorySystemEnabled: true,

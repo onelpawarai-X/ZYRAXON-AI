@@ -15,16 +15,33 @@
 
 import type { AppEntry } from "../catalog/seed"
 import { McpClient } from "./client"
+import { fillEndpoint } from "./endpoint"
 import { resolveApp, type Resolution } from "./resolve"
 import type { McpLocalConfig, McpRemoteConfig } from "./runtime"
 
-export { McpClient, resolveApp }
+export { McpClient } from "./client"
+export { resolveApp } from "./resolve"
+export { fillEndpoint, needsFullUrl } from "./endpoint"
 export type { Resolution }
 
 export type ConnectionState =
   | { status: "disconnected" }
   | { status: "connecting" }
   | { status: "needs_auth" }
+  | {
+      /**
+       * The server is up and wants a sign-in, but it will not register a client on its
+       * own, so the sign-in cannot even be built without a client ID the user has to
+       * create in the vendor's console.
+       *
+       * This is a state of its own rather than a failure because it is actionable: the
+       * panel opens the client dialog, the user pastes an ID, and the same connect is
+       * retried. Reporting it as `failed` is what used to leave these apps permanently
+       * broken — the dialog never opened because nothing ever asked for the ID.
+       */
+      status: "needs_client_id"
+      error?: string
+    }
   | { status: "connected"; toolCount: number }
   | { status: "failed"; error: string }
 
@@ -196,7 +213,23 @@ export function toServerConfig(
   clientId?: string,
   clientSecret?: string,
   env?: Record<string, string>,
+  instanceUrl?: string,
 ): McpLocalConfig | McpRemoteConfig | Record<string, never> {
+  /**
+   * Fill a `{placeholder}` endpoint with the address the user supplied.
+   *
+   * A `url_input` row is `https://{your-host}/mcp`: a real endpoint shape that is not a URL
+   * until the user's own host goes in. The value may be given as a bare host or as a full
+   * URL, so it is normalised onto the template's scheme before substitution — pasting
+   * `acme.example.com` has to produce `https://acme.example.com/mcp`, not `https://acme…`.
+   */
+  const endpoint = (() => {
+    const template = app.urlTemplate ?? (app.url && /\{[^}]+\}/.test(app.url) ? app.url : undefined)
+    if (!template) return app.url
+    if (!instanceUrl?.trim()) return undefined
+    return fillEndpoint(template, instanceUrl)
+  })()
+
   if (app.kind === "local") {
     // Bundled local servers are declared by ZYRAXON's own defaults and need nothing.
     // One that ships its own launch command has to be declared here or it can never
@@ -220,9 +253,9 @@ export function toServerConfig(
     }
   }
 
-  if (!app.url) return {}
+  if (!endpoint) return {}
 
-  const config: McpRemoteConfig = { type: "remote", url: app.url, enabled: true, timeout: REQUEST_TIMEOUT_MS }
+  const config: McpRemoteConfig = { type: "remote", url: endpoint, enabled: true, timeout: REQUEST_TIMEOUT_MS }
 
   if (token) {
     // Some endpoints reject the default Bearer header and require the key under a
@@ -317,6 +350,15 @@ export interface ConnectOptions {
   env?: Record<string, string>
   /** report intermediate states so a card can say "check your browser" */
   onProgress?: (state: ConnectionState) => void
+  /**
+   * The value that fills a `{placeholder}` in a `url_input` endpoint.
+   *
+   * The registry records servers like `https://{your-host}/mcp`, which is a real shape but
+   * not a URL anyone can press Connect on. The panel collects the host and passes it here;
+   * `toServerConfig` substitutes it into the template. Without this those rows had no flow
+   * at all and were mapped to the browser sign-in they do not have.
+   */
+  instanceUrl?: string
 }
 
 /**
@@ -358,8 +400,16 @@ async function attempt(
   let signedIn = false
 
   try {
-    const config = toServerConfig(app, token, options.clientId, options.clientSecret, options.env)
+    const config = toServerConfig(app, token, options.clientId, options.clientSecret, options.env, options.instanceUrl)
     onProgress?.({ status: "connecting" })
+
+    // A template endpoint with no address to put in it cannot be reached, and saying so is
+    // better than writing `https://{your-host}/mcp` into the config and letting the transport
+    // fail on a URL that was never a URL. The panel asks for the address first, so this only
+    // fires if a connect is started without it.
+    if (app.kind === "instance" && Object.keys(config).length === 0) {
+      return { status: "failed", error: "This server needs your own address before it can be reached." }
+    }
 
     // Local servers are already declared by ZYRAXON's own defaults, so there is
     // nothing to add; just wake the one that is configured.
@@ -511,7 +561,12 @@ async function settle(runtime: McpRuntime, name: string, status: McpStatusEntry)
   // it had contributed nothing to the agent.
   if (status.status === "connected") return { status: "connected", toolCount: await countTools(runtime, name) }
   if (status.status === "failed") return { status: "failed", error: explain(name, status.error) }
-  if (status.status === "needs_auth" || status.status === "needs_client_registration")
+  // The server will not register a client, so the sign-in cannot be built without an ID the
+  // user creates in the vendor's console. Reported as its own state so the panel can ask for
+  // it and retry, instead of showing a failure the user cannot act on.
+  if (status.status === "needs_client_registration")
+    return { status: "needs_client_id", error: explain(name, status.error) }
+  if (status.status === "needs_auth")
     return { status: "failed", error: explain(name, status.error ?? "sign-in was never completed") }
   return { status: "failed", error: `never finished connecting (last status: ${status.status})` }
 }
@@ -596,6 +651,8 @@ export function describe(state: ConnectionState): string {
         : "Connected and ready for the agent"
     case "needs_auth":
       return "Approve it in the browser that just opened"
+    case "needs_client_id":
+      return "This vendor issues its own client ID. Enter it to finish signing in."
     case "connecting":
       return "Connecting…"
     case "failed":

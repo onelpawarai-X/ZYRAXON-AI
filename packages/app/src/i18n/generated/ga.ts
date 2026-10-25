@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Cód foinseach, eisiúintí agus rianaire eisiúna",
   "settings.about.tagline": "Gníomhaire uathoibrithe uile-i-amháin an domhain",
   "settings.about.description.title": "Maidir ZYRAXON",
-  "settings.about.description": "Is é ZYRAXON gníomhaire uathoibrithe uile-i-amháin an domhain - suiteáil amháin a scríobhann agus a sheolann cód, a thiomáineann do mheaisín agus do bhrabhsálaí, a nascann 108 aip MCP fíoraithe, a rialaíonn feithiclí agus róbait, agus a ritheann lúb físe scáileáin beo, ar Windows, macOS agus Linux araon. Tógtha ag ZYRAXON Inc.",
+  "settings.about.description": "Is é ZYRAXON gníomhaire uathoibrithe uile-i-amháin an domhain - suiteáil amháin a scríobhann agus a sheolann cód, a thiomáineann do mheaisín agus do bhrabhsálaí, a nascann 8,200+ aip MCP fíoraithe, a rialaíonn feithiclí agus róbait, agus a ritheann lúb físe scáileáin beo, ar Windows, macOS agus Linux araon. Tógtha ag ZYRAXON Inc.",
   "settings.about.version": "Leagan",
   "settings.about.platform": "Ardán",
   "settings.about.links.title": "Naisc",

@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Forráskód, kiadások és problémakövető",
   "settings.about.tagline": "A világ minden az egyben automatizálási ügynöke",
   "settings.about.description.title": "A ZYRAXON-ról",
-  "settings.about.description": "A ZYRAXON a világ minden-az-egyben automatizálási ügynöke – egyetlen telepítés, amely kódot ír és szállít, meghajtja a gépet és a böngészőt, összekapcsol 108 ellenőrzött MCP-alkalmazást, vezérli a járműveket és a robotokat, valamint egy élő képernyős látáshurkot futtat Windowson, macOS-en és Linuxon egyaránt. Építette a ZYRAXON Inc.",
+  "settings.about.description": "A ZYRAXON a világ minden-az-egyben automatizálási ügynöke – egyetlen telepítés, amely kódot ír és szállít, meghajtja a gépet és a böngészőt, összekapcsol 8,200+ ellenőrzött MCP-alkalmazást, vezérli a járműveket és a robotokat, valamint egy élő képernyős látáshurkot futtat Windowson, macOS-en és Linuxon egyaránt. Építette a ZYRAXON Inc.",
   "settings.about.version": "Változat",
   "settings.about.platform": "Platform",
   "settings.about.links.title": "Linkek",

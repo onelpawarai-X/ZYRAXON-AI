@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Ikhodi yomthombo, ukukhishwa nokulandelela indaba",
   "settings.about.tagline": "I-ejenti yokuzenzakalela ephasini",
   "settings.about.description.title": "Mayelana ne-ZYRAXON",
-  "settings.about.description": "I-ZYRAXON yi-ejenti yokuzenzakalela ephasini yoke — into eyodwa etlola begodu ithumele ikhodi, iqhuba umtjhini wakho nesiphequluli, ixhumanisa ama-app we-MCP aqinisekisiweko ali-108, ilawula iinkoloyi namarobhothi, begodu yenza isikrini esibukhoma, ku-Windows, ku-macOS kanye ne-Linux ngokufanako. Yakhiwe yi-ZYRAXON Inc.",
+  "settings.about.description": "I-ZYRAXON yi-ejenti yokuzenzakalela ephasini yoke — into eyodwa etlola begodu ithumele ikhodi, iqhuba umtjhini wakho nesiphequluli, ixhumanisa ama-app we-MCP aqinisekisiweko ali-8,200+, ilawula iinkoloyi namarobhothi, begodu yenza isikrini esibukhoma, ku-Windows, ku-macOS kanye ne-Linux ngokufanako. Yakhiwe yi-ZYRAXON Inc.",
   "settings.about.version": "Umhlobo",
   "settings.about.platform": "Iplatfomu",
   "settings.about.links.title": "Amalinki",

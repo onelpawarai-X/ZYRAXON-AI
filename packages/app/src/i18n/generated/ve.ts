@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Khoudu ya tshisima, u bviswa na tshiṱirathedzhi tsha mafhungo",
   "settings.about.tagline": "Muimeleli wa ḽifhasi wa zwoṱhe-kha-nthihi wa u ḓiitela",
   "settings.about.description.title": "Nga ha ZYRAXON",
-  "settings.about.description": "ZYRAXON ndi muimeleli wa ḽifhasi wa zwoṱhe kha tshithihi — u dzhenisa huthihi hune ha ṅwala na u rumela khoudu, ha tshimbidza mutshini waṋu na burauza, ha ṱumanya dzi-app dza MCP dzo khwaṱhisedzwaho dza 108, ha langa zwiendedzi na dziroboto, na u tshimbidza luṱingo lwa bono ḽa tshikirini tshi tshilaho, kha Windows, macOS na Linux nga u fana. Yo fhaṱiwa nga Zyraxon Inc.",
+  "settings.about.description": "ZYRAXON ndi muimeleli wa ḽifhasi wa zwoṱhe kha tshithihi — u dzhenisa huthihi hune ha ṅwala na u rumela khoudu, ha tshimbidza mutshini waṋu na burauza, ha ṱumanya dzi-app dza MCP dzo khwaṱhisedzwaho dza 8,200+, ha langa zwiendedzi na dziroboto, na u tshimbidza luṱingo lwa bono ḽa tshikirini tshi tshilaho, kha Windows, macOS na Linux nga u fana. Yo fhaṱiwa nga Zyraxon Inc.",
   "settings.about.version": "Sia",
   "settings.about.platform": "Puḽatifomo",
   "settings.about.links.title": "Vhuṱumani",

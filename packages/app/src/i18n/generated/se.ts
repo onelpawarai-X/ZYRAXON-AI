@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Gáldokoda, almmuhusat ja áššečuovvu",
   "settings.about.tagline": "Máilmmi buot ovttas automatiserenfitnodat",
   "settings.about.description.title": "ZYRAXON birra",
-  "settings.about.description": "ZYRAXON lea máilmmi buot-oktasaš automatiserenfitnodat — okta installeren mii čállá ja sádde koda, stivre du mášiinna ja neahttačujuhusa, čatná 108 duođaštuvvon MCP-appa, stivre biillaid ja robohtaid, ja čađaha njuolggočájáhusa, sihke Windowsas, macOSas ja Linuxas. ZYRAXON Inc lea huksen.",
+  "settings.about.description": "ZYRAXON lea máilmmi buot-oktasaš automatiserenfitnodat — okta installeren mii čállá ja sádde koda, stivre du mášiinna ja neahttačujuhusa, čatná 8,200+ duođaštuvvon MCP-appa, stivre biillaid ja robohtaid, ja čađaha njuolggočájáhusa, sihke Windowsas, macOSas ja Linuxas. ZYRAXON Inc lea huksen.",
   "settings.about.version": "Veršuvdna",
   "settings.about.platform": "Vuođđu",
   "settings.about.links.title": "Liŋkkat",

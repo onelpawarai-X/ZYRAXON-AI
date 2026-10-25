@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Code source, versions et suivi des problèmes",
   "settings.about.tagline": "L'agent d'automatisation tout-en-un au monde",
   "settings.about.description.title": "À propos de ZYRAXON",
-  "settings.about.description": "ZYRAXON est l'agent d'automatisation tout-en-un au monde : une installation qui écrit et expédie du code, pilote votre machine et votre navigateur, connecte 108 applications MCP vérifiées, contrôle les véhicules et les robots et exécute une boucle de vision d'écran en direct, sous Windows, macOS et Linux. Construit par ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON est l'agent d'automatisation tout-en-un au monde : une installation qui écrit et expédie du code, pilote votre machine et votre navigateur, connecte 8,200+ applications MCP vérifiées, contrôle les véhicules et les robots et exécute une boucle de vision d'écran en direct, sous Windows, macOS et Linux. Construit par ZYRAXON Inc.",
   "settings.about.version": "Version",
   "settings.about.platform": "Plate-forme",
   "settings.about.links.title": "Links",

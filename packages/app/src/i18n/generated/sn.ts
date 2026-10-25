@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Source kodhi, kuburitswa uye kuburitsa tracker",
   "settings.about.tagline": "Mumiririri wepasi rose-in-one automation agent",
   "settings.about.description.title": "Nezve ZYRAXON",
-  "settings.about.description": "ZYRAXON ndiyo yepasi rose-in-one automation agent - imwe yekuisa inonyora nekutumira kodhi, inotyaira muchina wako nebrowser, inobatanidza 108 yakasimbiswa MCP maapplication, inodzora mota nemarobhoti, uye inomhanyisa live screen vision loop, paWindows, macOS neLinux zvakafanana. Yakavakwa neZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON ndiyo yepasi rose-in-one automation agent - imwe yekuisa inonyora nekutumira kodhi, inotyaira muchina wako nebrowser, inobatanidza 8,200+ yakasimbiswa MCP maapplication, inodzora mota nemarobhoti, uye inomhanyisa live screen vision loop, paWindows, macOS neLinux zvakafanana. Yakavakwa neZYRAXON Inc.",
   "settings.about.version": "Version",
   "settings.about.platform": "Platform",
   "settings.about.links.title": "Links",

@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Ҫӑлкуҫ кодӗ, кӑларӑмсем тата ыйтусене сӑнаса тӑракан",
   "settings.about.tagline": "Тӗнчери пурте пӗрле ӗҫлекен автоматизаци агенчӗ",
   "settings.about.description.title": "ZYRAXON ҫинчен",
-  "settings.about.description": "ZYRAXON — тӗнчери пурте пӗрле автоматизаци агенчӗ — пӗр установка, вӑл код ҫырать тата ярса парать, сирӗн машинӑпа браузера ӗҫлеттерет, 108 тӗрӗсленӗ MCP приложенине ҫыхӑнтарать, автомобильсемпе роботсене тытса тӑрать тата Windows, macOS тата Linux ҫинче чӗрӗ экран курӑмӗн циклне ӗҫлеттерет. ZYRAXON Inc компанийӗ тунӑ.",
+  "settings.about.description": "ZYRAXON — тӗнчери пурте пӗрле автоматизаци агенчӗ — пӗр установка, вӑл код ҫырать тата ярса парать, сирӗн машинӑпа браузера ӗҫлеттерет, 8,200+ тӗрӗсленӗ MCP приложенине ҫыхӑнтарать, автомобильсемпе роботсене тытса тӑрать тата Windows, macOS тата Linux ҫинче чӗрӗ экран курӑмӗн циклне ӗҫлеттерет. ZYRAXON Inc компанийӗ тунӑ.",
   "settings.about.version": "Верси",
   "settings.about.platform": "Платформа",
   "settings.about.links.title": "Ҫыхӑнусем",

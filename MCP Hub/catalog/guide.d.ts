@@ -1,5 +1,3 @@
-// Copyright (c) 2026 onelpawarai. All rights reserved.
-
 /**
  * The setup guide for every app, in every language the panel offers.
  *
@@ -38,7 +36,7 @@ export declare const LANGUAGES: Language[];
  * The English source text. Every line a translation is keyed against lives here.
  *
  * The {braces} are filled in per app by the composer below, so one sentence
- * serves all 108 apps and a correction to the wording lands everywhere at once.
+ * serves all 8,200+ apps and a correction to the wording lands everywhere at once.
  */
 export declare const templates: {
     readonly title: "Setup guide";
@@ -46,6 +44,14 @@ export declare const templates: {
     readonly docs: "Documentation";
     readonly endpoint: "Endpoint";
     readonly endpointLocal: "runs on this machine";
+    readonly requirements: "What you need, and where to get it";
+    readonly serverLinks: "Server and source";
+    readonly needsNothing: "Nothing. This server answers without a sign-in, a key or an account.";
+    readonly needClientId: "A client ID from the vendor's own console";
+    readonly needClientSecret: "The client secret that console shows beside it";
+    readonly needToken: "An access key";
+    readonly needInstance: "The address of your own server";
+    readonly needEnv: "Credentials this package reads from its environment";
     readonly howto: "How to connect";
     readonly scopes: "Scopes requested";
     readonly oauthClient: "OAuth client ID";

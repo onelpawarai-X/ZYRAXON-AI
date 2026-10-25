@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Cod ffynhonnell, datganiadau a thraciwr cyhoeddi",
   "settings.about.tagline": "Asiant awtomeiddio popeth-mewn-un y byd",
   "settings.about.description.title": "Am ZYRAXON",
-  "settings.about.description": "ZYRAXON yw asiant awtomeiddio popeth-mewn-un y byd - un gosodiad sy'n ysgrifennu ac yn anfon cod, yn gyrru'ch peiriant a'ch porwr, yn cysylltu 108 o apiau MCP wedi'u dilysu, yn rheoli cerbydau a robotiaid, ac yn rhedeg dolen weledigaeth sgrin fyw, ar Windows, macOS a Linux fel ei gilydd. Adeiladwyd gan ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON yw asiant awtomeiddio popeth-mewn-un y byd - un gosodiad sy'n ysgrifennu ac yn anfon cod, yn gyrru'ch peiriant a'ch porwr, yn cysylltu 8,200+ o apiau MCP wedi'u dilysu, yn rheoli cerbydau a robotiaid, ac yn rhedeg dolen weledigaeth sgrin fyw, ar Windows, macOS a Linux fel ei gilydd. Adeiladwyd gan ZYRAXON Inc.",
   "settings.about.version": "Fersiwn",
   "settings.about.platform": "Llwyfan",
   "settings.about.links.title": "Cysylltiadau",

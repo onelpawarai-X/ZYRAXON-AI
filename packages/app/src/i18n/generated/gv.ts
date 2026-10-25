@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Cood source, reihyn as tracker ymmyd",
   "settings.about.tagline": "Yn obbyr-automagh ooilley-ayn-un 'sy theihll",
   "settings.about.description.title": "Mychione ZYRAXON",
-  "settings.about.description": "ZYRAXON t'eh ny h-agglish automation ooilley-ayns-un 'sy theihll — un s'install ta scriptey as shleaystey code, t'er n'eiyrt do machine as dty bhraar, t'er n'eiyrt 108 apps MCP er-y-fa shen, t'er n'eiyrt carryn as robotyn, as t'er n'eiyrt loop vision screen beo, er Windows, macOS as Linux myr-cheilley. T'eh er ny thooilley liorish Zyraxon Inc.",
+  "settings.about.description": "ZYRAXON t'eh ny h-agglish automation ooilley-ayns-un 'sy theihll — un s'install ta scriptey as shleaystey code, t'er n'eiyrt do machine as dty bhraar, t'er n'eiyrt 8,200+ apps MCP er-y-fa shen, t'er n'eiyrt carryn as robotyn, as t'er n'eiyrt loop vision screen beo, er Windows, macOS as Linux myr-cheilley. T'eh er ny thooilley liorish Zyraxon Inc.",
   "settings.about.version": "Lhiaggan",
   "settings.about.platform": "Lhied",
   "settings.about.links.title": "Ceaghleyn",

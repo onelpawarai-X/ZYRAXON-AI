@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Sos kod, rilis na hevi traka",
   "settings.about.tagline": "Olgeta samting insait long wanpela otomesen ejen bilong wol",
   "settings.about.description.title": "Long ZYRAXON",
-  "settings.about.description": "ZYRAXON em i wanpela 'all-in-one' 'automation agent' bilong wol - wanpela 'install' we i save raitim na salim kod, draivim masin na 'browser' bilong yu, konektim 108 MCP ap we i gat verifikasen, bosim ol kar na robot, na ranim wanpela 'live screen vision loop', long Windows, macOS na Linux wankain. ZYRAXON Inc i bin wokim.",
+  "settings.about.description": "ZYRAXON em i wanpela 'all-in-one' 'automation agent' bilong wol - wanpela 'install' we i save raitim na salim kod, draivim masin na 'browser' bilong yu, konektim 8,200+ MCP ap we i gat verifikasen, bosim ol kar na robot, na ranim wanpela 'live screen vision loop', long Windows, macOS na Linux wankain. ZYRAXON Inc i bin wokim.",
   "settings.about.version": "Vesen",
   "settings.about.platform": "Pletfom",
   "settings.about.links.title": "Ol link",

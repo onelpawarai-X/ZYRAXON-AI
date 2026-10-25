@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Source code, famoahana ary tracker olana",
   "settings.about.tagline": "Mpampiasa automatique manerana izao tontolo izao",
   "settings.about.description.title": "Momba an'i ZYRAXON",
-  "settings.about.description": "ZYRAXON no mpiasan'ny automatique rehetra eran'izao tontolo izao — fametrahana iray izay manoratra sy mandefa kaody, mitondra ny milinanao sy ny navigateur, mampifandray ny fampiharana MCP voamarina 108, mifehy ny fiara sy ny robots, ary mampandeha rindran-tsary mivantana amin'ny efijery, amin'ny Windows, macOS ary Linux. Namboarin'i ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON no mpiasan'ny automatique rehetra eran'izao tontolo izao — fametrahana iray izay manoratra sy mandefa kaody, mitondra ny milinanao sy ny navigateur, mampifandray ny fampiharana MCP voamarina 8,200+, mifehy ny fiara sy ny robots, ary mampandeha rindran-tsary mivantana amin'ny efijery, amin'ny Windows, macOS ary Linux. Namboarin'i ZYRAXON Inc.",
   "settings.about.version": "Malagasy Bible",
   "settings.about.platform": "Platform",
   "settings.about.links.title": "rohy",

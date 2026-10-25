@@ -1,5 +1,3 @@
-// Copyright (c) 2026 onelpawarai. All rights reserved.
-
 import type { AppEntry } from "../catalog/seed";
 import { type RegistryServer } from "./registry";
 export interface Resolution {

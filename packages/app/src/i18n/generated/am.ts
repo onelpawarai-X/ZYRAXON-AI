@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "የምንጭ ኮድ፣ የተለቀቁ እና እትም መከታተያ",
   "settings.about.tagline": "የአለም ሁሉን-በ-አንድ አውቶሜሽን ወኪል",
   "settings.about.description.title": "ስለ ZYRAXON",
-  "settings.about.description": "ZYRAXON የአለም ሁሉን-በአንድ አውቶሜሽን ወኪል ነው - አንድ ጭነት ኮድ የሚጽፍ እና የሚልክ፣ ማሽንዎን እና አሳሽዎን የሚነዳ፣ 108 የተረጋገጡ MCP መተግበሪያዎችን የሚያገናኝ፣ ተሽከርካሪዎችን እና ሮቦቶችን የሚቆጣጠር እና የቀጥታ ስክሪን ቪዥን ምልልስ ይሰራል፣ በዊንዶውስ፣ ማክሮስ እና ሊኑክስ ላይ። በZYRAXON Inc. የተሰራ።",
+  "settings.about.description": "ZYRAXON የአለም ሁሉን-በአንድ አውቶሜሽን ወኪል ነው - አንድ ጭነት ኮድ የሚጽፍ እና የሚልክ፣ ማሽንዎን እና አሳሽዎን የሚነዳ፣ 8,200+ የተረጋገጡ MCP መተግበሪያዎችን የሚያገናኝ፣ ተሽከርካሪዎችን እና ሮቦቶችን የሚቆጣጠር እና የቀጥታ ስክሪን ቪዥን ምልልስ ይሰራል፣ በዊንዶውስ፣ ማክሮስ እና ሊኑክስ ላይ። በZYRAXON Inc. የተሰራ።",
   "settings.about.version": "ሥሪት",
   "settings.about.platform": "መድረክ",
   "settings.about.links.title": "አገናኞች",

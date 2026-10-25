@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Khodi ya xihlovo, ku humesiwa na mulandzeri wa nkandziyiso",
   "settings.about.tagline": "Muyimeri wa misava hinkwayo wa otomatiki wa swilo hinkwaswo eka xin’we",
   "settings.about.description.title": "Malunghana na ZYRAXON",
-  "settings.about.description": "ZYRAXON i muyimeri wa misava hinkwayo wa otomatiki wa hinkwaswo eka xin’we — ku nghenisa kun’we loku tsalaka no rhumela khodi, ku fambisa muchini wa wena na browser, ku hlanganisa 108 wa ti-app ta MCP leti tiyisisiweke, ku lawula mimovha na tirhoboto, naswona ku fambisa xirhendzevutani xa xivono xa xikirini lexi hanyaka, eka Windows, macOS na Linux hi ku fanana. Yi akiwile hi ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON i muyimeri wa misava hinkwayo wa otomatiki wa hinkwaswo eka xin’we — ku nghenisa kun’we loku tsalaka no rhumela khodi, ku fambisa muchini wa wena na browser, ku hlanganisa 8,200+ wa ti-app ta MCP leti tiyisisiweke, ku lawula mimovha na tirhoboto, naswona ku fambisa xirhendzevutani xa xivono xa xikirini lexi hanyaka, eka Windows, macOS na Linux hi ku fanana. Yi akiwile hi ZYRAXON Inc.",
   "settings.about.version": "Nkandziyiso",
   "settings.about.platform": "Ndhawu",
   "settings.about.links.title": "Swihlanganisi",

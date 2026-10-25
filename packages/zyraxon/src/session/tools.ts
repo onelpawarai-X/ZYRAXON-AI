@@ -6,6 +6,7 @@ import { Provider } from "@/provider/provider"
 import { ProviderTransform } from "@/provider/transform"
 import { MCP } from "@/mcp"
 import { McpCatalog } from "@/mcp/catalog"
+import { activatedServers, adoptConnected } from "@/mcp/activation"
 import { Permission } from "@/permission"
 import { Tool } from "@/tool/tool"
 import { ToolJsonSchema } from "@/tool/json-schema"
@@ -467,10 +468,34 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
     return tools
   }
 
+  /**
+   * Only the servers this session asked for contribute tools.
+   *
+   * Every tool of every connected server used to land here, so the tool list grew with
+   * however many servers happened to be running rather than with what the task needed,
+   * and the cost was paid on every request. Now a server's tools are injected once the
+   * session has activated it — `mcp_connect` does that as part of connecting — and
+   * `mcp_disconnect` takes them back out.
+   *
+   * A server that is already connected when the session first looks is adopted, because
+   * that connection came from the user's own config rather than from this session. The
+   * registry adopts at most once per session, so a server connected elsewhere cannot leak
+   * into this one's tool list mid-conversation.
+   */
+  adoptConnected(input.session.id, Object.keys(yield* mcp.clients()))
+  const activated = activatedServers(input.session.id)
+  const activatedPrefixes = new Set([...activated].map((name) => McpCatalog.sanitize(name) + "_"))
+  const isActivated = (toolID: string) => {
+    for (const prefix of activatedPrefixes) if (toolID.startsWith(prefix)) return true
+    return false
+  }
+
   const _tMcpTools = Date.now()
   const mcpToolsList = yield* mcp.tools()
-  const mcpToolEntries = Object.entries(mcpToolsList)
-  console.log(`[SessionTools.resolve] mcp.tools: ${mcpToolEntries.length} tools in ${Date.now() - _tMcpTools}ms`)
+  const mcpToolEntries = Object.entries(mcpToolsList).filter(([key]) => isActivated(key))
+  console.log(
+    `[SessionTools.resolve] mcp.tools: ${mcpToolEntries.length} injected of ${Object.keys(mcpToolsList).length} connected in ${Date.now() - _tMcpTools}ms`,
+  )
   for (const [key, entry] of mcpToolEntries) {
     const item = McpCatalog.convertTool(entry.def, entry.client, entry.timeout)
     const execute = item.execute

@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Source codice, solvo et exitus venato",
   "settings.about.tagline": "In uno automation agente omnia mundi",
   "settings.about.description.title": "De ZYRAXON",
-  "settings.about.description": "ZYRAXON est totum in uno automation agente mundi - unum install quod scribens et codicem navium, machinam tuam et navigatrum agit, coniungit 108 apps MCP verificatas, vehicula et robotas moderatur, ac vivis ansa in Fenestra, macOS et Linux similiter currit. aedificata ab ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON est totum in uno automation agente mundi - unum install quod scribens et codicem navium, machinam tuam et navigatrum agit, coniungit 8,200+ apps MCP verificatas, vehicula et robotas moderatur, ac vivis ansa in Fenestra, macOS et Linux similiter currit. aedificata ab ZYRAXON Inc.",
   "settings.about.version": "Version",
   "settings.about.platform": "Platform",
   "settings.about.links.title": "Vincula",

@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Kódigu fonte, lansamentu sira no tracker ba kestaun sira",
   "settings.about.tagline": "Ajente automatizasaun hotu-hotu iha mundu",
   "settings.about.description.title": "Kona-ba ZYRAXON",
-  "settings.about.description": "ZYRAXON maka ajente automatizasaun hotu-hotu iha mundu — instalasaun ida ne'ebé hakerek no haruka kódigu, lori ita-boot nia mákina no browser, liga aplikasaun MCP verifikadu 108, kontrola veíkulu no robó sira, no hala'o loop vizaun ekran moris nian, iha Windows, macOS no Linux hanesan. Harii husi ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON maka ajente automatizasaun hotu-hotu iha mundu — instalasaun ida ne'ebé hakerek no haruka kódigu, lori ita-boot nia mákina no browser, liga aplikasaun MCP verifikadu 8,200+, kontrola veíkulu no robó sira, no hala'o loop vizaun ekran moris nian, iha Windows, macOS no Linux hanesan. Harii husi ZYRAXON Inc.",
   "settings.about.version": "Versaun",
   "settings.about.platform": "Plataforma",
   "settings.about.links.title": "Ligasaun sira",

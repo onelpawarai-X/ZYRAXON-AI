@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Kodigo nin pinagkukuanan, mga pagluwas asin parasubaybay nin isyu",
   "settings.about.tagline": "An all-in-one automation agent kan kinaban",
   "settings.about.description.title": "Manungod sa ZYRAXON",
-  "settings.about.description": "An ZYRAXON iyo an all-in-one automation agent sa kinaban — sarong pag-instalar na nagsusurat asin nagpapadara nin kodigo, nagmamaneho kan saimong makina asin browser, nagkokonektar nin 108 na beripikadong MCP apps, nagkokontrol nin mga lunadan asin robot, asin nagpapadalagan nin sarong live screen vision loop, sa Windows, macOS asin Linux pareho. Itinogdok kan ZYRAXON Inc.",
+  "settings.about.description": "An ZYRAXON iyo an all-in-one automation agent sa kinaban — sarong pag-instalar na nagsusurat asin nagpapadara nin kodigo, nagmamaneho kan saimong makina asin browser, nagkokonektar nin 8,200+ na beripikadong MCP apps, nagkokontrol nin mga lunadan asin robot, asin nagpapadalagan nin sarong live screen vision loop, sa Windows, macOS asin Linux pareho. Itinogdok kan ZYRAXON Inc.",
   "settings.about.version": "Bersyon",
   "settings.about.platform": "Plataporma",
   "settings.about.links.title": "Mga Sugpon",

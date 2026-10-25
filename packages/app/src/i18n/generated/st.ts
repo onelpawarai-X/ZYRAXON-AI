@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Mohloli oa khoutu, litokollo le tracker ea tlhahiso",
   "settings.about.tagline": "Moemeli oa lefats'e oa li-automation",
   "settings.about.description.title": "Mabapi le ZYRAXON",
-  "settings.about.description": "ZYRAXON ke setsi sa lefats'e sa li-automation - sesebelisoa se ngolang le ho tsamaisa khoutu, se khanna mochini oa hau le sebatli, se hokela lits'ebetso tse netefalitsoeng tsa MCP tse 108, se laolang makoloi le liroboto, 'me se tsamaisa leqhubu la pono ea skrineng, ho Windows, macOS le Linux ka ho ts'oana. E hahiloe ke ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON ke setsi sa lefats'e sa li-automation - sesebelisoa se ngolang le ho tsamaisa khoutu, se khanna mochini oa hau le sebatli, se hokela lits'ebetso tse netefalitsoeng tsa MCP tse 8,200+, se laolang makoloi le liroboto, 'me se tsamaisa leqhubu la pono ea skrineng, ho Windows, macOS le Linux ka ho ts'oana. E hahiloe ke ZYRAXON Inc.",
   "settings.about.version": "Phetolelo",
   "settings.about.platform": "Sethala",
   "settings.about.links.title": "Lihokelo",

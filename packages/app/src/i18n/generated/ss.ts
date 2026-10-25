@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Ikhodi yemtfombo, kukhishwa kanye nekulandzelela inkinga",
   "settings.about.tagline": "I-ejenti yemhlaba yonkhe-ku-munye letentekelako",
   "settings.about.description.title": "Mayelana ne ZYRAXON",
-  "settings.about.description": "ZYRAXON yi-ejenti yemhlaba yonkhe-ku-munye yekutentela — kufaka lokukodwa lokubhalako futsi kutfumele ikhodi, kushayela umshini wakho kanye nesiphequluli, kuxhuma tinhlelo tekusebenta te-MCP leticinisekisiwe letingu-108, kulawula timoto kanye nemarobhothi, futsi kugijima i-loop yekubona isikrini lesibukhoma, ku-Windows, macOS nase-Linux ngekufana. Yakhiwe ngu Zyraxon Inc.",
+  "settings.about.description": "ZYRAXON yi-ejenti yemhlaba yonkhe-ku-munye yekutentela — kufaka lokukodwa lokubhalako futsi kutfumele ikhodi, kushayela umshini wakho kanye nesiphequluli, kuxhuma tinhlelo tekusebenta te-MCP leticinisekisiwe letingu-8,200+, kulawula timoto kanye nemarobhothi, futsi kugijima i-loop yekubona isikrini lesibukhoma, ku-Windows, macOS nase-Linux ngekufana. Yakhiwe ngu Zyraxon Inc.",
   "settings.about.version": "Luhlobo",
   "settings.about.platform": "Inkundla",
   "settings.about.links.title": "Tikhonjiso",

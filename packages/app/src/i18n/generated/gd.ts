@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Còd stòr, fiosan agus rianadair cùise",
   "settings.about.tagline": "An neach-ionaid fèin-ghluasaid uile-ann-aon san t-saoghal",
   "settings.about.description.title": "Mu ZYRAXON",
-  "settings.about.description": "Is e ZYRAXON an t-àidseant fèin-ghluasaid uile-ann-aon san t-saoghal - aon stàladh a bhios a’ sgrìobhadh agus a ’seòladh còd, a’ draibheadh ​​​​an inneal agad agus am brabhsair agad, a ’ceangal 108 aplacaidean MCP dearbhte, a’ cumail smachd air carbadan agus innealan-fuadain, agus a ’ruith lùb lèirsinn sgrion beò, air Windows, macOS agus Linux le chèile. Air a thogail le ZYRAXON Inc.",
+  "settings.about.description": "Is e ZYRAXON an t-àidseant fèin-ghluasaid uile-ann-aon san t-saoghal - aon stàladh a bhios a’ sgrìobhadh agus a ’seòladh còd, a’ draibheadh ​​​​an inneal agad agus am brabhsair agad, a ’ceangal 8,200+ aplacaidean MCP dearbhte, a’ cumail smachd air carbadan agus innealan-fuadain, agus a ’ruith lùb lèirsinn sgrion beò, air Windows, macOS agus Linux le chèile. Air a thogail le ZYRAXON Inc.",
   "settings.about.version": "Tionndadh",
   "settings.about.platform": "Àrd-ùrlar",
   "settings.about.links.title": "Ceanglaichean",

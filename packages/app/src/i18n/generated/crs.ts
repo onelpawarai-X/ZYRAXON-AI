@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Kod sours, laranzman e swivi problenm",
   "settings.about.tagline": "azan otomatik tou-dan-enn dan lemonn",
   "settings.about.description.title": "lo ZYRAXON",
-  "settings.about.description": "ZYRAXON i azan otomatik tou-dan-enn dan lemonn — en lenstalasyon ki ekrir e anvoy kod, dray ou masin ek browser, konekte 108 MCP apps verifye, kontrol bann veikil ek robo, e fer marse en loop vizyon lekran an direk, lo Windows, macOS e Linux parey. konstrir par ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON i azan otomatik tou-dan-enn dan lemonn — en lenstalasyon ki ekrir e anvoy kod, dray ou masin ek browser, konekte 8,200+ MCP apps verifye, kontrol bann veikil ek robo, e fer marse en loop vizyon lekran an direk, lo Windows, macOS e Linux parey. konstrir par ZYRAXON Inc.",
   "settings.about.version": "Versyon",
   "settings.about.platform": "Platform",
   "settings.about.links.title": "bann lyen",

@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Lambar tushe, sakewa da mai sa ido",
   "settings.about.tagline": "Wakilin sarrafa kansa na duk-in-one na duniya",
   "settings.about.description.title": "Game da ZYRAXON",
-  "settings.about.description": "ZYRAXON shine wakilin sarrafa kansa na duk-in-daya na duniya - shigarwa ɗaya wanda ke rubutawa da lambar jigilar kaya, yana sarrafa injin ku da mai bincike, yana haɗa ƙa'idodin MCP 108 da aka tabbatar, yana sarrafa motoci da robots, kuma yana gudanar da madaidaicin hangen nesa na allo, akan Windows, macOS da Linux iri ɗaya. Gina ta ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON shine wakilin sarrafa kansa na duk-in-daya na duniya - shigarwa ɗaya wanda ke rubutawa da lambar jigilar kaya, yana sarrafa injin ku da mai bincike, yana haɗa ƙa'idodin MCP 8,200+ da aka tabbatar, yana sarrafa motoci da robots, kuma yana gudanar da madaidaicin hangen nesa na allo, akan Windows, macOS da Linux iri ɗaya. Gina ta ZYRAXON Inc.",
   "settings.about.version": "Sigar",
   "settings.about.platform": "Dandalin",
   "settings.about.links.title": "Hanyoyin haɗi",

@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Kode u duen, duen man kwagh u dondon kwagh",
   "settings.about.tagline": "Ior mba ve lu a akaa a eren tom sha tseeneke ve sha tar cii la",
   "settings.about.description.title": "Kwagh u ZYRAXON .",
-  "settings.about.description": "ZYRAXON ka ikyagh ki tomough ki ki eren tom sha tseeneke u ki sha tar cii yô — ikyagh ki tomough ki môm ki ki nger shi ki tindi a kode yô, ki eren tom a ikyagh you ki tomough man ikyagh ki keren akaa, ki kohol akaa a MCP a i ver ér i er tom a mi la 108, ki nengen sha mato man ikyav mbi tomov mbi i yer ér robots la, shi ki eren tom a ikyagh ki nengen a mi sha jingi, sha Windows man macOS man Linux cii. I maa un sha ikyev i ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON ka ikyagh ki tomough ki ki eren tom sha tseeneke u ki sha tar cii yô — ikyagh ki tomough ki môm ki ki nger shi ki tindi a kode yô, ki eren tom a ikyagh you ki tomough man ikyagh ki keren akaa, ki kohol akaa a MCP a i ver ér i er tom a mi la 8,200+, ki nengen sha mato man ikyav mbi tomov mbi i yer ér robots la, shi ki eren tom a ikyagh ki nengen a mi sha jingi, sha Windows man macOS man Linux cii. I maa un sha ikyev i ZYRAXON Inc.",
   "settings.about.version": "Kwaghuhe",
   "settings.about.platform": "Tsembe",
   "settings.about.links.title": "Links",

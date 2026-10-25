@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "源碼、發佈版本同問題追蹤器",
   "settings.about.tagline": "全球一體化自動化代理",
   "settings.about.description.title": "關於 ZYRAXON",
-  "settings.about.description": "ZYRAXON 係全球一體化嘅自動化代理 — 一個安裝，可以寫入同運送代碼，驅動你嘅機器同瀏覽器，連接 108 個經過驗證嘅 MCP 應用程式，控制車輛同機械人，同埋喺 Windows 、 macOS 同 Linux 上面運行實時螢幕視覺循環。由 ZYRAXON 公司製造",
+  "settings.about.description": "ZYRAXON 係全球一體化嘅自動化代理 — 一個安裝，可以寫入同運送代碼，驅動你嘅機器同瀏覽器，連接 8,200+ 個經過驗證嘅 MCP 應用程式，控制車輛同機械人，同埋喺 Windows 、 macOS 同 Linux 上面運行實時螢幕視覺循環。由 ZYRAXON 公司製造",
   "settings.about.version": "版本",
   "settings.about.platform": "平台",
   "settings.about.links.title": "連結",

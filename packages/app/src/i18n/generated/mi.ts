@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Waehere puna, tukunga me te kaiwhaiwhai take",
   "settings.about.tagline": "Ko te kaihoko aunoatanga katoa o te ao",
   "settings.about.description.title": "Mo ZYRAXON",
-  "settings.about.description": "Ko ZYRAXON te kaihoko aunoatanga katoa-i-kotahi o te ao — kotahi te whakaurunga e tuhi ana, e kawe ana i te waehere, e peia ana to miihini me to kaitirotiro, e hono ana i nga taupānga MCP 108 kua manatokohia, e whakahaere ana i nga waka me nga karetao, me te whakahaere i te matakite matakite ora, i runga i te Matapihi, macOS me Linux. I hangaia e ZYRAXON Inc.",
+  "settings.about.description": "Ko ZYRAXON te kaihoko aunoatanga katoa-i-kotahi o te ao — kotahi te whakaurunga e tuhi ana, e kawe ana i te waehere, e peia ana to miihini me to kaitirotiro, e hono ana i nga taupānga MCP 8,200+ kua manatokohia, e whakahaere ana i nga waka me nga karetao, me te whakahaere i te matakite matakite ora, i runga i te Matapihi, macOS me Linux. I hangaia e ZYRAXON Inc.",
   "settings.about.version": "Putanga",
   "settings.about.platform": "Paerewa",
   "settings.about.links.title": "Hononga",

@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Рамзи манбаъ, нашрҳо ва пайгирии масъала",
   "settings.about.tagline": "Агенти автоматикунонии ҳама дар як ҷаҳон",
   "settings.about.description.title": "Дар бораи ZYRAXON",
-  "settings.about.description": "ZYRAXON агенти автоматикунонии ҳама дар як ҷаҳон аст — як насбкунӣ, ки рамз менависад ва мефиристад, мошин ва браузери шуморо меронад, 108 барномаи тасдиқшудаи MCP-ро мепайвандад, мошинҳо ва роботҳоро идора мекунад ва як ҳалқаи дидани экранро ҳам дар Windows, macOS ва Linux иҷро мекунад. Аз ҷониби ZYRAXON Inc сохта шудааст.",
+  "settings.about.description": "ZYRAXON агенти автоматикунонии ҳама дар як ҷаҳон аст — як насбкунӣ, ки рамз менависад ва мефиристад, мошин ва браузери шуморо меронад, 8,200+ барномаи тасдиқшудаи MCP-ро мепайвандад, мошинҳо ва роботҳоро идора мекунад ва як ҳалқаи дидани экранро ҳам дар Windows, macOS ва Linux иҷро мекунад. Аз ҷониби ZYRAXON Inc сохта шудааст.",
   "settings.about.version": "Версия",
   "settings.about.platform": "Платформа",
   "settings.about.links.title": "Пайвандҳо",

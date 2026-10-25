@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Kode ti lingu, sigingo na ye ti gingo nda ti ye",
   "settings.about.tagline": "Azo ti dunia so ayeke sara kua na automatisation .",
   "settings.about.description.title": "Na ndo ti ZYRAXON .",
-  "settings.about.description": "ZYRAXON ayeke mbeni ye so ayeke sara kua na aye kue na yâ ti dunia — mbeni installation so ayeke sû na atokua kode, ayeke pusu masini ti mo nga na navigateur ti mo, ayeke bungbi application MCP 108 so a vérifié ni awe, ayeke komande a-oto nga na a-robot, nga ayeke sara kua na mbeni boucle ti bango ndo na ndö ti écran, na ndö ti Windows, macOS nga na Linux legeoko. A leke ni na lege ti ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON ayeke mbeni ye so ayeke sara kua na aye kue na yâ ti dunia — mbeni installation so ayeke sû na atokua kode, ayeke pusu masini ti mo nga na navigateur ti mo, ayeke bungbi application MCP 8,200+ so a vérifié ni awe, ayeke komande a-oto nga na a-robot, nga ayeke sara kua na mbeni boucle ti bango ndo na ndö ti écran, na ndö ti Windows, macOS nga na Linux legeoko. A leke ni na lege ti ZYRAXON Inc.",
   "settings.about.version": "Mbeti",
   "settings.about.platform": "Ndo ti kusala",
   "settings.about.links.title": "A-lien",

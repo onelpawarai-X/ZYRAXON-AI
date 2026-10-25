@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "소스 코드, 릴리스 및 이슈 추적기",
   "settings.about.tagline": "세계 최고의 올인원 자동화 에이전트",
   "settings.about.description.title": "자이락손 소개",
-  "settings.about.description": "ZYRAXON은 세계 최고의 올인원 자동화 에이전트입니다. Windows, macOS, Linux 모두에서 코드를 작성 및 전달하고, 기계와 브라우저를 구동하고, 108개의 검증된 MCP 앱을 연결하고, 차량과 로봇을 제어하고, 라이브 스크린 비전 루프를 실행하는 한 번의 설치입니다. ZYRAXON Inc.에서 제작",
+  "settings.about.description": "ZYRAXON은 세계 최고의 올인원 자동화 에이전트입니다. Windows, macOS, Linux 모두에서 코드를 작성 및 전달하고, 기계와 브라우저를 구동하고, 8,200+개의 검증된 MCP 앱을 연결하고, 차량과 로봇을 제어하고, 라이브 스크린 비전 루프를 실행하는 한 번의 설치입니다. ZYRAXON Inc.에서 제작",
   "settings.about.version": "버전",
   "settings.about.platform": "플랫폼",
   "settings.about.links.title": "모래밭",

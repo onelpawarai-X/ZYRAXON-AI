@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Fa'ailoga puna, fa'asalalauga ma fa'amatalaga mata'upu",
   "settings.about.tagline": "Le so'o fa'aautomatika uma a le lalolagi",
   "settings.about.description.title": "E uiga ia ZYRAXON",
-  "settings.about.description": "O le ZYRAXON o le so'o fa'aautomatika uma a le lalolagi - e tasi le fa'apipi'i e tusitusi ma va'aia le code, fa'aulu lau masini ma lau su'esu'ega, fa'afeso'ota'i le 108 fa'amaonia polokalame MCP, fa'atonutonu ta'avale ma robots, ma fa'atautaia se mata'i fa'aaliga ola, i luga o Windows, macOS ma Linux tutusa. Fausia e ZYRAXON Inc.",
+  "settings.about.description": "O le ZYRAXON o le so'o fa'aautomatika uma a le lalolagi - e tasi le fa'apipi'i e tusitusi ma va'aia le code, fa'aulu lau masini ma lau su'esu'ega, fa'afeso'ota'i le 8,200+ fa'amaonia polokalame MCP, fa'atonutonu ta'avale ma robots, ma fa'atautaia se mata'i fa'aaliga ola, i luga o Windows, macOS ma Linux tutusa. Fausia e ZYRAXON Inc.",
   "settings.about.version": "Fa'aliliuga",
   "settings.about.platform": "Fa'avae",
   "settings.about.links.title": "So'oga",

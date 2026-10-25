@@ -3,7 +3,7 @@
 import { createConnection } from "net"
 import { createServer } from "http"
 import { OauthCallbackPage } from "@zyraxon-ai/core/oauth/page"
-import { OAUTH_CALLBACK_PORT, OAUTH_CALLBACK_PATH, parseRedirectUri } from "./oauth-provider"
+import { OAUTH_CALLBACK_ALT_PATH, OAUTH_CALLBACK_PORT, OAUTH_CALLBACK_PATH, parseRedirectUri } from "./oauth-provider"
 
 const OAUTH_CALLBACK_HOST = "127.0.0.1"
 
@@ -35,19 +35,26 @@ const CLOSING_GRACE_MS = 30_000
  * This is the only defence against a page on the internet posting to the loopback
  * listener. The state check stops an unrelated request from being treated as ours; it
  * does not stop a request that a malicious page supplies its own state for, which is
- * exactly what a browser can do to 127.0.0.1 without any user interaction. Requiring the
- * browser's own `Sec-Fetch-Site: same-origin` header does stop it, because a page is not
- * permitted to set that header at all — it is added by the browser and cannot be forged
- * from script or from a form post.
+ * exactly what a browser can do to 127.0.0.1 without any user interaction. Requiring a
+ * browser-added header does stop that, because a page is not permitted to set it at all.
  *
- * Not a substitute for state. Both are required: state proves the callback belongs to a
- * handshake we started, and this header proves it was the browser that followed the
- * redirect rather than something else that knew the port.
+ * The header that arrives on a real OAuth redirect is `Sec-Fetch-Site: cross-site`, not
+ * `same-origin`. The browser was on the provider's consent page and is now navigating to
+ * 127.0.0.1, so those two are different sites by definition. Accepting only `same-origin`
+ * and `none` therefore rejected every genuine sign-in with a 403 while accepting none of
+ * them, which is why the callback "never arrived" — the browser did reach the port and the
+ * listener threw the answer away.
+ *
+ * `cross-site` is accepted because it is the honest value for this navigation and it is
+ * still a value a script cannot forge: a non-browser client sends no `Sec-Fetch-Site` at
+ * all and is rejected below, and a page cannot set the header to `cross-site` on a
+ * same-origin fetch either. `same-origin` and `none` stay accepted for a provider that
+ * redirects within one origin and for a manually pasted URL.
  */
 function isFromTheBrowser(req: import("http").IncomingMessage): boolean {
   const site = req.headers["sec-fetch-site"]
   if (typeof site !== "string") return false
-  return site === "same-origin" || site === "none"
+  return site === "cross-site" || site === "same-origin" || site === "none"
 }
 
 function cleanupStateIndex(oauthState: string) {
@@ -97,7 +104,23 @@ function stopIfIdle() {
 function handleRequest(req: import("http").IncomingMessage, res: import("http").ServerResponse) {
   const url = new URL(req.url || "/", `http://localhost:${currentPort}`)
 
-  if (url.pathname !== currentPath) {
+  /**
+   * Accept the callback on either path.
+   *
+   * The listener has always used `/mcp/oauth/callback`, but every guide, every card and
+   * `mcp-control.ts` tell the user to register `http://127.0.0.1:19876/oauth/callback`
+   * with the provider. A provider that is given the shorter path redirects to it, this
+   * listener does not match it, and the sign-in ends in a 404 in the user's browser with
+   * nothing on the app side to explain it — which is the second half of "the callback
+   * never comes back".
+   *
+   * Rather than pick one and rewrite the guides in nine languages, both are served. The
+   * port is the boundary that matters here: anything reaching this loopback listener is
+   * already on the user's own machine, and the state check still decides whether the code
+   * belongs to a handshake we started.
+   */
+  const acceptedPaths = new Set([currentPath, OAUTH_CALLBACK_ALT_PATH])
+  if (!acceptedPaths.has(url.pathname)) {
     res.writeHead(404)
     res.end("Not found")
     return

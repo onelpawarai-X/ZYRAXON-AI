@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Source code, zotulutsa ndi tracker yotulutsa",
   "settings.about.tagline": "Wothandizira makina padziko lonse lapansi",
   "settings.about.description.title": "Za ZYRAXON",
-  "settings.about.description": "ZYRAXON ndiye makina odzipangira okha padziko lonse lapansi - kukhazikitsa kumodzi komwe kumalemba ndikutumiza ma code, kuyendetsa makina anu ndi osatsegula, kulumikiza mapulogalamu 108 otsimikizika a MCP, kuwongolera magalimoto ndi maloboti, ndikuyendetsa mawonekedwe owonera, pa Windows, macOS ndi Linux chimodzimodzi. Yopangidwa ndi ZYRAXON Inc.",
+  "settings.about.description": "ZYRAXON ndiye makina odzipangira okha padziko lonse lapansi - kukhazikitsa kumodzi komwe kumalemba ndikutumiza ma code, kuyendetsa makina anu ndi osatsegula, kulumikiza mapulogalamu 8,200+ otsimikizika a MCP, kuwongolera magalimoto ndi maloboti, ndikuyendetsa mawonekedwe owonera, pa Windows, macOS ndi Linux chimodzimodzi. Yopangidwa ndi ZYRAXON Inc.",
   "settings.about.version": "Baibulo",
   "settings.about.platform": "nsanja",
   "settings.about.links.title": "Maulalo",

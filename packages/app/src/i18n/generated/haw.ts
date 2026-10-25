@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Kumu kumu, hoʻokuʻu a me ka tracker hoʻopuka",
   "settings.about.tagline": "ʻO ke ao holoʻokoʻa i loko o hoʻokahi mea hana automation",
   "settings.about.description.title": "E pili ana iā ZYRAXON",
-  "settings.about.description": "ʻO ZYRAXON ka mea hoʻokele automation holoʻokoʻa o ka honua - hoʻokahi mea hoʻonohonoho e kākau a hoʻouna i nā code, e hoʻokele i kāu mīkini a me kāu polokalamu kele pūnaewele, hoʻopili i nā polokalamu MCP 108 i hōʻoia ʻia, hoʻokele i nā kaʻa a me nā robots, a holo i ka puka aniani ʻike maka, ma Windows, macOS a me Linux like. Kūkulu ʻia e ZYRAXON Inc.",
+  "settings.about.description": "ʻO ZYRAXON ka mea hoʻokele automation holoʻokoʻa o ka honua - hoʻokahi mea hoʻonohonoho e kākau a hoʻouna i nā code, e hoʻokele i kāu mīkini a me kāu polokalamu kele pūnaewele, hoʻopili i nā polokalamu MCP 8,200+ i hōʻoia ʻia, hoʻokele i nā kaʻa a me nā robots, a holo i ka puka aniani ʻike maka, ma Windows, macOS a me Linux like. Kūkulu ʻia e ZYRAXON Inc.",
   "settings.about.version": "Manao",
   "settings.about.platform": "Papahana",
   "settings.about.links.title": "Nā loulou",

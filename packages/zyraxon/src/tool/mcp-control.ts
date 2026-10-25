@@ -27,7 +27,9 @@ import { Tool } from "../tool/tool"
 import { Config } from "@/config/config"
 import { MCP } from "@/mcp"
 import { McpCatalog } from "@/mcp/catalog"
+import { activateServer, activatedServers, deactivateServer } from "@/mcp/activation"
 import { allSeedApps, type AppEntry } from "../../../../MCP Hub/catalog/seed"
+import { fillEndpoint } from "../../../../MCP Hub/lib/endpoint"
 
 type Metadata = { [key: string]: unknown }
 
@@ -42,6 +44,7 @@ const AUTH_MEANING = {
   none: "no sign-in at all.",
   token: "an API key. This tool opens the page where the key is created and takes the key from the user.",
   local: "runs on this machine and is declared by ZYRAXON's own config.",
+  instance: "needs your own address. The endpoint holds a placeholder, and this tool asks for the host before connecting.",
 } as const satisfies Record<AppEntry["kind"], string>
 
 const CATALOG_DESCRIPTION = `List the MCP (Model Context Protocol) apps ZYRAXON can connect to.
@@ -73,6 +76,10 @@ guess, so quote it rather than paraphrasing it.
 Returns, per server: status (connected, failed, needs_auth, needs_client_registration or disabled),
 the error text when there is one, the live tool count, the tool names a connected server
 contributed, and for a server waiting on sign-in, whether stored credentials are missing or expired.
+
+Connected and injected are reported apart. A server can be running without this session
+carrying its tools: only servers this session connected appear in the tool list, so a server
+under connectedButNotInjected needs mcp_connect before its tools can be called.
 
 Pass server to inspect just one.`
 
@@ -188,21 +195,28 @@ export const McpStatusTool = Tool.define<typeof StatusParameters, Metadata, MCP.
     return {
       description: STATUS_DESCRIPTION,
       parameters: StatusParameters,
-      execute: (params) =>
+      execute: (params, ctx) =>
         Effect.gen(function* () {
           const status = yield* mcp.status()
           const tools = Object.keys(yield* mcp.tools())
           const names = Object.keys(status).sort()
           const selected = params.server?.trim()
           const listed = selected ? names.filter((name) => name === selected) : names
+          // A server can be up without this session carrying its tools, so the two
+          // facts are reported apart: `connected` is the process, `injected` is whether
+          // the tools are in this session's list right now.
+          const activated = activatedServers(ctx.sessionID)
           const entries = yield* Effect.forEach(listed, (name) => describe(mcp, name, status[name], tools))
           const connected = entries.filter((entry) => entry.status === "connected")
+          const injected = connected.filter((entry) => activated.has(entry.server))
+          const injectable = connected.filter((entry) => !activated.has(entry.server))
           return {
-            title: `${connected.length}/${entries.length} MCP servers connected`,
+            title: `${connected.length}/${entries.length} MCP servers connected, ${injected.length} in this session`,
             metadata: {
               total: names.length,
               connected: connected.length,
-              tools: entries.reduce((sum, entry) => sum + entry.toolCount, 0),
+              injected: injected.length,
+              tools: injected.reduce((sum, entry) => sum + entry.toolCount, 0),
             },
             output: JSON.stringify(
               {
@@ -210,9 +224,14 @@ export const McpStatusTool = Tool.define<typeof StatusParameters, Metadata, MCP.
                 total: entries.length,
                 connected: connected.map((entry) => entry.server),
                 notConnected: entries.filter((entry) => entry.status !== "connected").map((entry) => entry.server),
-                toolsAvailable: entries.reduce((sum, entry) => sum + entry.toolCount, 0),
+                injectedInThisSession: injected.map((entry) => entry.server),
+                connectedButNotInjected: injectable.map((entry) => entry.server),
+                toolsAvailable: injected.reduce((sum, entry) => sum + entry.toolCount, 0),
                 servers: entries,
-                next: "Use mcp_catalog to find an app that is not configured yet, then mcp_connect to connect it.",
+                next:
+                  injectable.length > 0
+                    ? "A server listed under connectedButNotInjected is running but its tools are not in this session. Call mcp_connect on it to bring its tools in."
+                    : "Use mcp_catalog to find an app that is not configured yet, then mcp_connect to connect it.",
               },
               null,
               2,
@@ -269,6 +288,10 @@ const ConnectParameters = Schema.Struct({
     description:
       "OAuth client secret, when the vendor's console showed one next to the client ID. Most of these apps work with the ID alone.",
   }),
+  address: Schema.optional(Schema.String).annotate({
+    description:
+      "The host or full URL for an `instance` app, whose endpoint holds a {placeholder}. Omit it on the first call: that returns the template and the variable name to fill. Then call again with address set to the user's own host, e.g. `myteam.example.com`.",
+  }),
 })
 
 export const McpConnectTool = Tool.define<typeof ConnectParameters, Metadata, MCP.Service | Config.Service>(
@@ -279,7 +302,7 @@ export const McpConnectTool = Tool.define<typeof ConnectParameters, Metadata, MC
     return {
       description: CONNECT_DESCRIPTION,
       parameters: ConnectParameters,
-      execute: (params) =>
+      execute: (params, ctx) =>
         Effect.gen(function* () {
           const apps = allSeedApps()
           const wanted = params.app.trim()
@@ -289,9 +312,10 @@ export const McpConnectTool = Tool.define<typeof ConnectParameters, Metadata, MC
           if (!app) return unknownApp(apps, wanted)
 
           const existing = (yield* mcp.status())[app.id]
-          if (existing?.status === "connected") return yield* report(mcp, app, existing, "Already connected.")
-          if (app.kind === "token") return yield* tokenFlow(mcp, config, app, params.token?.trim())
-          if (app.kind === "local") return yield* local(mcp, app)
+          if (existing?.status === "connected") return yield* report(mcp, app, existing, "Already connected.", ctx.sessionID)
+          if (app.kind === "token") return yield* tokenFlow(mcp, config, app, params.token?.trim(), ctx.sessionID)
+          if (app.kind === "local") return yield* local(mcp, app, ctx.sessionID)
+          if (app.kind === "instance") return yield* instanceFlow(mcp, config, app, params.address?.trim(), ctx.sessionID)
 
           const clientId = params.clientId?.trim()
           const clientSecret = params.clientSecret?.trim()
@@ -318,14 +342,14 @@ export const McpConnectTool = Tool.define<typeof ConnectParameters, Metadata, MC
           // holds a token must not re-prompt — a bad token there is reported as the
           // failure it is.
           const signedIn = yield* mcp.hasStoredTokens(app.id)
-          if (first.status === "connected") return yield* report(mcp, app, first)
-          if (first.status === "failed" && signedIn) return yield* report(mcp, app, first)
-          if (first.status === "disabled") return yield* report(mcp, app, first)
+          if (first.status === "connected") return yield* report(mcp, app, first, undefined, ctx.sessionID)
+          if (first.status === "failed" && signedIn) return yield* report(mcp, app, first, undefined, ctx.sessionID)
+          if (first.status === "disabled") return yield* report(mcp, app, first, undefined, ctx.sessionID)
 
           // The server owns the browser: it opens the consent page and this call blocks
           // until the user answers it, exactly as the Hub's connect button does.
           const exit = yield* mcp.authenticate(app.id).pipe(Effect.timeout(AUTH_WINDOW), Effect.exit)
-          if (Exit.isSuccess(exit)) return yield* report(mcp, app, exit.value, "Signed in through the browser.")
+          if (Exit.isSuccess(exit)) return yield* report(mcp, app, exit.value, "Signed in through the browser.", ctx.sessionID)
           if (Cause.hasInterruptsOnly(exit.cause)) return yield* Effect.interrupt
           return yield* report(mcp, app, { status: "failed", error: squash(exit) })
         }),
@@ -361,7 +385,8 @@ const tokenFlow = Effect.fn("McpControl.tokenFlow")(function* (
   mcp: MCP.Interface,
   config: Config.Interface,
   app: AppEntry,
-  token?: string,
+  token: string | undefined,
+  sessionID: string,
 ) {
   if (!token) {
     if (app.tokenUrl) yield* mcp.openUrl(app.tokenUrl).pipe(Effect.ignore)
@@ -373,8 +398,8 @@ const tokenFlow = Effect.fn("McpControl.tokenFlow")(function* (
   yield* config.updateGlobal({ ...global, mcp: { ...global.mcp, [app.id]: entry } })
   const added = (yield* mcp.add(app.id, entry)).status
   const first = isStatus(added) ? added : added[app.id]
-  if (first.status === "connected") return yield* report(mcp, app, first, "Connected with the key you provided.")
-  if (first.status === "failed") return yield* report(mcp, app, first)
+  if (first.status === "connected") return yield* report(mcp, app, first, "Connected with the key you provided.", sessionID)
+  if (first.status === "failed") return yield* report(mcp, app, first, undefined, sessionID)
 
   // Declared but not yet live: wake it and read back what actually happened.
   const exit = yield* mcp.connect(app.id).pipe(Effect.timeout(REMOTE_TIMEOUT_MS), Effect.exit)
@@ -388,6 +413,7 @@ const tokenFlow = Effect.fn("McpControl.tokenFlow")(function* (
     app,
     status,
     status.status === "connected" ? "Connected with the key you provided." : undefined,
+    sessionID,
   )
 })
 
@@ -420,7 +446,61 @@ function needsToken(app: AppEntry) {
   }
 }
 
-const local = Effect.fn("McpControl.local")(function* (mcp: MCP.Interface, app: AppEntry) {
+/**
+ * The two-call flow for a server that runs at the user's own address.
+ *
+ * The registry records endpoints like `https://{your-host}/mcp` for the servers a person
+ * hosts themselves. The first call returns the template and the variable to fill, because
+ * there is nothing to connect to yet and asking for the address is the whole answer; the
+ * second call writes the completed URL and connects. Without this the agent had no way to
+ * reach those rows at all — they fell through to the OAuth branch and failed.
+ */
+const instanceFlow = Effect.fn("McpControl.instanceFlow")(function* (
+  mcp: MCP.Interface,
+  config: Config.Interface,
+  app: AppEntry,
+  address: string | undefined,
+  sessionID: string,
+) {
+  const template = app.urlTemplate ?? app.url ?? ""
+  const variable = template.match(/\{([^}]+)\}/)?.[1] ?? "your-host"
+
+  if (!address) {
+    return {
+      title: `${app.name} needs your own address`,
+      metadata: { app: app.id, connected: false, needsUserAction: true, template },
+      output: JSON.stringify(
+        {
+          app: app.id,
+          name: app.name,
+          connected: false,
+          needsUserAction: true,
+          why: `${app.name} runs at an address only you know, so the endpoint is a template rather than a fixed URL.`,
+          endpointTemplate: template,
+          fill: variable,
+          example: template.replace(/\{[^}]+\}/g, "myteam.example.com"),
+          steps: [
+            `Ask the user for the host their instance runs on, which fills \`${variable}\` in \`${template}\`.`,
+            "Then call mcp_connect again on this app with address set to exactly what they gave you.",
+            "Do not claim the app is connected until that call returns connected: true.",
+          ],
+          next: "Ask the user for their host, then retry with the address parameter.",
+        },
+        null,
+        2,
+      ),
+    }
+  }
+
+  const entry = serverEntry(app, undefined, undefined, undefined, address)
+  const global = yield* config.getGlobal()
+  yield* config.updateGlobal({ ...global, mcp: { ...global.mcp, [app.id]: entry } })
+  const added = (yield* mcp.add(app.id, entry)).status
+  const first = isStatus(added) ? added : added[app.id]
+  return yield* report(mcp, app, first ?? { status: "failed", error: "the server did not answer" }, undefined, sessionID)
+})
+
+const local = Effect.fn("McpControl.local")(function* (mcp: MCP.Interface, app: AppEntry, sessionID: string) {
   const exit = yield* mcp.connect(app.id).pipe(Effect.exit)
   if (Exit.isFailure(exit)) {
     if (Cause.hasInterruptsOnly(exit.cause)) return yield* Effect.interrupt
@@ -433,10 +513,20 @@ const local = Effect.fn("McpControl.local")(function* (mcp: MCP.Interface, app: 
       error: `"${app.id}" is a local server and is not declared in this ZYRAXON's config, so there is nothing to wake. Local servers ship with the app.`,
     })
   }
-  return yield* report(mcp, app, status)
+  return yield* report(mcp, app, status, undefined, sessionID)
 })
 
-function serverEntry(app: AppEntry, token?: string, clientId?: string, clientSecret?: string): ConfigMCPV1.Info {
+function serverEntry(app: AppEntry, token?: string, clientId?: string, clientSecret?: string, address?: string): ConfigMCPV1.Info {
+  // An instance app's endpoint is a template. The host the user gave fills the placeholder,
+  // and the config gets a real URL rather than `https://{your-host}/mcp`, which no transport
+  // can open. A bare host is accepted and given a scheme so `myteam.example.com` works too.
+  if (app.kind === "instance") {
+    const template = app.urlTemplate ?? app.url
+    if (!template) throw new Error(`MCP app "${app.id}" is an instance app with no endpoint template`)
+    const host = (address ?? "").trim()
+    if (!host) throw new Error(`MCP app "${app.id}" needs the user's own address before it can be reached`)
+    return { type: "remote", url: fillEndpoint(template, host), enabled: true, timeout: REMOTE_TIMEOUT_MS } as const
+  }
   if (!app.url) throw new Error(`MCP app "${app.id}" has no endpoint in the catalog`)
   const base = { type: "remote", url: app.url, enabled: true, timeout: REMOTE_TIMEOUT_MS } as const
   // A key rides as a plain header: the server never sees an OAuth dance, it just wants
@@ -528,9 +618,15 @@ const report = Effect.fn("McpControl.report")(function* (
   app: AppEntry,
   status: MCP.Status,
   note?: string,
+  sessionID?: string,
 ) {
   const names = serverTools(Object.keys(yield* mcp.tools()), app.id)
   const connected = status.status === "connected"
+  // Connecting is what puts a server's tools into this session's tool list. Doing it
+  // here rather than at the call sites means every path that ends connected — OAuth,
+  // key, local, or already up — activates it exactly once, and a path that fails
+  // leaves the session's tool list untouched.
+  if (connected && sessionID) activateServer(sessionID, app.id)
   return {
     title: connected ? `${app.name} connected` : `${app.name} did not connect`,
     metadata: {
@@ -586,7 +682,7 @@ export const McpDisconnectTool = Tool.define<typeof DisconnectParameters, Metada
     return {
       description: DISCONNECT_DESCRIPTION,
       parameters: DisconnectParameters,
-      execute: (params) =>
+      execute: (params, ctx) =>
         Effect.gen(function* () {
           const wanted = params.app.trim()
           const app = allSeedApps().find(
@@ -622,6 +718,10 @@ export const McpDisconnectTool = Tool.define<typeof DisconnectParameters, Metada
           // Credentials go after the transport is down, so a failure here still leaves the
           // server off, and a success means the next connect cannot reuse the old key.
           yield* mcp.removeAuth(name)
+
+          // Take the server's tools back out of this session too. A disconnect that left
+          // them injected would keep the model calling tools whose server is gone.
+          deactivateServer(ctx.sessionID, name)
 
           const global = yield* config.getGlobal()
           const declared = global.mcp?.[name]

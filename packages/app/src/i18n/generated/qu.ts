@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Pukyu codigo, kachariykuna chaymanta lluqsiy qatiq",
   "settings.about.tagline": "Kay pachapi tukuy imayuq automatizacion ruwaq",
   "settings.about.description.title": "ZYRAXONmanta",
-  "settings.about.description": "ZYRAXON kay pachamanta tukuy ima hukllapi automatizacion agente kaq — huk instalación kaqmanta qillqan chaymanta codigo apachin, makinaykita chaymanta maskaqniykita purichin, 108 chiqaqchasqa MCP ruwanakuna tinkin, antawakuna chaymanta robotkuna kamachin, chaymanta huk kawsaq pantalla qhaway llalliq purichin, Windows kaqpi, macOS kaqpi chaymanta Linux kaqpi kaqlla. ZYRAXON Inc. nisqap rurasqan.",
+  "settings.about.description": "ZYRAXON kay pachamanta tukuy ima hukllapi automatizacion agente kaq — huk instalación kaqmanta qillqan chaymanta codigo apachin, makinaykita chaymanta maskaqniykita purichin, 8,200+ chiqaqchasqa MCP ruwanakuna tinkin, antawakuna chaymanta robotkuna kamachin, chaymanta huk kawsaq pantalla qhaway llalliq purichin, Windows kaqpi, macOS kaqpi chaymanta Linux kaqpi kaqlla. ZYRAXON Inc. nisqap rurasqan.",
   "settings.about.version": "Ima niraq",
   "settings.about.platform": "Plataforma",
   "settings.about.links.title": "T'inkikuna",

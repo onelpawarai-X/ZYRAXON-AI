@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Kod iwdi, yaltinnde e rewindaade caɗeele",
   "settings.about.tagline": "Waɗde otomaatik winndere ndee fof e nder gootal",
   "settings.about.description.title": "Ko fayti e ZYRAXON",
-  "settings.about.description": "ZYRAXON ko gollorde otooji winndere ndee kala e nder gootal — install gootol binndoowo e neldude kod, diwtuɗo masiŋ maa e feerorde maa, jokkondirɗo e 108 app MCP hoolkisaaɗo, jogorɗo jokkondirde e otooji e robooji, e dogginde loop yiyngo ekran nguurndam, e Windows, macOS e Linux no feewi. Ko ZYRAXON Inc mahi ɗum.",
+  "settings.about.description": "ZYRAXON ko gollorde otooji winndere ndee kala e nder gootal — install gootol binndoowo e neldude kod, diwtuɗo masiŋ maa e feerorde maa, jokkondirɗo e 8,200+ app MCP hoolkisaaɗo, jogorɗo jokkondirde e otooji e robooji, e dogginde loop yiyngo ekran nguurndam, e Windows, macOS e Linux no feewi. Ko ZYRAXON Inc mahi ɗum.",
   "settings.about.version": "Irin",
   "settings.about.platform": "Daaldal",
   "settings.about.links.title": "Jokkondire",

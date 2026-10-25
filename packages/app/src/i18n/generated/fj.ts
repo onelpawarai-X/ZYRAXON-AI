@@ -872,7 +872,7 @@ export const dict: Record<string, string> = {
   "settings.about.row.github.description": "Kodi ni ivurevure, sereki kei na dauvakadidike ni ulutaga",
   "settings.about.tagline": "Na vuravura kece-ena-dua na vakailesilesi ni automation",
   "settings.about.description.title": "Me baleta na ZYRAXON",
-  "settings.about.description": "ZYRAXON sa ikoya na vuravura kece-ena-dua na mata ni veiqaravi vakataki koya — e dua na vakacurumi ka vola ka vakauta na code, draivataka na nomu misini kei na barausa, semati 108 vakadeitaki MCP apps, lewa na motoka kei na robots, ka cicivaka e dua na sikirini bula ni raivotu ni loop, ena katubaleka, macOS kei na Linux vakatautauvata. Tara na Zyraxon Inc.",
+  "settings.about.description": "ZYRAXON sa ikoya na vuravura kece-ena-dua na mata ni veiqaravi vakataki koya — e dua na vakacurumi ka vola ka vakauta na code, draivataka na nomu misini kei na barausa, semati 8,200+ vakadeitaki MCP apps, lewa na motoka kei na robots, ka cicivaka e dua na sikirini bula ni raivotu ni loop, ena katubaleka, macOS kei na Linux vakatautauvata. Tara na Zyraxon Inc.",
   "settings.about.version": "Itabataba",
   "settings.about.platform": "Ituvatuva",
   "settings.about.links.title": "Veisemati",
