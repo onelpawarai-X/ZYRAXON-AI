@@ -157,6 +157,14 @@ export async function connectDetailFor(id: string): Promise<ConnectDetail | unde
  * so a full registry name still matches. Rows with more tools sort ahead of rows with
  * fewer when both match, on the theory that a server with twenty tools is the one they
  * meant more often than one with a single tool of the same name.
+ *
+ * Every row is read. An earlier version stopped once it had `limit * 6` matches, which
+ * looks like a cheap early exit and is not: the rows are in registry order, not in
+ * tool-count order, so the scan stopped before it had seen the rows the sort was about to
+ * promote. A one-letter term is where it showed — "ai" matched 2,636 rows, the scan broke
+ * after 360 of them, and 54 of the true top 60 were missing from the answer. The array is
+ * 8,094 entries held in memory already; reading all of it is a few milliseconds, and it is
+ * the only way the ranking can be the ranking.
  */
 export async function searchVerified(term: string, limit = 40): Promise<VerifiedHit[]> {
   const needle = term.trim().toLowerCase()
@@ -175,7 +183,6 @@ export async function searchVerified(term: string, limit = 40): Promise<Verified
     const name = row[1].toLowerCase()
     if (name.startsWith(needle)) starts.push(row)
     else if (name.includes(needle) || row[0].toLowerCase().includes(needle)) contains.push(row)
-    if (starts.length + contains.length >= limit * 6) break
   }
 
   return [...starts, ...contains]
