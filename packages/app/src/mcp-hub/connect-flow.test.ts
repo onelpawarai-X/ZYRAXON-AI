@@ -16,6 +16,7 @@
 import { describe, expect, test } from "bun:test"
 import { toServerConfig } from "../../../../MCP Hub/lib/connect"
 import { connectDetailFor, searchVerified, verifiedCount, verifiedHitToApp } from "../../../../MCP Hub/lib/verified-catalog"
+import { verifiedRows, type VerifiedRow } from "../../../../MCP Hub/catalog/verified-index"
 
 /** Every shipped row, loaded once for the whole file. */
 let allRows: Awaited<ReturnType<typeof searchVerified>> | undefined
@@ -105,5 +106,77 @@ describe("verified catalog", () => {
       const url = (config as { url?: string }).url ?? ""
       expect(url.includes("{")).toBe(false)
     }
+  })
+})
+
+/**
+ * The ranking has to be the ranking.
+ *
+ * Search used to stop scanning once it had `limit * 6` matches, on the theory that a
+ * handful of candidates is enough to sort. It is not: the index is in registry order, not
+ * in tool-count order, so the scan quit before it had seen the rows the sort was about to
+ * promote. A broad term is where it showed, and a broad term is exactly what a person
+ * types first — "ai" matched 2,636 rows, the scan broke after 360, and 54 of the true top
+ * 60 were never returned. These tests recompute the intended answer from the shipped rows
+ * and require the function to agree with it exactly, so the early exit cannot come back.
+ */
+describe("verified catalog search ranking", () => {
+  /**
+   * The answer the doc comment promises: name-starts first, then tool count, then limit.
+   *
+   * Computed from the raw index rows, in registry order — the same input `searchVerified`
+   * scans. Deriving it from `rows()` instead would sort by tool count first and hide the
+   * ordering bug this is meant to catch.
+   */
+  function expected(term: string, limit: number): string[] {
+    const needle = term.toLowerCase()
+    const starts: VerifiedRow[] = []
+    const contains: VerifiedRow[] = []
+    for (const row of verifiedRows) {
+      const name = row[1].toLowerCase()
+      if (name.startsWith(needle)) starts.push(row)
+      else if (name.includes(needle) || row[0].toLowerCase().includes(needle)) contains.push(row)
+    }
+    return [...starts, ...contains]
+      .sort((a, b) => b[6] - a[6])
+      .slice(0, limit)
+      .map((row) => row[0])
+  }
+
+  const broad: [string, number][] = [
+    ["ai", 60],
+    ["mcp", 60],
+    ["s", 60],
+    ["a", 60],
+    ["api", 40],
+    ["data", 40],
+    ["cloud", 40],
+  ]
+
+  for (const [term, limit] of broad) {
+    test(`"${term}" returns the highest-tool matches, not the first ones found`, async () => {
+      const want = expected(term, limit)
+      const got = (await searchVerified(term, limit)).map((hit) => hit.id)
+
+      expect(got.length).toBe(Math.min(limit, want.length))
+      expect(got).toEqual(want)
+      // The failure this guards against is silent: the list still fills up, with the
+      // wrong rows. Asserting the head is populated catches a "returns nothing" rewrite.
+      expect(got.length).toBeGreaterThan(0)
+    })
+  }
+
+  test("a term with few matches is unaffected", async () => {
+    for (const term of ["notion", "postgres", "slack"]) {
+      const want = expected(term, 40)
+      const got = (await searchVerified(term, 40)).map((hit) => hit.id)
+      expect(got).toEqual(want)
+    }
+  })
+
+  test("the tool-count leader is reachable by its own name", async () => {
+    const leader = verifiedRows.slice().sort((a, b) => b[6] - a[6])[0]!
+    const got = await searchVerified(leader[1], 40)
+    expect(got.some((hit) => hit.id === leader[0])).toBe(true)
   })
 })
