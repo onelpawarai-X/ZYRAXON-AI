@@ -20,7 +20,7 @@ on:
       tag:
         description: Release tag to build and attach to
         required: true
-        default: v19.0.8
+        default: v19.0.9
 
 permissions:
   contents: write

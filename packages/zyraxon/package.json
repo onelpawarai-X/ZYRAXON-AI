@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "version": "19.0.8",
+  "version": "19.0.9",
   "name": "zyraxon",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE",
