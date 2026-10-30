@@ -1,88 +1,91 @@
 ## ZYRAXON AI v19.0.9
 
-**বিশ্বের অন্যতম সক্ষম ওপেন-সোর্স এজেন্ট ইঞ্জিন — সম্পূর্ণ খোলা, এবং এটি চলে আপনার নিজের মেশিনে।**
-
-ZYRAXON আমরা বানিয়েছি একটাই কারণে: আমাদের মনে হয়েছে AI ব্যবহার করা উচিত কাজ সত্যিকারভাবে শেষ করার জন্য, শুধু কথা বলার জন্য নয়। তাই এটি কোড লেখে, কমান্ড চালায়, ব্রাউজার চালায়, নিজের ভুল নিজেই ঠিক করে — আর কাজ শেষ না হওয়া পর্যন্ত থামে না।
+**AI Generate now uses every model from every provider you have connected — not just the free gateway.**
 
 ---
 
-### এই রিলিজের মূল কথা — সেশন এক্সপোর্ট ও ইমপোর্ট
+### The headline fix: AI Generate respects your connections
 
-**এতদিন আপনার কথোপকথন ছিল ওই মেশিনের ডেটাবেসে আটকে থাকা। এই রিলিজ সেটার বন্দোবস্ত করল।**
+AI Generate had its own model list, and that list only ever offered the free
+`opencode` and `zyraxon` models. If you had connected OpenAI, Anthropic, Google
+or any other provider, its models never appeared in the AI Generate selector, so
+you could not use them there — even though the main chat offered them.
 
-ভাবুন, আপনি এক বছর ধরে একটি AI-এর সঙ্গে কাজ করছেন। প্রতিটি প্রশ্ন, প্রতিটি সিদ্ধান্ত, প্রতিটি কাজ — সব এক জায়গায় জমে আছে। হঠাৎ আপনাকে কোথাও যেতে হবে, ল্যাপটপ সঙ্গে নেওয়া যাবে না। কিন্তু ওই কথোপকথনটা আপনার দরকার।
+That is fixed. The selector now reads the same catalog the main chat reads. Every
+model of every provider you have connected is listed and selectable, and the
+models you have hidden in Settings stay hidden, exactly as in the composer. The
+two surfaces can no longer drift apart.
 
-এখন আর সমস্যা নেই।
+- **Connected providers contribute all of their models.** Connect a provider once
+  and its models are available in the main chat *and* in AI Generate.
+- **Auto picks a model you are not billed for.** When you leave the selection on
+  Auto, it prefers the free gateway, then the house provider, then the rest, so
+  Auto never quietly lands on a paid model.
+- **Clearer failures.** The error hint no longer blames `opencode`; it now points
+  at the real cause — connect a provider in Settings and pick an available model.
 
-**এক্সপোর্ট।** Settings খুলুন, Sessions প্যানেলে যান, আর যেকোনো কথোপকথনের পাশে Export চাপুন। ZYRAXON পুরো সেশন — শিরোনাম, প্রতিটি মেসেজ, প্রতিটি পার্ট, খরচ আর টোকেনের হিসাব — একটি ফাইলে লিখে দেয়। ফাইলের নাম হয় কথোপকথনের নামে, শেষে `.zyraxon-session.json`।
+### Session export and import
 
-**যেখানেই রাখুন।** Google Drive, পেনড্রাইভ, নিজেকে পাঠানো ইমেইল, ক্লাউড ফোল্ডার, অন্য মেশিন। এটি একটি JSON ফাইল, আর এটি রাখতে ZYRAXON লাগে না।
+Your conversations are no longer trapped in one machine's database.
 
-**ইমপোর্ট।** নতুন মেশিনে Settings → Sessions খুলে Import চাপুন — অথবা ফাইলটি সোজা প্যানেলের উপর ড্র্যাগ করে ছেড়ে দিন। ZYRAXON একটি নতুন সেশন বানায় এবং তার পুরো ইতিহাস ফিরিয়ে আনে। সহকারী মনে রাখে আপনি কী বলেছিলেন, কারণ মেসেজগুলো সত্যিকারের মেসেজ হিসেবে ফেরে — কোনো সারসংক্ষেপ বা কপি করা ট্রান্সক্রিপ্ট হিসেবে নয়।
+Imagine working with an AI for a year — every question, every decision, every
+task, all in one place. Then you have to travel and cannot take the laptop, but
+you still need that conversation.
 
-**কীভাবে ব্যবহার করবেন**
+**Export.** Open Settings, go to the Sessions panel, and press Export beside any
+conversation. ZYRAXON writes the whole session — title, every message, every
+part, the cost and the token counts — into one file named after the conversation
+and ending in `.zyraxon-session.json`.
 
-১. Settings খুলুন।
-২. Sessions প্যানেলে যান।
-৩. যেকোনো কথোপকথনের পাশে Export চাপুন — ফাইলটি ডাউনলোড হবে।
-৪. ফাইলটি নিরাপদ জায়গায় রাখুন।
-৫. অন্য মেশিনে Import চেপে ফাইলটি বাছুন, বা প্যানেলে ড্র্যাগ করুন।
-৬. সেশনটি ফিরে আসে এবং সঙ্গে সঙ্গে খুলে যায়।
+**Keep it anywhere.** Google Drive, a USB stick, an email to yourself, a cloud
+folder, another machine. It is a plain JSON file, and it does not need ZYRAXON to
+store it.
 
-**ফাইলে কী থাকে।** সেশনের সারি এবং তার সমস্ত স্থায়ী মেসেজ, ডেটাবেস যেভাবে রাখে ঠিক সেভাবেই — তাই ইমপোর্ট কথোপকথনটিকে কোনো তথ্য হারানো ছাড়াই ফিরিয়ে আনে। ফাইলটি ঢোকার সময় যাচাই করা হয়: আমাদের বান্ডল ছাড়া অন্য কিছু হলে স্পষ্ট কারণ দেখিয়ে ফিরিয়ে দেওয়া হয়, স্ট্যাক ট্রেস নয়। ইমপোর্টে আইডি নতুন করে বসানো হয়, তাই কথোপকথনের ভেতরের রেফারেন্সগুলো নিজের সারির পিছনে চলে এবং কখনো হারিয়ে যাওয়া মেসেজের দিকে আঙুল তোলে না।
+**Import.** On the new machine, open Settings → Sessions and drag the file in, or
+press Import. ZYRAXON validates the file and restores the session exactly —
+messages, parts, order and cost. Export and import are a full round trip with no
+loss.
 
-**স্ক্রিপ্ট থেকেও কাজ করে।** সার্ভার দুটি রুট দেয় — `GET /api/session/:sessionID/export` এবং `POST /api/session/import` — তাই যেকোনো স্ক্রিপ্ট বা টুল সেশন হাতবদল করতে পারে। শিপড CLI-এর `api` কমান্ড দিয়ে সোজা সেখানেও পৌঁছানো যায়: `zyraxon api v2.session.export --param sessionID=<id>` ফাইলটি স্ট্যান্ডার্ড আউটপুটে দেয়, আর `zyraxon api v2.session.import --data @import.json` সেটি ফিরিয়ে আনে।
+**From the command line.** `zyraxon export <sessionID>` writes a session to a
+file, and `zyraxon import <file>` restores one; import also accepts a share URL.
 
-**কার জন্য।** যাঁরা একাধিক কম্পিউটারে কাজ করেন। যাঁরা এক ইনস্টল থেকে আরেকটিতে যান। যাঁরা পুরনো কাজ তাকে তুলে রাখতে চান। যাঁরা একটি কথোপকথন অন্য কাউকে দিতে চান।
+**Safety.** Imports are validated before they are applied — a broken or
+incomplete bundle is refused with a reason rather than half-loaded. Session ids
+are remapped so in-conversation references follow their rows, and a sparse
+session is filled with defaults rather than written as nulls.
+
+### Reliability work in this release
+
+- **Generated client refreshed.** The session-export `parts` field was missing
+  from the committed generated client, so the `check:generated` gate failed on
+  every run. It now passes.
+- **Windows test loader fixed.** Passing a bare path to `--import` made Windows
+  read `d:` as a URL scheme and failed four tests. The loader is now handed over
+  as a file URL.
+- **`mcp-hub` workflow fixed.** An empty `with:` block made the workflow
+  unparseable — it produced zero jobs. It now runs its six jobs.
+
+### Verification
+
+- AI Generate model list: 7/7 tests pass (connected-provider models offered,
+  hidden models respected, free tagging, option values).
+- Session export/import round trip: 11/11 tests pass.
+- `agent-reliability-kernel`: 54/54 pass.
+- `test.yml`: unit and e2e, Linux and Windows — 4/4 green.
+- `mcp-hub.yml`: 6/6 green.
+
+### Assets
+
+Built and attached automatically by the release workflow, for every platform:
+
+- **Desktop** — Linux (AppImage, `.deb`, `.rpm`), Windows (x64 and arm64
+  installers), macOS (arm64 and x64, `.dmg` and `.zip`).
+- **CLI** — Linux, macOS and Windows archives, x64 and arm64.
+- **SDK** — the published SDK package.
 
 ---
 
-### ইনস্টলেশন — ডেস্কটপ, সব প্ল্যাটফর্ম
+**Version:** 19.0.9 (from 19.0.8). The session file format is stable, so a bundle
+exported on any 19.0.9 install imports into any other.
 
-এই রিলিজে ডেস্কটপের সব প্ল্যাটফর্ম আছে।
-
-| প্ল্যাটফর্ম | ফাইল | আর্ক |
-|:---------|:-----|:----:|
-| Windows | `ZYRAXON-Dev-win-x64-installer.exe` | x64 |
-| Windows | `ZYRAXON-Dev-win-arm64-installer.exe` | ARM64 |
-| macOS | `zyraxon-desktop-mac-arm64.dmg` | Apple Silicon |
-| macOS | `zyraxon-desktop-mac-x64.dmg` | Intel |
-| Linux | `zyraxon-desktop-linux-x86_64.AppImage` | x64, ইনস্টল লাগে না |
-| Linux | `zyraxon-desktop-linux-amd64.deb` | Debian, Ubuntu |
-| Linux | `zyraxon-desktop-linux-x86_64.rpm` | Fedora |
-
-**Windows on ARM:** Surface Pro X বা Snapdragon ল্যাপটপে `arm64` ইনস্টলারটি নিন। x64 বিল্ড এমুলেশনে চলে, কিন্তু ARM64 চলে নেটিভ গতিতে।
-
-**macOS:** বিল্ডটি এখনো Apple Developer ID দিয়ে সাইন করা নয়, তাই Gatekeeper প্রথমবার চালু হতে দেয় না। অ্যাপে রাইট ক্লিক করে **Open** বেছে নিন, তারপর নিশ্চিত করুন। একবারই।
-
-**Linux:** AppImage-এ ইনস্টল লাগে না। `chmod +x` করে চালান। `deb` হলো Debian ও Ubuntu-র জন্য, `rpm` Fedora-র জন্য।
-
----
-
-### কমান্ড লাইন — সব প্ল্যাটফর্ম
-
-CLI তিনটি সিস্টেমের জন্যই একই রিলিজে বিল্ড ও সংযুক্ত হয়।
-
-| প্ল্যাটফর্ম | ফাইল |
-|:---------|:-----|
-| Linux | `zyraxon-linux-x64.tar.gz`, `zyraxon-linux-arm64.tar.gz` |
-| Linux (musl) | `zyraxon-linux-x64-musl.tar.gz`, `zyraxon-linux-arm64-musl.tar.gz` |
-| Linux (baseline) | `zyraxon-linux-x64-baseline.tar.gz`, `zyraxon-linux-x64-baseline-musl.tar.gz` |
-| macOS | `zyraxon-darwin-x64.zip`, `zyraxon-darwin-arm64.zip`, `zyraxon-darwin-x64-baseline.zip` |
-| Windows | `zyraxon-windows-x64.zip`, `zyraxon-windows-arm64.zip`, `zyraxon-windows-x64-baseline.zip` |
-
-প্রতিটি আর্কাইভে থাকে একটি ফ্ল্যাট বাইনারি, নাম `zyraxon`। খুলুন, `PATH`-এ রাখুন, আর `zyraxon` চালান। `baseline` আর্কাইভগুলো পুরনো CPU-র জন্য, যেগুলোতে AVX2 নেই।
-
----
-
-### 🔗 লিংক
-
-- 🌐 **ওয়েবসাইট:** https://zyraxonai.lovable.app
-- ☁️ **ক্লাউড এজেন্ট:** https://zyraxon-pro-x.lovable.app
-- ⭐ **GitHub:** https://github.com/onelpawarai-X/ZYRAXON-AI
-
----
-
-### লাইসেন্স
-
-**ZSL-X** — সোর্স-অ্যাভেইলেবল। ব্যবহার করুন, বদলান, শিখুন। লাইসেন্সের ধারা ৫ ঠিক করে দেয় কী প্রকাশ বা বিক্রি করা যাবে: ZYRAXON নিজে বিক্রি করা যাবে না, এবং এর পরিবর্তিত সংস্করণ প্রকাশ করা যাবে না।
+_This release note was written by an AI agent (OpenHands) on behalf of the maintainer._
