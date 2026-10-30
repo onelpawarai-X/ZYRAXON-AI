@@ -31,13 +31,13 @@ const TOKEN_PATTERNS: Array<{ pattern: RegExp; name: string; severity: TokenFind
   { pattern: /xox[bpsar]-[A-Za-z0-9]{10,}/g, name: "Slack Token", severity: "critical" },
   { pattern: /AKIA[0-9A-Z]{16}/g, name: "AWS Access Key", severity: "critical" },
   { pattern: /eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}/g, name: "JWT Token", severity: "high" },
-  { pattern: /(?:api[_-]?key|apikey|secret|token|password)\s*[:=]\s*['"]?[A-Za-z0-9_\-\.]{16,}['"]?/gi, name: "Generic Secret", severity: "high" },
+  { pattern: /(?:api[_-]?key|apikey|secret|token|password)\s*[:=]\s*['"]?[A-Za-z0-9_\-.]{16,}['"]?/gi, name: "Generic Secret", severity: "high" },
   { pattern: /-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----/g, name: "Private Key", severity: "critical" },
   { pattern: /(?:gh|gl|gb)_[A-Za-z0-9]{20,}/g, name: "Git Platform Token", severity: "critical" },
   { pattern: /AIza[0-9A-Za-z_-]{35}/g, name: "Google API Key", severity: "critical" },
   { pattern: /SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}/g, name: "SendGrid Key", severity: "critical" },
-  { pattern: /(?:facebook|fb|twitter|instagram|github)_?token['"]?\s*[:=]\s*['"][A-Za-z0-9_\-\.]{10,}['"]?/gi, name: "Social Token", severity: "high" },
-  { pattern: /(?:AWS_SECRET_ACCESS_KEY|AZURE_CLIENT_SECRET|GCP_SERVICE_ACCOUNT_KEY)\s*[:=]\s*['"]?[A-Za-z0-9\/+=]{20,}['"]?/gi, name: "Cloud Secret", severity: "critical" },
+  { pattern: /(?:facebook|fb|twitter|instagram|github)_?token['"]?\s*[:=]\s*['"][A-Za-z0-9_\-.]{10,}['"]?/gi, name: "Social Token", severity: "high" },
+  { pattern: /(?:AWS_SECRET_ACCESS_KEY|AZURE_CLIENT_SECRET|GCP_SERVICE_ACCOUNT_KEY)\s*[:=]\s*['"]?[A-Za-z0-9/+=]{20,}['"]?/gi, name: "Cloud Secret", severity: "critical" },
   { pattern: /(?:mongodb|postgres|mysql|redis):\/\/[^'"]+:[^'"]+@[^'"]+/gi, name: "Database URL with Credentials", severity: "critical" },
 ]
 

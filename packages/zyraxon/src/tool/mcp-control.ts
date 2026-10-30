@@ -727,7 +727,7 @@ export const McpDisconnectTool = Tool.define<typeof DisconnectParameters, Metada
           const declared = global.mcp?.[name]
           yield* config.updateGlobal({
             ...global,
-            mcp: { ...global.mcp, [name]: { ...(declared ?? {}), enabled: false } },
+            mcp: { ...global.mcp, [name]: { ...declared, enabled: false } },
           })
 
           return {

@@ -745,7 +745,7 @@ export async function omniZeroTrustStrip(params: {
       { name: 'AWS Key', regex: /AKIA[0-9A-Z]{16}/g },
       { name: 'JWT Token', regex: /eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}/g },
       { name: 'Private Key', regex: /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/g },
-      { name: 'API Key', regex: /(?:api[_-]?key|apikey)\s*[:=]\s*['"]?[A-Za-z0-9_\-\.]{16,}['"]?/gi },
+      { name: 'API Key', regex: /(?:api[_-]?key|apikey)\s*[:=]\s*['"]?[A-Za-z0-9_\-.]{16,}['"]?/gi },
       { name: 'Generic Secret', regex: /(?:secret|token|password)\s*[:=]\s*['"][^'"]{12,}['"]/gi },
     ]
 

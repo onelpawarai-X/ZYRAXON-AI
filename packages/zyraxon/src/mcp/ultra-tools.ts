@@ -1414,7 +1414,7 @@ export async function ultraComplexity(args: {
     const operatorPatterns = [
       /\b(if|else|for|while|do|switch|case|return|break|continue|throw|try|catch|finally|new|delete|typeof|instanceof|void|in|of|class|extends|super|import|export|default|from|as|async|await|yield|const|let|var|function|static|public|private|protected|get|set)\b/,
       /[+\-*/%=<>!&|^~?:]+/,
-      /[{}()\[\];,.]/
+      /[{}()[\];,.]/
     ]
 
     for (const line of lines) {

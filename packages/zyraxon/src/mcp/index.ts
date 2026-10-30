@@ -282,7 +282,7 @@ const refused = (status: number, body: string) => CREDENTIAL_STATUSES.has(status
           "content-type": "application/json",
           accept: "application/json, text/event-stream",
           ...(session ? { "mcp-session-id": session } : {}),
-          ...(headers ?? {}),
+          ...headers,
         },
         body: JSON.stringify(body),
       }),
@@ -360,7 +360,7 @@ const refused = (status: number, body: string) => CREDENTIAL_STATUSES.has(status
     if (session) {
       // Nothing is done with the throwaway session, so close it instead of leaving
       // the server to hold it until it times out.
-      fetch(url, { method: "DELETE", headers: { "mcp-session-id": session, ...(headers ?? {}) } }).catch(
+      fetch(url, { method: "DELETE", headers: { "mcp-session-id": session, ...headers } }).catch(
         () => {},
       )
     }

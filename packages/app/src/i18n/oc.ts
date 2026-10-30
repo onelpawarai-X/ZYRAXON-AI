@@ -1330,7 +1330,7 @@ export const dict = {
     "Totes los atalhos son listats jos los Paramètres, e la meteissa lista se dobre amb la ligacion de claus qu'i es mostrada.",
 
   "editor.voiceInput": "Entrada vocals",
-  "provider.custom.field.apiKey.description": "Facultatif. Daissatz void se vos reglis la l\'autenticacion amb los entèstes.",
+  "provider.custom.field.apiKey.description": "Facultatif. Daissatz void se vos reglis la l'autenticacion amb los entèstes.",
   "provider.custom.models.label": "Modèls",
   "provider.custom.models.id.label": "ID",
   "provider.custom.models.id.placeholder": "id-de-modèl",
@@ -1340,10 +1340,10 @@ export const dict = {
   "provider.custom.models.add": "Apondre un modèl",
   "provider.custom.headers.label": "Entèstes (facultatiu)",
   "provider.custom.headers.key.label": "Entèsta",
-  "provider.custom.headers.key.placeholder": "Nom-de-l\'entèsta",
+  "provider.custom.headers.key.placeholder": "Nom-de-l'entèsta",
   "provider.custom.headers.value.label": "Valor",
   "provider.custom.headers.value.placeholder": "valor",
-  "provider.custom.headers.remove": "Levar l\'entèsta",
+  "provider.custom.headers.remove": "Levar l'entèsta",
   "provider.custom.headers.add": "Apondre una entèsta",
   "settings.tab.advanced.description": "Camins, entorn e comportament que cal pauc de temps tocar",
 } satisfies Partial<Record<Keys, string>>

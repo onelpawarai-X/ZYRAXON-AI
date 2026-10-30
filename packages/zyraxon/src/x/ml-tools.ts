@@ -89,7 +89,7 @@ export class NLPModel {
                 charCount: chars,
                 sentenceCount: sentences,
                 avgWordLength: words.length > 0 ? +(chars / words.length).toFixed(2) : 0,
-                uniqueWords: [...new Set(words.map(w => w.toLowerCase()))].length,
+                uniqueWords: new Set(words.map(w => w.toLowerCase())).size,
             },
         };
     }
@@ -119,7 +119,7 @@ export class NLPModel {
         while ((match = personPattern.exec(text)) !== null) {
             entities.push({ text: match[0], type: "PERSON", start: match.index, end: match.index + match[0].length });
         }
-        const datePattern = /\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\b/g;
+        const datePattern = /\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b/g;
         while ((match = datePattern.exec(text)) !== null) {
             entities.push({ text: match[0], type: "DATE", start: match.index, end: match.index + match[0].length });
         }

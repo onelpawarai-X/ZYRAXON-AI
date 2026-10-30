@@ -86,7 +86,7 @@ function parseStackTrace(stack: string): StackFrame[] {
 
 function extractErrorTokens(error: string): Set<string> {
   const tokens = new Set<string>()
-  const words = error.toLowerCase().split(/[\s:;,()\[\]{}]+/).filter((w) => w.length > 2)
+  const words = error.toLowerCase().split(/[\s:;,()[\]{}]+/).filter((w) => w.length > 2)
   for (const w of words) tokens.add(w)
   return tokens
 }

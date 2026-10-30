@@ -657,7 +657,7 @@ function yamlStringNeedsQuotes(str) {
     return true;
   if (/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]/.test(str))
     return true;
-  if (/^-/.test(str))
+  if (str.startsWith('-'))
     return true;
   if (/[\n:](\s|$)/.test(str))
     return true;
@@ -669,7 +669,7 @@ function yamlStringNeedsQuotes(str) {
     return true;
   if (/[{}`]/.test(str))
     return true;
-  if (/^\[/.test(str))
+  if (str.startsWith('['))
     return true;
   if (!isNaN(Number(str)) || ["y", "n", "yes", "no", "true", "false", "on", "off", "null"].includes(str.toLowerCase()))
     return true;
@@ -5031,7 +5031,7 @@ function transform(template, params2, testIdAttributeName2) {
     const paramsAfterHas = params2.slice(paramsCountBeforeHas + paramsCountInHas);
     params2 = paramsBeforeHas.concat([{ quote: '"', text: hasSelector }]).concat(paramsAfterHas);
   }
-  template = template.replace(/\,set([\w]+)\(([^)]+)\)/g, (_, group1, group2) => "," + group1.toLowerCase() + "=" + group2.toLowerCase()).replace(/framelocator\(([^)]+)\)/g, "$1.internal:control=enter-frame").replace(/contentframe(\(\))?/g, "internal:control=enter-frame").replace(/pierceframes(\(\))?/g, "internal:control=pierce-frames").replace(/locator\(([^)]+),hastext=([^),]+)\)/g, "locator($1).internal:has-text=$2").replace(/locator\(([^)]+),hasnottext=([^),]+)\)/g, "locator($1).internal:has-not-text=$2").replace(/locator\(([^)]+),hastext=([^),]+)\)/g, "locator($1).internal:has-text=$2").replace(/locator\(([^)]+)\)/g, "$1").replace(/getbyrole\(([^)]+)\)/g, "internal:role=$1").replace(/getbytext\(([^)]+)\)/g, "internal:text=$1").replace(/getbylabel\(([^)]+)\)/g, "internal:label=$1").replace(/getbytestid\(([^)]+)\)/g, `internal:testid=[${encodeTestIdAttributeName(testIdAttributeName2)}=$1]`).replace(/getby(placeholder|alt|title)(?:text)?\(([^)]+)\)/g, "internal:attr=[$1=$2]").replace(/first(\(\))?/g, "nth=0").replace(/last(\(\))?/g, "nth=-1").replace(/nth\(([^)]+)\)/g, "nth=$1").replace(/filter\(,?visible=true\)/g, "visible=true").replace(/filter\(,?visible=false\)/g, "visible=false").replace(/filter\(,?hastext=([^)]+)\)/g, "internal:has-text=$1").replace(/filter\(,?hasnottext=([^)]+)\)/g, "internal:has-not-text=$1").replace(/filter\(,?has2=([^)]+)\)/g, "internal:has=$1").replace(/filter\(,?hasnot2=([^)]+)\)/g, "internal:has-not=$1").replace(/,exact=false/g, "").replace(/(,name=\$\d+)(,description=\$\d+),exact=true/g, "$1s$2s").replace(/,exact=true/g, "s").replace(/,includehidden=/g, ",include-hidden=").replace(/\,/g, "][");
+  template = template.replace(/,set([\w]+)\(([^)]+)\)/g, (_, group1, group2) => "," + group1.toLowerCase() + "=" + group2.toLowerCase()).replace(/framelocator\(([^)]+)\)/g, "$1.internal:control=enter-frame").replace(/contentframe(\(\))?/g, "internal:control=enter-frame").replace(/pierceframes(\(\))?/g, "internal:control=pierce-frames").replace(/locator\(([^)]+),hastext=([^),]+)\)/g, "locator($1).internal:has-text=$2").replace(/locator\(([^)]+),hasnottext=([^),]+)\)/g, "locator($1).internal:has-not-text=$2").replace(/locator\(([^)]+),hastext=([^),]+)\)/g, "locator($1).internal:has-text=$2").replace(/locator\(([^)]+)\)/g, "$1").replace(/getbyrole\(([^)]+)\)/g, "internal:role=$1").replace(/getbytext\(([^)]+)\)/g, "internal:text=$1").replace(/getbylabel\(([^)]+)\)/g, "internal:label=$1").replace(/getbytestid\(([^)]+)\)/g, `internal:testid=[${encodeTestIdAttributeName(testIdAttributeName2)}=$1]`).replace(/getby(placeholder|alt|title)(?:text)?\(([^)]+)\)/g, "internal:attr=[$1=$2]").replace(/first(\(\))?/g, "nth=0").replace(/last(\(\))?/g, "nth=-1").replace(/nth\(([^)]+)\)/g, "nth=$1").replace(/filter\(,?visible=true\)/g, "visible=true").replace(/filter\(,?visible=false\)/g, "visible=false").replace(/filter\(,?hastext=([^)]+)\)/g, "internal:has-text=$1").replace(/filter\(,?hasnottext=([^)]+)\)/g, "internal:has-not-text=$1").replace(/filter\(,?has2=([^)]+)\)/g, "internal:has=$1").replace(/filter\(,?hasnot2=([^)]+)\)/g, "internal:has-not=$1").replace(/,exact=false/g, "").replace(/(,name=\$\d+)(,description=\$\d+),exact=true/g, "$1s$2s").replace(/,exact=true/g, "s").replace(/,includehidden=/g, ",include-hidden=").replace(/,/g, "][");
   const parts = template.split(".");
   for (let index = 0; index < parts.length - 1; index++) {
     if (parts[index] === "internal:control=enter-frame" && parts[index + 1].startsWith("nth=")) {
@@ -22785,7 +22785,7 @@ var require_ipv6 = __commonJS({
         const address6 = new _Address6(this.parsedAddress.slice(0, 6).join(":"), 6);
         const correct = address6.correctForm();
         let infix = "";
-        if (!/:$/.test(correct)) {
+        if (!correct.endsWith(':')) {
           infix = ":";
         }
         return correct + infix + address4.address;
@@ -25832,9 +25832,9 @@ var require_yazl = __commonJS({
     function validateMetadataPath(metadataPath, isDirectory) {
       if (metadataPath === "") throw new Error("empty metadataPath");
       metadataPath = metadataPath.replace(/\\/g, "/");
-      if (/^[a-zA-Z]:/.test(metadataPath) || /^\//.test(metadataPath)) throw new Error("absolute path: " + metadataPath);
+      if (/^[a-zA-Z]:/.test(metadataPath) || metadataPath.startsWith('/')) throw new Error("absolute path: " + metadataPath);
       if (metadataPath.split("/").indexOf("..") !== -1) throw new Error("invalid relative path: " + metadataPath);
-      var looksLikeDirectory = /\/$/.test(metadataPath);
+      var looksLikeDirectory = metadataPath.endsWith('/');
       if (isDirectory) {
         if (!looksLikeDirectory) metadataPath += "/";
       } else {
@@ -28385,7 +28385,7 @@ var require_yauzl = __commonJS({
       if (fileName.indexOf("\\") !== -1) {
         return "invalid characters in fileName: " + fileName;
       }
-      if (/^[a-zA-Z]:/.test(fileName) || /^\//.test(fileName)) {
+      if (/^[a-zA-Z]:/.test(fileName) || fileName.startsWith('/')) {
         return "absolute path: " + fileName;
       }
       if (fileName.split("/").indexOf("..") !== -1) {
@@ -30384,38 +30384,9 @@ var init_mjs = __esm({
     };
     process2 = globalThis.process;
     ({
-      onExit: (
-        /**
-         * Called when the process is exiting, whether via signal, explicit
-         * exit, or running out of stuff to do.
-         *
-         * If the global process object is not suitable for instrumentation,
-         * then this will be a no-op.
-         *
-         * Returns a function that may be used to unload signal-exit.
-         */
-        onExit
-      ),
-      load: (
-        /**
-         * Load the listeners.  Likely you never need to call this, unless
-         * doing a rather deep integration with signal-exit functionality.
-         * Mostly exposed for the benefit of testing.
-         *
-         * @internal
-         */
-        load
-      ),
-      unload: (
-        /**
-         * Unload the listeners.  Likely you never need to call this, unless
-         * doing a rather deep integration with signal-exit functionality.
-         * Mostly exposed for the benefit of testing.
-         *
-         * @internal
-         */
-        unload
-      )
+      onExit,
+      load,
+      unload
     } = signalExitWrap(processOk(process2) ? new SignalExit(process2) : new SignalExitFallback()));
   }
 });
@@ -36268,7 +36239,7 @@ var init_regexes = __esm({
         return /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/;
       return new RegExp(`^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-${version4}[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$`);
     };
-    email = /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/;
+    email = /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9-]*\.)+[A-Za-z]{2,}$/;
     _emoji = `^(\\p{Extended_Pictographic}|\\p{Emoji_Component})+$`;
     ipv4 = /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])$/;
     ipv6 = /^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:))$/;
@@ -38398,7 +38369,7 @@ var init_registries = __esm({
       get(schema) {
         const p = schema._zod.parent;
         if (p) {
-          const pm = { ...this.get(p) ?? {} };
+          const pm = { ...this.get(p) };
           delete pm.id;
           const f = { ...pm, ...this._map.get(schema) };
           return Object.keys(f).length ? f : void 0;
@@ -39305,7 +39276,7 @@ var init_to_json_schema = __esm({
     };
     createStandardJSONSchemaMethod = (schema, io, processors = {}) => (params2) => {
       const { libraryOptions, target } = params2 ?? {};
-      const ctx = initializeContext({ ...libraryOptions ?? {}, target, io, processors });
+      const ctx = initializeContext({ ...libraryOptions, target, io, processors });
       process4(schema, ctx);
       extractDefs(ctx, schema);
       return finalize(ctx, schema);
@@ -68362,7 +68333,7 @@ async function validateDependenciesLinux(sdkLanguage, linuxLddDirectories, dlOpe
   const allMissingDeps = new Set(missingDeps);
   const missingPackages = /* @__PURE__ */ new Set();
   const libraryToPackageNameMapping = deps[hostPlatform] ? {
-    ...deps[hostPlatform]?.lib2package || {},
+    ...deps[hostPlatform]?.lib2package,
     ...MANUAL_LIBRARY_TO_PACKAGE_NAME_UBUNTU
   } : {};
   for (const missingDep of missingDeps) {
@@ -92700,9 +92671,9 @@ var require_glob_parent = __commonJS({
     var isWin32 = require("os").platform() === "win32";
     var slash = "/";
     var backslash = /\\/g;
-    var enclosure = /[\{\[].*[\}\]]$/;
-    var globby = /(^|[^\\])([\{\[]|\([^\)]+$)/;
-    var escaped2 = /\\([\!\*\?\|\[\]\(\)\{\}])/g;
+    var enclosure = /[{[].*[}\]]$/;
+    var globby = /(^|[^\\])([{[]|\([^)]+$)/;
+    var escaped2 = /\\([!*?|[\](){}])/g;
     module3.exports = function globParent(str, opts) {
       var options2 = Object.assign({ flipBackslashes: true }, opts);
       if (options2.flipBackslashes && isWin32 && str.indexOf(slash) < 0) {
@@ -118809,7 +118780,7 @@ var init_protocol = __esm({
             jsonrpcRequest.params = {
               ...request2.params,
               _meta: {
-                ...request2.params?._meta || {},
+                ...request2.params?._meta,
                 progressToken: messageId
               }
             };
@@ -118824,7 +118795,7 @@ var init_protocol = __esm({
             jsonrpcRequest.params = {
               ...jsonrpcRequest.params,
               _meta: {
-                ...jsonrpcRequest.params?._meta || {},
+                ...jsonrpcRequest.params?._meta,
                 [RELATED_TASK_META_KEY]: relatedTask
               }
             };
@@ -118943,7 +118914,7 @@ var init_protocol = __esm({
             params: {
               ...notification.params,
               _meta: {
-                ...notification.params?._meta || {},
+                ...notification.params?._meta,
                 [RELATED_TASK_META_KEY]: options2.relatedTask
               }
             }
@@ -118977,7 +118948,7 @@ var init_protocol = __esm({
                 params: {
                   ...jsonrpcNotification2.params,
                   _meta: {
-                    ...jsonrpcNotification2.params?._meta || {},
+                    ...jsonrpcNotification2.params?._meta,
                     [RELATED_TASK_META_KEY]: options2.relatedTask
                   }
                 }
@@ -118997,7 +118968,7 @@ var init_protocol = __esm({
             params: {
               ...jsonrpcNotification.params,
               _meta: {
-                ...jsonrpcNotification.params?._meta || {},
+                ...jsonrpcNotification.params?._meta,
                 [RELATED_TASK_META_KEY]: options2.relatedTask
               }
             }
@@ -134051,7 +134022,7 @@ var require_utf7 = __commonJS({
     Utf7Codec.prototype.encoder = Utf7Encoder;
     Utf7Codec.prototype.decoder = Utf7Decoder;
     Utf7Codec.prototype.bomAware = true;
-    var nonDirectChars = /[^A-Za-z0-9'\(\),-\.\/:\? \n\r\t]+/g;
+    var nonDirectChars = /[^A-Za-z0-9'(),-./:? \n\r\t]+/g;
     function Utf7Encoder(options2, codec) {
       this.iconv = codec.iconv;
     }
@@ -134067,7 +134038,7 @@ var require_utf7 = __commonJS({
       this.inBase64 = false;
       this.base64Accum = "";
     }
-    var base64Regex = /[A-Za-z0-9\/+]/;
+    var base64Regex = /[A-Za-z0-9/+]/;
     var base64Chars = [];
     for (i2 = 0; i2 < 256; i2++) {
       base64Chars[i2] = base64Regex.test(String.fromCharCode(i2));
@@ -140067,7 +140038,7 @@ function resolutionParser(name, value2) {
 function headerParser(arg, previous) {
   if (!arg)
     return previous;
-  const result2 = { ...previous ?? {} };
+  const result2 = { ...previous };
   const colonIndex = arg.indexOf(":");
   const name = colonIndex === -1 ? arg.trim() : arg.substring(0, colonIndex).trim();
   const value2 = colonIndex === -1 ? "" : arg.substring(colonIndex + 1).trim();

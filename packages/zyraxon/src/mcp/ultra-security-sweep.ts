@@ -782,7 +782,7 @@ class PasswordAnalyzer {
     if (/[a-z]/.test(password)) charsetSize += 26
     if (/[A-Z]/.test(password)) charsetSize += 26
     if (/[0-9]/.test(password)) charsetSize += 10
-    if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(password)) charsetSize += 32
+    if (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(password)) charsetSize += 32
     if (charsetSize === 0) charsetSize = 256
 
     const entropyBits = password.length * Math.log2(charsetSize)

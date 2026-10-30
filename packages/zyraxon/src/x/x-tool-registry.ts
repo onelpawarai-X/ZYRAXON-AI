@@ -4858,7 +4858,7 @@ function analyzeCode(code: string, language: string): Record<string, unknown> {
     catchBlocks: (code.match(/\bcatch\s*(\([^)]*\))?\s*\{/g) ?? []).length,
     maxLineLength: lines.reduce((max, l) => Math.max(max, l.length), 0),
   }
-  const cyclomatic = 1 + counts.ifs + counts.loops + (code.match(/\bcase\s+/g) ?? []).length + (code.match(/\&\&|\|\|/g) ?? []).length
+  const cyclomatic = 1 + counts.ifs + counts.loops + (code.match(/\bcase\s+/g) ?? []).length + (code.match(/&&|\|\|/g) ?? []).length
   const longestLineIdx = lines.findIndex((l) => l.length === counts.maxLineLength)
   const issues: Array<{ severity: string; message: string; line?: number }> = []
   if (counts.todo > 0) issues.push({ severity: "info", message: `${counts.todo} TODO/FIXME markers` })

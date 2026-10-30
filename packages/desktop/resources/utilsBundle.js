@@ -9166,7 +9166,7 @@ var require_ipv6 = __commonJS({
         const address6 = new _Address6(this.parsedAddress.slice(0, 6).join(":"), 6);
         const correct = address6.correctForm();
         let infix = "";
-        if (!/:$/.test(correct)) {
+        if (!correct.endsWith(':')) {
           infix = ":";
         }
         return correct + infix + address4.address;
@@ -22719,7 +22719,7 @@ var require_util3 = __commonJS({
     }
     exports2.getArg = getArg;
     var urlRegexp = /^(?:([\w+\-.]+):)?\/\/(?:(\w+:\w+)@)?([\w.-]*)(?::(\d+))?(.*)$/;
-    var dataUrlRegexp = /^data:.+\,.+$/;
+    var dataUrlRegexp = /^data:.+,.+$/;
     function urlParse(aUrl) {
       var match2 = aUrl.match(urlRegexp);
       if (!match2) {
@@ -22841,7 +22841,7 @@ var require_util3 = __commonJS({
           return aPath;
         }
         aRoot = aRoot.slice(0, index);
-        if (aRoot.match(/^([^\/]+:\/)?\/*$/)) {
+        if (aRoot.match(/^([^/]+:\/)?\/*$/)) {
           return aPath;
         }
         ++level;
@@ -24473,7 +24473,7 @@ var require_source_map_support = __commonJS({
     var retrieveFile = handlerExec(retrieveFileHandlers);
     retrieveFileHandlers.push(function(path5) {
       path5 = path5.trim();
-      if (/^file:/.test(path5)) {
+      if (path5.startsWith('file:')) {
         path5 = path5.replace(/file:\/\/\/(\w:)?/, function(protocol, drive) {
           return drive ? "" : (
             // file:///C:/dir/file -> C:/dir/file
@@ -24508,10 +24508,10 @@ var require_source_map_support = __commonJS({
     function supportRelativeURL(file2, url2) {
       if (!file2) return url2;
       var dir = path4.dirname(file2);
-      var match2 = /^\w+:\/\/[^\/]*/.exec(dir);
+      var match2 = /^\w+:\/\/[^/]*/.exec(dir);
       var protocol = match2 ? match2[0] : "";
       var startPath = dir.slice(protocol.length);
-      if (protocol && /^\/\w\:/.test(startPath)) {
+      if (protocol && /^\/\w:/.test(startPath)) {
         protocol += "/";
         return protocol + path4.resolve(dir.slice(protocol.length), url2).replace(/\\/g, "/");
       }
@@ -33390,9 +33390,9 @@ var require_glob_parent = __commonJS({
     var isWin32 = require("os").platform() === "win32";
     var slash = "/";
     var backslash = /\\/g;
-    var enclosure = /[\{\[].*[\}\]]$/;
-    var globby = /(^|[^\\])([\{\[]|\([^\)]+$)/;
-    var escaped = /\\([\!\*\?\|\[\]\(\)\{\}])/g;
+    var enclosure = /[{[].*[}\]]$/;
+    var globby = /(^|[^\\])([{[]|\([^)]+$)/;
+    var escaped = /\\([!*?|[\](){}])/g;
     module2.exports = function globParent(str, opts) {
       var options2 = Object.assign({ flipBackslashes: true }, opts);
       if (options2.flipBackslashes && isWin32 && str.indexOf(slash) < 0) {
@@ -37107,9 +37107,9 @@ var require_yazl = __commonJS({
     function validateMetadataPath(metadataPath, isDirectory) {
       if (metadataPath === "") throw new Error("empty metadataPath");
       metadataPath = metadataPath.replace(/\\/g, "/");
-      if (/^[a-zA-Z]:/.test(metadataPath) || /^\//.test(metadataPath)) throw new Error("absolute path: " + metadataPath);
+      if (/^[a-zA-Z]:/.test(metadataPath) || metadataPath.startsWith('/')) throw new Error("absolute path: " + metadataPath);
       if (metadataPath.split("/").indexOf("..") !== -1) throw new Error("invalid relative path: " + metadataPath);
-      var looksLikeDirectory = /\/$/.test(metadataPath);
+      var looksLikeDirectory = metadataPath.endsWith('/');
       if (isDirectory) {
         if (!looksLikeDirectory) metadataPath += "/";
       } else {
@@ -38569,7 +38569,7 @@ var require_yauzl = __commonJS({
       if (fileName.indexOf("\\") !== -1) {
         return "invalid characters in fileName: " + fileName;
       }
-      if (/^[a-zA-Z]:/.test(fileName) || /^\//.test(fileName)) {
+      if (/^[a-zA-Z]:/.test(fileName) || fileName.startsWith('/')) {
         return "absolute path: " + fileName;
       }
       if (fileName.split("/").indexOf("..") !== -1) {
@@ -53800,7 +53800,7 @@ var require_utf7 = __commonJS({
     Utf7Codec.prototype.encoder = Utf7Encoder;
     Utf7Codec.prototype.decoder = Utf7Decoder;
     Utf7Codec.prototype.bomAware = true;
-    var nonDirectChars = /[^A-Za-z0-9'\(\),-\.\/:\? \n\r\t]+/g;
+    var nonDirectChars = /[^A-Za-z0-9'(),-./:? \n\r\t]+/g;
     function Utf7Encoder(options2, codec2) {
       this.iconv = codec2.iconv;
     }
@@ -53816,7 +53816,7 @@ var require_utf7 = __commonJS({
       this.inBase64 = false;
       this.base64Accum = "";
     }
-    var base64Regex2 = /[A-Za-z0-9\/+]/;
+    var base64Regex2 = /[A-Za-z0-9/+]/;
     var base64Chars = [];
     for (i2 = 0; i2 < 256; i2++) {
       base64Chars[i2] = base64Regex2.test(String.fromCharCode(i2));
@@ -57386,7 +57386,7 @@ var require_which = __commonJS({
         const ppRaw = pathEnv[i2];
         const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw;
         const pCmd = path4.join(pathPart, cmd);
-        const p = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd : pCmd;
+        const p = !pathPart && /^\.[\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd : pCmd;
         resolve(subStep(p, i2, 0));
       });
       const subStep = (p, i2, ii) => new Promise((resolve, reject) => {
@@ -57413,7 +57413,7 @@ var require_which = __commonJS({
         const ppRaw = pathEnv[i2];
         const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw;
         const pCmd = path4.join(pathPart, cmd);
-        const p = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd : pCmd;
+        const p = !pathPart && /^\.[\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd : pCmd;
         for (let j = 0; j < pathExt.length; j++) {
           const cur = p + pathExt[j];
           try {
@@ -58529,7 +58529,7 @@ function parsePatch(uniDiff) {
   const diffstr = uniDiff.split(/\n/), list = [];
   let i2 = 0;
   function isGitDiffHeader(line) {
-    return /^diff --git /.test(line);
+    return line.startsWith('diff --git ');
   }
   function isDiffHeader(line) {
     return isGitDiffHeader(line) || /^Index:\s/.test(line) || /^diff(?: -r \w+)+\s/.test(line);
@@ -58606,7 +58606,7 @@ function parsePatch(uniDiff) {
           if (newModeMatch) {
             index.newMode = newModeMatch[1];
           }
-          if (/^Binary files /.test(extLine)) {
+          if (extLine.startsWith('Binary files ')) {
             index.isBinary = true;
           }
           i2++;
@@ -58631,7 +58631,7 @@ function parsePatch(uniDiff) {
     }
     while (i2 < diffstr.length) {
       const line = diffstr[i2];
-      if (isDiffHeader(line) || isFileHeader(line) || /^===================================================================/.test(line)) {
+      if (isDiffHeader(line) || isFileHeader(line) || line.startsWith('===================================================================')) {
         break;
       } else if (isHunkHeader(line)) {
         index.hunks.push(parseHunk());
@@ -61220,7 +61220,7 @@ function expand_(str, max, isTop) {
     if (!m)
       return [str];
     const pre = m.pre;
-    if (/\$$/.test(m.pre)) {
+    if (m.pre.endsWith('$')) {
       const post2 = m.post.length ? expand_(m.post, max, false) : [""];
       for (let k = 0; k < post2.length && k < max; k++) {
         const expansion = pre + "{" + m.body + "}" + post2[k];
@@ -69584,9 +69584,9 @@ var uuid = (version2) => {
 var uuid4 = /* @__PURE__ */ uuid(4);
 var uuid6 = /* @__PURE__ */ uuid(6);
 var uuid7 = /* @__PURE__ */ uuid(7);
-var email = /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/;
+var email = /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9-]*\.)+[A-Za-z]{2,}$/;
 var html5Email = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-var rfc5322Email = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+var rfc5322Email = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 var unicodeEmail = /^[^\s@"]{1,64}@[^\s@]{1,255}$/u;
 var idnEmail = unicodeEmail;
 var browserEmail = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
@@ -78335,7 +78335,7 @@ var $ZodRegistry = class {
   get(schema) {
     const p = schema._zod.parent;
     if (p) {
-      const pm = { ...this.get(p) ?? {} };
+      const pm = { ...this.get(p) };
       delete pm.id;
       const f = { ...pm, ...this._map.get(schema) };
       return Object.keys(f).length ? f : void 0;
@@ -79744,7 +79744,7 @@ var createToJSONSchemaMethod = (schema, processors = {}) => (params) => {
 };
 var createStandardJSONSchemaMethod = (schema, io, processors = {}) => (params) => {
   const { libraryOptions, target } = params ?? {};
-  const ctx = initializeContext({ ...libraryOptions ?? {}, target, io, processors });
+  const ctx = initializeContext({ ...libraryOptions, target, io, processors });
   process11(schema, ctx);
   extractDefs(ctx, schema);
   return finalize(ctx, schema);
@@ -83324,7 +83324,7 @@ var uuidRegex = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]
 var nanoidRegex = /^[a-z0-9_-]{21}$/i;
 var jwtRegex = /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/;
 var durationRegex = /^[-+]?P(?!$)(?:(?:[-+]?\d+Y)|(?:[-+]?\d+[.,]\d+Y$))?(?:(?:[-+]?\d+M)|(?:[-+]?\d+[.,]\d+M$))?(?:(?:[-+]?\d+W)|(?:[-+]?\d+[.,]\d+W$))?(?:(?:[-+]?\d+D)|(?:[-+]?\d+[.,]\d+D$))?(?:T(?=[\d+-])(?:(?:[-+]?\d+H)|(?:[-+]?\d+[.,]\d+H$))?(?:(?:[-+]?\d+M)|(?:[-+]?\d+[.,]\d+M$))?(?:[-+]?\d+(?:[.,]\d+)?S)?)??$/;
-var emailRegex = /^(?!\.)(?!.*\.\.)([A-Z0-9_'+\-\.]*)[A-Z0-9_+-]@([A-Z0-9][A-Z0-9\-]*\.)+[A-Z]{2,}$/i;
+var emailRegex = /^(?!\.)(?!.*\.\.)([A-Z0-9_'+\-.]*)[A-Z0-9_+-]@([A-Z0-9][A-Z0-9-]*\.)+[A-Z]{2,}$/i;
 var _emojiRegex = `^(\\p{Extended_Pictographic}|\\p{Emoji_Component})+$`;
 var emojiRegex;
 var ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])$/;
@@ -88303,7 +88303,7 @@ var zodPatterns = {
   /**
    * `a-z` was added to replicate /i flag
    */
-  email: /^(?!\.)(?!.*\.\.)([a-zA-Z0-9_'+\-\.]*)[a-zA-Z0-9_+-]@([a-zA-Z0-9][a-zA-Z0-9\-]*\.)+[a-zA-Z]{2,}$/,
+  email: /^(?!\.)(?!.*\.\.)([a-zA-Z0-9_'+\-.]*)[a-zA-Z0-9_+-]@([a-zA-Z0-9][a-zA-Z0-9-]*\.)+[a-zA-Z]{2,}$/,
   /**
    * Constructed a valid Unicode RegExp
    *
@@ -89818,7 +89818,7 @@ var Protocol = class {
         jsonrpcRequest.params = {
           ...request.params,
           _meta: {
-            ...request.params?._meta || {},
+            ...request.params?._meta,
             progressToken: messageId
           }
         };
@@ -89833,7 +89833,7 @@ var Protocol = class {
         jsonrpcRequest.params = {
           ...jsonrpcRequest.params,
           _meta: {
-            ...jsonrpcRequest.params?._meta || {},
+            ...jsonrpcRequest.params?._meta,
             [RELATED_TASK_META_KEY]: relatedTask
           }
         };
@@ -89952,7 +89952,7 @@ var Protocol = class {
         params: {
           ...notification.params,
           _meta: {
-            ...notification.params?._meta || {},
+            ...notification.params?._meta,
             [RELATED_TASK_META_KEY]: options2.relatedTask
           }
         }
@@ -89986,7 +89986,7 @@ var Protocol = class {
             params: {
               ...jsonrpcNotification2.params,
               _meta: {
-                ...jsonrpcNotification2.params?._meta || {},
+                ...jsonrpcNotification2.params?._meta,
                 [RELATED_TASK_META_KEY]: options2.relatedTask
               }
             }
@@ -90006,7 +90006,7 @@ var Protocol = class {
         params: {
           ...jsonrpcNotification.params,
           _meta: {
-            ...jsonrpcNotification.params?._meta || {},
+            ...jsonrpcNotification.params?._meta,
             [RELATED_TASK_META_KEY]: options2.relatedTask
           }
         }

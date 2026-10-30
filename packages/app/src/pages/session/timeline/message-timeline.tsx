@@ -1172,7 +1172,7 @@ export function MessageTimeline(props: {
     const remaining = fullText.slice(alreadySent.length).trim()
     if (remaining.length === 0) return
 
-    const sentences = remaining.split(/(?<=[।!?\.\n])\s*/)
+    const sentences = remaining.split(/(?<=[।!?.\n])\s*/)
     let buffer = ""
     for (const sentence of sentences) {
       if (buffer.length + sentence.length > 300 && buffer.length > 0) {

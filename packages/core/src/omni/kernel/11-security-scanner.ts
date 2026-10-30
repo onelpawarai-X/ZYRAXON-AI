@@ -41,7 +41,7 @@ const OWASP_RULES: Array<{
 
 const ENDPOINT_PATTERNS: Array<{ name: string; pattern: RegExp; severity: SecurityFinding["severity"] }> = [
   { name: "No Auth Endpoint", pattern: /app\.(get|post|put|delete|patch)\(\s*['"][^'"]+['"]\s*,\s*(?!.*auth|.*jwt|.*verify|.*token)/gi, severity: "medium" },
-  { name: "Hardcoded Secret", pattern: /(?:secret|key|token|password)\s*[:=]\s*['"][A-Za-z0-9_\-\.]{20,}['"]/gi, severity: "critical" },
+  { name: "Hardcoded Secret", pattern: /(?:secret|key|token|password)\s*[:=]\s*['"][A-Za-z0-9_\-.]{20,}['"]/gi, severity: "critical" },
   { name: "SQL Injection Risk", pattern: /(?:query|execute)\s*\(\s*['"`].*\$\{/g, severity: "critical" },
   { name: "Command Injection Risk", pattern: /(?:exec|spawn|execSync)\s*\(\s*`[^`]*\$\{/g, severity: "critical" },
   { name: "Path Traversal Risk", pattern: /\.\.\/|\.\.\\|path\.join\(.*req\./gi, severity: "high" },

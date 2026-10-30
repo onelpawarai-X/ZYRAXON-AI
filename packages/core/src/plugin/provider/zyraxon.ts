@@ -147,7 +147,7 @@ export const ZyraxonPlugin = define<HttpClient.HttpClient | EventV2.Service | Sc
             if (config.variants !== undefined) {
               model.variants = Object.entries(config.variants).map(([id, options]) => ({
                 id: ModelV2.VariantID.make(id),
-                headers: { ...(options.headers ?? {}) },
+                headers: { ...options.headers },
                 body: lowerer.request(withoutCredentials(options)),
               }))
             }

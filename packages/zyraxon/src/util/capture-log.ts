@@ -74,14 +74,14 @@ export function captureLog(scope: string, message: string, data?: Record<string,
       id: randomUUID().slice(0, 8),
       scope,
       message,
-      ...(data ?? {}),
+      ...data,
     }
     appendFileSync(path, safeStringify(record) + "\n", "utf8")
   } catch {}
 }
 
 export function captureRequestError(scope: string, input: { url?: string; headers?: Record<string, string> }, error: unknown) {
-  const headers = { ...(input.headers ?? {}) }
+  const headers = { ...input.headers }
   for (const h of ["authorization", "x-api-key", "api-key", "token", "cookie"]) {
     if (headers[h]) headers[h] = "[REDACTED]"
   }
@@ -97,7 +97,7 @@ export function captureHttpStatus(
   input: { url?: string; headers?: Record<string, string> },
   response: { status: number; statusText?: string; body?: string },
 ) {
-  const headers = { ...(input.headers ?? {}) }
+  const headers = { ...input.headers }
   for (const h of ["authorization", "x-api-key", "api-key", "token", "cookie"]) {
     if (headers[h]) headers[h] = "[REDACTED]"
   }

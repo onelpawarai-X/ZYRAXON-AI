@@ -18,8 +18,8 @@ const SECRET_PATTERNS: Array<{ pattern: RegExp; name: string; severity: "critica
   { pattern: /eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}/g, name: "JWT Token", severity: "high" },
   { pattern: /-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----/g, name: "Private Key", severity: "critical" },
   { pattern: /(?:gh|gl|gb)_[A-Za-z0-9]{20,}/g, name: "Git Platform Token", severity: "critical" },
-  { pattern: /(?:facebook|fb|twitter|instagram)_token['"]?\s*[:=]\s*['"][A-Za-z0-9_\-\.]{10,}['"]/gi, name: "Social Media Token", severity: "high" },
-  { pattern: /(?:api[_-]?key|apikey|secret|token|password|passwd|credential|auth)\s*[:=]\s*['"]?[A-Za-z0-9_\-\.]{16,}['"]?/gi, name: "Generic Secret", severity: "high" },
+  { pattern: /(?:facebook|fb|twitter|instagram)_token['"]?\s*[:=]\s*['"][A-Za-z0-9_\-.]{10,}['"]/gi, name: "Social Media Token", severity: "high" },
+  { pattern: /(?:api[_-]?key|apikey|secret|token|password|passwd|credential|auth)\s*[:=]\s*['"]?[A-Za-z0-9_\-.]{16,}['"]?/gi, name: "Generic Secret", severity: "high" },
 ]
 
 const CONTEXTUAL_PATTERNS: Array<{ pattern: RegExp; name: string }> = [
@@ -221,7 +221,7 @@ function containsApiKeyPattern(input: string): boolean {
 
 function aggressiveScan(input: string): Array<{ type: string; severity: string; original: string; replaced: string }> {
   const findings: Array<{ type: string; severity: string; original: string; replaced: string }> = []
-  const longTokens = input.match(/[A-Za-z0-9_\-]{24,}/g) ?? []
+  const longTokens = input.match(/[A-Za-z0-9_-]{24,}/g) ?? []
   for (const token of longTokens) {
     if (token.length >= 24 && !isCommonWord(token)) {
       const placeholder = `[KEY_REDACTED:${deterministicHash(token).toString(36)}]`
