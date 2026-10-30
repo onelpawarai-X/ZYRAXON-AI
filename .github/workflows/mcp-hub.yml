@@ -90,10 +90,9 @@ jobs:
 
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
-        with:
-          # Bun comes from the version pinned in package.json, so this job installs
-          # with the same Bun the release workflows do. The retry in setup-bun stays
-          # as a second line of defence against the Windows patch race.
+        # Bun comes from the version pinned in package.json, so this job installs
+        # with the same Bun the release workflows do. The retry in setup-bun stays
+        # as a second line of defence against the Windows patch race.
 
       - name: Install uv
         uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
