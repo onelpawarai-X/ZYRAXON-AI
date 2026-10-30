@@ -660,7 +660,7 @@ export class TestLLMServer extends Context.Service<TestLLMServer, TestLLMServer.
         const ready = waits.filter((item) => hits.length >= item.count)
         if (!ready.length) return
         waits = waits.filter((item) => hits.length < item.count)
-        yield* Effect.forEach(ready, (item) => Deferred.succeed(item.ready, void 0))
+        yield* Effect.forEach(ready, (item) => Deferred.succeed(item.ready, undefined))
       })
 
       const pull = (hit: Hit) => {
