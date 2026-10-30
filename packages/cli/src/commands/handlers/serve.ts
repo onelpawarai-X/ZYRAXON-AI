@@ -2,6 +2,7 @@
 
 import { NodeHttpServer } from "@effect/platform-node"
 import { Credential } from "@zyraxon-ai/core/credential"
+import { Database } from "@zyraxon-ai/core/database/database"
 import { AppNodeBuilder } from "@zyraxon-ai/core/effect/app-node-builder"
 import { LayerNode } from "@zyraxon-ai/core/effect/layer-node"
 import { PermissionSaved } from "@zyraxon-ai/core/permission/saved"
@@ -42,7 +43,7 @@ function bind(hostname: string, port: number, password: string) {
   return Layer.build(
     HttpRouter.serve(createRoutes(password), { disableListenLog: true, disableLogger: true }).pipe(
       Layer.provideMerge(NodeHttpServer.layer(() => createServer(), { port, host: hostname })),
-      Layer.provide(AppNodeBuilder.build(LayerNode.group([Credential.node, PermissionSaved.node]))),
+      Layer.provide(AppNodeBuilder.build(LayerNode.group([Credential.node, PermissionSaved.node, Database.node]))),
     ),
   ).pipe(Effect.map((context) => Context.get(context, HttpServer.HttpServer).address))
 }

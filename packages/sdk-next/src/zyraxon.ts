@@ -2,6 +2,7 @@
 
 import { Zyraxon } from "@zyraxon-ai/client/effect"
 import { AppNodeBuilder } from "@zyraxon-ai/core/effect/app-node-builder"
+import { Database } from "@zyraxon-ai/core/database/database"
 import { LayerNode } from "@zyraxon-ai/core/effect/layer-node"
 import { PermissionSaved } from "@zyraxon-ai/core/permission/saved"
 import { ApplicationTools } from "@zyraxon-ai/core/tool/application-tools"
@@ -13,7 +14,7 @@ export const create = Effect.fn("Zyraxon.create")(function* () {
   const scope = yield* Scope.Scope
   const memoMap = yield* Layer.makeMemoMap
   const context = yield* Layer.buildWithMemoMap(
-    AppNodeBuilder.build(LayerNode.group([ApplicationTools.node, PermissionSaved.node])),
+    AppNodeBuilder.build(LayerNode.group([ApplicationTools.node, PermissionSaved.node, Database.node])),
     memoMap,
     scope,
   )
@@ -31,7 +32,7 @@ export const create = Effect.fn("Zyraxon.create")(function* () {
     ),
     (web) => Effect.promise(web.dispose),
   )
-  const fetch = Object.assign((input: RequestInfo | URL, init?: RequestInit) => web.handler(new Request(input, init)), {
+  const fetch = Object.assign((input: RequestInfo | URL, init?: RequestInit) => web.handler(new Request(input, init), context), {
     preconnect: () => undefined,
   }) satisfies typeof globalThis.fetch
   const client = yield* Zyraxon.make({ baseUrl: "http://opencode.local" }).pipe(
