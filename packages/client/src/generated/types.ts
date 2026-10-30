@@ -1787,6 +1787,7 @@ export type SessionsExportOutput = {
     readonly seq: number
     readonly time_created: number
     readonly data: JsonValue
+    readonly parts: ReadonlyArray<{ readonly id: string; readonly time_created: number; readonly data: JsonValue }>
   }>
 }
 
@@ -1823,6 +1824,7 @@ export type SessionsImportInput = {
         readonly seq: number
         readonly time_created: number
         readonly data: JsonValue
+        readonly parts: ReadonlyArray<{ readonly id: string; readonly time_created: number; readonly data: JsonValue }>
       }>
     }
     readonly location?: { readonly directory: string; readonly workspaceID?: string } | null
@@ -1859,6 +1861,7 @@ export type SessionsImportInput = {
         readonly seq: number
         readonly time_created: number
         readonly data: JsonValue
+        readonly parts: ReadonlyArray<{ readonly id: string; readonly time_created: number; readonly data: JsonValue }>
       }>
     }
     readonly location?: { readonly directory: string; readonly workspaceID?: string } | null
