@@ -106,7 +106,8 @@ function findChromePath(): string {
 }
 
 function launchChromeWithCDP(port: number): Promise<{ pid: number; wsUrl: string }> {
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve, reject) => {
+    void (async () => {
     const { spawn } = require("child_process")
     const chromePath = findChromePath()
 
@@ -155,6 +156,7 @@ function launchChromeWithCDP(port: number): Promise<{ pid: number; wsUrl: string
 
     child.kill()
     reject(new Error("Chrome did not start CDP server within 15 seconds"))
+    })().catch(reject)
   })
 }
 

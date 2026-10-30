@@ -2109,7 +2109,8 @@ export class AlgorithmBenchmarker {
     opsPerSecond: number;
     avgTimePerOp: number;
   }> {
-    return new Promise(async (resolve) => {
+    return new Promise((resolve, reject) => {
+      void (async () => {
       let totalOps = 0;
       const startTime = performance.now();
 
@@ -2124,6 +2125,7 @@ export class AlgorithmBenchmarker {
         opsPerSecond: (totalOps / elapsed) * 1000,
         avgTimePerOp: elapsed / totalOps
       });
+      })().catch(reject);
     });
   }
 
