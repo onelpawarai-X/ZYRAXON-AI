@@ -1,6 +1,6 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-﻿// @refresh reload
+// @refresh reload
 
 import {
   ACCEPTED_FILE_EXTENSIONS,

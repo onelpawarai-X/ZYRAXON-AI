@@ -96,7 +96,10 @@ export const AppViewer: Component<AppViewerProps> = (props) => {
     setIsLoading(true)
     setError(null)
     if (iframeRef) {
-      iframeRef.src = iframeRef.src
+      // Re-setting the src attribute reloads the frame. A cross-origin frame
+      // cannot be reloaded through contentWindow.location, so the attribute is
+      // the only option here.
+      iframeRef.setAttribute("src", iframeRef.src)
     }
   }
 

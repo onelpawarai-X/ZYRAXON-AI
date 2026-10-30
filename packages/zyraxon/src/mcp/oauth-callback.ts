@@ -246,9 +246,10 @@ export async function ensureRunning(redirectUri?: string): Promise<void> {
     if (code === "EADDRINUSE") {
       throw new Error(
         `Cannot complete sign-in: local port ${port} is already in use, so the browser's reply cannot reach ZYRAXON. Close whatever is using it and try again.`,
+        { cause: e },
       )
     }
-    throw new Error(`Cannot start the sign-in listener on 127.0.0.1:${port} — ${(e as Error).message}`)
+    throw new Error(`Cannot start the sign-in listener on 127.0.0.1:${port} — ${(e as Error).message}`, { cause: e })
   }
 
   server = created

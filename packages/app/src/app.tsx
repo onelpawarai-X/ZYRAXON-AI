@@ -1,6 +1,6 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-﻿import "@/index.css"
+import "@/index.css"
 import * as Sentry from "@sentry/solid"
 import { I18nProvider } from "@zyraxon-ai/ui/context"
 import { DialogProvider } from "@zyraxon-ai/ui/context/dialog"

@@ -1,6 +1,6 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-﻿import { Component, Show, createMemo, createResource } from "solid-js"
+import { Component, Show, createMemo, createResource } from "solid-js"
 import { useParams } from "@solidjs/router"
 import { createMediaQuery } from "@solid-primitives/media"
 import { ButtonV2 } from "@zyraxon-ai/ui/v2/button-v2"
@@ -156,7 +156,7 @@ export const SettingsGeneralV2: Component<{
   )
 
   const [pinchZoom, { mutate: setPinchZoom }] = createResource(
-    () => (desktop() && platform.getPinchZoomEnabled ? true : false),
+    () => Boolean(desktop() && platform.getPinchZoomEnabled),
     () => Promise.resolve(platform.getPinchZoomEnabled?.() ?? false).catch(() => false),
     { initialValue: false },
   )

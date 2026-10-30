@@ -375,7 +375,7 @@ export const FFIType = { void:0, i8:1, u8:2, i16:3, u16:4, i32:5, u32:6, i64:7, 
     publicDir: "../../../app/public",
     root: "src/renderer",
     build: {
-      sourcemap: process.env.SENTRY_AUTH_TOKEN ? true : false,
+      sourcemap: Boolean(process.env.SENTRY_AUTH_TOKEN),
       rollupOptions: {
         input: {
           main: "src/renderer/index.html",

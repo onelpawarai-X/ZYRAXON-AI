@@ -1,6 +1,6 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-﻿export function initializationData<A>(state: (() => A | undefined) & { error: unknown }) {
+export function initializationData<A>(state: (() => A | undefined) & { error: unknown }) {
   if (state.error !== undefined) throw markLocalServerStartup(state.error)
   return state()
 }

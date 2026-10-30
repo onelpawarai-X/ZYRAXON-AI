@@ -70,7 +70,7 @@ function modelKey(model: ModelKey) {
 export const { use: useModels, provider: ModelsProvider } = createSimpleContext({
   name: "Models",
   gate: false,
-  init: (props: { directory?: Accessor<string | undefined> } = {}) => {
+  init: (props: { directory?: Accessor<string | undefined> }) => {
     const providers = useProviders(props.directory)
     const server = useServer()
     const serverUrl = () => server.current?.http?.url

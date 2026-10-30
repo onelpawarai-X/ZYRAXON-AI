@@ -503,7 +503,7 @@ async function generateWithNodeLlama(opts: GenerateOptions): Promise<GenerateRes
       evalTimeMs: elapsed,
     };
   } catch (err: any) {
-    throw new Error(`node-llama-cpp failed: ${err.message}`);
+    throw new Error(`node-llama-cpp failed: ${err.message}`, { cause: err });
   }
 }
 

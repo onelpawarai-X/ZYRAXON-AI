@@ -1,6 +1,6 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-﻿import type {
+import type {
   Config,
   McpResource,
   ZyraxonClient,
