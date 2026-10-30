@@ -1,163 +1,235 @@
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
+# Let the AI do the work, then prove the work with the machine instead of a
+# person.
+#
+# The agent runs headless in the target checkout and pushes a branch. This
+# workflow then calls the verification gate against that branch, and only opens a
+# pull request when every gate passed. A branch that does not verify fails the run
+# and carries a red commit status, so nothing downstream — a reviewer, a merge
+# queue, a branch protection rule — has to read a log to find out whether the work
+# is real.
+#
+# The gates are the target repository's own scripts, discovered from its
+# `package.json` (profile `auto`), plus this repository's gates when verifying
+# this repository. See `.github/workflows/verify-gate.yml` and
+# `packages/agent-reliability-kernel/src/verify-cli.ts`.
 name: ZYRAXON AI Agent
+
 on:
   workflow_dispatch:
     inputs:
       target_repo:
-        description: 'Target repository (owner/repo)'
+        description: "Target repository (owner/repo)"
         required: true
       target_branch:
-        description: 'Target branch'
+        description: "Branch to open the pull request against"
         required: false
-        default: 'main'
+        default: "main"
       issue_number:
-        description: 'Issue number to fix'
+        description: "Issue number to fix"
         required: false
       fix_description:
-        description: 'What to fix'
+        description: "What to fix"
         required: true
+      verify_profile:
+        description: "How much to verify before the pull request is opened"
+        type: choice
+        options: [auto, quick, full, containers, all]
+        default: auto
       user_token:
-        description: 'User GitHub token'
+        description: "GitHub token with write access to the target repository"
         required: true
 
 permissions:
   contents: write
   pull-requests: write
   issues: write
+  statuses: write
 
 jobs:
   zyraxon-fix:
+    name: fix and verify
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - name: Checkout ZYRAXON-AI
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Bun and install dependencies
+        uses: ./.github/actions/setup-bun
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+      - name: Install the ZYRAXON CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/onelpawarai-X/ZYRAXON-AI/main/install | bash
+          echo "$HOME/.zyraxon/bin" >> "$GITHUB_PATH"
 
       - name: Configure Git
         run: |
           git config --global user.name "ZYRAXON-AI"
           git config --global user.email "zyraxon@zyraxonai.com"
 
-      - name: Clone Target Repository
+      - name: Clone the target repository
         env:
           USER_TOKEN: ${{ inputs.user_token }}
         run: |
+          set -euo pipefail
           REPO="${{ inputs.target_repo }}"
           BRANCH="${{ inputs.target_branch }}"
           git clone "https://x-access-token:${USER_TOKEN}@github.com/${REPO}.git" target-repo
           cd target-repo
-          git checkout "${BRANCH}" || git checkout main || git checkout master
+          git checkout "${BRANCH}"
 
-      - name: Install Dependencies
+      # The real work: the agent edits the target checkout in place. The prompt
+      # states the acceptance bar so the agent aims at what the gates check, and
+      # `--auto` keeps the run non-interactive so it can complete unattended.
+      - name: Run the agent
+        env:
+          ZYRAXON_API_KEY: ${{ secrets.ZYRAXON_API_KEY }}
         run: |
+          set -euo pipefail
           cd target-repo
-          if [ -f "package.json" ]; then
-            npm install || bun install || yarn install
+          PROMPT="$(printf '%s\n' \
+            "Repository: ${{ inputs.target_repo }}" \
+            "Branch: ${{ inputs.target_branch }}" \
+            "Issue: #${{ inputs.issue_number }}" \
+            "" \
+            "Task: ${{ inputs.fix_description }}" \
+            "" \
+            "Work directly in this checkout. Make the change, then make it true:" \
+            "- The code must typecheck." \
+            "- The existing tests must still pass, and you must add a test for the change." \
+            "- Do not leave a stub, a placeholder, or a commented-out path behind." \
+            "When you are done, stop. A separate step runs the gates and decides.")"
+          zyraxon run "${PROMPT}" --auto 2>&1 | tee /tmp/agent.log || true
+
+      - name: Detect whether the agent changed anything
+        id: diff
+        run: |
+          set -euo pipefail
+          cd target-repo
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::The agent produced no changes; there is nothing to verify."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git --no-pager diff --stat
           fi
-          if [ -f "requirements.txt" ]; then
-            pip install -r requirements.txt
-          fi
-          if [ -f "Cargo.toml" ]; then
-            cargo build --release || true
-          fi
 
-      - name: Analyze Issue
-        id: analyze
+      - name: Commit and push the branch
+        if: steps.diff.outputs.changed == 'true'
+        id: push
+        env:
+          USER_TOKEN: ${{ inputs.user_token }}
         run: |
+          set -euo pipefail
           cd target-repo
-          ISSUE="${{ inputs.issue_number }}"
-          DESC="${{ inputs.fix_description }}"
-          echo "## ZYRAXON AI Analysis" > /tmp/analysis.md
-          echo "" >> /tmp/analysis.md
-          echo "Issue: #${ISSUE}" >> /tmp/analysis.md
-          echo "Description: ${DESC}" >> /tmp/analysis.md
-          echo "" >> /tmp/analysis.md
-          echo "### Files to modify:" >> /tmp/analysis.md
-          find . -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" -o -name "*.py" -o -name "*.rs" | head -20 >> /tmp/analysis.md
-
-      - name: Apply Fix
-        run: |
-          cd target-repo
-          echo "Applying ZYRAXON AI fix..."
-          echo "# ZYRAXON AI fix applied at $(date -u)" >> .zyraxon-fix.log
-
-      - name: Create Branch
-        run: |
-          cd target-repo
-          BRANCH="zyraxon-fix-$(date +%s)"
+          BRANCH="zyraxon-fix-$(date +%Y%m%d%H%M%S)"
           git checkout -b "${BRANCH}"
-          echo "BRANCH_NAME=${BRANCH}" >> $GITHUB_ENV
-
-      - name: Commit Changes
-        run: |
-          cd target-repo
           git add -A
           git commit --author="ZYRAXON-AI <zyraxon@zyraxonai.com>" \
             -m "fix(zyraxon): ${{ inputs.fix_description }}
 
           Applied by ZYRAXON AI Agent
           Issue: #${{ inputs.issue_number }}
-          Repository: ${{ inputs.target_repo }}" || echo "No changes to commit"
-
-      - name: Push Changes
-        env:
-          USER_TOKEN: ${{ inputs.user_token }}
-        run: |
-          cd target-repo
+          Repository: ${{ inputs.target_repo }}"
           REPO="${{ inputs.target_repo }}"
-          git push "https://x-access-token:${USER_TOKEN}@github.com/${REPO}.git" "${BRANCH_NAME}"
+          git push "https://x-access-token:${USER_TOKEN}@github.com/${REPO}.git" "${BRANCH}"
+          echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
 
-      - name: Create Pull Request
+      # Verification runs before the pull request is opened, so an unverified
+      # branch never reaches a reviewer as if it were ready. This is the step that
+      # replaces the human check.
+      - name: Verify the change
+        if: steps.diff.outputs.changed == 'true'
+        id: verify
+        uses: ./.github/actions/verify-gate
+        with:
+          profile: ${{ inputs.verify_profile }}
+          root: ${{ github.workspace }}/target-repo
+
+      # The repository's own gates prove the code is sound. When the target also
+      # declares external evaluators, this runs *those* — a hosted grader, a test
+      # suite, the SWE-bench harness — and reads a score back, so a system the
+      # agent was connected to reports the result instead of a person running it.
+      # No config means nothing is scored, and the pull request is still gated on
+      # the gates above rather than on a claim.
+      - name: Score the change against external systems
+        if: steps.diff.outputs.changed == 'true'
+        id: score
+        continue-on-error: true
+        uses: ./.github/actions/auto-verify
+        with:
+          root: ${{ github.workspace }}/target-repo
+
+      - name: Open the pull request
+        if: steps.diff.outputs.changed == 'true' && steps.verify.outputs.ok == 'true'
         env:
           GH_TOKEN: ${{ inputs.user_token }}
         run: |
+          set -euo pipefail
           cd target-repo
-          gh pr create \
+          REPO="${{ inputs.target_repo }}"
+          if [ "${{ steps.score.outputs.scored }}" = "true" ]; then
+            scored="External evaluators ran and scored: **${{ steps.score.outputs.ok }}**."
+          else
+            scored="No external evaluator config was present, so only the repository gates scored this branch."
+          fi
+          gh pr create --repo "${REPO}" \
             --title "fix(zyraxon): ${{ inputs.fix_description }}" \
-            --body "## ZYRAXON AI Auto-Fix
-
-          **Issue:** #${{ inputs.issue_number }}
-          **Description:** ${{ inputs.fix_description }}
-          **Repository:** ${{ inputs.target_repo }}
-
-          ---
-          *Applied by ZYRAXON AI Agent*
-          *Author: ZYRAXON-AI <zyraxon@zyraxonai.com>*" \
+            --body "$(printf '%s\n' \
+              "## ZYRAXON AI Auto-Fix" \
+              "" \
+              "**Issue:** #${{ inputs.issue_number }}" \
+              "**Description:** ${{ inputs.fix_description }}" \
+              "**Repository:** ${{ inputs.target_repo }}" \
+              "" \
+              "### Verification" \
+              "" \
+              "Every gate passed before this pull request was opened (profile: \`${{ inputs.verify_profile }}\`)." \
+              "${scored}" \
+              "" \
+              "---" \
+              "*Applied and verified by ZYRAXON AI Agent*")" \
             --base "${{ inputs.target_branch }}" \
-            --head "${BRANCH_NAME}"
+            --head "${{ steps.push.outputs.branch }}"
 
-      - name: Comment on Issue
-        if: inputs.issue_number
+      - name: Comment on the issue
+        if: always() && inputs.issue_number && steps.diff.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ inputs.user_token }}
         run: |
+          set -euo pipefail
           cd target-repo
           REPO="${{ inputs.target_repo }}"
-          ISSUE="${{ inputs.issue_number }}"
-          gh issue comment "${ISSUE}" \
-            --body "## 🤖 ZYRAXON AI has proposed a fix!
+          if [ "${{ steps.verify.outputs.ok }}" = "true" ]; then
+            body="## 🤖 ZYRAXON AI proposed a verified fix
 
-          **PR:** Created with branch \`${BRANCH_NAME}\`
+          **Branch:** \`${{ steps.push.outputs.branch }}\`
           **Fix:** ${{ inputs.fix_description }}
+          **Verification:** passed (profile \`${{ inputs.verify_profile }}\`)"
+          else
+            body="## ⚠️ ZYRAXON AI produced a fix that did not verify
 
-          ---
-          *Applied by ZYRAXON AI Agent*
-          *Author: ZYRAXON-AI <zyraxon@zyraxonai.com>*"
+          **Branch:** \`${{ steps.push.outputs.branch }}\`
+          **Fix:** ${{ inputs.fix_description }}
+          **Verification:** failed (profile \`${{ inputs.verify_profile }}\`). No pull request was opened."
+          fi
+          gh issue comment "${{ inputs.issue_number }}" --repo "${REPO}" --body "${body}"
 
-      - name: Cleanup
-        if: always()
+      - name: Fail when the change did not verify
+        if: always() && steps.diff.outputs.changed == 'true' && steps.verify.outputs.ok != 'true'
         run: |
-          rm -rf target-repo
+          echo "::error::The agent's change did not pass verification. No pull request was opened."
+          exit 1
+
+      - name: Upload the verdict and the agent log
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: zyraxon-agent-run
+          if-no-files-found: ignore
+          retention-days: 14
+          path: |
+            verify-verdict.json
+            /tmp/agent.log

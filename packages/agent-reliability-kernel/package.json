@@ -6,5 +6,11 @@
   "description": "Policy-gated, budget-aware execution and verification primitives for ZYRAXON AI agents.",
   "exports": {
     ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsgo --noEmit",
+    "test": "node --import ../../scripts/node-test/loader.mjs --experimental-transform-types --test --test-force-exit \"test/**/*.test.ts\"",
+    "verify": "node --import ../../scripts/node-test/loader.mjs --experimental-transform-types src/verify-cli.ts",
+    "auto-verify": "node --import ../../scripts/node-test/loader.mjs --experimental-transform-types src/auto-verify-cli.ts"
   }
 }
