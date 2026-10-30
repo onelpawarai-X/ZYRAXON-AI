@@ -8,6 +8,7 @@ import { useServer } from "@/context/server"
 import { useModels } from "@/context/models"
 import { useSubscription } from "@/context/subscription"
 import { useProviders } from "@/hooks/use-providers"
+import { offeredModels, optionLabel, optionValue } from "./ai-generate-models"
 import { CodeGuardianScanner, CodeGuardianAIFeedback, type CodeIssue } from "./code-guardian"
 import {
   MonacoAIAssistant,
@@ -107,39 +108,39 @@ export function MonacoEditor(props: MonacoEditorProps) {
     return "zyraxon-dark"
   }
 
-  // Free-tier model predicate, copied verbatim from the composer's unpaid
-  // selector (`dialog-select-model-unpaid-v2.tsx`). The opencode/zyraxon
-  // gateways expose free models at zero cost; paid models only appear once a
-  // paid provider is connected.
-  const isFreeModel = (providerID: string, cost?: { input: number }) =>
-    (providerID === "opencode" || providerID === "zyraxon") && (!cost || cost.input === 0)
-
+  // AI Generate must offer the same models the main chat offers: every model of
+  // every provider the user has connected, plus the free gateways. Listing only
+  // the opencode/zyraxon free models hid a connected provider's models, which is
+  // the bug this replaces. `useModels().list()` already carries a connected
+  // provider's full model set, and `visible()` applies the user's show/hide
+  // choices exactly as the composer does, so both surfaces now agree.
+  //
   // Populate the AI Generate model `<select>` from the shared model catalog so
   // it matches the composer exactly. Option values are `providerID/modelID`,
   // the form the `/v1/chat/completions` bridge accepts.
   const populateModelSelect = (select: HTMLSelectElement) => {
     const previous = select.value
     const paid = providers.paid().length > 0
-    const offered = paid ? models.list() : models.list().filter((m) => isFreeModel(m.provider.id, m.cost))
+    const offered = offeredModels(models.list(), (key) => models.visible(key))
 
     select.innerHTML = ""
     const auto = document.createElement("option")
     // Auto resolves to the first offered model so the backend always receives a
     // concrete, valid id — never a bare "auto" it cannot route.
-    auto.value = offered[0] ? `${offered[0].provider.id}/${offered[0].id}` : "auto"
-    auto.textContent = `Auto (Free — ${offered.length} model${offered.length === 1 ? "" : "s"})`
+    auto.value = offered[0] ? optionValue(offered[0]) : "auto"
+    auto.textContent = `Auto (${offered.length} model${offered.length === 1 ? "" : "s"})`
     select.appendChild(auto)
 
     for (const m of offered) {
       const opt = document.createElement("option")
-      opt.value = `${m.provider.id}/${m.id}`
-      opt.textContent = m.name
+      opt.value = optionValue(m)
+      opt.textContent = optionLabel(m)
       opt.title = opt.value
       select.appendChild(opt)
     }
 
     if (previous && Array.from(select.options).some((o) => o.value === previous)) select.value = previous
-    console.log("[Monaco] AI Generate models:", offered.length, paid ? "(paid)" : "(free)")
+    console.log("[Monaco] AI Generate models:", offered.length, paid ? "(paid provider connected)" : "(free tier)")
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -297,10 +298,9 @@ export function MonacoEditor(props: MonacoEditorProps) {
     const langSelect = domNode.querySelector("#aic-lang") as HTMLSelectElement
 
     // ── Model list: the SAME catalog the main session composer uses ──
-    // The chat box must never invent its own list. `useModels()` already
-    // free-gates the opencode provider (paid models only appear once a key is
-    // connected) and hides models the user disabled, so AI Generate and the
-    // composer always offer an identical set.
+    // The chat box must never invent its own list. `useModels()` returns every
+    // model of every connected provider, and `visible()` applies the user's
+    // show/hide choices, so AI Generate and the composer offer an identical set.
     populateModelSelect(modelSelect)
 
     // Stop ALL events from propagating to Monaco editor (bubble phase — allows buttons/selects to work)
@@ -550,7 +550,7 @@ export function MonacoEditor(props: MonacoEditorProps) {
               getDomNode: () => {
                 const node = document.createElement("div")
                 node.style.cssText = "width:420px;padding:12px 16px;background:#2d1b1b;border:1px solid #ff4444;border-radius:10px;color:#ff6b6b;font-size:12px;font-family:inherit;box-shadow:0 4px 20px rgba(255,0,0,0.3);line-height:1.5;"
-                node.innerHTML = `<b>AI Generation Failed</b><br/>${error.message || "Unknown error"}<br/><span style="font-size:10px;opacity:0.6">Check that opencode provider is configured and the model is available.</span>`
+                node.innerHTML = `<b>AI Generation Failed</b><br/>${error.message || "Unknown error"}<br/><span style="font-size:10px;opacity:0.6">Check that a provider is connected in Settings and the selected model is available.</span>`
                 setTimeout(() => { try { ed.removeContentWidget(errorWidget) } catch {} }, 8000)
                 return node
               },

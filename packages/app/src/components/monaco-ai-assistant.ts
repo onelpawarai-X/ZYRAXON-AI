@@ -176,11 +176,15 @@ export class MonacoAIAssistant {
       }
     }
     const list = Array.from(byModel.values())
-    // Free-tier opencode models first, then everything else alphabetically.
+    // Prefer the free opencode gateway, then the house zyraxon provider, then
+    // everything else alphabetically. Ordering the house and free gateways first
+    // keeps Auto on a model the user is not billed for, while a connected paid
+    // provider's models remain reachable by name.
     list.sort((a, b) => {
-      const aFree = a.id.includes("opencode/") ? 0 : 1
-      const bFree = b.id.includes("opencode/") ? 0 : 1
-      if (aFree !== bFree) return aFree - bFree
+      const rank = (id: string) => (id.includes("opencode/") ? 0 : id.includes("zyraxon/") ? 1 : 2)
+      const aRank = rank(a.id)
+      const bRank = rank(b.id)
+      if (aRank !== bRank) return aRank - bRank
       return a.name.localeCompare(b.name)
     })
     return list.map((entry) => ({ id: entry.id, name: entry.name }))
