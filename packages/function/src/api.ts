@@ -38,9 +38,9 @@ export class SyncServer extends DurableObject<Env> {
     })
   }
 
-  async webSocketMessage(_ws, _message) {}
+  async webSocketMessage(_ws: WebSocket, _message: string | ArrayBuffer) {}
 
-  async webSocketClose(ws, code, _reason, _wasClean) {
+  async webSocketClose(ws: WebSocket, code: number, _reason: string, _wasClean: boolean) {
     ws.close(code, "Durable Object is closing WebSocket")
   }
 
@@ -179,10 +179,10 @@ export default new Hono<{ Bindings: Env }>()
     console.log("share_data", id)
     if (!id) return c.text("Error: Share ID is required", { status: 400 })
     const stub = c.env.SYNC_SERVER.get(c.env.SYNC_SERVER.idFromName(id))
-    const data = await stub.getData()
+    const data: Array<{ key: string; content: any }> = await stub.getData()
 
-    let info
-    const messages: Record<string, any> = {}
+    let info: { id?: string; [key: string]: any } | undefined
+    const messages: Record<string, { parts: any[]; [key: string]: any }> = {}
     data.forEach((d) => {
       const [root, type] = d.key.split("/")
       if (root !== "session") return
@@ -278,13 +278,14 @@ export default new Hono<{ Bindings: Env }>()
         audience: EXPECTED_AUDIENCE,
       })
       const sub = payload.sub // e.g. 'repo:my-org/my-repo:ref:refs/heads/main'
-      const parts = sub.split(":")[1].split("/")
-      owner = parts[0]
-      repo = parts[1]
+      const parts = sub?.split(":")[1]?.split("/")
+      owner = parts?.[0]
+      repo = parts?.[1]
     } catch (err) {
       console.error("Token verification failed:", err)
       return c.json({ error: "Invalid or expired token" }, { status: 403 })
     }
+    if (!owner || !repo) return c.json({ error: "Token does not identify a repository" }, { status: 400 })
 
     // Create app JWT token
     const auth = createAppAuth({
@@ -325,7 +326,8 @@ export default new Hono<{ Bindings: Env }>()
       // Verify permissions
       const userClient = new Octokit({ auth: token })
       const { data: repoData } = await userClient.repos.get({ owner, repo })
-      if (!repoData.permissions.admin && !repoData.permissions.push && !repoData.permissions.maintain)
+      const permissions = repoData.permissions
+      if (!permissions?.admin && !permissions?.push && !permissions?.maintain)
         throw new Error("User does not have write permissions")
 
       // Get installation token
@@ -364,6 +366,7 @@ export default new Hono<{ Bindings: Env }>()
   .get("/get_github_app_installation", async (c) => {
     const owner = c.req.query("owner")
     const repo = c.req.query("repo")
+    if (!owner || !repo) return c.json({ error: "owner and repo query parameters are required" }, { status: 400 })
 
     const auth = createAppAuth({
       appId: Resource.GITHUB_APP_ID.value,
