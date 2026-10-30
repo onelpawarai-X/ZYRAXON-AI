@@ -1,6 +1,8 @@
 ## ZYRAXON AI v19.0.9
 
-**AI Generate now uses every model from every provider you have connected — not just the free gateway.**
+**Two features lead this release: AI Generate now uses every model from every
+provider you have connected, and Settings has a new Integrations panel for
+connecting an external system to the agent.**
 
 ---
 
@@ -54,6 +56,36 @@ incomplete bundle is refused with a reason rather than half-loaded. Session ids
 are remapped so in-conversation references follow their rows, and a sparse
 session is filled with defaults rather than written as nulls.
 
+### Integrations: connect an external system to the agent
+
+The agent can now be given the outside systems it needs, from one place. A new
+**Integrations** panel lives in Settings, beside Sessions. It lists every
+integration the server offers, connects one with a key or through OAuth, and
+disconnects it again.
+
+The panel is the part that was missing. The server already owned the registry,
+the credential store and the routes; what did not exist was a way to reach them
+from the app. Before this release the machinery was there with no door to it.
+
+- **Connect with a key.** Pick an integration, paste the secret, and it is stored
+  and active. The panel confirms and the row reads as connected.
+- **Connect through OAuth.** The server hands back a URL to open and an attempt
+  to watch. The panel opens the browser and polls the attempt until it is
+  complete, fails, or expires — and it stops on a hard five-minute cap, so a
+  panel left open cannot poll forever.
+- **Disconnect.** Removing a connection deletes the stored credential; the row
+  goes back to unconnected.
+
+There is no separate store to keep in sync. A connection *is* a credential in
+the server's own credential store — the same one the agent reads when it works.
+Once you connect an integration, the agent picks it up from the same registry on
+its own, so there is no per-task wiring step.
+
+This also means the browser half and the server half cannot drift apart: every
+call in the panel goes through one client that speaks the server's own routes
+with the same credentials the SDK uses, and a connection is stored as a
+credential rather than as panel-only state.
+
 ### Reliability work in this release
 
 - **Generated client refreshed.** The session-export `parts` field was missing
@@ -69,6 +101,9 @@ session is filled with defaults rather than written as nulls.
 
 - AI Generate model list: 7/7 tests pass (connected-provider models offered,
   hidden models respected, free tagging, option values).
+- Integrations client: 16/16 tests pass (Basic auth headers, the location query,
+  listing and fetching, key and OAuth connects, attempt polling and cancel, and
+  disconnect).
 - Session export/import round trip: 11/11 tests pass.
 - `agent-reliability-kernel`: 54/54 pass.
 - `test.yml`: unit and e2e, Linux and Windows — 4/4 green.
