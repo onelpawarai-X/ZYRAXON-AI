@@ -44,6 +44,9 @@
     "@zyraxon-ai/session-ui#test": {
       "dependsOn": ["^build"],
       "outputs": []
+    },
+    "@zyraxon-ai/agent-reliability-kernel#test": {
+      "outputs": []
     }
   }
 }

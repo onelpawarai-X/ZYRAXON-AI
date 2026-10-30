@@ -1,7 +1,12 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-import { test as ntest, describe as ndescribe, it as nit } from "node:test"
+import { test as ntest, describe as ndescribe, it as nit, before as nbefore, after as nafter } from "node:test"
 export { ntest as test, ndescribe as describe, nit as it }
+
+// `bun:test` names the file-level hooks `beforeAll`/`afterAll`; node:test names
+// them `before`/`after`. Both run once around the tests in the file, so the alias
+// is what a suite written against `bun:test` needs to run unchanged under Node.
+export { nbefore as beforeAll, nafter as afterAll }
 
 function fmt(v) {
   try { return typeof v === "string" ? JSON.stringify(v) : JSON.stringify(v) } catch { return String(v) }

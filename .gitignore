@@ -98,3 +98,4 @@ quickpeek.config.json
 reviews.db
 safe-ssh-mcp.log
 zenbrain.db
+.analysis/

@@ -19,6 +19,7 @@ import { SettingsLanguageV2 } from "@/components/settings-v2/language"
 import { SettingsAgentsV2 } from "@/components/settings-v2/agents"
 import { SettingsSessionsV2 } from "@/components/settings-v2/sessions"
 import { SettingsExtensionsV2 } from "@/components/settings-v2/extensions-v2"
+import { SettingsIntegrationsV2 } from "@/components/settings-v2/integrations"
 import { SettingsStorageV2 } from "@/components/settings-v2/storage"
 import { SettingsSecurityV2 } from "@/components/settings-v2/security"
 import { SettingsAdvancedV2 } from "@/components/settings-v2/advanced"
@@ -40,6 +41,7 @@ const SECTION_VALUES = [
   "providers",
   "models",
   "extensions",
+  "integrations",
   "storage",
   "security",
   "advanced",
@@ -88,6 +90,7 @@ export const SettingsRoute: Component = () => {
         { value: "providers", label: language.t("settings.tab.providers"), icon: "providers" },
         { value: "models", label: language.t("settings.tab.models"), icon: "models" },
         { value: "extensions", label: language.t("settings.tab.extensions"), icon: "puzzle" },
+        { value: "integrations", label: language.t("settings.tab.integrations"), icon: "link" },
       ],
     },
     {
@@ -196,6 +199,9 @@ export const SettingsRoute: Component = () => {
         </TabsV2.Content>
         <TabsV2.Content value="extensions" class="settings-v2-panel">
           <SettingsExtensionsV2 />
+        </TabsV2.Content>
+        <TabsV2.Content value="integrations" class="settings-v2-panel">
+          <SettingsIntegrationsV2 />
         </TabsV2.Content>
         <TabsV2.Content value="storage" class="settings-v2-panel">
           <SettingsStorageV2 />

@@ -26,7 +26,15 @@ import type { Bundle } from "@zyraxon-ai/schema/session-port"
  */
 const realFetch = globalThis.fetch
 beforeAll(() => {
-  globalThis.fetch = Bun.fetch as unknown as typeof fetch
+  // happy-dom, which the app's unit runner preloads, replaces `fetch` with a
+  // browser fetch that enforces the same-origin policy and so refuses this suite's
+  // real local listener. The preload keeps the runtime's own fetch aside before
+  // happy-dom registers; Bun's fetch is used directly where the variable is absent.
+  const native =
+    (globalThis as { __zyraxonNativeFetch?: typeof fetch }).__zyraxonNativeFetch ??
+    (globalThis.Bun?.fetch as typeof fetch | undefined) ??
+    globalThis.fetch
+  globalThis.fetch = native
 })
 afterAll(() => {
   globalThis.fetch = realFetch
@@ -121,7 +129,7 @@ describe("session export over HTTP", () => {
   })
 
   test("a refused export surfaces the server message", async () => {
-    expect(fetchSessionBundle(connection, "ses_missing")).rejects.toThrow("gone")
+    await expect(fetchSessionBundle(connection, "ses_missing")).rejects.toThrow("gone")
   })
 })
 
