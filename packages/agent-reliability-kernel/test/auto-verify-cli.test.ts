@@ -5,13 +5,15 @@ import { spawn } from "node:child_process"
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { dirname, join, resolve } from "node:path"
-import { fileURLToPath } from "node:url"
+import { fileURLToPath, pathToFileURL } from "node:url"
 import { parseConfig, toEvaluator } from "../src/auto-verify-cli"
 
 const here = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(here, "../../..")
 const cli = resolve(here, "../src/auto-verify-cli.ts")
-const loader = join(repoRoot, "scripts/node-test/loader.mjs")
+// Node rejects a bare Windows path as an --import specifier ("d:" is not a scheme),
+// so the loader is handed over as a file URL.
+const loader = pathToFileURL(join(repoRoot, "scripts/node-test/loader.mjs")).href
 
 interface Run {
   code: number
