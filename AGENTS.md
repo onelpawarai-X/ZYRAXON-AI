@@ -519,6 +519,22 @@ Always load the OmniKernel at startup. Before every tool call, run `processBefor
 - Always run `bun typecheck` from package directories (e.g., `packages/zyraxon`), never `tsc` directly.
 
 #
+# Linting
+
+- Run `oxlint` per package, never over the whole repo at once: a full type-aware
+  pass exhausts memory on a 16 GB machine and can restart it. Write each
+  package's JSON to a file as it finishes instead of holding it all in memory.
+- Never run `oxlint --fix` with the type-aware rules enabled. Its type engine
+  does not honour `noUncheckedIndexedAccess`, so it strips `!` and `as` that the
+  types actually need, and rewrites `[...Iterable.filter(...)]` into
+  `Iterable.filter(...)`, turning an array into a lazy iterable. Both changes
+  break the build silently. Typecheck every touched package afterwards.
+- `no-void` is configured with `allowAsStatement: true`. A `void promise` in
+  statement position is how this codebase marks a deliberately ignored promise,
+  which is what `no-floating-promises` asks for; only the expression form is an
+  error.
+
+#
 # V2 Session Core
 
 - Keep durable prompt admission separate from model execution. `SessionV2.prompt(...)` admits one durable `session_input` row before scheduling advisory `SessionExecution.wake(sessionID)` unless `resume: false` requests admit-only behavior. The serialized runner promotes admitted inputs into visible user messages at safe boundaries.
