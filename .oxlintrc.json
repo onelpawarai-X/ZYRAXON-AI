@@ -34,7 +34,7 @@
     "no-global-assign": "error",
     "no-labels": "error",
     "no-proto": "error",
-    "no-void": "error",
+    "no-void": ["error", { "allowAsStatement": true }],
     "no-with": "error",
     "radix": "error"
   },
