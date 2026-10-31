@@ -18,8 +18,8 @@ export const LLMGatewayPlugin = define({
           if (!(yield* integrations.get(Integration.ID.make(item.provider.id)))) continue
           evt.provider.update(item.provider.id, (provider) => {
             provider.request.headers["HTTP-Referer"] = "https://zyraxonai.lovable.app/"
-            provider.request.headers["X-Title"] = "opencode"
-            provider.request.headers["X-Source"] = "opencode"
+            provider.request.headers["X-Title"] = "zyraxon"
+            provider.request.headers["X-Source"] = "zyraxon"
           })
         }
       }),

@@ -1,13 +1,13 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { LayerNode } from "@zyraxon-ai/core/effect/layer-node"
 import type { AuthOAuthResult, Hooks } from "@opencode-ai/plugin"
-import { serviceUse } from "@opencode-ai/core/effect/service-use"
+import { serviceUse } from "@zyraxon-ai/core/effect/service-use"
 import { Auth } from "@/auth"
 import { InstanceState } from "@/effect/instance-state"
-import { optional } from "@opencode-ai/core/schema"
+import { optional } from "@zyraxon-ai/core/schema"
 import { Plugin } from "../plugin"
-import { ProviderV2 } from "@opencode-ai/core/provider"
+import { ProviderV2 } from "@zyraxon-ai/core/provider"
 import { Array as Arr, Effect, Layer, Record, Result, Context, Schema } from "effect"
 
 const When = Schema.Struct({
@@ -104,7 +104,7 @@ interface State {
   pending: Map<ProviderV2.ID, AuthOAuthResult>
 }
 
-export class Service extends Context.Service<Service, Interface>()("@opencode/ProviderAuth") {}
+export class Service extends Context.Service<Service, Interface>()("@zyraxon/ProviderAuth") {}
 
 export const use = serviceUse(Service)
 

@@ -102,9 +102,8 @@ Trust boundaries that matter:
   that arrive inside a file or a tool result — must never be able to escalate
   privileges on its own.
 
-The opencode provider remains available because it is a genuinely free option
-and remains supported. Its presence is a provider choice, not the architecture:
-the engine has no dependency on any single vendor.
+Every provider is reached with the operator's own credential. The engine has no
+anonymous or shared-key path, and no dependency on any single vendor.
 
 ## Hardening notes for operators
 

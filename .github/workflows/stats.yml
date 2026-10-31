@@ -11,7 +11,7 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   stats:
-    if: github.repository == 'anomalyco/zyraxon'
+    if: github.repository == 'onelpawarai-X/ZYRAXON-AI'
     runs-on: ubuntu-latest
     permissions:
       contents: write

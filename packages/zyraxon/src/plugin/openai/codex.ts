@@ -8,7 +8,7 @@ import { setTimeout as sleep } from "node:timers/promises"
 import { createServer } from "http"
 import { OpenAIWebSocketPool } from "./ws-pool"
 import { OauthCallbackPage } from "@zyraxon-ai/core/oauth/page"
-import { freeTierUserAgent } from "@opencode-ai/core/installation/version"
+import { freeTierUserAgent } from "@zyraxon-ai/core/installation/version"
 
 const CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann"
 const ISSUER = "https://auth.openai.com"
@@ -89,7 +89,7 @@ function buildAuthorizeUrl(redirectUri: string, pkce: PkceCodes, state: string):
     id_token_add_organizations: "true",
     codex_cli_simplified_flow: "true",
     state,
-    originator: "opencode",
+    originator: "zyraxon",
   })
   return `${ISSUER}/oauth/authorize?${params.toString()}`
 }
@@ -551,7 +551,7 @@ export async function CodexAuthPlugin(input: PluginInput, options: CodexAuthPlug
     },
     "chat.headers": async (input, output) => {
       if (input.model.providerID !== "openai") return
-      output.headers.originator = "opencode"
+      output.headers.originator = "zyraxon"
       output.headers["User-Agent"] = `${freeTierUserAgent()} (${os.platform()} ${os.release()}; ${os.arch()})`
       output.headers["session-id"] = input.sessionID
       // Temporary fetch-layer hack: title generation currently shares the conversation

@@ -962,7 +962,7 @@ export const RunCommand = effectCmd({
         return Server.Default().app.fetch(new Request(request, { headers }))
       }) as typeof globalThis.fetch
       const sdk = createZyraxonClient({
-        baseUrl: "http://opencode.internal",
+        baseUrl: "http://zyraxon.internal",
         fetch: fetchFn,
         directory,
       })

@@ -6,7 +6,7 @@ import { OAUTH_DUMMY_KEY } from "../auth"
 import { OauthCallbackPage } from "@zyraxon-ai/core/oauth/page"
 import { createServer } from "http"
 import open from "open"
-import { freeTierUserAgent } from "@opencode-ai/core/installation/version"
+import { freeTierUserAgent } from "@zyraxon-ai/core/installation/version"
 
 const OAUTH_CLIENT_ID = "LOCAL_APPLICATION"
 const OAUTH_CALLBACK_HOST = "127.0.0.1"

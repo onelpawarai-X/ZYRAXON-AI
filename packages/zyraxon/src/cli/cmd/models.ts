@@ -60,8 +60,8 @@ export const ModelsCommand = effectCmd({
       const bIsHouse = b === "zyraxon"
       if (aIsHouse && !bIsHouse) return -1
       if (!aIsHouse && bIsHouse) return 1
-      const aIsOpencode = a.startsWith("opencode")
-      const bIsOpencode = b.startsWith("opencode")
+      const aIsOpencode = a.startsWith("zyraxon")
+      const bIsOpencode = b.startsWith("zyraxon")
       if (aIsOpencode && !bIsOpencode) return -1
       if (!aIsOpencode && bIsOpencode) return 1
       return a.localeCompare(b)

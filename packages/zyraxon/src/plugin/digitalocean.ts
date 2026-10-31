@@ -6,7 +6,7 @@ import type { Model } from "@zyraxon-ai/sdk/v2"
 import { OauthCallbackPage } from "@zyraxon-ai/core/oauth/page"
 import { createServer } from "http"
 import open from "open"
-import { freeTierUserAgent } from "@opencode-ai/core/installation/version"
+import { freeTierUserAgent } from "@zyraxon-ai/core/installation/version"
 
 const DO_OAUTH_CLIENT_ID = "b1a6c5158156caac821fd1b30253ca8acb52454a48fa744420e41889cb589f82"
 const DO_AUTHORIZE_URL = "https://cloud.digitalocean.com/v1/oauth/authorize"

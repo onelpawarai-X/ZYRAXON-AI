@@ -188,7 +188,7 @@ function httpStatus(error: Error): number | undefined {
 type MCPClient = Client
 
 function createClient(directory: string) {
-  const client = new Client({ name: "opencode", version: InstallationVersion }, CLIENT_OPTIONS)
+  const client = new Client({ name: "zyraxon", version: InstallationVersion }, CLIENT_OPTIONS)
   client.setRequestHandler(ListRootsRequestSchema, () =>
     Promise.resolve({ roots: [{ uri: pathToFileURL(directory).href }] }),
   )
@@ -901,7 +901,7 @@ const layer = Layer.effect(
         // so the console window a stdio server would otherwise flash is handled there.
         env: {
           ...process.env,
-          ...(cmd === "opencode" ? { BUN_BE_BUN: "1" } : {}),
+          ...(cmd === "zyraxon" ? { BUN_BE_BUN: "1" } : {}),
           ...dotenv,
           ...resolvedEnv,
         },

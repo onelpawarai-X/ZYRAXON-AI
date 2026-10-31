@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
 # Copyright (c) 2026 onelpawarai. All rights reserved.
 
-ARG REGISTRY=ghcr.io/anomalyco
+ARG REGISTRY=ghcr.io/onelpawarai-x
 FROM ${REGISTRY}/build/rust:24.04
 
 ARG DEBIAN_FRONTEND=noninteractive

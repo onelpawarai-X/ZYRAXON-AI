@@ -141,9 +141,9 @@ export default function Download() {
                 </code>
                 <CopyStatus />
               </button>
-              <button data-component="cli-row" onClick={handleCopyClick("brew install anomalyco/tap/zyraxon")}>
+              <button data-component="cli-row" onClick={handleCopyClick("brew install onelpawarai-X/tap/zyraxon")}>
                 <code>
-                  brew install <strong>anomalyco/tap/zyraxon</strong>
+                  brew install <strong>onelpawarai-X/tap/zyraxon</strong>
                 </code>
                 <CopyStatus />
               </button>

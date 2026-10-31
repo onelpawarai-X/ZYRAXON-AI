@@ -1,35 +1,35 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { LayerNode } from "@zyraxon-ai/core/effect/layer-node"
 import os from "os"
-import { ConfigV1 } from "@opencode-ai/core/v1/config/config"
+import { ConfigV1 } from "@zyraxon-ai/core/v1/config/config"
 import fuzzysort from "fuzzysort"
 import { Config } from "@/config/config"
 import { mapValues, mergeDeep, omit, pickBy, sortBy } from "remeda"
 import { NoSuchModelError, type Provider as SDK } from "ai"
-import { Npm } from "@opencode-ai/core/npm"
-import { Hash } from "@opencode-ai/core/util/hash"
+import { Npm } from "@zyraxon-ai/core/npm"
+import { Hash } from "@zyraxon-ai/core/util/hash"
 import { Plugin } from "../plugin"
-import { serviceUse } from "@opencode-ai/core/effect/service-use"
+import { serviceUse } from "@zyraxon-ai/core/effect/service-use"
 import { type LanguageModelV3, type SpeechModelV3 } from "@ai-sdk/provider"
 import { ProviderCatalog } from "@zyraxon-ai/core/provider-catalog"
 import { Auth } from "../auth"
 import { Env } from "../env"
-import { InstallationVersion, freeTierUserAgent } from "@opencode-ai/core/installation/version"
+import { InstallationVersion, freeTierUserAgent } from "@zyraxon-ai/core/installation/version"
 import { iife } from "@/util/iife"
-import { Global } from "@opencode-ai/core/global"
+import { Global } from "@zyraxon-ai/core/global"
 import path from "path"
 import { pathToFileURL } from "url"
 import { Effect, Layer, Context, Schema, Types } from "effect"
 import { EffectBridge } from "@/effect/bridge"
 import { InstanceState } from "@/effect/instance-state"
 import { EffectPromise } from "@/effect/promise"
-import { FSUtil } from "@opencode-ai/core/fs-util"
+import { FSUtil } from "@zyraxon-ai/core/fs-util"
 import { isRecord } from "@/util/record"
-import { optional } from "@opencode-ai/core/schema"
+import { optional } from "@zyraxon-ai/core/schema"
 import { ProviderTransform } from "./transform"
-import { ProviderV2 } from "@opencode-ai/core/provider"
-import { ModelV2 } from "@opencode-ai/core/model"
+import { ProviderV2 } from "@zyraxon-ai/core/provider"
+import { ModelV2 } from "@zyraxon-ai/core/model"
 import * as Local from "@/local/local"
 import { ModelStatus } from "./model-status"
 import { RuntimeFlags } from "@/effect/runtime-flags"
@@ -138,7 +138,7 @@ const BUNDLED_PROVIDERS: Record<string, () => Promise<(opts: any) => BundledSDK>
   "@ai-sdk/alibaba": () => import("@ai-sdk/alibaba").then((m) => m.createAlibaba),
   "gitlab-ai-provider": () => import("gitlab-ai-provider").then((m) => m.createGitLab),
   "@ai-sdk/github-copilot": () =>
-    import("@opencode-ai/core/github-copilot/copilot-provider").then((m) => m.createOpenaiCompatible),
+    import("@zyraxon-ai/core/github-copilot/copilot-provider").then((m) => m.createOpenaiCompatible),
   "venice-ai-sdk-provider": () => import("venice-ai-sdk-provider").then((m) => m.createVenice),
 }
 
@@ -191,42 +191,33 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         if (input.env.some((item) => env[item])) return true
         return false
       })
+      // ZYRAXON policy: this provider is reachable only with a caller-supplied
+      // credential. There is no anonymous public key and no free-model fallback,
+      // so an unauthenticated client gets no models at all.
       const ok =
         hasKey ||
         Boolean(yield* dep.auth(input.id)) ||
         Boolean((yield* dep.config()).provider?.["opencode"]?.options?.apiKey)
 
       if (!ok) {
-        for (const [key, value] of Object.entries(input.models)) {
-          if (value.cost.input === 0) continue
+        for (const key of Object.keys(input.models)) {
           delete input.models[key]
         }
       }
 
       return {
         autoload: Object.keys(input.models).length > 0,
-        // The free-tier gate reads User-Agent on the provider request itself,
-        // before session preparation runs, so it has to be set here as well.
-        options: {
-          ...(ok ? {} : { apiKey: "public" }),
-          headers: { "User-Agent": freeTierUserAgent() },
-        },
       }
     }),
     // The house provider is keyless: its endpoint answers without any
     // credential. Without a loader here it never lands in `providers`, so it
     // never appears in the connected set and the picker demotes it to
-    // "add more models". `apiKey: "public"` mirrors the opencode free tier,
-    // which needs a non-empty value to build a client at all.
+    // "add more models".
     zyraxon: Effect.fnUntraced(function* (input: Info) {
       const env = yield* dep.env()
       const hasKey = input.env.some((item) => env[item]) || Boolean(yield* dep.auth(input.id))
       return {
         autoload: Object.keys(input.models).length > 0,
-        options: {
-          ...(hasKey ? {} : { apiKey: "public" }),
-          headers: { "User-Agent": freeTierUserAgent() },
-        },
       }
     }),
     openai: () =>
@@ -410,7 +401,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
           }
 
           // Region resolution precedence (highest to lowest):
-          // 1. options.region from opencode.json provider config
+          // 1. options.region from zyraxon.json provider config
           // 2. defaultRegion from AWS_REGION environment variable
           // 3. Default "us-east-1" (baked into defaultRegion)
           const region = options?.region ?? defaultRegion
@@ -493,9 +484,9 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
-            "X-Source": "opencode",
+            "HTTP-Referer": "https://zyraxon.ai/",
+            "X-Title": "zyraxon",
+            "X-Source": "zyraxon",
           },
         },
       }),
@@ -504,8 +495,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
+            "HTTP-Referer": "https://zyraxon.ai/",
+            "X-Title": "zyraxon",
           },
         },
       }),
@@ -514,8 +505,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: provider.source === "config",
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
+            "HTTP-Referer": "https://zyraxon.ai/",
+            "X-Title": "zyraxon",
             "X-BILLING-INVOKE-ORIGIN": "OpenCode",
           },
         },
@@ -525,8 +516,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "http-referer": "https://opencode.ai/",
-            "x-title": "opencode",
+            "http-referer": "https://zyraxon.ai/",
+            "x-title": "zyraxon",
           },
         },
       }),
@@ -630,8 +621,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
+            "HTTP-Referer": "https://zyraxon.ai/",
+            "X-Title": "zyraxon",
           },
         },
       }),
@@ -830,7 +821,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
       if (!apiToken) {
         throw new Error(
           "CLOUDFLARE_API_TOKEN (or CF_AIG_TOKEN) is required for Cloudflare AI Gateway. " +
-            "Set it via environment variable or run `opencode auth cloudflare-ai-gateway`.",
+            "Set it via environment variable or run `zyraxon auth cloudflare-ai-gateway`.",
         )
       }
 
@@ -911,7 +902,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "X-Cerebras-3rd-Party-Integration": "opencode",
+            "X-Cerebras-3rd-Party-Integration": "zyraxon",
           },
         },
       }),
@@ -920,8 +911,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
+            "HTTP-Referer": "https://zyraxon.ai/",
+            "X-Title": "zyraxon",
           },
         },
       }),
@@ -948,7 +939,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
           autoload: false,
           async getModel() {
             throw new Error(
-              `Snowflake Cortex: missing credentials (${missing}). Provide a bearer token (OAuth, JWT, or PAT) via env var, opencode auth, or provider options.`,
+              `Snowflake Cortex: missing credentials (${missing}). Provide a bearer token (OAuth, JWT, or PAT) via env var, zyraxon auth, or provider options.`,
             )
           },
         }
@@ -1246,7 +1237,7 @@ interface State {
   varsLoaders: Record<string, CustomVarsLoader>
 }
 
-export class Service extends Context.Service<Service, Interface>()("@opencode/Provider") {}
+export class Service extends Context.Service<Service, Interface>()("@zyraxon/Provider") {}
 
 export const use = serviceUse(Service)
 
@@ -1294,16 +1285,6 @@ function cloudflareGatewayNpm(providerID: string, modelID: string) {
   return undefined
 }
 
-// The catalogue advertises the console-gated `zen` path for the upstream
-// opencode.ai provider, but the free tier is served from the public
-// `inference` path instead. `zen` answers every public-key request with
-// FreeTierError regardless of the session fingerprint, so point the upstream
-// host at `inference` while leaving ZYRAXON's own gateway routing untouched.
-function freeTierApiUrl(url: string) {
-  if (!url) return url
-  return url.replace(/^(https?:\/\/opencode\.ai\/)zen\//, "$1inference/")
-}
-
 function fromCatalogModel(provider: ProviderCatalog.Provider, model: ProviderCatalog.Model): Model {
   const base: Model = {
     id: ModelV2.ID.make(model.id),
@@ -1312,7 +1293,7 @@ function fromCatalogModel(provider: ProviderCatalog.Provider, model: ProviderCat
     family: model.family,
     api: {
       id: model.id,
-      url: freeTierApiUrl(model.provider?.api ?? provider.api ?? ""),
+      url: model.provider?.api ?? provider.api ?? "",
       npm:
         cloudflareGatewayNpm(provider.id, model.id) ??
         model.provider?.npm ??
@@ -1554,9 +1535,8 @@ const entries = yield* providerCatalog.get()
               api: {
                 id: apiID,
                 npm: apiNpm,
-                url: freeTierApiUrl(
+                url:
                   model.provider?.api ?? provider?.api ?? existingModel?.api.url ?? entries[providerID]?.api ?? "",
-                ),
               },
               status: model.status ?? existingModel?.status ?? "active",
               name,
@@ -2054,7 +2034,7 @@ const entries = yield* providerCatalog.get()
         return undefined
       }
 
-      const priority = providerID.startsWith("opencode")
+      const priority = providerID.startsWith("zyraxon")
         ? ["gpt-nano"]
         : providerID.startsWith("github-copilot")
           ? ["gpt-mini", ...smallModelFamilyPriority]

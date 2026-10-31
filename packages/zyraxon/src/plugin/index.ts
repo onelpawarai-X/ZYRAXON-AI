@@ -72,7 +72,7 @@ function internalPlugins(flags: RuntimeFlags.Info): PluginInstance[] {
         experimentalWebSockets: experimentalWebSocketsEnabled({ enabled: flags.experimentalWebSockets }),
       }),
     CopilotAuthPlugin,
-    // External auth plugins are typed against the published @opencode-ai/plugin
+    // External auth plugins are typed against the published plugin package
     // declarations; the shapes match at runtime, so bridge the nominal types here.
     GitlabAuthPlugin as unknown as PluginInstance,
     PoeAuthPlugin as unknown as PluginInstance,

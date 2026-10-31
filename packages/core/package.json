@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "version": "19.0.9",
+  "version": "2.0.0",
   "name": "@zyraxon-ai/core",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE",
@@ -10,7 +10,7 @@
     "url": "https://github.com/onelpawarai-X/ZYRAXON-AI.git",
     "directory": "packages/core"
   },
-  "author": "OMG / Lx Sayidi <sayidilx@gmail.com>",
+  "author": "onelpawarai <onelpawarai@users.noreply.github.com>",
   "bin": {
     "zyraxon": "./bin/zyraxon"
   },

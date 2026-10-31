@@ -716,7 +716,7 @@ function anthropicBindsThinking(apiId: string) {
 }
 
 // Fable 5.1 binds each thinking signature to the system prompt, tool list, and
-// messages above it, and rejects the request when any of that changes. opencode
+// messages above it, and rejects the request when any of that changes. The provider
 // re-renders parts of that prefix between turns (system prompt, tools, compaction),
 // so ask the API to drop the affected blocks instead of failing the request.
 // Older model deployments may reject this field, even with thinking enabled.

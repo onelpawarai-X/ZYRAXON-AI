@@ -447,7 +447,7 @@ const main = Effect.gen(function* () {
   const password = randomUUID()
 
   // ─── CRITICAL: Show UI FIRST, fork sidecar in background ──────────────
-  // This is the key OpenCode pattern: restore windows immediately,
+  // Restore windows immediately,
   // then fork the sidecar loading as a background fiber.
   // The renderer waits for serverReady via IPC — it does NOT block main.
   const windows = restoreMainWindows()

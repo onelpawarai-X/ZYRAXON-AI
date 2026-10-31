@@ -8,7 +8,7 @@ import DESCRIPTION from "./websearch.txt"
 import { checksum } from "@zyraxon-ai/core/util/encode"
 
 import { RuntimeFlags } from "@/effect/runtime-flags"
-import { freeTierUserAgent } from "@opencode-ai/core/installation/version"
+import { freeTierUserAgent } from "@zyraxon-ai/core/installation/version"
 
 export const Parameters = Schema.Struct({
   query: Schema.String.annotate({ description: "Websearch query" }),

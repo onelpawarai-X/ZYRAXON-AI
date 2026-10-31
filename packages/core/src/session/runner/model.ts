@@ -130,15 +130,6 @@ const withVariant = (
 const apiName = (model: ModelV2.Info) =>
   model.api.type === "aisdk" ? `${model.api.type}:${model.api.package}` : model.api.type
 
-// The free-tier gate requires the session fingerprint on both
-// `x-opencode-session` and `x-opencode-session-id`; a request carrying only one
-// of them is refused with FreeTierError. These are per-session values, so they
-// are injected here where the session is known rather than on the catalog model.
-const freeTierSessionHeaders = (sessionID: SessionSchema.ID) => ({
-  "x-opencode-session": sessionID,
-  "x-opencode-session-id": sessionID,
-})
-
 export const fromCatalogModel = (
   model: ModelV2.Info,
   credential?: Credential.Value,
@@ -150,12 +141,7 @@ export const fromCatalogModel = (
       : produce(model, (draft) => {
           Object.assign(draft.request.body, credential.metadata)
         })
-  const withSession =
-    sessionID === undefined || resolved.providerID !== ProviderV2.ID.opencode
-      ? resolved
-      : produce(resolved, (draft) => {
-          Object.assign(draft.request.headers, freeTierSessionHeaders(sessionID))
-        })
+  const withSession = resolved
   const key = apiKey(withSession, credential)
   if (withSession.api.type === "aisdk" && withSession.api.package === "@ai-sdk/openai") {
     return Effect.succeed(

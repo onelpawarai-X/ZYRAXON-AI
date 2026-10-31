@@ -32,4 +32,4 @@ dist-ssr
 *.sw?
 out/
 
-resources/opencode-cli*
+resources/zyraxon-cli*

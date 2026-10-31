@@ -9,15 +9,15 @@ import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstab
 import { EventV2 } from "../../event"
 import { Credential } from "../../credential"
 import { Integration } from "../../integration"
-import { freeTierApiUrl, freeTierUserAgent } from "../../installation/version"
+import { freeTierUserAgent } from "../../installation/version"
 import { ModelV2 } from "../../model"
 import { ProviderV2 } from "../../provider"
 import { ConfigProviderV1 } from "../../v1/config/provider"
 import { ConfigProviderOptionsV1 } from "../../v1/config/provider-options"
 import { ConfigV1 } from "../../v1/config/config"
 
-const defaultServer = process.env["OPENCODE_CONSOLE_URL"] ?? "https://opencode.ai/console"
-const clientID = "opencode-cli"
+const defaultServer = process.env["ZYRAXON_CONSOLE_URL"] ?? "https://zyraxon.ai/console"
+const clientID = "zyraxon-cli"
 const methodID = Integration.MethodID.make("device")
 const RemoteResponse = Schema.Struct({ config: ConfigV1.Info })
 const Device = Schema.Struct({
@@ -39,7 +39,7 @@ const Org = Schema.Struct({ id: Schema.String, name: Schema.String })
 
 function oauth(http: HttpClient.HttpClient) {
   return {
-    integrationID: Integration.ID.make("opencode"),
+    integrationID: Integration.ID.make("zyraxon"),
     method: {
       id: methodID,
       type: "oauth",
@@ -78,7 +78,7 @@ function oauth(http: HttpClient.HttpClient) {
 }
 
 export const ZyraxonPlugin = define<HttpClient.HttpClient | EventV2.Service | Scope.Scope>({
-  id: "opencode",
+  id: "zyraxon",
   effect: Effect.fn(function* (ctx) {
     const events = yield* EventV2.Service
     const http = yield* HttpClient.HttpClient
@@ -87,7 +87,7 @@ export const ZyraxonPlugin = define<HttpClient.HttpClient | EventV2.Service | Sc
     let providers: typeof ConfigV1.Info.Type.provider | undefined
 
     const load = Effect.fn("ZyraxonPlugin.load")(function* () {
-      const connection = yield* ctx.integration.connection.active("opencode")
+      const connection = yield* ctx.integration.connection.active("zyraxon")
       const credential = connection
         ? yield* ctx.integration.connection.resolve(connection).pipe(Effect.catch(() => Effect.succeed(undefined)))
         : undefined
@@ -102,18 +102,18 @@ export const ZyraxonPlugin = define<HttpClient.HttpClient | EventV2.Service | Sc
     })
 
     yield* ctx.integration.transform((draft) => {
-      draft.update("opencode", (integration) => {
+      draft.update("zyraxon", (integration) => {
         integration.name = "ZYRAXON"
       })
       draft.method.update(oauth(http))
-      draft.method.update({ integrationID: "opencode", method: { type: "key", label: "API key (service account)" } })
+      draft.method.update({ integrationID: "zyraxon", method: { type: "key", label: "API key (service account)" } })
     })
 
-    connected = (yield* ctx.integration.connection.active("opencode")) !== undefined
+    connected = (yield* ctx.integration.connection.active("zyraxon")) !== undefined
     yield* ctx.catalog.transform((catalog) => {
       for (const [providerID, item] of Object.entries(providers ?? {})) {
         catalog.provider.update(providerID, (provider) => {
-          provider.integrationID = Integration.ID.make("opencode")
+          provider.integrationID = Integration.ID.make("zyraxon")
           if (item.name !== undefined) provider.name = item.name
           provider.api = item.npm
             ? { type: "aisdk", package: item.npm, url: item.api }
@@ -167,29 +167,26 @@ export const ZyraxonPlugin = define<HttpClient.HttpClient | EventV2.Service | Sc
 
       const item = catalog.provider.get(ProviderV2.ID.opencode)
       if (!item) return
-      const hasKey = Boolean(process.env.OPENCODE_API_KEY || connected || item.provider.request.body.apiKey)
-      catalog.provider.update(item.provider.id, (provider) => {
-        // The free-tier gate identifies the client by this header alone.
-        provider.request.headers["User-Agent"] = freeTierUserAgent()
-        // The catalogue advertises the console-gated `zen` path, but the free
-        // tier is only served from the public `inference` path. Without this
-        // rewrite every public-key request is refused with FreeTierError.
-        provider.api.url = freeTierApiUrl(provider.api.url)
-        if (!hasKey) provider.request.body.apiKey = "public"
-      })
-      if (hasKey) return
-      for (const model of item.models.values()) {
-        if (!model.cost.some((cost) => cost.input > 0)) continue
-        catalog.model.update(item.provider.id, model.id, (draft) => {
-          draft.api.url = freeTierApiUrl(draft.api.url)
-          draft.enabled = false
+      // ZYRAXON policy: the upstream provider is API-key only. There is no
+      // anonymous public-key path and no free-model fallback. Without a key the
+      // provider and all of its models are disabled, so nothing can be reached
+      // by a caller who has not supplied their own credential.
+      const hasKey = Boolean(process.env.ZYRAXON_API_KEY || connected || item.provider.request.body.apiKey)
+      if (!hasKey) {
+        catalog.provider.update(item.provider.id, (provider) => {
+          provider.disabled = true
         })
+        for (const model of item.models.values()) {
+          catalog.model.update(item.provider.id, model.id, (draft) => {
+            draft.enabled = false
+          })
+        }
       }
     })
 
     const refresh = () => loading.withPermit(load().pipe(Effect.andThen(ctx.catalog.reload())))
     yield* events.subscribe(Integration.Event.ConnectionUpdated).pipe(
-      Stream.filter((event) => event.data.integrationID === Integration.ID.make("opencode")),
+      Stream.filter((event) => event.data.integrationID === Integration.ID.make("zyraxon")),
       Stream.runForEach(refresh),
       Effect.forkScoped({ startImmediately: true }),
     )

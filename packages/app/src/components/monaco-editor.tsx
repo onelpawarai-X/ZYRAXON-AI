@@ -110,7 +110,7 @@ export function MonacoEditor(props: MonacoEditorProps) {
 
   // AI Generate must offer the same models the main chat offers: every model of
   // every provider the user has connected, plus the free gateways. Listing only
-  // the opencode/zyraxon free models hid a connected provider's models, which is
+  // the free house models hid a connected provider's models, which is
   // the bug this replaces. `useModels().list()` already carries a connected
   // provider's full model set, and `visible()` applies the user's show/hide
   // choices exactly as the composer does, so both surfaces now agree.

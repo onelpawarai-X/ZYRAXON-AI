@@ -5,7 +5,7 @@ import { OAUTH_DUMMY_KEY } from "../auth"
 import { createServer } from "http"
 
 import { OauthCallbackPage } from "@zyraxon-ai/core/oauth/page"
-import { freeTierUserAgent } from "@opencode-ai/core/installation/version"
+import { freeTierUserAgent } from "@zyraxon-ai/core/installation/version"
 
 // Public Grok-CLI OAuth client. xAI's auth server rejects loopback OAuth from
 // non-allowlisted clients, so we reuse the Grok-CLI client_id that xAI ships
@@ -139,7 +139,7 @@ export function buildAuthorizeUrl(
     state,
     nonce,
     plan: "generic",
-    referrer: "opencode",
+    referrer: "zyraxon",
   })
   return `${options.authorizeUrl ?? AUTHORIZE_URL}?${params.toString()}`
 }

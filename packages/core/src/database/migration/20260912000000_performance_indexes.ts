@@ -8,7 +8,7 @@ export default {
   up(tx) {
     return Effect.gen(function* () {
       // ============================================
-      // PERFORMANCE INDEXES — Beat OpenCode's load time
+      // PERFORMANCE INDEXES — reduce startup load time
       // ============================================
 
       // Session listing: most common query — session by project + updated

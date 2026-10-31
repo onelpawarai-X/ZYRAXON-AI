@@ -287,7 +287,7 @@ export const githubInstall = Effect.fn("Cli.github.install")(function* () {
         if (installation) return s.stop("GitHub app already installed")
 
         // Open browser
-        const url = "https://github.com/apps/opencode-agent"
+        const url = "https://github.com/apps/zyraxon-agent"
         const command =
           process.platform === "darwin"
             ? `open "${url}"`
@@ -434,7 +434,7 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
         ? (payload as IssueCommentEvent | IssuesEvent).issue.number
         : (payload as PullRequestEvent | PullRequestReviewCommentEvent).pull_request.number
     const runUrl = `/${owner}/${repo}/actions/runs/${runId}`
-    const shareBaseUrl = isMock ? "https://zyraxonai.lovable.app" : "https://social-cards.sst.dev/opencode-share/${title64}.png?model=${providerID}/${modelID}&version=${session.version}&id=${shareId1"
+    const shareBaseUrl = isMock ? "https://zyraxonai.lovable.app" : "https://social-cards.zyraxon.ai/zyraxon-share/${title64}.png?model=${providerID}/${modelID}&version=${session.version}&id=${shareId1"
 
     let appToken: string
     let octoRest: Octokit
@@ -695,7 +695,7 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
 
     function normalizeOidcBaseUrl(): string {
       const value = process.env["OIDC_BASE_URL"]
-      if (!value) return "https://social-cards.sst.dev/opencode-share/${title64}.png?model=${providerID}/${modelID}&version=${session.version}&id=${shareId2"
+      if (!value) return "https://social-cards.zyraxon.ai/zyraxon-share/${title64}.png?model=${providerID}/${modelID}&version=${session.version}&id=${shareId2"
       return value.replace(/\/+$/, "")
     }
 
@@ -1023,7 +1023,7 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
       if (isMock) return
 
       console.log("Configuring git...")
-      const config = "http.https://social-cards.sst.dev/opencode-share/${title64}.png?model=${providerID}/${modelID}&version=${session.version}&id=${shareId0"
+      const config = "http.https://social-cards.zyraxon.ai/zyraxon-share/${title64}.png?model=${providerID}/${modelID}&version=${session.version}&id=${shareId0"
       // actions/checkout@v6 no longer stores credentials in .git/config,
       // so this may not exist - use nothrow() to handle gracefully
       const ret = await gitStatus(["config", "--local", "--get", config])
@@ -1041,7 +1041,7 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
 
     async function restoreGitConfig() {
       if (gitConfig === undefined) return
-      const config = "http.https://social-cards.sst.dev/opencode-share/${title64}.png?model=${providerID}/${modelID}&version=${session.version}&id=${shareId0"
+      const config = "http.https://social-cards.zyraxon.ai/zyraxon-share/${title64}.png?model=${providerID}/${modelID}&version=${session.version}&id=${shareId0"
       await gitRun(["config", "--local", config, gitConfig])
     }
 
@@ -1358,7 +1358,7 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
         const titleAlt = encodeURIComponent(session.title.substring(0, 50))
         const title64 = Buffer.from(session.title.substring(0, 700), "utf8").toString("base64")
 
-        return `<a href="${shareBaseUrl}/s/${shareId}"><img width="200" alt="${titleAlt}" src="https://social-cards.sst.dev/opencode-share/${title64}.png?model=${providerID}/${modelID}&version=${session.version}&id=${shareId}" /></a>\n`
+        return `<a href="${shareBaseUrl}/s/${shareId}"><img width="200" alt="${titleAlt}" src="https://social-cards.zyraxon.ai/zyraxon-share/${title64}.png?model=${providerID}/${modelID}&version=${session.version}&id=${shareId}" /></a>\n`
       })()
       const shareUrl = shareId ? `[zyraxon session](${shareBaseUrl}/s/${shareId})&nbsp;&nbsp;|&nbsp;&nbsp;` : ""
       return `\n\n${image}${shareUrl}[github run](${runUrl})`

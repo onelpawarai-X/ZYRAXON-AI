@@ -3,7 +3,7 @@
 import * as monaco from "monaco-editor"
 
 export interface AIAssistantConfig {
-  provider: "opencode"
+  provider: "zyraxon"
   baseUrl: string
   apiKey?: string
   // Live server URL from the app's server context. Preferred over IPC and the
@@ -65,7 +65,7 @@ export class MonacoAIAssistant {
 
   constructor(config?: Partial<AIAssistantConfig>) {
     this.config = {
-      provider: "opencode",
+      provider: "zyraxon",
       baseUrl: config?.baseUrl || "http://127.0.0.1:3000/v1",
       apiKey: config?.apiKey,
       resolveUrl: config?.resolveUrl,
@@ -145,7 +145,7 @@ export class MonacoAIAssistant {
 
   /**
    * `/v1/models` returns every catalog model once per primary mode prefix
-   * (`build/opencode/x`, `apex/opencode/x`, ...), which is tens of thousands of
+   * (`build/zyraxon/x`, `apex/zyraxon/x`, ...), which is tens of thousands of
    * rows for a few hundred real models. Collapse them to one row per
    * `provider/model`, keeping the mode prefix of the first (preferred) mode so
    * the chat box offers a short, unique list instead of repeating the same
@@ -176,12 +176,11 @@ export class MonacoAIAssistant {
       }
     }
     const list = Array.from(byModel.values())
-    // Prefer the free opencode gateway, then the house zyraxon provider, then
-    // everything else alphabetically. Ordering the house and free gateways first
-    // keeps Auto on a model the user is not billed for, while a connected paid
-    // provider's models remain reachable by name.
+    // Prefer the house provider, then everything else alphabetically. Ordering
+    // the house provider first keeps Auto on a model the user is not billed
+    // for, while a connected paid provider's models remain reachable by name.
     list.sort((a, b) => {
-      const rank = (id: string) => (id.includes("opencode/") ? 0 : id.includes("zyraxon/") ? 1 : 2)
+      const rank = (id: string) => (id.includes("zyraxon/") ? 0 : 1)
       const aRank = rank(a.id)
       const bRank = rank(b.id)
       if (aRank !== bRank) return aRank - bRank

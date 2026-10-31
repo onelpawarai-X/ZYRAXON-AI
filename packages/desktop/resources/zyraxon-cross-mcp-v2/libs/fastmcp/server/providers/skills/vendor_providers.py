@@ -127,14 +127,14 @@ class CopilotSkillsProvider(SkillsDirectoryProvider):
 
 
 class OpenCodeSkillsProvider(SkillsDirectoryProvider):
-    """OpenCode skills from ~/.config/opencode/skills/."""
+    """ZYRAXON skills from ~/.config/zyraxon/skills/."""
 
     def __init__(
         self,
         reload: bool = False,
         supporting_files: Literal["template", "resources"] = "template",
     ) -> None:
-        root = Path.home() / ".config" / "opencode" / "skills"
+        root = Path.home() / ".config" / "zyraxon" / "skills"
 
         super().__init__(
             roots=[root],

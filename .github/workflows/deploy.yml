@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   deploy:
-    if: github.repository == 'anomalyco/zyraxon' && (github.ref_name == 'dev' || github.ref_name == 'production')
+    if: github.repository == 'onelpawarai-X/ZYRAXON-AI' && (github.ref_name == 'dev' || github.ref_name == 'production')
     runs-on: ubuntu-latest
     environment: ${{ github.ref_name }}
     steps:

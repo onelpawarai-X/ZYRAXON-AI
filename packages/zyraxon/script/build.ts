@@ -188,7 +188,7 @@ for (const item of targets) {
       autoloadPackageJson: true,
       target: name.replace(pkg.name, "bun") as any,
       outfile: `dist/${name}/bin/zyraxon`,
-      execArgv: [`--user-agent=opencode/${Script.version}`, "--use-system-ca", "--"],
+      execArgv: [`--user-agent=zyraxon/${Script.version}`, "--use-system-ca", "--"],
       windows: {},
     },
     files: {

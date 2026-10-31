@@ -91,21 +91,10 @@ function bayesianUpdate(prior: number, likelihood: number, evidence: number): nu
 
 export class CostRouter {
   private models: ModelInfo[] = [
-    { name: "gpt-5.4-nano", provider: "opencode", costPer1kInput: 0, costPer1kOutput: 0, contextLimit: 32000, capability: "simple", latencyMs: 200, qualityScore: 0.5, free: true },
-    { name: "mimo-v2.5-free", provider: "opencode", costPer1kInput: 0, costPer1kOutput: 0, contextLimit: 200000, capability: "reasoning", latencyMs: 500, qualityScore: 0.75, free: true },
-    { name: "big-pickle", provider: "opencode", costPer1kInput: 0, costPer1kOutput: 0, contextLimit: 200000, capability: "coding", latencyMs: 400, qualityScore: 0.8, free: true },
-    { name: "deepseek-v4-flash-free", provider: "opencode", costPer1kInput: 0, costPer1kOutput: 0, contextLimit: 200000, capability: "reasoning", latencyMs: 350, qualityScore: 0.72, free: true },
-    { name: "glm-5.2", provider: "opencode", costPer1kInput: 1.4, costPer1kOutput: 4.4, contextLimit: 1000000, capability: "coding", latencyMs: 600, qualityScore: 0.92, free: false },
-    { name: "gpt-5.1-codex-max", provider: "opencode", costPer1kInput: 12, costPer1kOutput: 36, contextLimit: 32000, capability: "coding", latencyMs: 800, qualityScore: 0.95, free: false },
+    { name: "glm-5.2", provider: "zyraxon", costPer1kInput: 1.4, costPer1kOutput: 4.4, contextLimit: 1000000, capability: "coding", latencyMs: 600, qualityScore: 0.92, free: false },
+    { name: "gpt-5.1-codex-max", provider: "zyraxon", costPer1kInput: 12, costPer1kOutput: 36, contextLimit: 32000, capability: "coding", latencyMs: 800, qualityScore: 0.95, free: false },
     { name: "gemini-3.5-flash", provider: "google", costPer1kInput: 0, costPer1kOutput: 0, contextLimit: 1000000, capability: "vision", latencyMs: 300, qualityScore: 0.78, free: true },
-    { name: "deepseek-v4-pro", provider: "opencode", costPer1kInput: 1.74, costPer1kOutput: 3.48, contextLimit: 1000000, capability: "general", latencyMs: 500, qualityScore: 0.88, free: false },
-    { name: "grok-code", provider: "opencode", costPer1kInput: 0, costPer1kOutput: 0, contextLimit: 256000, capability: "coding", latencyMs: 450, qualityScore: 0.76, free: true },
-    { name: "kimi-k2.5-free", provider: "opencode", costPer1kInput: 0, costPer1kOutput: 0, contextLimit: 262000, capability: "reasoning", latencyMs: 550, qualityScore: 0.74, free: true },
-    { name: "qwen3.6-plus-free", provider: "opencode", costPer1kInput: 0, costPer1kOutput: 0, contextLimit: 262000, capability: "general", latencyMs: 400, qualityScore: 0.73, free: true },
-    { name: "minimax-m3-free", provider: "opencode", costPer1kInput: 0, costPer1kOutput: 0, contextLimit: 200000, capability: "reasoning", latencyMs: 600, qualityScore: 0.71, free: true },
-    { name: "nemotron-3-ultra-free", provider: "opencode", costPer1kInput: 0, costPer1kOutput: 0, contextLimit: 1000000, capability: "general", latencyMs: 500, qualityScore: 0.77, free: true },
-    { name: "qwen3-coder", provider: "opencode", costPer1kInput: 0, costPer1kOutput: 0, contextLimit: 262000, capability: "coding", latencyMs: 420, qualityScore: 0.79, free: true },
-    { name: "kimi-k2-thinking", provider: "opencode", costPer1kInput: 0, costPer1kOutput: 0, contextLimit: 262000, capability: "reasoning", latencyMs: 600, qualityScore: 0.76, free: true },
+    { name: "deepseek-v4-pro", provider: "zyraxon", costPer1kInput: 1.74, costPer1kOutput: 3.48, contextLimit: 1000000, capability: "general", latencyMs: 500, qualityScore: 0.88, free: false },
   ]
 
   private routingHistory: Array<{ task: TaskProfile; selectedModel: string; timestamp: number; score: number }> = []

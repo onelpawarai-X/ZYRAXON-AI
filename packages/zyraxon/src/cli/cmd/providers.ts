@@ -465,7 +465,7 @@ const cfgSvc = yield* Config.Service
       )
     }
 
-    if (provider === "opencode") {
+    if (provider === "zyraxon") {
       yield* Prompt.log.info("Create an api key at https://zyraxonai.lovable.app/auth")
     }
 

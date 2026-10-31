@@ -10,7 +10,7 @@ set -euo pipefail
 # truncation when pressing Enter in Kitty and other terminals.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/claudianus/opencode/fix-zhipuai-coding-plan-thinking/patches/install-korean-ime-fix.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/onelpawarai-X/ZYRAXON-AI/main/patches/install-korean-ime-fix.sh | bash
 #   # or from a cloned repo:
 #   ./patches/install-korean-ime-fix.sh
 
@@ -22,7 +22,7 @@ NC='\033[0m'
 
 ZYRAXON_DIR="${ZYRAXON_DIR:-$HOME/.zyraxon}"
 ZYRAXON_SRC="${ZYRAXON_SRC:-$HOME/.zyraxon-src}"
-FORK_REPO="${FORK_REPO:-https://github.com/claudianus/opencode.git}"
+FORK_REPO="${FORK_REPO:-https://github.com/onelpawarai-X/ZYRAXON-AI.git}"
 FORK_BRANCH="${FORK_BRANCH:-fix-zhipuai-coding-plan-thinking}"
 
 info()  { echo -e "${MUTED}$*${NC}"; }

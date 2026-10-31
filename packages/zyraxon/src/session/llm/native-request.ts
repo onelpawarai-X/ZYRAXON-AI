@@ -1,7 +1,7 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-import type { JsonSchema, LLMRequest, ProviderMetadata } from "@opencode-ai/llm"
-import { LLM, Message, SystemPart, ToolCallPart, ToolDefinition, ToolResultPart } from "@opencode-ai/llm"
+import type { JsonSchema, LLMRequest, ProviderMetadata } from "@zyraxon-ai/llm"
+import { LLM, Message, SystemPart, ToolCallPart, ToolDefinition, ToolResultPart } from "@zyraxon-ai/llm"
 import {
   AmazonBedrock,
   Anthropic,
@@ -10,7 +10,7 @@ import {
   OpenAI,
   OpenAICompatible,
   OpenRouter,
-} from "@opencode-ai/llm/providers"
+} from "@zyraxon-ai/llm/providers"
 import type { ModelMessage } from "ai"
 import type { Provider } from "@/provider/provider"
 import { isRecord } from "@/util/record"
@@ -183,7 +183,7 @@ export const model = (input: Provider.Model | RequestInput, headers?: Record<str
 export const request = (input: RequestInput) => {
   const converted = messages(input.messages)
   // This is the only native adapter boundary that should construct canonical
-  // @opencode-ai/llm request objects from opencode's session/AI SDK-shaped data.
+  // @zyraxon-ai/llm request objects from the session/AI SDK-shaped data.
   return LLM.request({
     model: model(input, input.headers),
     system: [...(input.system ?? []).map(SystemPart.make), ...converted.system],

@@ -80,7 +80,7 @@ export const InstanceHttpApi = HttpApi.make("zyraxon-instance")
   .addHttpApi(WorkspaceApi)
   .middleware(SchemaErrorMiddleware)
 
-export const ZyraxonHttpApi = HttpApi.make("opencode")
+export const ZyraxonHttpApi = HttpApi.make("zyraxon")
   .addHttpApi(RootHttpApi)
   .addHttpApi(EventApi)
   .addHttpApi(InstanceHttpApi)

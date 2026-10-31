@@ -28,7 +28,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
 
       - name: Run zyraxon
-        uses: anomalyco/zyraxon/github@2c14fc5586fe0b88e5c04732d2e846769cc35671 # latest
+        uses: onelpawarai-X/ZYRAXON-AI/github@2c14fc5586fe0b88e5c04732d2e846769cc35671 # latest
         env:
           ZYRAXON_API_KEY: ${{ secrets.ZYRAXON_API_KEY }}
           ZYRAXON_PERMISSION: '{"bash": "deny"}'

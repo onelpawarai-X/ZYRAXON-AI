@@ -1,8 +1,8 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-import { PermissionV1 } from "@opencode-ai/core/v1/permission"
+import { PermissionV1 } from "@zyraxon-ai/core/v1/permission"
 import type { Auth } from "@/auth"
-import { SessionV1 } from "@opencode-ai/core/v1/session"
+import { SessionV1 } from "@zyraxon-ai/core/v1/session"
 import type { RuntimeFlags } from "@/effect/runtime-flags"
 import { InstanceState } from "@/effect/instance-state"
 import { Permission } from "@/permission"
@@ -11,38 +11,13 @@ import type { MessageV2 } from "../message-v2"
 import type { Provider } from "@/provider/provider"
 import { ProviderTransform } from "@/provider/transform"
 import { SystemPrompt } from "../system"
-import { freeTierUserAgent } from "@opencode-ai/core/installation/version"
+import { freeTierUserAgent } from "@zyraxon-ai/core/installation/version"
 import { Effect, Record } from "effect"
 import { jsonSchema, tool as aiTool, type ModelMessage, type Tool } from "ai"
 import type { Plugin } from "@/plugin"
 import { mergeDeep } from "remeda"
 
-// The free-tier gate reads `User-Agent: opencode/<release>` and nothing else.
-// InstallationVersion is the build version, which is "local" for a dev build and
-// a bump away from the release otherwise, so using it here made every free model
-// answer "OpenCode's free tier can only be used from within OpenCode" — the
-// request was rejected for being unrecognised rather than for anything the user
-// did. The version the gate accepts is pinned separately.
 const USER_AGENT = freeTierUserAgent()
-
-// The free-tier gate on hosted opencode models inspects the advertised tool
-// catalog, not just the User-Agent. A request whose `tools` array is empty — or
-// missing the built-in `read` tool — is refused with FreeTierError even though
-// the same model answers a normal turn. Title generation, compaction, and
-// summaries intentionally send no tools, so they were the requests that failed
-// while the main turn succeeded, which made free models look intermittent.
-// Advertise a gate-satisfying `read` definition whenever the caller sent none.
-const FREE_TIER_GATE_READ = aiTool({
-  description: "Read the contents of a file.",
-  inputSchema: jsonSchema({
-    type: "object",
-    properties: {
-      filePath: { type: "string", description: "The absolute path to the file to read" },
-    },
-    required: ["filePath"],
-  }),
-  execute: async () => ({ output: "", title: "", metadata: {} }),
-})
 
 type PrepareInput = {
   readonly user: SessionV1.User
@@ -179,13 +154,6 @@ export const prepare = Effect.fn("LLMRequestPrep.prepare")(function* (input: Pre
   )
 
   const tools = resolveTools(input)
-  // Hosted opencode free models require the `read` tool to be advertised on
-  // every request. Background turns (title, compaction, summary) call with an
-  // empty tool set on purpose, so add the gate definition back without
-  // enabling anything the caller disabled.
-  if (input.model.providerID.startsWith("opencode") && !tools["read"]) {
-    tools["read"] = FREE_TIER_GATE_READ
-  }
   // Codex parity: OpenAI Responses-family providers hardcode `strict: false`
   // on every function tool so MCP-sourced and dynamic schemas that don't
   // satisfy OpenAI's structured-outputs constraints still register.
@@ -214,10 +182,6 @@ export const prepare = Effect.fn("LLMRequestPrep.prepare")(function* (input: Pre
     })
   }
 
-  const opencodeProjectID = input.model.providerID.startsWith("opencode")
-    ? (yield* InstanceState.context).project.id
-    : undefined
-
   return {
     system,
     messages,
@@ -225,34 +189,20 @@ export const prepare = Effect.fn("LLMRequestPrep.prepare")(function* (input: Pre
     params,
     messageTransformOptions: options,
     headers: (() => {
-      const base = input.model.providerID.startsWith("opencode")
-        ? {
-            ...(opencodeProjectID ? { "x-opencode-project": opencodeProjectID } : {}),
-            "x-opencode-session": input.sessionID,
-            // The free-tier gate requires the session id on both the
-            // `x-opencode-session` and `x-opencode-session-id` headers; a
-            // request carrying only the former is refused with FreeTierError.
-            "x-opencode-session-id": input.sessionID,
-            "x-opencode-request": input.user.id,
-            "x-opencode-client": input.flags.client,
-            "User-Agent": USER_AGENT,
-          }
-        : {
-            "x-session-affinity": input.sessionID,
-            "X-Session-Id": input.sessionID,
-            "User-Agent": USER_AGENT,
-          }
-      const merged = {
+      // Every provider gets the same session-affinity headers. There is no
+      // provider-specific branch and no forced User-Agent: requests are
+      // authenticated by the caller's own credential.
+      const base = {
+        "x-session-affinity": input.sessionID,
+        "X-Session-Id": input.sessionID,
+        "User-Agent": USER_AGENT,
+      }
+      return {
         ...base,
         ...(input.parentSessionID ? { "x-parent-session-id": input.parentSessionID } : {}),
         ...input.model.headers,
         ...headers,
       }
-      // The free-tier gate has to be the last word: a model-level or plugin
-      // header that sets User-Agent would otherwise replace it and every free
-      // model would be refused.
-      if (!input.model.providerID.startsWith("opencode")) return merged
-      return { ...merged, "User-Agent": USER_AGENT }
     })(),
   }
 })

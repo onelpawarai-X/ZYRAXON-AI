@@ -18,7 +18,7 @@ export type DecodedCredentials = {
 
 export class Config extends ConfigService.Service<Config>()("@zyraxon/ServerAuthConfig", {
   password: EffectConfig.string("ZYRAXON_SERVER_PASSWORD").pipe(EffectConfig.option),
-  username: EffectConfig.string("ZYRAXON_SERVER_USERNAME").pipe(EffectConfig.withDefault("opencode")),
+  username: EffectConfig.string("ZYRAXON_SERVER_USERNAME").pipe(EffectConfig.withDefault("zyraxon")),
 }) {}
 
 export type Info = Context.Service.Shape<typeof Config>
@@ -39,7 +39,7 @@ export function header(credentials?: Credentials) {
   const password = credentials?.password ?? Flag.ZYRAXON_SERVER_PASSWORD
   if (!password) return undefined
 
-  const username = credentials?.username ?? Flag.ZYRAXON_SERVER_USERNAME ?? "opencode"
+  const username = credentials?.username ?? Flag.ZYRAXON_SERVER_USERNAME ?? "zyraxon"
   return `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`
 }
 
