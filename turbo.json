@@ -3,7 +3,9 @@
   "globalEnv": ["CI", "ZYRAXON_DISABLE_SHARE", "ZYRAXON_MODE", "ZYRAXON_STREAM_KEY"],
   "globalPassThroughEnv": ["CI", "ZYRAXON_DISABLE_SHARE", "ZYRAXON_MODE", "ZYRAXON_STREAM_KEY"],
   "tasks": {
-    "typecheck": {},
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]

@@ -52,11 +52,10 @@ incorporate or reference any third-party open-source license
 unless explicitly stated in an accompanying NOTICE file. Any
 third-party component remains under its own license.
 
-Portions of this project were informed by the architecture of the
-opencode project, licensed under the MIT License,
-Copyright (c) 2025 opencode. The full MIT text is reproduced in
-THIRD-PARTY-NOTICES.md. That notice covers the referenced
-architecture only; the copyright in ZYRAXON AI itself belongs
+Portions of this project were copied from an earlier
+open-source project during the first days of
+development. Everything built since is ZYRAXON's own
+work, and the copyright in ZYRAXON AI itself belongs
 solely to onelpawarai.
 
 =======================================================================
