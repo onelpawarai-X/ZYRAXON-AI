@@ -18,9 +18,25 @@
     "outDir": "node_modules/.ts-dist",
     "isolatedModules": true,
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "rootDir": "../..",
+    "types": [
+      "bun",
+      "node",
+      "vite/client"
+    ]
   },
-  "include": ["src", "package.json", "../../MCP Hub"],
-  "exclude": ["dist", "ts-dist"]
+  "include": [
+    "src",
+    "package.json",
+    "../../MCP Hub",
+    "../../MCP Hub/catalog/*.json"
+  ],
+  "exclude": [
+    "dist",
+    "ts-dist"
+  ]
 }

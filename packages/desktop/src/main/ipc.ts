@@ -4,7 +4,7 @@ import { execFile } from "node:child_process"
 import { stat } from "node:fs/promises"
 import { readFileSync, existsSync } from "node:fs"
 import { basename, join } from "node:path"
-import { app, BrowserWindow, Notification, clipboard, desktopCapturer, dialog, ipcMain, shell } from "electron"
+import { app, BrowserWindow, Notification, clipboard, desktopCapturer, dialog, ipcMain, nativeImage, shell } from "electron"
 import type { IpcMainEvent, IpcMainInvokeEvent } from "electron"
 import type { DesktopMenuAction } from "@zyraxon-ai/app/desktop-menu"
 
@@ -373,10 +373,16 @@ export function registerIpcHandlers(deps: Deps) {
     return true
   })
 
-  ipcMain.handle("read-clipboard-image", () => {
-    const image = clipboard.readImage()
+  // Electron 44 removed clipboard.readImage(); the clipboard is now read as
+  // ClipboardItem entries whose payloads are Blobs.
+  ipcMain.handle("read-clipboard-image", async () => {
+    const items = await clipboard.read()
+    const png = items.find((item) => item.types.includes("image/png"))
+    if (!png) return null
+    const blob = await png.getType("image/png")
+    const buffer = await blob.arrayBuffer()
+    const image = nativeImage.createFromBuffer(Buffer.from(buffer))
     if (image.isEmpty()) return null
-    const buffer = image.toPNG().buffer
     const size = image.getSize()
     return { buffer, width: size.width, height: size.height }
   })
