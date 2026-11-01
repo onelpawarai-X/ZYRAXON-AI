@@ -125,7 +125,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
     })
 
     const validModel = (model: ModelKey) => {
-      if (model.providerID === "local" || model.providerID === "zyraxon" || model.providerID === "zyraxon") return true
+      if (model.providerID === "local" || model.providerID === "zyraxon") return true
       const provider = providers.all().get(model.providerID)
       return !!provider?.models[model.modelID] && connected().has(model.providerID)
     }
@@ -197,18 +197,6 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
       const zyraxonProvider = allProviders.find((p) => p.id === "zyraxon")
       if (zyraxonProvider) {
         const first = Object.values(zyraxonProvider.models)[0]
-        if (first) {
-          const model = { providerID: "zyraxon", modelID: first.id }
-          if (validModel(model)) return model
-        }
-      }
-      // Then zyraxon free models (Big Pickle, MiMo, etc.)
-      const zyraxonProvider = allProviders.find((p) => p.id === "zyraxon")
-      if (zyraxonProvider) {
-        const freeModels = Object.values(zyraxonProvider.models).filter(
-          (m) => !m.cost || m.cost.input === 0,
-        )
-        const first = freeModels[0] ?? Object.values(zyraxonProvider.models)[0]
         if (first) {
           const model = { providerID: "zyraxon", modelID: first.id }
           if (validModel(model)) return model

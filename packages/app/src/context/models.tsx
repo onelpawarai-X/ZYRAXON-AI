@@ -153,14 +153,6 @@ export const { use: useModels, provider: ModelsProvider } = createSimpleContext(
           })),
         )
 
-      // Opencode provider → free models ONLY (even if not connected)
-      const zyraxonEntry = entries.find(([id]: any) => id === "zyraxon")
-      const zyraxonFreeModels = zyraxonEntry
-        ? Object.values(zyraxonEntry[1]?.models ?? {})
-            .filter((m: any) => !m.cost || m.cost.input === 0)
-            .map((m: any) => ({ ...m, provider: zyraxonEntry[1] }))
-        : []
-
       // ZYRAXON provider → its own models first, so the house provider is
       // always the first group in the picker and the default selection.
       const zyraxonEntry = entries.find(([id]: any) => id === "zyraxon")
@@ -176,11 +168,11 @@ export const { use: useModels, provider: ModelsProvider } = createSimpleContext(
         : Object.values(LOCAL_PROVIDER.models).map((m) => ({ ...m, provider: LOCAL_PROVIDER }))
 
       // Merge: zyraxon first (the house provider is pinned on top), then local,
-      // then zyraxon free, then connected.
+      // then connected.
       // Deduplicate by id+provider
       const seen = new Set<string>()
       const result: any[] = []
-      for (const m of [...zyraxonModels, ...localModels, ...zyraxonFreeModels, ...connectedModels]) {
+      for (const m of [...zyraxonModels, ...localModels, ...connectedModels]) {
         const key = `${m.provider.id}:${m.id}`
         if (!seen.has(key)) { seen.add(key); result.push(m) }
       }
