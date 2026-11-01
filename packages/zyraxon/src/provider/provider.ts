@@ -185,30 +185,6 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
           },
         },
       }),
-    opencode: Effect.fnUntraced(function* (input: Info) {
-      const env = yield* dep.env()
-      const hasKey = iife(() => {
-        if (input.env.some((item) => env[item])) return true
-        return false
-      })
-      // ZYRAXON policy: this provider is reachable only with a caller-supplied
-      // credential. There is no anonymous public key and no free-model fallback,
-      // so an unauthenticated client gets no models at all.
-      const ok =
-        hasKey ||
-        Boolean(yield* dep.auth(input.id)) ||
-        Boolean((yield* dep.config()).provider?.["opencode"]?.options?.apiKey)
-
-      if (!ok) {
-        for (const key of Object.keys(input.models)) {
-          delete input.models[key]
-        }
-      }
-
-      return {
-        autoload: Object.keys(input.models).length > 0,
-      }
-    }),
     // The house provider is keyless: its endpoint answers without any
     // credential. Without a loader here it never lands in `providers`, so it
     // never appears in the connected set and the picker demotes it to
@@ -484,7 +460,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://zyraxon.ai/",
+            "HTTP-Referer": "https://zyraxonai.lovable.app/",
             "X-Title": "zyraxon",
             "X-Source": "zyraxon",
           },
@@ -495,7 +471,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://zyraxon.ai/",
+            "HTTP-Referer": "https://zyraxonai.lovable.app/",
             "X-Title": "zyraxon",
           },
         },
@@ -505,9 +481,9 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: provider.source === "config",
         options: {
           headers: {
-            "HTTP-Referer": "https://zyraxon.ai/",
+            "HTTP-Referer": "https://zyraxonai.lovable.app/",
             "X-Title": "zyraxon",
-            "X-BILLING-INVOKE-ORIGIN": "OpenCode",
+            "X-BILLING-INVOKE-ORIGIN": "Zyraxon",
           },
         },
       }),
@@ -516,7 +492,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "http-referer": "https://zyraxon.ai/",
+            "http-referer": "https://zyraxonai.lovable.app/",
             "x-title": "zyraxon",
           },
         },
@@ -621,7 +597,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://zyraxon.ai/",
+            "HTTP-Referer": "https://zyraxonai.lovable.app/",
             "X-Title": "zyraxon",
           },
         },
@@ -911,7 +887,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://zyraxon.ai/",
+            "HTTP-Referer": "https://zyraxonai.lovable.app/",
             "X-Title": "zyraxon",
           },
         },

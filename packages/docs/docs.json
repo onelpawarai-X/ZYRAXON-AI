@@ -16,7 +16,7 @@
           {
             "group": "Getting started",
             "pages": ["index", "quickstart", "development"],
-            "openapi": "https://zyraxon.ai/openapi.json"
+            "openapi": "https://zyraxonai.lovable.app/openapi.json"
           }
         ]
       }

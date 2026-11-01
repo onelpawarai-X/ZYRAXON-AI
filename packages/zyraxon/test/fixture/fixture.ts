@@ -98,7 +98,7 @@ export async function tmpdir<T>(options?: TmpDirOptions<T>) {
     await Bun.write(
       path.join(dirpath, "zyraxon.json"),
       JSON.stringify({
-        $schema: "https://zyraxon.ai/config.json",
+        $schema: "https://zyraxonai.lovable.app/config.json",
         ...options.config,
       }),
     )
@@ -156,7 +156,7 @@ export function tmpdirScoped<E = never, R = never>(options?: {
       yield* Effect.promise(() =>
         fs.writeFile(
           path.join(dir, "zyraxon.json"),
-          JSON.stringify({ $schema: "https://zyraxon.ai/config.json", ...resolved }),
+          JSON.stringify({ $schema: "https://zyraxonai.lovable.app/config.json", ...resolved }),
         ),
       )
     }

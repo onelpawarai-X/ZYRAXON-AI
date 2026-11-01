@@ -134,7 +134,7 @@ export function Header(props: { githubStars: string; links?: readonly HeaderLink
             <strong>{i18n.t("header.github")}</strong>
             <span>[{props.githubStars}]</span>
           </a>
-          <a data-slot="header-button" data-variant="contrast" href="https://zyraxon.ai/">
+          <a data-slot="header-button" data-variant="contrast" href="https://zyraxonai.lovable.app/">
             <strong>{i18n.t("header.tryZYRAXON")}</strong>
           </a>
           <button
@@ -234,12 +234,12 @@ export function Footer(props: {
     { href: "#geo-breakdown", label: i18n.t("nav.geoBreakdown") },
   ]
   const legal = [
-    { href: "https://zyraxon.ai/legal/terms-of-service", label: i18n.t("footer.terms") },
-    { href: "https://zyraxon.ai/legal/privacy-policy", label: i18n.t("footer.privacy") },
+    { href: "https://zyraxonai.lovable.app/legal/terms-of-service", label: i18n.t("footer.terms") },
+    { href: "https://zyraxonai.lovable.app/legal/privacy-policy", label: i18n.t("footer.privacy") },
   ]
   const connect = [
-    { href: "mailto:hello@zyraxon.ai", label: i18n.t("footer.contact") },
-    { href: "https://zyraxon.ai/discord", label: i18n.t("footer.community") },
+    { href: "mailto:hello@zyraxonai.lovable.app", label: i18n.t("footer.contact") },
+    { href: "https://zyraxonai.lovable.app/discord", label: i18n.t("footer.community") },
     { href: "https://x.com/SayidiLxs", label: "X" },
     { href: githubLink.href, label: i18n.t("header.github") },
     { href: "https://www.youtube.com/@anomaly-co", label: i18n.t("footer.youtube") },
@@ -253,7 +253,7 @@ export function Footer(props: {
     <footer data-component="footer">
       <Show when={bridge()}>{(link) => <SectionBridge label={link().label} href={link().href} />}</Show>
       <div data-slot="footer-grid">
-        <a data-slot="footer-mark" href="https://zyraxon.ai" aria-label={i18n.t("footer.homeAria")}>
+        <a data-slot="footer-mark" href="https://zyraxonai.lovable.app" aria-label={i18n.t("footer.homeAria")}>
           <ZyraxonMark />
         </a>
         <FooterColumn title={i18n.t("footer.modelData")} links={modelStats} localHref={localHref} />

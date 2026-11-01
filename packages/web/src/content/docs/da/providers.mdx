@@ -37,7 +37,7 @@ Du kan tilpasse base URL for enhver udbyder ved at angive muligheden `baseURL`. 
   "provider": {
     "anthropic": {
       "options": {
-        "baseURL": "https://zyraxon.ai/auth"
+        "baseURL": "https://zyraxonai.lovable.app/auth"
       }
     }
   }
@@ -54,7 +54,7 @@ ZYRAXON Zen er en liste over modeller leveret af ZYRAXON-teamet, som er blevet t
 Hvis du er ny, anbefaler vi at starte med ZYRAXON Zen.
 :::
 
-1. Kør kommandoen `/connect` i TUI, vælg zyraxon og gå til [zyraxon.ai/auth](https://zyraxon.ai/auth).
+1. Kør kommandoen `/connect` i TUI, vælg zyraxon og gå til [zyraxonai.lovable.app/auth](https://zyraxonai.lovable.app/auth).
 
    ```txt
    /connect
@@ -85,7 +85,7 @@ Det fungerer som alle andre udbydere i ZYRAXON og er helt valgfrit at bruge.
 
 ZYRAXON Go er en billig abonnementsplan, der giver pålidelig adgang til populære åbne kodningsmodeller leveret af ZYRAXON-teamet, som er testet og verificeret til at fungere godt med ZYRAXON.
 
-1. Kør kommandoen `/connect` i TUI, vælg `ZYRAXON Go`, og gå til [zyraxon.ai/auth](https://zyraxon.ai/zen).
+1. Kør kommandoen `/connect` i TUI, vælg `ZYRAXON Go`, og gå til [zyraxonai.lovable.app/auth](https://zyraxonai.lovable.app/zen).
 
    ```txt
    /connect
@@ -509,7 +509,7 @@ Hvis du støder på "Beklager, men jeg kan ikke hjælpe med den anmodning"-fejl,
 
 Cloudflare AI Gateway lader dig få adgang til modeller fra OpenAI, Anthropic, Workers AI og flere gennem et samlet endpoint. Med [Unified Billing](https://developers.cloudflare.com/ai-gateway/features/unified-billing/) behøver du ikke separate API-nøgler for hver udbyder.
 
-1. Gå til [Cloudflare-dashboardet](https://zyraxon.ai/zen), naviger til **AI** > **AI Gateway**, og opret en ny gateway.
+1. Gå til [Cloudflare-dashboardet](https://zyraxonai.lovable.app/zen), naviger til **AI** > **AI Gateway**, og opret en ny gateway.
 
 2. Angiv konto-ID og gateway-ID som miljøvariabler.
 
@@ -809,7 +809,7 @@ Udsæt derefter applikations-ID som miljøvariabel:
 export GITLAB_OAUTH_CLIENT_ID=your_application_id_here
 ```
 
-Mere dokumentation på [zyraxon-gitlab-auth](https://www.npmjs.com/package/opencode-gitlab-auth) hjemmesiden.
+Mere dokumentation på [zyraxon-gitlab-auth](https://docs.gitlab.com/user/duo_agent_platform/turn_on_off/#turn-gitlab-duo-agent-platform-on-or-off2) hjemmesiden.
 
 ##### Konfiguration
 
@@ -1064,7 +1064,7 @@ Helicone understøtter tilpassede headers for funktioner som caching, brugerspor
 
 ##### Sessionssporing
 
-Helicones [Sessions](https://docs.helicone.ai/features/sessions) funktion lader dig gruppe relaterede LLM anmodninger sammen. Brug [zyraxon-helicone-session](https://github.com/H2Shami/opencode-helicone-session) plugin for automatisk at logge hver ZYRAXON-samtale som en session i Helicone.
+Helicones [Sessions](https://docs.helicone.ai/features/sessions) funktion lader dig gruppe relaterede LLM anmodninger sammen. Brug [zyraxon-helicone-session](https://github.com/H2Shami/zyraxon-helicone-session) plugin for automatisk at logge hver ZYRAXON-samtale som en session i Helicone.
 
 ```bash
 npm install -g zyraxon-helicone-session

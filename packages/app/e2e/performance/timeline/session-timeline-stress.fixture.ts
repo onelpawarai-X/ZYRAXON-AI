@@ -294,7 +294,7 @@ export const fixture = {
   provider: {
     all: [
       {
-        id: "opencode",
+        id: "zyraxon",
         name: "ZYRAXON",
         models: { "claude-opus-4-6": { id: "claude-opus-4-6", name: "Claude Opus 4.6", limit: { context: 200_000 } } },
       },

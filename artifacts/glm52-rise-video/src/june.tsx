@@ -138,7 +138,7 @@ export function JuneTotals() {
             fontWeight: 500,
           }}
         >
-          <div style={{ color: c.ink }}>zyraxon.ai/data</div>
+          <div style={{ color: c.ink }}>zyraxonai.lovable.app/data</div>
         </div>
       </div>
     </AbsoluteFill>

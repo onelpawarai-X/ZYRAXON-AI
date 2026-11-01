@@ -16,7 +16,7 @@ import { ConfigProviderV1 } from "../../v1/config/provider"
 import { ConfigProviderOptionsV1 } from "../../v1/config/provider-options"
 import { ConfigV1 } from "../../v1/config/config"
 
-const defaultServer = process.env["ZYRAXON_CONSOLE_URL"] ?? "https://zyraxon.ai/console"
+const defaultServer = process.env["ZYRAXON_CONSOLE_URL"] ?? "https://zyraxonai.lovable.app/console"
 const clientID = "zyraxon-cli"
 const methodID = Integration.MethodID.make("device")
 const RemoteResponse = Schema.Struct({ config: ConfigV1.Info })
@@ -165,7 +165,7 @@ export const ZyraxonPlugin = define<HttpClient.HttpClient | EventV2.Service | Sc
         }
       }
 
-      const item = catalog.provider.get(ProviderV2.ID.opencode)
+      const item = catalog.provider.get(ProviderV2.ID.zyraxon)
       if (!item) return
       // ZYRAXON policy: the upstream provider is API-key only. There is no
       // anonymous public-key path and no free-model fallback. Without a key the

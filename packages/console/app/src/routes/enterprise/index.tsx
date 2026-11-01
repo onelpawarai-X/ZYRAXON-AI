@@ -277,7 +277,7 @@ export default function Enterprise() {
               </li>
               <li>
                 <Faq question={i18n.t("enterprise.faq.q5")}>
-                  {i18n.t("enterprise.faq.a5.before")} <a href="https://trust.zyraxon.ai">trust.zyraxon.ai</a>{" "}
+                  {i18n.t("enterprise.faq.a5.before")} <a href="https://trust.zyraxonai.lovable.app">trust.zyraxonai.lovable.app</a>{" "}
                   {i18n.t("enterprise.faq.a5.after")}
                 </Faq>
               </li>

@@ -9,7 +9,7 @@ connecting an external system to the agent.**
 ### The headline fix: AI Generate respects your connections
 
 AI Generate had its own model list, and that list only ever offered the free
-`opencode` and `zyraxon` models. If you had connected OpenAI, Anthropic, Google
+`zyraxon` and `zyraxon` models. If you had connected OpenAI, Anthropic, Google
 or any other provider, its models never appeared in the AI Generate selector, so
 you could not use them there — even though the main chat offered them.
 
@@ -23,7 +23,7 @@ two surfaces can no longer drift apart.
 - **Auto picks a model you are not billed for.** When you leave the selection on
   Auto, it prefers the free gateway, then the house provider, then the rest, so
   Auto never quietly lands on a paid model.
-- **Clearer failures.** The error hint no longer blames `opencode`; it now points
+- **Clearer failures.** The error hint no longer blames `zyraxon`; it now points
   at the real cause — connect a provider in Settings and pick an available model.
 
 ### Session export and import

@@ -786,7 +786,7 @@ function defaultModelFromConfig(
   // First-session ACP startup must not scan historical sessions just to infer
   // a default. Configured model, zyraxon provider, then sorted best model keep
   // the protocol response deterministic without extra session/message reads.
-  const houseProvider = providers[ProviderV2.ID.make("opencode")]
+  const houseProvider = providers[ProviderV2.ID.make("zyraxon")]
   const houseModel = houseProvider ? Provider.sort(Object.values(houseProvider.models))[0] : undefined
   if (houseProvider && houseModel) return { providerID: houseProvider.id, modelID: houseModel.id }
 

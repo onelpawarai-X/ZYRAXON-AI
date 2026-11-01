@@ -39,7 +39,7 @@ Sie können die Base URL für jeden Anbieter anpassen, indem Sie die Option `bas
   "provider": {
     "anthropic": {
       "options": {
-        "baseURL": "https://zyraxon.ai/auth"
+        "baseURL": "https://zyraxonai.lovable.app/auth"
       }
     }
   }
@@ -57,7 +57,7 @@ Getestet und verifiziert, dass es gut mit ZYRAXON funktioniert. [Learn more](/do
 Wenn Sie neu sind, empfehlen wir Ihnen, mit ZYRAXON Zen zu beginnen.
 :::
 
-1. Führen Sie den Befehl `/connect` in TUI aus, wählen Sie ZYRAXON aus und gehen Sie zu [zyraxon.ai/auth](https://zyraxon.ai/auth).
+1. Führen Sie den Befehl `/connect` in TUI aus, wählen Sie ZYRAXON aus und gehen Sie zu [zyraxonai.lovable.app/auth](https://zyraxonai.lovable.app/auth).
 
    ```txt
    /connect
@@ -88,7 +88,7 @@ Es funktioniert wie jeder andere Anbieter in ZYRAXON und ist völlig optional.
 
 ZYRAXON Go ist ein kostenguenstiges Abonnement, das zuverlaessigen Zugriff auf beliebte Open-Coding-Modelle bietet, die vom ZYRAXON-Team getestet und verifiziert wurden, dass sie gut mit ZYRAXON funktionieren.
 
-1. Führen Sie den Befehl `/connect` in der TUI aus, waehlen Sie `ZYRAXON Go` und gehen Sie zu [zyraxon.ai/auth](https://zyraxon.ai/zen).
+1. Führen Sie den Befehl `/connect` in der TUI aus, waehlen Sie `ZYRAXON Go` und gehen Sie zu [zyraxonai.lovable.app/auth](https://zyraxonai.lovable.app/zen).
 
    ```txt
    /connect
@@ -515,7 +515,7 @@ Wenn Sie auf die Fehlermeldung „Es tut mir leid, aber ich kann Ihnen bei diese
 
 Mit dem Cloudflare AI Gateway können Sie über einen einheitlichen Endpunkt auf Modelle von OpenAI, Anthropic, Workers AI und mehr zugreifen. Mit [Unified Billing](https://developers.cloudflare.com/ai-gateway/features/unified-billing/) benötigen Sie nicht für jeden Anbieter separate API-Schlüssel.
 
-1. Gehen Sie zu [Cloudflare dashboard](https://zyraxon.ai/zen), navigieren Sie zu **AI** > **AI Gateway** und erstellen Sie ein neues Gateway.
+1. Gehen Sie zu [Cloudflare dashboard](https://zyraxonai.lovable.app/zen), navigieren Sie zu **AI** > **AI Gateway** und erstellen Sie ein neues Gateway.
 
 2. Legen Sie Ihr Konto ID und Ihr Gateway ID als Umgebungsvariablen fest.
 
@@ -815,7 +815,7 @@ Stellen Sie dann die Anwendung ID als Umgebungsvariable bereit:
 export GITLAB_OAUTH_CLIENT_ID=your_application_id_here
 ```
 
-Weitere Dokumentation auf der [zyraxon-gitlab-auth](https://www.npmjs.com/package/opencode-gitlab-auth)-Homepage.
+Weitere Dokumentation auf der [zyraxon-gitlab-auth](https://docs.gitlab.com/user/duo_agent_platform/turn_on_off/#turn-gitlab-duo-agent-platform-on-or-off2)-Homepage.
 
 ##### Konfiguration
 
@@ -1070,7 +1070,7 @@ Helicone unterstützt benutzerdefinierte Header für Funktionen wie Caching, Ben
 
 ##### Sitzungsverfolgung
 
-Mit der [Sessions](https://docs.helicone.ai/features/sessions)-Funktion von Helicone können Sie zusammengehörige LLM-Anfragen gruppieren. Verwenden Sie das [zyraxon-helicone-session](https://github.com/H2Shami/opencode-helicone-session)-Plugin, um jede ZYRAXON-Konversation automatisch als Sitzung in Helicone zu protokollieren.
+Mit der [Sessions](https://docs.helicone.ai/features/sessions)-Funktion von Helicone können Sie zusammengehörige LLM-Anfragen gruppieren. Verwenden Sie das [zyraxon-helicone-session](https://github.com/H2Shami/zyraxon-helicone-session)-Plugin, um jede ZYRAXON-Konversation automatisch als Sitzung in Helicone zu protokollieren.
 
 ```bash
 npm install -g zyraxon-helicone-session

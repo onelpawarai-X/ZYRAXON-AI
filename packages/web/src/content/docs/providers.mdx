@@ -93,7 +93,7 @@ tested and verified to work well with ZYRAXON. [Learn more](/docs/zen).
 If you are new, we recommend starting with ZYRAXON Zen.
 :::
 
-1. Run the `/connect` command in the TUI, select `ZYRAXON Zen`, and head to [zyraxon.ai/auth](https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider9).
+1. Run the `/connect` command in the TUI, select `ZYRAXON Zen`, and head to [zyraxonai.lovable.app/auth](https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider9).
 
    ```txt
    /connect
@@ -125,7 +125,7 @@ It works like any other provider in ZYRAXON and is completely optional to use.
 ZYRAXON Go is a low cost subscription plan that provides reliable access to popular open coding models provided by the ZYRAXON team that have been
 tested and verified to work well with ZYRAXON.
 
-1. Run the `/connect` command in the TUI, select `ZYRAXON Go`, and head to [zyraxon.ai/auth](https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider9).
+1. Run the `/connect` command in the TUI, select `ZYRAXON Go`, and head to [zyraxonai.lovable.app/auth](https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider9).
 
    ```txt
    /connect
@@ -382,7 +382,7 @@ You can configure zyraxon to use local models through [Atomic Chat](https://docs
       "npm": "@ai-sdk/openai-compatible",
       "name": "Atomic Chat (local)",
       "options": {
-        "baseURL": "https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider2"
+        "baseURL": "https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider2"
       },
       "models": {
         "<your-model-id>": {
@@ -400,7 +400,7 @@ In this example:
 - `npm` specifies the package to use for this provider. Here, `@ai-sdk/openai-compatible` is used for any OpenAI-compatible API.
 - `name` is the display name for the provider in the UI.
 - `options.baseURL` is the endpoint for the local server. Change the host and port to match your Atomic Chat setup.
-- `models` is a map of model IDs to their display names. Each ID must match the `id` returned by `GET /v1/models` — run `curl https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider0 to list the ids currently loaded in Atomic Chat.
+- `models` is a map of model IDs to their display names. Each ID must match the `id` returned by `GET /v1/models` — run `curl https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider0 to list the ids currently loaded in Atomic Chat.
 
 :::tip
 If tool calls aren't working well, pick a loaded model with strong tool-calling support (for example, a Qwen-Coder or DeepSeek-Coder variant).
@@ -414,7 +414,7 @@ If tool calls aren't working well, pick a loaded model with strong tool-calling 
 If you encounter "I'm sorry, but I cannot assist with that request" errors, try changing the content filter from **DefaultV2** to **Default** in your Azure resource.
 :::
 
-1. Head over to the [Azure portal](https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider1) and create an **Azure OpenAI** resource. You'll need:
+1. Head over to the [Azure portal](https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider1) and create an **Azure OpenAI** resource. You'll need:
    - **Resource name**: This becomes part of your API endpoint (`https://zenmux.ai/settings/keys)
    - **API key**: Either `KEY 1` or `KEY 2` from your resource
 
@@ -461,7 +461,7 @@ If you encounter "I'm sorry, but I cannot assist with that request" errors, try 
 
 ### Azure Cognitive Services
 
-1. Head over to the [Azure portal](https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider1) and create an **Azure OpenAI** resource. You'll need:
+1. Head over to the [Azure portal](https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider1) and create an **Azure OpenAI** resource. You'll need:
    - **Resource name**: This becomes part of your API endpoint (`https://AZURE_COGNITIVE_SERVICES_RESOURCE_NAME.cognitiveservices.azure.com/`)
    - **API key**: Either `KEY 1` or `KEY 2` from your resource
 
@@ -508,7 +508,7 @@ If you encounter "I'm sorry, but I cannot assist with that request" errors, try 
 
 ### Baseten
 
-1. Head over to the [Baseten](https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider7), create an account, and generate an API key.
+1. Head over to the [Baseten](https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider7), create an account, and generate an API key.
 
 2. Run the `/connect` command and search for **Baseten**.
 
@@ -535,7 +535,7 @@ If you encounter "I'm sorry, but I cannot assist with that request" errors, try 
 
 ### Cerebras
 
-1. Head over to the [Cerebras console](https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider7), create an account, and generate an API key.
+1. Head over to the [Cerebras console](https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider7), create an account, and generate an API key.
 
 2. Run the `/connect` command and search for **Cerebras**.
 
@@ -872,7 +872,7 @@ Selecting a router model is a drop-in replacement for any other model — ZYRAXO
 
 ### Fireworks AI
 
-1. Head over to the [Fireworks AI console](https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider0), create an account, and click **Create API Key**.
+1. Head over to the [Fireworks AI console](https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider0), create an account, and click **Create API Key**.
 
 2. Run the `/connect` command and search for **Fireworks AI**.
 
@@ -1086,12 +1086,12 @@ subscription](https://cloud.digitalocean.com/) to use.
    /connect
    ```
 
-2. Navigate to [github.com/login/device](https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider4) and enter the code.
+2. Navigate to [github.com/login/device](https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider4) and enter the code.
 
    ```txt
    ┌ Login with GitHub Copilot
    │
-   │ https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider4
+   │ https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider4
    │
    │ Enter code: 8F43-6FCF
    │
@@ -1262,7 +1262,7 @@ The `global` region improves availability and reduces errors at no extra cost. U
    /models
    ```
 
-For more providers and advanced features like caching and rate limiting, check the [Helicone documentation](https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider5).
+For more providers and advanced features like caching and rate limiting, check the [Helicone documentation](https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider5).
 
 #### Optional Configs
 
@@ -1278,7 +1278,7 @@ Here's [Helicone's Model Directory](https://docs.digitalocean.com/products/genai
       "npm": "@ai-sdk/openai-compatible",
       "name": "Helicone",
       "options": {
-        "baseURL": "https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider9",
+        "baseURL": "https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider9",
       },
       "models": {
         "gpt-4o": {
@@ -1306,7 +1306,7 @@ Helicone supports custom headers for features like caching, user tracking, and s
       "npm": "@ai-sdk/openai-compatible",
       "name": "Helicone",
       "options": {
-        "baseURL": "https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider9",
+        "baseURL": "https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider9",
         "headers": {
           "Helicone-Cache-Enabled": "true",
           "Helicone-User-Id": "zyraxon",
@@ -1427,7 +1427,7 @@ You can configure zyraxon to use local models through LM Studio.
       "npm": "@ai-sdk/openai-compatible",
       "name": "LM Studio (local)",
       "options": {
-        "baseURL": "https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider3"
+        "baseURL": "https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider3"
       },
       "models": {
         "google/gemma-3n-e4b": {
@@ -1507,9 +1507,9 @@ To use Kimi K2 from Moonshot AI:
 
 ### NVIDIA
 
-NVIDIA provides access to Nemotron models and many other open models through [build.nvidia.com](https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider4) for free.
+NVIDIA provides access to Nemotron models and many other open models through [build.nvidia.com](https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider4) for free.
 
-1. Head over to [build.nvidia.com](https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider4), create an account, and generate an API key.
+1. Head over to [build.nvidia.com](https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider4), create an account, and generate an API key.
 
 2. Run the `/connect` command and search for **NVIDIA**.
 
@@ -1951,7 +1951,7 @@ STACKIT AI Model Serving provides fully managed sovereign hosting environment fo
 
 ### OVHcloud AI Endpoints
 
-1. Head over to the [OVHcloud panel](https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider8). Navigate to the `Public Cloud` section, `AI & Machine Learning` > `AI Endpoints` and in `API Keys` tab, click **Create a new API key**.
+1. Head over to the [OVHcloud panel](https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider8). Navigate to the `Public Cloud` section, `AI & Machine Learning` > `AI Endpoints` and in `API Keys` tab, click **Create a new API key**.
 
 2. Run the `/connect` command and search for **OVHcloud AI Endpoints**.
 
@@ -2009,7 +2009,7 @@ To use [Scaleway Generative APIs](https://docs.gitlab.com/user/duo_agent_platfor
 
 [Snowflake Cortex](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-rest-api) gives you access to frontier models (Claude, OpenAI GPT-5, and more) via an OpenAI-compatible API. All inference runs within the Snowflake perimeter and is billed in Snowflake credits. For per-model rates, see the [Snowflake Service Consumption Table](https://www.snowflake.com/legal-files/CreditConsumptionTable.pdf).
 
-Don't have a Snowflake account? [Sign up for a free trial](https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider).
+Don't have a Snowflake account? [Sign up for a free trial](https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider).
 
 zyraxon's core workflow for coding, editing files, and running commands relies on tool calling. Only the Claude and OpenAI families within Snowflake Cortex support this. The provider is limited to those families to support the core workflow.
 
@@ -2110,7 +2110,7 @@ The model catalog is provided automatically. A minimal `zyraxon.json` is all tha
 
 ### Together AI
 
-1. Head over to the [Together AI console](https://signup.snowflake.com/?utm_source=opencode&utm_medium=docs&utm_campaign=cortex-provider6), create an account, and click **Add Key**.
+1. Head over to the [Together AI console](https://signup.snowflake.com/?utm_source=zyraxon&utm_medium=docs&utm_campaign=cortex-provider6), create an account, and click **Add Key**.
 
 2. Run the `/connect` command and search for **Together AI**.
 

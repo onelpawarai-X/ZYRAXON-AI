@@ -5681,7 +5681,7 @@ Search gigs, sellers and reviews
 | Fair Value MCP Server | `com.ascent-partners/fair-value` | General | remote_http | no_auth | tools_list | 14 | `https://fair-value.ascent-partners.com/mcp` |
 | HKEx Filings | `com.ascent-partners/hkex-filings` | AI & ML | remote_http | no_auth | full | 4 | `https://hkex-listco-updates.ascent-partners.com/api/mcp` |
 | Intangible Asset Valuation MCP Server | `com.ascent-partners/intangible-valuation` | General | remote_http | no_auth | tools_list | 14 | `https://intangible-valuation.ascent-partners.com/api/mcp` |
-| com.ascent-partners/opencode-workbench | `com.ascent-partners/opencode-workbench` | General | remote_http | no_auth | full | 10 | `https://opencode-workbench.simonmak.com/mcp` |
+| com.ascent-partners/zyraxon-workbench | `com.ascent-partners/zyraxon-workbench` | General | remote_http | no_auth | full | 10 | `https://zyraxon-workbench.simonmak.com/mcp` |
 | Startup Valuation MCP Server | `com.ascent-partners/startup-valuation` | AI & ML | remote_http | no_auth | tools_list | 14 | `https://startup-valuation.ascent-partners.com/api` |
 | Vision Driven Design (VDD) MCP Server | `com.ascent-partners/vision-driven-design` | Data & Analytics | remote_http | no_auth | tools_list | 15 | `https://vdd.simonmak.com/api/mcp` |
 | A股数据 API (A-Share Data API) | `com.ashareapi/ashare-data-api` | General | remote_http | no_auth | tools_list | 84 | `https://api.ashareapi.com/mcp` |

@@ -181,7 +181,7 @@ export default function () {
               modelParam = "unknown"
             }
             const version = `v${info().version}`
-            return `https://social-cards.zyraxon.ai/zyraxon-share/${encodedTitle}.png?model=${modelParam}&version=${version}&id=${data().shareID}`
+            return `https://social-cards.zyraxonai.lovable.app/zyraxon-share/${encodedTitle}.png?model=${modelParam}&version=${version}&id=${data().shareID}`
           })
 
           return (
@@ -276,7 +276,7 @@ export default function () {
                         <div class="relative bg-background-stronger w-screen h-screen overflow-hidden flex flex-col">
                           <header class="h-12 px-6 py-2 flex items-center justify-between self-stretch bg-background-base border-b border-border-weak-base">
                             <div class="">
-                              <a href="https://zyraxon.ai">
+                              <a href="https://zyraxonai.lovable.app">
                                 <Mark />
                               </a>
                             </div>
@@ -290,7 +290,7 @@ export default function () {
                               />
                               <IconButton
                                 as={"a"}
-                                href="https://zyraxon.ai/discord"
+                                href="https://zyraxonai.lovable.app/discord"
                                 target="_blank"
                                 icon="discord"
                                 variant="ghost"

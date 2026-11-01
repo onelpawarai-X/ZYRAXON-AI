@@ -10,8 +10,8 @@ import { selectProviderCatalog } from "./provider-catalog"
 export const popularProviders = [
   "zyraxon",
   "local",
-  "opencode",
-  "opencode-go",
+  "zyraxon",
+  "zyraxon-go",
   "anthropic",
   "github-copilot",
   "openai",
@@ -68,7 +68,7 @@ export function useProviders(directory?: Accessor<string | undefined>) {
           providers().all,
           ([id]) =>
             connected.has(id) &&
-            (id !== "opencode" || Object.values(providers().all.get(id)?.models ?? {}).some((m) => m.cost?.input)),
+            (id !== "zyraxon" || Object.values(providers().all.get(id)?.models ?? {}).some((m) => m.cost?.input)),
         ),
       ]
       return paid

@@ -17,7 +17,7 @@ import {
   buttonText,
 } from "../styles"
 
-const CONSOLE_URL = "https://zyraxon.ai/"
+const CONSOLE_URL = "https://zyraxonai.lovable.app/"
 
 interface InviteEmailProps {
   inviter?: string

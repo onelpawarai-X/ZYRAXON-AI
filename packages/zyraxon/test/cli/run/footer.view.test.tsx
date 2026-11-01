@@ -61,7 +61,7 @@ function model(input: {
     providerID: "zyraxon",
     api: {
       id: "zyraxon",
-      url: "https://zyraxon.ai",
+      url: "https://zyraxonai.lovable.app",
       npm: "@ai-sdk/openai-compatible",
     },
     name: input.name,

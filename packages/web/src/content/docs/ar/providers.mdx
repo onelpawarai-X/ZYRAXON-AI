@@ -38,7 +38,7 @@ export const console = config.console
   "provider": {
     "anthropic": {
       "options": {
-        "baseURL": "https://zyraxon.ai/auth"
+        "baseURL": "https://zyraxonai.lovable.app/auth"
       }
     }
   }
@@ -56,7 +56,7 @@ ZYRAXON Zen هي قائمة نماذج يوفّرها فريق ZYRAXON وقد ت
 إذا كنت جديدا، فننصح بالبدء مع ZYRAXON Zen.
 :::
 
-1. شغّل الأمر `/connect` في TUI، واختر zyraxon، ثم انتقل إلى [zyraxon.ai/auth](https://zyraxon.ai/auth).
+1. شغّل الأمر `/connect` في TUI، واختر zyraxon، ثم انتقل إلى [zyraxonai.lovable.app/auth](https://zyraxonai.lovable.app/auth).
 
    ```txt
    /connect
@@ -87,7 +87,7 @@ ZYRAXON Zen هي قائمة نماذج يوفّرها فريق ZYRAXON وقد ت
 
 ZYRAXON Go هي خطة اشتراك منخفضة التكلفة توفّر وصولا موثوقا إلى نماذج البرمجة المفتوحة الشهيرة المقدّمة من فريق ZYRAXON، والتي تم اختبارها والتحقق من أنها تعمل بشكل جيد مع ZYRAXON.
 
-1. شغّل الأمر `/connect` في TUI، واختر `ZYRAXON Go`، ثم انتقل إلى [zyraxon.ai/auth](https://zyraxon.ai/zen).
+1. شغّل الأمر `/connect` في TUI، واختر `ZYRAXON Go`، ثم انتقل إلى [zyraxonai.lovable.app/auth](https://zyraxonai.lovable.app/zen).
 
    ```txt
    /connect
@@ -513,7 +513,7 @@ ZYRAXON Go هي خطة اشتراك منخفضة التكلفة توفّر وص�
 
 تتيح Cloudflare AI Gateway الوصول إلى نماذج من OpenAI وAnthropic وWorkers AI وغيرها عبر نقطة نهاية موحّدة. مع [Unified Billing](https://developers.cloudflare.com/ai-gateway/features/unified-billing/) لن تحتاج إلى مفاتيح API منفصلة لكل مزوّد.
 
-1. توجّه إلى [Cloudflare dashboard](https://zyraxon.ai/zen)، وانتقل إلى **AI** > **AI Gateway**، وأنشئ بوابة جديدة.
+1. توجّه إلى [Cloudflare dashboard](https://zyraxonai.lovable.app/zen)، وانتقل إلى **AI** > **AI Gateway**، وأنشئ بوابة جديدة.
 
 2. عيّن Account ID وGateway ID كمتغيرات بيئة.
 
@@ -812,7 +812,7 @@ callback URL ‏`http://127.0.0.1:8080/callback` ونطاقات الصلاحيا
 export GITLAB_OAUTH_CLIENT_ID=your_application_id_here
 ```
 
-مزيد من التوثيق على صفحة [zyraxon-gitlab-auth](https://www.npmjs.com/package/opencode-gitlab-auth).
+مزيد من التوثيق على صفحة [zyraxon-gitlab-auth](https://docs.gitlab.com/user/duo_agent_platform/turn_on_off/#turn-gitlab-duo-agent-platform-on-or-off2).
 
 ##### التهيئة
 
@@ -1066,7 +1066,7 @@ export GITLAB_OAUTH_CLIENT_ID=your_application_id_here
 
 ##### تتبع الجلسات
 
-تتيح ميزة [Sessions](https://docs.helicone.ai/features/sessions) في Helicone تجميع طلبات LLM المرتبطة معا. استخدم ملحق [zyraxon-helicone-session](https://github.com/H2Shami/opencode-helicone-session) لتسجيل كل محادثة ZYRAXON تلقائيا كجلسة في Helicone.
+تتيح ميزة [Sessions](https://docs.helicone.ai/features/sessions) في Helicone تجميع طلبات LLM المرتبطة معا. استخدم ملحق [zyraxon-helicone-session](https://github.com/H2Shami/zyraxon-helicone-session) لتسجيل كل محادثة ZYRAXON تلقائيا كجلسة في Helicone.
 
 ```bash
 npm install -g zyraxon-helicone-session

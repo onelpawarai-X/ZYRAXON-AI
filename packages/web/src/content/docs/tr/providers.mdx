@@ -39,7 +39,7 @@ config.
   "provider": {
     "anthropic": {
       "options": {
-        "baseURL": "https://zyraxon.ai/auth"
+        "baseURL": "https://zyraxonai.lovable.app/auth"
       }
     }
   }
@@ -57,7 +57,7 @@ zyraxon ile iyi çalıştığı test edilip doğrulandı. [Daha fazla bilgi](/do
 Yeniyseniz ZYRAXON Zen ile başlamanızı öneririz.
 :::
 
-1. TUI'de `/connect` komutunu çalıştırın, zyraxon'u seçin ve [zyraxon.ai/auth](https://zyraxon.ai/auth)'ye gidin.
+1. TUI'de `/connect` komutunu çalıştırın, zyraxon'u seçin ve [zyraxonai.lovable.app/auth](https://zyraxonai.lovable.app/auth)'ye gidin.
 
    ```txt
    /connect
@@ -88,7 +88,7 @@ zyraxon'daki diğer sağlayıcılar gibi çalışır ve kullanımı tamamen iste
 
 ZYRAXON Go, zyraxon ile iyi çalıştığı test edilmiş ve doğrulanmış, zyraxon ekibi tarafından sağlanan popüler açık kodlama modellerine güvenilir erişim sağlayan düşük maliyetli bir abonelik planıdır.
 
-1. TUI'de `/connect` komutunu çalıştırın, `ZYRAXON Go`'yu seçin ve [zyraxon.ai/auth](https://zyraxon.ai/zen) adresine gidin.
+1. TUI'de `/connect` komutunu çalıştırın, `ZYRAXON Go`'yu seçin ve [zyraxonai.lovable.app/auth](https://zyraxonai.lovable.app/zen) adresine gidin.
 
    ```txt
    /connect
@@ -517,7 +517,7 @@ Araç çağrıları iyi çalışmıyorsa, tool calling desteği güçlü olan y�
 
 Cloudflare AI Gateway, OpenAI, Anthropic, Workers AI ve daha fazlasındaki modellere birleşik bir uç nokta aracılığıyla erişmenizi sağlar. [Unified Billing](https://developers.cloudflare.com/ai-gateway/features/unified-billing/) ile her sağlayıcı için ayrı API anahtarlarına ihtiyacınız yoktur.
 
-1. [Cloudflare dashboard](https://zyraxon.ai/zen)'a gidin, **AI** > **AI Ağ Geçidi**'ne gidin ve yeni bir ağ geçidi oluşturun.
+1. [Cloudflare dashboard](https://zyraxonai.lovable.app/zen)'a gidin, **AI** > **AI Ağ Geçidi**'ne gidin ve yeni bir ağ geçidi oluşturun.
 
 2. Hesap Kimliğinizi ve Ağ Geçidi Kimliğinizi ortam değişkenleri olarak ayarlayın.
 
@@ -817,7 +817,7 @@ Then expose application ID as environment variable:
 export GITLAB_OAUTH_CLIENT_ID=your_application_id_here
 ```
 
-Daha fazla belge [zyraxon-gitlab-auth](https://www.npmjs.com/package/opencode-gitlab-auth) ana sayfasında.
+Daha fazla belge [zyraxon-gitlab-auth](https://docs.gitlab.com/user/duo_agent_platform/turn_on_off/#turn-gitlab-duo-agent-platform-on-or-off2) ana sayfasında.
 
 ##### Yapılandırma
 
@@ -1071,7 +1071,7 @@ Helicone, önbelleğe alma, kullanıcı izleme ve oturum yönetimi gibi özellik
 
 ##### Oturum izleme
 
-Helicone'un [Sessions](https://docs.helicone.ai/features/sessions) özelliği, ilgili LLM isteklerini birlikte gruplandırmanıza olanak tanır. Her zyraxon görüşmesini Helicone'da bir oturum olarak otomatik olarak kaydetmek için [zyraxon-helicone-session](https://github.com/H2Shami/opencode-helicone-session) eklentisini kullanın.
+Helicone'un [Sessions](https://docs.helicone.ai/features/sessions) özelliği, ilgili LLM isteklerini birlikte gruplandırmanıza olanak tanır. Her zyraxon görüşmesini Helicone'da bir oturum olarak otomatik olarak kaydetmek için [zyraxon-helicone-session](https://github.com/H2Shami/zyraxon-helicone-session) eklentisini kullanın.
 
 ```bash
 npm install -g zyraxon-helicone-session

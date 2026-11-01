@@ -337,7 +337,7 @@ bun run --cwd packages/desktop bun run package:mac
 
 ## Contact
 
-- **Website**: https://zyraxon.ai
+- **Website**: https://zyraxonai.lovable.app
 - **Email**: skhridoy652@gmail.com
 - **Discord**: https://discord.gg/GP8yX33NA
 

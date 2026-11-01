@@ -1211,7 +1211,7 @@ export type Config = {
     diff_style?: "auto" | "stacked"
   }
   /**
-   * Command configuration, see https://zyraxon.ai/docs/commands
+   * Command configuration, see https://zyraxonai.lovable.app/docs/commands
    */
   command?: {
     [key: string]: {
@@ -1268,7 +1268,7 @@ export type Config = {
     [key: string]: AgentConfig | undefined
   }
   /**
-   * Agent configuration, see https://zyraxon.ai/docs/agent
+   * Agent configuration, see https://zyraxonai.lovable.app/docs/agent
    */
   agent?: {
     plan?: AgentConfig

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://zyraxon.ai/config.json",
+  "$schema": "https://zyraxonai.lovable.app/config.json",
   "provider": {},
   "permission": "allow",
   "references": {

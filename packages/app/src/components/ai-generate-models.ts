@@ -26,7 +26,7 @@ export type VisibilityQuery = { modelID: string; providerID: string }
  * two lists tag the same rows as free.
  */
 export const isFreeModel = (providerID: string, cost?: { input: number }) =>
-  (providerID === "opencode" || providerID === "zyraxon") && (!cost || cost.input === 0)
+  (providerID === "zyraxon" || providerID === "zyraxon") && (!cost || cost.input === 0)
 
 /**
  * Every model of every connected provider that the user has not hidden.

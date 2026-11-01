@@ -1,9 +1,9 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 export const domain = (() => {
-  if ($app.stage === "production") return "zyraxon.ai"
-  if ($app.stage === "dev") return "dev.zyraxon.ai"
-  return `${$app.stage}.dev.zyraxon.ai`
+  if ($app.stage === "production") return "zyraxonai.lovable.app"
+  if ($app.stage === "dev") return "dev.zyraxonai.lovable.app"
+  return `${$app.stage}.dev.zyraxonai.lovable.app`
 })()
 
 export const zoneID = "430ba34c138cfb5360826c4909f99be8"
@@ -27,7 +27,7 @@ export const zyraxonConfig = {
 if ($app.stage === "production") {
   new cloudflare.DnsRecord("TrustCenter", {
     zoneId: zoneID,
-    name: "trust.zyraxon.ai",
+    name: "trust.zyraxonai.lovable.app",
     type: "CNAME",
     content: "3a69a5bb27875189.vercel-dns-016.com",
     proxied: false,
@@ -36,7 +36,7 @@ if ($app.stage === "production") {
 
   new cloudflare.DnsRecord("TrustCenterVerification", {
     zoneId: zoneID,
-    name: "zyraxon.ai",
+    name: "zyraxonai.lovable.app",
     type: "TXT",
     content: "compai-domain-verification=org_6993a99c6200a2d642bb115d",
     ttl: 60,

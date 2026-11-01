@@ -190,7 +190,7 @@ export class ZyraxonGenerator {
     };
 
     const result: Record<string, any> = {};
-    result['$schema'] = 'https://opencode.ai/config.json';
+    result['$schema'] = 'https://zyraxonai.lovable.app/config.json';
     result['mcp'] = {};
     result['tools'] = {
       'jarvis*': false,

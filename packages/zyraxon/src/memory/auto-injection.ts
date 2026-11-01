@@ -1,7 +1,7 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 // ZYRAXON ETERNAL MEMORY v5 — Token-Based Compaction, 50,000 Year Preservation
-// OpenCode-inspired but 100x better: token-based selection, incremental LLM summaries,
+// Zyraxon-inspired but 100x better: token-based selection, incremental LLM summaries,
 // structured summary (Objective/Work State/Next Move), 500-message buffer.
 // Zero limits. Zero forget. Zero latency. Survives 1000GB+ databases.
 
@@ -17,12 +17,12 @@ const MEMORY_DIR = path.join(Global.Path.data, "memory")
 const DB_PATH = path.join(MEMORY_DIR, "infinite_memory.db")
 
 // ═══════════════════════════════════════════════════════════════
-// TOKEN-BASED COMPACTION CONSTANTS — 10x more than OpenCode
+// TOKEN-BASED COMPACTION CONSTANTS — 10x more than Zyraxon
 // ═══════════════════════════════════════════════════════════════
-const CHARS_PER_TOKEN = 4                        // Same as OpenCode: length / 4
-const RECENT_BUFFER_SIZE = 500                   // 500 messages buffer (OpenCode: ~50)
+const CHARS_PER_TOKEN = 4                        // Same as Zyraxon: length / 4
+const RECENT_BUFFER_SIZE = 500                   // 500 messages buffer (Zyraxon: ~50)
 const MAX_CONTEXT_MEMORIES = 100                 // 100 memories for deep recall
-const KEEP_TOKENS = 20000                        // Keep last 20K tokens (OpenCode: 8K)
+const KEEP_TOKENS = 20000                        // Keep last 20K tokens (Zyraxon: 8K)
 const COMPACTION_TRIGGER_TOKENS = 60000          // Trigger compaction at 60K tokens
 const COMPACTION_SUMMARY_TOKENS = 4096           // Max tokens for summary output
 const TOOL_OUTPUT_MAX_CHARS = 2000               // Truncate tool outputs in serialization
@@ -237,7 +237,7 @@ async function initDb(): Promise<void> {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// TOKEN ESTIMATION — Same algorithm as OpenCode (4 chars = 1 token)
+// TOKEN ESTIMATION — Same algorithm as Zyraxon (4 chars = 1 token)
 // ═══════════════════════════════════════════════════════════════
 
 function tokenEstimate(input: string): number {
@@ -717,7 +717,7 @@ export async function cachedContextUpdate(context: Record<string, any>): Promise
 }
 
 // ============================================
-// TOKEN-BASED CONTEXT INJECTION — 100x better than OpenCode
+// TOKEN-BASED CONTEXT INJECTION — 100x better than Zyraxon
 // ============================================
 
 export async function autoInjectContext(userMessage: string, agent: string, sessionId?: string): Promise<string> {
@@ -1056,7 +1056,7 @@ export async function checkCompactionNeeded(sessionId: string): Promise<{
   // Get previous summary if exists
   const previousSummary = await getCompactionSummary(sessionId)
 
-  // Build compaction prompt (same as OpenCode's buildPrompt)
+  // Build compaction prompt (same as Zyraxon's buildPrompt)
   const selected = selectMessagesByTokens(
     rows.map(r => ({ role: r.role, content: r.content })),
     KEEP_TOKENS
@@ -1600,7 +1600,7 @@ export const autoMemory = {
   listMemoriesCursor, searchMemoriesCursor,
   // Batch operations (new)
   batchSave, batchSearch,
-  // Compaction system (v5 — 100x better than OpenCode)
+  // Compaction system (v5 — 100x better than Zyraxon)
   compaction,
   getCompactionSummary, storeCompactionSummary, updateCompactionSummary, checkCompactionNeeded,
 }

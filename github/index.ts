@@ -376,7 +376,7 @@ async function getAccessToken() {
 
   let response
   if (isMock()) {
-    response = await fetch("https://api.zyraxon.ai/exchange_github_app_token_with_pat", {
+    response = await fetch("https://api.zyraxonai.lovable.app/exchange_github_app_token_with_pat", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${useEnvMock().mockToken}`,
@@ -385,7 +385,7 @@ async function getAccessToken() {
     })
   } else {
     const oidcToken = await core.getIDToken("zyraxon-github-action")
-    response = await fetch("https://api.zyraxon.ai/exchange_github_app_token", {
+    response = await fetch("https://api.zyraxonai.lovable.app/exchange_github_app_token", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${oidcToken}`,
@@ -833,7 +833,7 @@ function footer(opts?: { image?: boolean }) {
     const titleAlt = encodeURIComponent(session.title.substring(0, 50))
     const title64 = Buffer.from(session.title.substring(0, 700), "utf8").toString("base64")
 
-    return `<a href="${useShareUrl()}/s/${shareId}"><img width="200" alt="${titleAlt}" src="https://social-cards.zyraxon.ai/zyraxon-share/${title64}.png?model=${providerID}/${modelID}&version=${session.version}&id=${shareId}" /></a>\n`
+    return `<a href="${useShareUrl()}/s/${shareId}"><img width="200" alt="${titleAlt}" src="https://social-cards.zyraxonai.lovable.app/zyraxon-share/${title64}.png?model=${providerID}/${modelID}&version=${session.version}&id=${shareId}" /></a>\n`
   })()
   const shareUrl = shareId ? `[zyraxon session](${useShareUrl()}/s/${shareId})&nbsp;&nbsp;|&nbsp;&nbsp;` : ""
   return `\n\n${image}${shareUrl}[github run](${useEnvRunUrl()})`

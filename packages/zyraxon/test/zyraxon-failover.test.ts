@@ -50,7 +50,7 @@ describe("zyraxonFailoverChain", () => {
     // Swapping a paid provider's model behind the user's back would misreport
     // what answered, so failover is deliberately ZYRAXON-only.
     expect(zyraxonFailoverChain("anthropic", "claude-sonnet-4")).toEqual(["claude-sonnet-4"])
-    expect(zyraxonFailoverChain("opencode", "big-pickle")).toEqual(["big-pickle"])
+    expect(zyraxonFailoverChain("zyraxon", "big-pickle")).toEqual(["big-pickle"])
   })
 
   test("still reaches an unknown ZYRAXON model the user selected", () => {

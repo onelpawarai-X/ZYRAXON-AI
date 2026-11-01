@@ -149,7 +149,7 @@ export namespace User {
             // @ts-ignore
             InviteEmail({
               inviter: emailInfo.inviterEmail,
-              assetsUrl: `https://zyraxon.ai/email`,
+              assetsUrl: `https://zyraxonai.lovable.app/email`,
               workspaceID: workspaceID,
               workspaceName: emailInfo.workspaceName,
             }),

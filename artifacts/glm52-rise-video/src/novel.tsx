@@ -128,7 +128,7 @@ export function NovelTokens() {
             }}
           >
             <div style={{ color: c.dim }}>{nf.format(AVG)} tokens / request · last week</div>
-            <div style={{ color: c.white }}>zyraxon.ai/data</div>
+            <div style={{ color: c.white }}>zyraxonai.lovable.app/data</div>
           </div>
         </div>
       </div>

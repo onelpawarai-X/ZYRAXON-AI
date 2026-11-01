@@ -240,7 +240,7 @@ const layer = Layer.effect(
           .install(dir, {
             add: [
               {
-                name: "@opencode-ai/plugin",
+                name: "@zyraxon-ai/plugin",
                 version: InstallationLocal ? undefined : InstallationVersion,
               },
             ],

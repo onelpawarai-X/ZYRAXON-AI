@@ -34,7 +34,7 @@ const xml = `<?xml version="1.0" encoding="UTF-8"?>
   <content_rating type="oars-1.1" />
 
   <url type="bugtracker">https://github.com/onelpawarai/ZYRAXON-AI/issues</url>
-  <url type="homepage">https://zyraxon.ai</url>
+  <url type="homepage">https://zyraxonai.lovable.app</url>
   <url type="vcs-browser">https://github.com/onelpawarai/ZYRAXON-AI</url>
 
   <screenshots>

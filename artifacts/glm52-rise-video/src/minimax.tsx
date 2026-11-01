@@ -195,7 +195,7 @@ export function MiniMaxClimb() {
             <span style={{ width: 13, height: 13, background: c.accent, display: "inline-block" }} />
             2.56T tokens last week · +482.3B added
           </div>
-          <div style={{ color: c.ink }}>zyraxon.ai/data</div>
+          <div style={{ color: c.ink }}>zyraxonai.lovable.app/data</div>
         </div>
       </div>
     </AbsoluteFill>

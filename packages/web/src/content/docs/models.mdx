@@ -53,7 +53,7 @@ ZYRAXON config.
 
 ```json title="zyraxon.json" {3}
 {
-  "$schema": "https://zyraxon.ai/config.json",
+  "$schema": "https://zyraxonai.lovable.app/config.json",
   "model": "lmstudio/google/gemma-3n-e4b"
 }
 ```
@@ -70,7 +70,7 @@ You can globally configure a model's options through the config.
 
 ```jsonc title="zyraxon.jsonc" {7-12,19-24}
 {
-  "$schema": "https://zyraxon.ai/config.json",
+  "$schema": "https://zyraxonai.lovable.app/config.json",
   "provider": {
     "openai": {
       "models": {
@@ -109,7 +109,7 @@ You can also define custom variants that extend built-in ones. Variants let you 
 
 ```jsonc title="zyraxon.jsonc" {6-21}
 {
-  "$schema": "https://zyraxon.ai/config.json",
+  "$schema": "https://zyraxonai.lovable.app/config.json",
   "provider": {
     "zyraxon": {
       "models": {
@@ -174,7 +174,7 @@ You can override existing variants or add your own:
 
 ```jsonc title="zyraxon.jsonc" {7-18}
 {
-  "$schema": "https://zyraxon.ai/config.json",
+  "$schema": "https://zyraxonai.lovable.app/config.json",
   "provider": {
     "openai": {
       "models": {
@@ -211,7 +211,7 @@ When ZYRAXON starts up, it checks for models in the following priority order:
 
    ```json title="zyraxon.json"
    {
-     "$schema": "https://zyraxon.ai/config.json",
+     "$schema": "https://zyraxonai.lovable.app/config.json",
      "model": "anthropic/claude-sonnet-4-20250514"
    }
    ```

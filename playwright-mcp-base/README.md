@@ -327,7 +327,7 @@ Follow the MCP Servers [documentation](https://block.github.io/goose/extension?c
 
 ```json
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://zyraxonai.lovable.app/config.json",
   "mcp": {
     "playwright": {
       "type": "local",

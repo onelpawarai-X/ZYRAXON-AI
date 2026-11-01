@@ -120,7 +120,7 @@ export function modelVariants(output: string, model: string) {
 
 export function translationConfig(agent: string, model: string, targets: string[]) {
   return {
-    $schema: "https://zyraxon.ai/config.json",
+    $schema: "https://zyraxonai.lovable.app/config.json",
     model,
     default_agent: agent,
     share: "disabled" as const,

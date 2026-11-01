@@ -39,7 +39,7 @@ Možete prilagoditi osnovni URL za bilo kojeg provajdera postavljanjem opcije `b
   "provider": {
     "anthropic": {
       "options": {
-        "baseURL": "https://zyraxon.ai/auth"
+        "baseURL": "https://zyraxonai.lovable.app/auth"
       }
     }
   }
@@ -57,7 +57,7 @@ testirano i potvrđeno da dobro radi sa ZYRAXON. [Saznajte više](/docs/zen).
 Ako ste novi, preporučujemo da počnete sa ZYRAXON Zen.
 :::
 
-1. Pokrenite naredbu `/connect` u TUI-u, odaberite zyraxon i idite na [zyraxon.ai/auth](https://zyraxon.ai/auth).
+1. Pokrenite naredbu `/connect` u TUI-u, odaberite zyraxon i idite na [zyraxonai.lovable.app/auth](https://zyraxonai.lovable.app/auth).
 
 ```txt
    /connect
@@ -88,7 +88,7 @@ Radi kao i svaki drugi provajder u ZYRAXON i potpuno je opcionalan za korištenj
 
 ZYRAXON Go je jeftin plan pretplate koji pruža pouzdan pristup popularnim modelima otvorenog kodiranja koje pruža ZYRAXON tim i koji su testirani i verificirani da dobro rade s ZYRAXON-om.
 
-1. Pokrenite naredbu `/connect` u TUI-u, odaberite `ZYRAXON Go` i idite na [zyraxon.ai/auth](https://zyraxon.ai/zen).
+1. Pokrenite naredbu `/connect` u TUI-u, odaberite `ZYRAXON Go` i idite na [zyraxonai.lovable.app/auth](https://zyraxonai.lovable.app/zen).
 
    ```txt
    /connect
@@ -518,7 +518,7 @@ Ili ga dodajte na svoj bash profil:
 
 Cloudflare AI Gateway vam omogućava da pristupite modelima iz OpenAI, Anthropic, Workers AI i više preko objedinjene krajnje tačke. Sa [Unified Billing](https://developers.cloudflare.com/ai-gateway/features/unified-billing/) nisu vam potrebni posebni API ključevi za svakog provajdera.
 
-1. Idite na [Cloudflare kontrolnu tablu](https://zyraxon.ai/zen), idite na **AI** > **AI Gateway** i kreirajte novi pristupnik.
+1. Idite na [Cloudflare kontrolnu tablu](https://zyraxonai.lovable.app/zen), idite na **AI** > **AI Gateway** i kreirajte novi pristupnik.
 
 2. Postavite svoj ID naloga i ID pristupnika kao varijable okruženja.
 
@@ -820,7 +820,7 @@ Zatim izložite ID aplikacije kao varijablu okruženja:
 export GITLAB_OAUTH_CLIENT_ID=your_application_id_here
 ```
 
-Više dokumentacije na početnoj stranici [zyraxon-gitlab-auth](https://www.npmjs.com/package/opencode-gitlab-auth).
+Više dokumentacije na početnoj stranici [zyraxon-gitlab-auth](https://docs.gitlab.com/user/duo_agent_platform/turn_on_off/#turn-gitlab-duo-agent-platform-on-or-off2).
 
 ##### Konfiguracija
 
@@ -1075,7 +1075,7 @@ Helicone podržava prilagođena zaglavlja za funkcije kao što su keširanje, pr
 
 ##### Praćenje sesije
 
-Heliconeova funkcija [Sessions](https://docs.helicone.ai/features/sessions) vam omogućava da grupišete povezane LLM zahtjeve zajedno. Koristite dodatak [zyraxon-helicone-session](https://github.com/H2Shami/opencode-helicone-session) da automatski prijavite svaki ZYRAXON razgovor kao sesiju u Helicone-u.
+Heliconeova funkcija [Sessions](https://docs.helicone.ai/features/sessions) vam omogućava da grupišete povezane LLM zahtjeve zajedno. Koristite dodatak [zyraxon-helicone-session](https://github.com/H2Shami/zyraxon-helicone-session) da automatski prijavite svaki ZYRAXON razgovor kao sesiju u Helicone-u.
 
 ```bash
 npm install -g zyraxon-helicone-session

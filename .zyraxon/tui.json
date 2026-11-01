@@ -1,5 +1,5 @@
 {
-  "$schema": "https://zyraxon.ai/tui.json",
+  "$schema": "https://zyraxonai.lovable.app/tui.json",
   "plugin": [
     [
       "./plugins/tui-smoke.tsx",

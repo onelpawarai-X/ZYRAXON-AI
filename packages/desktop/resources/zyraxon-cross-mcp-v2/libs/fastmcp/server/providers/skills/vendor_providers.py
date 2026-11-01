@@ -126,7 +126,7 @@ class CopilotSkillsProvider(SkillsDirectoryProvider):
         )
 
 
-class OpenCodeSkillsProvider(SkillsDirectoryProvider):
+class ZyraxonSkillsProvider(SkillsDirectoryProvider):
     """ZYRAXON skills from ~/.config/zyraxon/skills/."""
 
     def __init__(

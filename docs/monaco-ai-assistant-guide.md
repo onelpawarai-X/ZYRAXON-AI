@@ -146,19 +146,19 @@ function buggyCode() {
 
 ## Provider Configuration
 
-Default model: `opencode/deepseek-v4-flash-free` (free, unlimited)
+Default model: `zyraxon/deepseek-v4-flash-free` (free, unlimited)
 
 ### Available Free Models:
-- `opencode/deepseek-v4-flash-free` (200K)
-- `opencode/glm-4.7-free` (204K)
-- `opencode/kimi-k2.5-free` (262K)
-- `opencode/mimo-v2-pro-free` (1M)
+- `zyraxon/deepseek-v4-flash-free` (200K)
+- `zyraxon/glm-4.7-free` (204K)
+- `zyraxon/kimi-k2.5-free` (262K)
+- `zyraxon/mimo-v2-pro-free` (1M)
 
 ### To change model:
 Edit `monaco-editor.tsx`:
 ```typescript
 const aiAssistant = new MonacoAIAssistant({
-  model: "opencode/glm-4.7-free",
+  model: "zyraxon/glm-4.7-free",
 })
 ```
 

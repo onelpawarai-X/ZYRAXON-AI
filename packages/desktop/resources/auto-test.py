@@ -433,7 +433,7 @@ console.log('Images:', JSON.stringify(images));
 const emailInputs = await page.$$('input[type="email"], input[name*="email"]');
 if (emailInputs.length > 0) {{
   console.log('Email input found, testing...');
-  await emailInputs[0].fill('test@zyraxon.ai');
+  await emailInputs[0].fill('test@zyraxonai.lovable.app');
 }}
 
 const submitButtons = await page.$$('button[type="submit"], input[type="submit"]');

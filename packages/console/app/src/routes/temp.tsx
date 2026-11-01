@@ -69,7 +69,7 @@ export default function Home() {
               <span>
                 <span>curl -fsSL </span>
                 <span data-slot="protocol">https://</span>
-                <span data-slot="highlight">zyraxon.ai/install</span>
+                <span data-slot="highlight">zyraxonai.lovable.app/install</span>
                 <span> | bash</span>
               </span>
               <CopyStatus />
@@ -166,7 +166,7 @@ export default function Home() {
             <a href="https://github.com/onelpawarai/ZYRAXON-AI">{i18n.t("footer.github")}</a>
           </div>
           <div data-slot="cell">
-            <a href="https://zyraxon.ai/discord">{i18n.t("footer.discord")}</a>
+            <a href="https://zyraxonai.lovable.app/discord">{i18n.t("footer.discord")}</a>
           </div>
         </footer>
       </div>

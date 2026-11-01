@@ -71,8 +71,8 @@ new sst.cloudflare.x.Astro("Web", {
     VITE_API_URL: api.url.apply((url) => url!),
     // ZYRAXON documentation settings
     ZYRAXON_DOCS_VERSION: "1.14.0",
-    ZYRAXON_MCP_TOOLS_DOCS: "https://zyraxon.ai/docs/mcp-tools",
-    ZYRAXON_STREAMING_DOCS: "https://zyraxon.ai/docs/streaming",
+    ZYRAXON_MCP_TOOLS_DOCS: "https://zyraxonai.lovable.app/docs/mcp-tools",
+    ZYRAXON_STREAMING_DOCS: "https://zyraxonai.lovable.app/docs/streaming",
   },
 })
 

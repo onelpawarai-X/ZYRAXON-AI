@@ -3,7 +3,7 @@
 import React from "react"
 import { AbsoluteFill, Easing, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion"
 
-// stats.zyraxon.ai design tokens (light theme)
+// stats.zyraxonai.lovable.app design tokens (light theme)
 const c = {
   bg: "#ffffff",
   ink: "#161616",
@@ -179,7 +179,7 @@ export function FlashShare() {
             <span style={{ width: 13, height: 13, background: c.accent, display: "inline-block" }} />
             DeepSeek V4 Flash · 9.48T tokens · 83.6M requests
           </div>
-          <div style={{ color: c.ink }}>zyraxon.ai/data</div>
+          <div style={{ color: c.ink }}>zyraxonai.lovable.app/data</div>
         </div>
       </div>
     </AbsoluteFill>

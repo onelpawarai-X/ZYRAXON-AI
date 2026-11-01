@@ -7,7 +7,7 @@ This module provides a two-layer architecture for skill discovery:
 - **SkillProvider**: Handles a single skill folder, exposing its files as resources.
 - **SkillsDirectoryProvider**: Scans a directory, creates a SkillProvider per folder.
 - **Vendor providers**: Platform-specific providers for Claude, Cursor, VS Code, Codex,
-  Gemini, Goose, Copilot, and OpenCode.
+  Gemini, Goose, Copilot, and Zyraxon.
 
 Example:
     ```python
@@ -37,7 +37,7 @@ from fastmcp.server.providers.skills.vendor_providers import (
     CursorSkillsProvider,
     GeminiSkillsProvider,
     GooseSkillsProvider,
-    OpenCodeSkillsProvider,
+    ZyraxonSkillsProvider,
     VSCodeSkillsProvider,
 )
 
@@ -49,7 +49,7 @@ __all__ = [
     "CursorSkillsProvider",
     "GeminiSkillsProvider",
     "GooseSkillsProvider",
-    "OpenCodeSkillsProvider",
+    "ZyraxonSkillsProvider",
     "SkillProvider",
     "SkillsDirectoryProvider",
     "VSCodeSkillsProvider",
