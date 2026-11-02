@@ -12,6 +12,16 @@ Members receive the latest unlock codes from the community. Codes are **only** s
 
 </div>
 
+<div align="center">
+
+### 🚀 Our Own Model — Opening at 100,000 Installs
+
+ZYRAXON's own model provider is built and ready. We are holding it back on purpose: it opens to everyone the moment this project reaches **100,000 installs** — so that day one is fast, stable and reliable.
+
+**Every install is a vote. At 100,000, the gate opens.**
+
+</div>
+
 <hr/>
 
 <div align="center">
@@ -473,7 +483,7 @@ Security reports go through [SECURITY.md](SECURITY.md), not the issue tracker.
 | Email | [sayidilxs@gmail.com](mailto:sayidilxs@gmail.com) |
 | Website | [zyraxonai.lovable.app](https://zyraxonai.lovable.app/) |
 | Cloud Agent | [zyraxon-pro-x.lovable.app](https://zyraxon-pro-x.lovable.app/) |
-| Portfolio | [onelpawarai.lovable.app](https://onelpawarai.lovable.app/) |
+| Portfolio | [ZYRAXON LAB](https://zyraxon-group-x.lovable.app/) |
 | YouTube | [@ZYRAXONAI](https://www.youtube.com/@ZYRAXONAI) |
 | Facebook | [onelpawarai](https://www.facebook.com/onelpawarai) |
 | Access codes | [ZYRAXON Group](https://zyraxon-group-x.lovable.app/) |
@@ -487,5 +497,5 @@ ZSL-X. See [LICENSE](LICENSE).
 ---
 
 <div align="center">
-  <sub>Built by <a href="https://onelpawarai.lovable.app/">Zyraxon Labs</a> — Bangladesh, operating globally.</sub>
+  <sub>Built by <a href="https://zyraxon-group-x.lovable.app/">ZYRAXON LAB</a> — Bangladesh, operating globally.</sub>
 </div>

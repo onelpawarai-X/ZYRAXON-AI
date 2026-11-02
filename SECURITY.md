@@ -121,5 +121,5 @@ anonymous or shared-key path, and no dependency on any single vendor.
 ---
 
 <p align="center">
-  <sub>Built by <a href="https://onelpawarai.lovable.app/">Zyraxon Labs</a> — Bangladesh, operating globally.</sub>
+  <sub>Built by <a href="https://zyraxon-group-x.lovable.app/">ZYRAXON LAB</a> — Bangladesh, operating globally.</sub>
 </p>

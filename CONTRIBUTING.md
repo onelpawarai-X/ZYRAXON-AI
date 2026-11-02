@@ -873,7 +873,7 @@ agree that your contribution is licensed under it.
 
 ## The team
 
-Maintained by **Zyraxon Labs**.
+Maintained by **ZYRAXON LAB**.
 
 |              |                                                                 |
 | :----------- | :-------------------------------------------------------------- |
@@ -882,7 +882,7 @@ Maintained by **Zyraxon Labs**.
 | Email        | [sayidilxs@gmail.com](mailto:sayidilxs@gmail.com)               |
 | Website      | [zyraxonai.lovable.app](https://zyraxonai.lovable.app/)         |
 | Cloud Agent  | [zyraxon-pro-x.lovable.app](https://zyraxon-pro-x.lovable.app/) |
-| Portfolio    | [onelpawarai.lovable.app](https://onelpawarai.lovable.app/)     |
+| Portfolio    | [ZYRAXON LAB](https://zyraxon-group-x.lovable.app/)     |
 | YouTube      | [@ZYRAXONAI](https://www.youtube.com/@ZYRAXONAI)                |
 | Facebook     | [onelpawarai](https://www.facebook.com/onelpawarai)             |
 | Access codes | [ZYRAXON Group](https://zyraxon-group-x.lovable.app/)           |

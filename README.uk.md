@@ -141,7 +141,7 @@ ZYRAXON містить два вбудовані агенти, між якими
 | Email | [sayidilxs@gmail.com](mailto:sayidilxs@gmail.com) |
 | Website | [zyraxonai.lovable.app](https://zyraxonai.lovable.app/) |
 | Cloud Agent | [zyraxon-pro-x.lovable.app](https://zyraxon-pro-x.lovable.app/) |
-| Portfolio | [onelpawarai.lovable.app](https://onelpawarai.lovable.app/) |
+| Portfolio | [ZYRAXON LAB](https://zyraxon-group-x.lovable.app/) |
 | YouTube | [@ZYRAXONAI](https://www.youtube.com/@ZYRAXONAI) |
 | Facebook | [onelpawarai](https://www.facebook.com/onelpawarai) |
 | Access codes | [ZYRAXON Group](https://zyraxon-group-x.lovable.app/) |
@@ -149,5 +149,5 @@ ZYRAXON містить два вбудовані агенти, між якими
 ---
 
 <p align="center">
-  <sub>Built by <a href="https://onelpawarai.lovable.app/">Zyraxon Labs</a> — Bangladesh, operating globally.</sub>
+  <sub>Built by <a href="https://zyraxon-group-x.lovable.app/">ZYRAXON LAB</a> — Bangladesh, operating globally.</sub>
 </p>

@@ -203,5 +203,5 @@ effect-sqlite-node (standalone)
 
 - **Homepage**: https://zyraxonai.lovable.app
 - **License Portal**: https://zyraxonai-license.lovable.app
-- **Founder**: https://onelpawarai.lovable.app
+- **Founder**: https://zyraxon-group-x.lovable.app
 - **GitHub**: https://github.com/onelpawarai-X/ZYRAXON-AI
