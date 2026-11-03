@@ -96,7 +96,6 @@ export const DialogSelectModelUnpaidV2: Component<{ model?: ModelState }> = (pro
                     <ModelTooltip
                       model={{ ...item, name: displayModelName(item.name) }}
                       latest={item.latest}
-                      free={isFree(item)}
                       v2
                     />
                   }
