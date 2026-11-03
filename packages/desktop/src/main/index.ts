@@ -577,7 +577,7 @@ const main = Effect.gen(function* () {
         "mcp": {
           "jarvis-browser": {
             "type": "local",
-            "command": ["node", "__RESOURCES_PATH__/jarvis-browser-mcp.cjs", "--headless", "--browser", "chrome", "--no-sandbox"],
+            "command": ["node", "__RESOURCES_PATH__/jarvis-browser-mcp.cjs", "--headless", "--browser", "chromium", "--no-sandbox"],
             "enabled": false,
             "timeout": 30000,
             "environment": {

@@ -112,6 +112,17 @@ export type CaptureSource = {
   thumbnail: string | null
 }
 
+/**
+ * One input event from the Preview panel, in absolute screen coordinates.
+ * `previewWindowGeometry` turns a point inside the mirrored frame into these.
+ */
+export type PreviewInputAction =
+  | { kind: "click"; x: number; y: number; button?: "left" | "right" | "middle"; double?: boolean }
+  | { kind: "scroll"; x: number; y: number; dy: number; dx?: number }
+  | { kind: "key"; keys: string[] }
+  | { kind: "type"; text: string }
+  | { kind: "move"; x: number; y: number }
+
 export type ElectronAPI = {
   killSidecar: () => Promise<void>
   installCli: () => Promise<string>
@@ -221,6 +232,13 @@ export type ElectronAPI = {
   listPreviewSources: () => Promise<CaptureSource[]>
   openPreviewTarget: (target: string) => Promise<boolean>
   onSitePreviewUpdate: (cb: (state: PreviewState) => void) => () => void
+  /**
+   * Forward real input into the window the panel is mirroring, so the panel is
+   * usable rather than only watchable. Screen coordinates are absolute; the panel
+   * converts a click inside the frame using previewWindowGeometry.
+   */
+  previewInput: (action: PreviewInputAction) => Promise<{ ok: boolean; error?: string }>
+  previewWindowGeometry: (title: string) => Promise<{ x: number; y: number; width: number; height: number } | null>
 
   // Model Download
   downloadModel: (config: { url: string; targetPath: string; modelId: string }) => Promise<{ success: boolean; path?: string; skipped?: boolean; error?: string }>

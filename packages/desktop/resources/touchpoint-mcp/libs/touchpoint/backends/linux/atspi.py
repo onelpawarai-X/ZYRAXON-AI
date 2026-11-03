@@ -409,11 +409,16 @@ class AtSpiBackend(Backend):
         # Precompute AT-SPI StateType → Touchpoint State mapping
         # so _translate_states avoids per-element getattr lookups.
         self._state_lookup: dict[object, State] = {}
-        for atspi_key, tp_state in _ATSPI_STATE_MAP.items():
-            enum_name = atspi_key.removeprefix("STATE_")
-            atspi_enum = getattr(self._atspi.StateType, enum_name, None)
-            if atspi_enum is not None:
-                self._state_lookup[atspi_enum] = tp_state
+        # _import_atspi() returns None when PyGObject or the Atspi typelib is
+        # missing. is_available() reports that as an unavailable backend so the
+        # caller gets a clear BackendUnavailableError; reaching into None here
+        # raised AttributeError first and hid the real reason.
+        if self._atspi is not None:
+            for atspi_key, tp_state in _ATSPI_STATE_MAP.items():
+                enum_name = atspi_key.removeprefix("STATE_")
+                atspi_enum = getattr(self._atspi.StateType, enum_name, None)
+                if atspi_enum is not None:
+                    self._state_lookup[atspi_enum] = tp_state
         # Per-walk scale factor set by get_elements(); None means
         # _build_element should derive it from the accessible's app.
         self._walk_scale: float | None = None

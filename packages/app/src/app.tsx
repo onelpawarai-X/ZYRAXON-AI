@@ -257,6 +257,19 @@ declare global {
         Array<{ id: string; name: string; appIcon: string | null; thumbnail: string | null }>
       >
       openPreviewTarget?: (target: string) => Promise<boolean>
+      /** Forward a click, key or scroll into the mirrored window (absolute screen coords). */
+      previewInput?: (action: {
+        kind: "click" | "scroll" | "key" | "type" | "move"
+        x?: number
+        y?: number
+        button?: "left" | "right" | "middle"
+        double?: boolean
+        dy?: number
+        dx?: number
+        keys?: string[]
+        text?: string
+      }) => Promise<{ ok: boolean; error?: string }>
+      previewWindowGeometry?: (title: string) => Promise<{ x: number; y: number; width: number; height: number } | null>
       onSitePreviewUpdate?: (cb: (state: { url: string | null; siteName: string | null; siteId: string | null; attachedWindow?: { id: string; name: string } | null; timestamp: string }) => void) => () => void
       setPreviewState?: (state: { url: string | null; siteName: string | null; siteId: string | null; attachedWindow?: { id: string; name: string } | null; timestamp: string }) => Promise<void>
       openLink?: (url: string) => void

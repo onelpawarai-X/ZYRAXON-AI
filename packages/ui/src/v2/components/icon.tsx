@@ -75,6 +75,10 @@ const icons = {
     viewBox: "0 0 16 16",
     body: `<path d="M1.5 4.5C1.5 2.84315 2.84315 1.5 4.5 1.5H11.5C13.1569 1.5 14.5 2.84315 14.5 4.5V11.5C14.5 13.1569 13.1569 14.5 11.5 14.5H4.5C2.84315 14.5 1.5 13.1569 1.5 11.5V4.5Z" stroke="currentColor"/><path d="M6.5 6L10.5 8L6.5 10V6Z" fill="currentColor"/>`,
   },
+  cursor: {
+    viewBox: "0 0 16 16",
+    body: `<path d="M3.5 2.5L12.5 7.2L8.6 8.6L7.2 12.5L3.5 2.5Z" stroke="currentColor" stroke-linejoin="round"/>`,
+  },
   "window-attach": {
     viewBox: "0 0 16 16",
     body: `<path d="M1.5 2.5H9.5V8.5H1.5V2.5Z" stroke="currentColor"/><path d="M6.5 13.5H14.5V7.5H6.5V13.5Z" stroke="currentColor"/><path d="M4 6H7" stroke="currentColor" stroke-linecap="round"/>`,

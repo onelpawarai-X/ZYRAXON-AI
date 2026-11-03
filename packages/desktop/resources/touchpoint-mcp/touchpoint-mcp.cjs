@@ -15,54 +15,63 @@ if (!fs.existsSync(runPy)) runPy = path.join(_dir, 'run.py');
 var libsDir = path.join(_dir, 'libs');
 
 // ─── Dynamic Python Detection ─────────────────────────────────────
-// Priority: system PATH → ZYRAXON auto-installed → common locations
-function findPython() {
+// The accessibility stack is what separates a working server from a red one, and
+// it is not on every interpreter. A distro package like python3-gi installs
+// `gi` into /usr/bin/python3 while a pyenv or Homebrew python3 earlier on PATH
+// has none — picking the first `python3` then left the backend unavailable and
+// every accessibility tool failed. Probe for the pieces and prefer the
+// interpreter that has them.
+function probe(pythonCmd, code) {
+    try {
+        execFileSync(pythonCmd, ['-c', code], { stdio: ['pipe', 'pipe', 'pipe'], timeout: 8000 });
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+// What each platform's backend needs on top of the MCP runtime packages.
+function accessibilityCode() {
+    if (process.platform === 'win32') return 'import uiautomation';
+    if (process.platform === 'darwin') return 'import ApplicationServices';
+    return "import gi; gi.require_version('Atspi', '2.0'); from gi.repository import Atspi";
+}
+
+function hasRuntime(pythonCmd) {
+    return probe(pythonCmd, 'import mcp.server.fastmcp, rapidfuzz, websocket, PIL, screeninfo');
+}
+
+function hasAccessibility(pythonCmd) {
+    return probe(pythonCmd, accessibilityCode());
+}
+
+function which(cmd) {
+    try {
+        return execSync((process.platform === 'win32' ? 'where ' : 'which ') + cmd, {
+            encoding: 'utf8',
+            timeout: 2000,
+        }).trim().split('\n')[0].trim();
+    } catch (e) {
+        return null;
+    }
+}
+
+function collectCandidates() {
     var isWin = process.platform === 'win32';
-    var candidates = [];
+    var names = isWin ? ['python', 'python3', 'py -3'] : ['python3', 'python'];
+    var found = [];
 
-    // 1. System PATH (fastest, most reliable)
-    // Check 'python' first (often newer with pip packages), then python3, then py -3
-    var sysCmds = isWin ? ['python', 'python3', 'py -3'] : ['python3', 'python'];
-    for (var i = 0; i < sysCmds.length; i++) {
-        var cmd = sysCmds[i];
-        var baseCmd = cmd.split(' ')[0];
-        var args = cmd.split(' ').slice(1).concat(['--version']);
-        try {
-            var out = execFileSync(baseCmd, args, { encoding: 'utf8', timeout: 3000, stdio: ['pipe', 'pipe', 'pipe'] });
-            var match = out.trim().match(/Python (\d+\.\d+)/);
-            if (match) {
-                var fullCmd = cmd;
-                try {
-                    if (isWin) {
-                        var whereOut = execSync('where ' + baseCmd, { encoding: 'utf8', timeout: 2000 }).trim().split('\n')[0].trim();
-                        if (whereOut) fullCmd = whereOut;
-                    } else {
-                        var whichOut = execSync('which ' + baseCmd, { encoding: 'utf8', timeout: 2000 }).trim();
-                        if (whichOut) fullCmd = whichOut;
-                    }
-                } catch(e) {}
-                process.stderr.write('[touchpoint-mcp] Found system Python: ' + fullCmd + ' (' + match[0] + ')\n');
-                return fullCmd;
-            }
-        } catch(e) {}
+    for (var i = 0; i < names.length; i++) {
+        var parts = names[i].split(' ');
+        var resolved = which(parts[0]);
+        if (resolved) found.push(resolved);
     }
 
-    // 2. ZYRAXON auto-installed Python (~/.zyraxon/python/)
     var zyraxonPython = path.join(os.homedir(), '.zyraxon', 'python');
-    var localPy = isWin ? path.join(zyraxonPython, 'python.exe') : path.join(zyraxonPython, 'bin', 'python3');
-    if (fs.existsSync(localPy)) {
-        try {
-            var out = execFileSync(localPy, ['--version'], { encoding: 'utf8', timeout: 3000, stdio: ['pipe', 'pipe', 'pipe'] });
-            if (out.trim().match(/Python/)) {
-                process.stderr.write('[touchpoint-mcp] Found ZYRAXON Python: ' + localPy + '\n');
-                return localPy;
-            }
-        } catch(e) {}
-    }
+    found.push(isWin ? path.join(zyraxonPython, 'python.exe') : path.join(zyraxonPython, 'bin', 'python3'));
 
-    // 3. Common install locations (Windows)
     if (isWin) {
-        var commonPaths = [
+        found = found.concat([
             path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Python', 'Python312', 'python.exe'),
             path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Python', 'Python311', 'python.exe'),
             path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Python', 'Python310', 'python.exe'),
@@ -71,32 +80,49 @@ function findPython() {
             'C:\\Python312\\python.exe',
             'C:\\Python311\\python.exe',
             'C:\\Python310\\python.exe',
-        ];
-        for (var j = 0; j < commonPaths.length; j++) {
-            if (fs.existsSync(commonPaths[j])) {
-                try {
-                    var out = execFileSync(commonPaths[j], ['--version'], { encoding: 'utf8', timeout: 3000, stdio: ['pipe', 'pipe', 'pipe'] });
-                    if (out.trim().match(/Python/)) {
-                        process.stderr.write('[touchpoint-mcp] Found Python: ' + commonPaths[j] + '\n');
-                        return commonPaths[j];
-                    }
-                } catch(e) {}
-            }
-        }
+        ]);
     } else {
-        // Common Unix locations
-        var unixPaths = ['/usr/bin/python3', '/usr/local/bin/python3', '/opt/homebrew/bin/python3'];
-        for (var k = 0; k < unixPaths.length; k++) {
-            if (fs.existsSync(unixPaths[k])) {
-                try {
-                    var out = execFileSync(unixPaths[k], ['--version'], { encoding: 'utf8', timeout: 3000, stdio: ['pipe', 'pipe', 'pipe'] });
-                    if (out.trim().match(/Python/)) {
-                        process.stderr.write('[touchpoint-mcp] Found Python: ' + unixPaths[k] + '\n');
-                        return unixPaths[k];
-                    }
-                } catch(e) {}
-            }
+        found = found.concat(['/usr/bin/python3', '/usr/local/bin/python3', '/opt/homebrew/bin/python3']);
+    }
+
+    // De-duplicate while keeping the order, and drop anything not executable.
+    var seen = {};
+    var unique = [];
+    for (var j = 0; j < found.length; j++) {
+        var candidate = found[j];
+        if (!candidate || seen[candidate]) continue;
+        seen[candidate] = true;
+        try {
+            if (fs.existsSync(candidate)) unique.push(candidate);
+        } catch (e) {}
+    }
+    return unique;
+}
+
+function findPython() {
+    var candidates = collectCandidates();
+
+    // Best: everything the server needs, accessibility included.
+    for (var i = 0; i < candidates.length; i++) {
+        if (hasAccessibility(candidates[i])) {
+            process.stderr.write('[touchpoint-mcp] Using Python with accessibility support: ' + candidates[i] + '\n');
+            return candidates[i];
         }
+    }
+
+    // Next: at least the MCP runtime, so non-accessibility tools still answer.
+    for (var k = 0; k < candidates.length; k++) {
+        if (hasRuntime(candidates[k])) {
+            process.stderr.write('[touchpoint-mcp] Using Python (no accessibility backend): ' + candidates[k] + '\n');
+            return candidates[k];
+        }
+    }
+
+    // Last resort: any interpreter at all; the self-heal below installs the
+    // runtime packages and the backend reports its own reason if still missing.
+    if (candidates.length > 0) {
+        process.stderr.write('[touchpoint-mcp] Falling back to ' + candidates[0] + '\n');
+        return candidates[0];
     }
 
     return null;
