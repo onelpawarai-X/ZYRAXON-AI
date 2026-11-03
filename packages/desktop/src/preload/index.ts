@@ -1,7 +1,7 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import { contextBridge, ipcRenderer, webUtils } from "electron"
-import type { ElectronAPI, PreviewState, StreamState, WslServersEvent } from "./types"
+import type { ElectronAPI, PreviewInputAction, PreviewState, StreamState, WslServersEvent } from "./types"
 import type { UpdaterState } from "@zyraxon-ai/app/updater"
 
 const updaterCallbacks = new Set<(state: UpdaterState) => void>()
@@ -173,6 +173,8 @@ const api: ElectronAPI = {
   setPreviewState: (state) => ipcRenderer.invoke("set-preview-state", state),
   listPreviewSources: () => ipcRenderer.invoke("preview-list-sources"),
   openPreviewTarget: (target) => ipcRenderer.invoke("preview-open-external", target),
+  previewInput: (action: PreviewInputAction) => ipcRenderer.invoke("preview-input", action),
+  previewWindowGeometry: (title: string) => ipcRenderer.invoke("preview-window-geometry", title),
   onSitePreviewUpdate: (cb) => {
     const handler = (_: unknown, state: PreviewState) => cb(state)
     ipcRenderer.on("site-preview-update", handler)

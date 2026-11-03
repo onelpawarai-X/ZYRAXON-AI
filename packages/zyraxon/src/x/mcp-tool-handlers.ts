@@ -665,7 +665,21 @@ async function cdpWaitForLoad(page: CdpPage, timeoutMs = 15000): Promise<void> {
 
 type McpMessage = { jsonrpc: string; id?: number; method?: string; params?: unknown; result?: unknown; error?: { code?: number; message?: string } }
 
-class TouchpointMcpClient {
+/**
+ * The environment a bundled server needs to be spawned with.
+ *
+ * A packaged Electron app has no `node` on PATH, so these servers are launched
+ * with the Electron binary itself. Without ELECTRON_RUN_AS_NODE that binary
+ * starts a second copy of the app instead of running the script, so the child
+ * never speaks JSON-RPC and every tool of that server fails. The main MCP loader
+ * sets this; the X layer spawns its own clients and used not to.
+ */
+function serverEnv(cmd: string): NodeJS.ProcessEnv {
+  if (cmd !== process.execPath) return process.env
+  return { ...process.env, ELECTRON_RUN_AS_NODE: "1" }
+}
+
+class StdioMcpClient {
   private proc: ChildProcess
   private nextId = 1
   private pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>()
@@ -673,7 +687,11 @@ class TouchpointMcpClient {
   toolNames = new Set<string>()
 
   constructor(entry: { cmd: string; args: string[] }) {
-    this.proc = spawn(entry.cmd, entry.args, { stdio: ["pipe", "pipe", "pipe"], windowsHide: true })
+    this.proc = spawn(entry.cmd, entry.args, {
+      stdio: ["pipe", "pipe", "pipe"],
+      windowsHide: true,
+      env: serverEnv(entry.cmd),
+    })
     this.proc.stdout?.setEncoding("utf8")
     this.proc.stdout?.on("data", (chunk: string) => this.onData(chunk))
     this.proc.stderr?.on("data", () => {
@@ -800,15 +818,15 @@ function resolveTouchpointEntry(): { cmd: string; args: string[] } | null {
   return null
 }
 
-let touchpointMcp: Promise<TouchpointMcpClient | null> | null = null
+let touchpointMcp: Promise<StdioMcpClient | null> | null = null
 
-async function ensureTouchpointMcp(): Promise<TouchpointMcpClient | null> {
+async function ensureTouchpointMcp(): Promise<StdioMcpClient | null> {
   if (!touchpointMcp) {
     touchpointMcp = (async () => {
       const entry = resolveTouchpointEntry()
       if (!entry) return null
       try {
-        const client = new TouchpointMcpClient(entry)
+        const client = new StdioMcpClient(entry)
         const tools = await client.initialize()
         if (tools.size === 0) {
           client.close()
@@ -821,6 +839,152 @@ async function ensureTouchpointMcp(): Promise<TouchpointMcpClient | null> {
     })()
   }
   return touchpointMcp
+}
+
+/**
+ * Locate the bundled Nuphus server.
+ *
+ * Nuphus is a native binary per platform, so the wrapper is what gets spawned and
+ * the wrapper picks the binary. Only the wrapper has to be found here.
+ */
+function resolveNuphusEntry(): { cmd: string; args: string[] } | null {
+  const candidates: string[] = []
+  const resourcesPath = (process as unknown as { resourcesPath?: string }).resourcesPath
+  if (resourcesPath) candidates.push(path.join(resourcesPath, "nuphus-mcp"))
+  candidates.push(path.join(process.cwd(), "packages", "desktop", "resources", "nuphus-mcp"))
+  let walk = process.cwd()
+  for (let i = 0; i < 6; i++) {
+    candidates.push(path.join(walk, "packages", "desktop", "resources", "nuphus-mcp"))
+    candidates.push(path.join(walk, "resources", "nuphus-mcp"))
+    const parent = path.dirname(walk)
+    if (parent === walk) break
+    walk = parent
+  }
+  const here = path.dirname(fileURLToPath(import.meta.url))
+  candidates.push(path.join(here, "..", "..", "..", "desktop", "resources", "nuphus-mcp"))
+  for (const dir of candidates) {
+    const cjs = path.join(dir, "nuphus-mcp.cjs")
+    if (fs.existsSync(cjs)) return { cmd: process.execPath, args: [cjs] }
+  }
+  return null
+}
+
+let nuphusMcp: Promise<StdioMcpClient | null> | null = null
+
+async function ensureNuphusMcp(): Promise<StdioMcpClient | null> {
+  if (!nuphusMcp) {
+    nuphusMcp = (async () => {
+      const entry = resolveNuphusEntry()
+      if (!entry) return null
+      try {
+        const client = new StdioMcpClient(entry)
+        const tools = await client.initialize()
+        if (tools.size === 0) {
+          client.close()
+          return null
+        }
+        return client
+      } catch {
+        return null
+      }
+    })()
+  }
+  return nuphusMcp
+}
+
+/**
+ * How each `nuphus_*` tool maps onto the bundled server.
+ *
+ * The names differ because the registry's list predates the server it drives:
+ * the server exposes `desktop_*` and `browser_*`, the registry advertised
+ * `nuphus_*`. Only the mapping is kept here, so one tool definition can reach the
+ * server that actually implements it.
+ */
+const NUPHUS_TOOL_MAP: Record<string, { tool: string; args: (a: HandlerArgs) => HandlerArgs }> = {
+  nuphus_screenshot: {
+    tool: "desktop_screenshot",
+    args: (a) => ({ path: textArg(a.path) || undefined, region: a.region }),
+  },
+  nuphus_list_windows: { tool: "desktop_windows_list", args: () => ({}) },
+  nuphus_focus_window: {
+    tool: "desktop_window_activate",
+    args: (a) => ({ hwnd: numArg(a.window_id ?? a.hwnd, 0) }),
+  },
+  nuphus_click: {
+    tool: "desktop_mouse",
+    args: (a) => ({
+      action: "click",
+      x: numArg(a.x, 0),
+      y: numArg(a.y, 0),
+      button: textArg(a.button) || "left",
+      clicks: 1,
+    }),
+  },
+  nuphus_type: {
+    tool: "desktop_input",
+    args: (a) => ({ hwnd: numArg(a.window_id ?? a.hwnd, 0) || undefined, mode: "type", text: textArg(a.text) }),
+  },
+  nuphus_hotkey: {
+    tool: "desktop_input",
+    args: (a) => ({
+      hwnd: numArg(a.window_id ?? a.hwnd, 0) || undefined,
+      mode: "hotkey",
+      keys: textArg(a.keys).split("+").map((k) => k.trim()).filter(Boolean),
+    }),
+  },
+  nuphus_scroll: {
+    tool: "desktop_mouse",
+    args: (a) => {
+      const dy = numArg(a.dy, 0)
+      return { action: "scroll", x: numArg(a.x, 0), y: numArg(a.y, 0), direction: dy < 0 ? "down" : "up", amount: Math.max(1, Math.abs(dy)) }
+    },
+  },
+  nuphus_mouse_move: {
+    tool: "desktop_mouse",
+    args: (a) => ({ action: "move", x: Math.round(numArg(a.x, 0)), y: Math.round(numArg(a.y, 0)) }),
+  },
+  nuphus_drag: {
+    tool: "desktop_mouse_drag",
+    args: (a) => ({
+      start_x: numArg(a.x1, 0),
+      start_y: numArg(a.y1, 0),
+      end_x: numArg(a.x2, 0),
+      end_y: numArg(a.y2, 0),
+    }),
+  },
+  nuphus_ocr: { tool: "desktop_vision", args: (a) => ({ prompt: textArg(a.prompt) || undefined }) },
+  nuphus_clipboard_set: { tool: "desktop_clipboard_write", args: (a) => ({ text: textArg(a.text) }) },
+  nuphus_browser_navigate: { tool: "browser_navigate", args: (a) => ({ url: textArg(a.url) }) },
+  nuphus_browser_snapshot: { tool: "browser_snapshot", args: () => ({}) },
+  nuphus_browser_click: {
+    tool: "browser_click",
+    args: (a) => ({ selector: textArg(a.selector), ref: textArg(a.ref) || undefined }),
+  },
+  nuphus_browser_type: {
+    tool: "browser_type",
+    args: (a) => ({ selector: textArg(a.selector), ref: textArg(a.ref) || undefined, text: textArg(a.text) }),
+  },
+  nuphus_browser_screenshot: { tool: "browser_screenshot", args: (a) => ({ path: textArg(a.path) || undefined }) },
+  nuphus_browser_cookies: { tool: "browser_cookies_get", args: () => ({}) },
+  nuphus_browser_execute: { tool: "browser_evaluate", args: (a) => ({ script: textArg(a.script) }) },
+}
+
+/** Run a mapped `nuphus_*` tool on the bundled server, falling back to the local implementation. */
+async function nuphusDispatch(id: string, args: HandlerArgs, fallback: Handler): Promise<HandlerResult> {
+  const mapped = NUPHUS_TOOL_MAP[id]
+  if (mapped) {
+    const client = await ensureNuphusMcp()
+    if (client) {
+      try {
+        if (!client.toolNames.has(mapped.tool)) throw new Error(`MCP server does not expose ${mapped.tool}`)
+        const result = await client.callTool(mapped.tool, coerceMcpArgs(mapped.args(args)))
+        return normalizeMcpResult(result)
+      } catch {
+        // fall through to the local implementation
+      }
+    }
+  }
+  return fallback(args)
 }
 
 const MCP_BOOL_KEYS = new Set(["tree", "gone", "fullscreen", "replace", "named_only", "all_elements", "probe"])
@@ -1831,7 +1995,14 @@ async function tpDispatch(id: string, args: HandlerArgs): Promise<HandlerResult>
   return withTouchpointMcp(id, args, (a) => tpLocalFallback(id, a))
 }
 
-const nuphusHandlers: Record<string, Handler> = {
+/**
+ * The local implementations, used when the bundled server cannot be reached.
+ *
+ * They are Windows-only by construction (they drive PowerShell), so on Linux and
+ * macOS the server above is the only path that works — which is why it is tried
+ * first and these only run when it is unavailable.
+ */
+const nuphusLocalFallbacks: Record<string, Handler> = {
   async nuphus_screenshot(args) {
     const windowId = textArg(args.window_id)
     if (windowId) return ok(await captureWindowPng(windowId))
@@ -1871,9 +2042,7 @@ const nuphusHandlers: Record<string, Handler> = {
     return ocrRegionPs(textArg(args.region) || "full")
   },
   async nuphus_clipboard_get() {
-    if (process.platform !== "win32") return err("Clipboard tools require Windows")
-    const out = await runPs("$c = Get-Clipboard -Raw -ErrorAction Stop\nif ($null -eq $c) { Write-Output '' } else { Write-Output $c }", 10000)
-    return ok({ text: out.replace(/\r\n$/, "") })
+    return err("Reading the clipboard is not exposed by the bundled server; use desktop_clipboard_write to set it")
   },
   async nuphus_clipboard_set(args) {
     const text = textArg(args.text)
@@ -1881,6 +2050,10 @@ const nuphusHandlers: Record<string, Handler> = {
     await runPs(`$t = ${psDecode(b64(text))}\nSet-Clipboard -Value $t\nWrite-Output 'ok'`, 10000)
     return ok({ set: true, characters: [...text].length })
   },
+}
+
+/** The local browser fallbacks drive Chrome over CDP, which the server supersedes. */
+const nuphusBrowserLocalFallbacks: Record<string, Handler> = {
   async nuphus_browser_navigate(args) {
     const url = textArg(args.url)
     if (!url) return err("url is required")
@@ -1899,65 +2072,37 @@ const nuphusHandlers: Record<string, Handler> = {
         .map((n) => {
           const role = n.role as { value?: string } | string | undefined
           const name = n.name as { value?: string } | string | undefined
-          const roleValue = typeof role === "string" ? role : role?.value || ""
-          const nameValue = typeof name === "string" ? name : name?.value || ""
           return {
-            role: roleValue,
-            name: nameValue,
-            nodeId: n.nodeId ?? null,
-            backendDOMNodeId: n.backendDOMNodeId ?? null,
-            ignored: n.ignored === true,
+            role: typeof role === "string" ? role : role?.value ?? "",
+            name: typeof name === "string" ? name : name?.value ?? "",
+            nodeId: n.nodeId,
           }
         })
-        .filter((n) => n.name || (n.role && n.role !== "generic"))
-      return ok({ count: nodes.length, nodes, sourceUrl: page.url })
+        .filter((n) => n.role || n.name)
+      return ok({ count: nodes.length, nodes, url: page.url })
     })
   },
   async nuphus_browser_click(args) {
     const selector = textArg(args.selector)
     if (!selector) return err("selector is required")
     return withCdp(async (page) => {
-      const expression = `(() => {
-  const el = document.querySelector(${JSON.stringify(selector)})
-  if (!el) return { error: "not-found" }
-  el.scrollIntoView({ block: "center", inline: "center" })
-  const r = el.getBoundingClientRect()
-  return { x: r.left + r.width / 2, y: r.top + r.height / 2, tag: el.tagName }
-})()`
-      const hit = (await cdpEvaluate(page, expression)) as { error?: string; x?: number; y?: number; tag?: string } | null
-      if (!hit || hit.error) {
-        return err(`No element matches selector ${JSON.stringify(selector)} on ${page.url}`)
-      }
-      await cdpCall(page.wsUrl, "Input.dispatchMouseEvent", { type: "mouseMoved", x: hit.x, y: hit.y })
-      await cdpCall(page.wsUrl, "Input.dispatchMouseEvent", { type: "mousePressed", x: hit.x, y: hit.y, button: "left", clickCount: 1 })
-      await cdpCall(page.wsUrl, "Input.dispatchMouseEvent", { type: "mouseReleased", x: hit.x, y: hit.y, button: "left", clickCount: 1 })
-      return ok({ clicked: true, selector, tag: hit.tag ?? null, x: hit.x, y: hit.y, url: page.url })
+      await cdpCall(page.wsUrl, "Runtime.evaluate", {
+        expression: `(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return false; el.click(); return true })()`,
+        returnByValue: true,
+      })
+      return ok({ clicked: true, selector })
     })
   },
   async nuphus_browser_type(args) {
     const selector = textArg(args.selector)
     const text = textArg(args.text)
     if (!selector) return err("selector is required")
-    if (!text) return err("text is required")
     return withCdp(async (page) => {
-      const expression = `(() => {
-  const el = document.querySelector(${JSON.stringify(selector)})
-  if (!el) return { error: "not-found" }
-  el.focus()
-  const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype
-  const setter = Object.getOwnPropertyDescriptor(proto, "value") && Object.getOwnPropertyDescriptor(proto, "value").set
-  const value = ${JSON.stringify(text)}
-  if (setter) setter.call(el, value)
-  else el.value = value
-  el.dispatchEvent(new Event("input", { bubbles: true }))
-  el.dispatchEvent(new Event("change", { bubbles: true }))
-  return { ok: true, value: el.value, tag: el.tagName }
-})()`
-      const result = (await cdpEvaluate(page, expression)) as { error?: string; ok?: boolean; value?: string; tag?: string } | null
-      if (!result || result.error) {
-        return err(`No element matches selector ${JSON.stringify(selector)} on ${page.url}`)
-      }
-      return ok({ typed: true, selector, value: result.value ?? text, tag: result.tag ?? null })
+      const result = (await cdpCall(page.wsUrl, "Runtime.evaluate", {
+        expression: `(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return null; el.focus(); el.value = ${JSON.stringify(text)}; el.dispatchEvent(new Event('input', { bubbles: true })); return { value: el.value, tag: el.tagName } })()`,
+        returnByValue: true,
+      })) as { result?: { value?: { value?: string; tag?: string } } }
+      return ok({ typed: true, selector, value: result.result?.value?.value ?? text, tag: result.result?.value?.tag ?? null })
     })
   },
   async nuphus_browser_screenshot() {
@@ -1993,6 +2138,24 @@ const nuphusHandlers: Record<string, Handler> = {
     })
   },
 }
+
+const nuphusLocal = { ...nuphusLocalFallbacks, ...nuphusBrowserLocalFallbacks }
+
+/**
+ * Every `nuphus_*` tool the registry advertises, routed to the bundled server first.
+ *
+ * The registry's names are kept as the tool ids so an existing conversation's tool
+ * calls keep resolving; the dispatch maps each one onto the name the server exposes.
+ * Ids with no server counterpart (the clipboard read) still get a handler, so they
+ * report why instead of "no implementation registered".
+ */
+const nuphusHandlers: Record<string, Handler> = Object.fromEntries(
+  [...new Set([...Object.keys(NUPHUS_TOOL_MAP), ...Object.keys(nuphusLocal)])].map((id) => [
+    id,
+    (args: HandlerArgs) =>
+      nuphusDispatch(id, args, nuphusLocal[id] ?? (async () => err(`No local fallback implementation for ${id}`))),
+  ]),
+)
 
 const touchpointHandlers: Record<string, Handler> = {
   async tp_apps(args) {
@@ -2121,7 +2284,12 @@ const touchpointHandlers: Record<string, Handler> = {
     return tpDispatch("tp_action", args)
   },
   async tp_read_text(args) {
-    if (!textArg(args.element_id)) return err("element_id is required")
+    // The Preview panel reads whatever is on screen and only knows the window it
+    // attached, so an element id cannot be required here — requiring it made
+    // x_preview_read_text fail before it ever reached the server.
+    if (!textArg(args.element_id) && !textArg(args.app) && !textArg(args.window_id)) {
+      return err("element_id or app is required")
+    }
     return tpDispatch("tp_read_text", args)
   },
   async tp_screenshot(args) {
