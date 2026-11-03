@@ -285,7 +285,6 @@ export function PromptInputV2(props: PromptInputV2Props) {
               disabled={state.mode === "shell"}
               language={props.language}
               onLanguageChange={props.onLanguageChange}
-              onSubmit={props.controller.submit}
             />
           </div>
           <PromptInputV2SubmitButton

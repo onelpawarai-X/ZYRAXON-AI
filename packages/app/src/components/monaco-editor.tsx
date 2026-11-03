@@ -8,6 +8,7 @@ import { useServer } from "@/context/server"
 import { useModels } from "@/context/models"
 import { useSubscription } from "@/context/subscription"
 import { useProviders } from "@/hooks/use-providers"
+import { createRealtimeStt, type RealtimeStt } from "@zyraxon-ai/session-ui/v2/prompt-input/stt-client"
 import { offeredModels, optionLabel, optionValue } from "./ai-generate-models"
 import { CodeGuardianScanner, CodeGuardianAIFeedback, type CodeIssue } from "./code-guardian"
 import {
@@ -314,27 +315,21 @@ export function MonacoEditor(props: MonacoEditorProps) {
     domNode.addEventListener("keypress", stopAll)
     domNode.addEventListener("contextmenu", stopAll)
 
-    // Voice input goes through the same Chrome speech bridge the main chat box
-    // uses (voiceStartListening / voiceStopListening + voice-event). The old
-    // MediaRecorder → transcribeAudio path is dead: the IPC handler throws and
-    // the button never produced text.
+    // Voice input streams the microphone straight to the ZYRAXON STT endpoint,
+    // the same path the chat box uses. The old Chrome voice bridge and its
+    // separate window are gone.
     let micRecordingActive = false
     let micRecordingTimer: ReturnType<typeof setInterval> | null = null
     let micRecordingSeconds = 0
-    let removeVoiceListener: (() => void) | null = null
     let voiceBuffer = ""
-    const api = (window as any).api
+    let inlineStt: RealtimeStt | null = null
 
     const cleanupVoice = () => {
       if (micRecordingTimer) { clearInterval(micRecordingTimer); micRecordingTimer = null }
-      if (removeVoiceListener) { removeVoiceListener(); removeVoiceListener = null }
       micRecordingActive = false
       micRecordingSeconds = 0
     }
     const stopAllMic = () => {
-      if (micRecordingActive && api?.voiceStopListening) {
-        try { void api.voiceStopListening() } catch {}
-      }
       const finalText = voiceBuffer.trim()
       voiceBuffer = ""
       if (finalText) input.value = finalText
@@ -345,56 +340,43 @@ export function MonacoEditor(props: MonacoEditorProps) {
     micBtn.addEventListener("click", (e) => {
       e.stopPropagation()
       if (micRecordingActive) {
-        stopAllMic()
-        return
-      }
-      if (!api?.voiceStartListening) {
-        const warn = document.createElement("div")
-        warn.className = "aic-err"
-        warn.textContent = "Voice input needs the desktop app."
-        domNode.appendChild(warn)
-        setTimeout(() => warn.remove(), 3000)
+        void inlineStt?.stop()
         return
       }
       voiceBuffer = ""
-      removeVoiceListener = api.onVoiceEvent?.((event: any) => {
-        if (event?.type === "voice-transcript") {
-          const text = (event.fullText || event.text || "").trim()
-          if (text) { voiceBuffer = text; input.value = text }
-        } else if (event?.type === "voice-mic-state" && event.active === false) {
-          stopAllMic()
-        }
-      }) ?? null
-      inlineVoiceCleanup = () => {
-        try { api.voiceStopListening?.() } catch {}
-        try { removeVoiceListener?.() } catch {}
-      }
-      try { api.voiceSetLanguage?.(langSelect.value || "auto") } catch {}
-      try { api.voiceClearAccumulatedTranscript?.() } catch {}
-      Promise.resolve(api.voiceStartListening()).then((result: any) => {
-        if (result === false) {
+      const client = createRealtimeStt({
+        onLive: (text) => { voiceBuffer = text; input.value = text },
+        onFinal: (text) => { voiceBuffer = text; input.value = text; stopAllMic() },
+        onError: (message) => {
           cleanupVoice()
           micBtn.classList.remove("rec")
           const warn = document.createElement("div")
           warn.className = "aic-err"
-          warn.textContent = "Voice bridge not ready. Restart the app."
+          warn.textContent = message
           domNode.appendChild(warn)
           setTimeout(() => warn.remove(), 3000)
-          return
-        }
-        micRecordingActive = true
-        micBtn.classList.add("rec")
-        micBtn.title = "Click to stop recording"
-        micRecordingSeconds = 0
-        micRecordingTimer = setInterval(() => {
-          micRecordingSeconds++
-          micBtn.title = `Recording ${micRecordingSeconds}s — Click to stop`
-        }, 1000)
-      }).catch(() => {
-        cleanupVoice()
-        micBtn.classList.remove("rec")
-        micBtn.title = "Voice input"
+        },
+        onState: (state) => {
+          if (state === "recording") {
+            micRecordingActive = true
+            micBtn.classList.add("rec")
+            micBtn.title = "Click to stop recording"
+            micRecordingSeconds = 0
+            micRecordingTimer = setInterval(() => {
+              micRecordingSeconds++
+              micBtn.title = `Recording ${micRecordingSeconds}s — Click to stop`
+            }, 1000)
+            return
+          }
+          if (state === "idle") stopAllMic()
+        },
       })
+      inlineStt = client
+      inlineVoiceCleanup = () => {
+        client.dispose()
+        if (inlineStt === client) inlineStt = null
+      }
+      void client.start(langSelect.value || "auto")
     })
 
     input.addEventListener("keydown", (e) => {

@@ -265,10 +265,6 @@ const main = Effect.gen(function* () {
     event.preventDefault()
     setAppQuitting()
     closeCloudAgentWindow()
-    try {
-      const { getVoiceBridgeModule } = require("./voice-bridge-singleton") as typeof import("./voice-bridge-singleton")
-      getVoiceBridgeModule()?.stopVoiceBridge()
-    } catch {}
     void stopSidecars().finally(() => {
       app.quit()
     })
@@ -276,17 +272,9 @@ const main = Effect.gen(function* () {
 
   app.on("will-quit", () => {
     setAppQuitting()
-    try {
-      const { getVoiceBridgeModule } = require("./voice-bridge-singleton") as typeof import("./voice-bridge-singleton")
-      getVoiceBridgeModule()?.stopVoiceBridge()
-    } catch {}
   })
 
   app.on("window-all-closed", () => {
-    try {
-      const { getVoiceBridgeModule } = require("./voice-bridge-singleton") as typeof import("./voice-bridge-singleton")
-      getVoiceBridgeModule()?.stopVoiceBridge()
-    } catch {}
     if (!isQuitting) {
       isQuitting = true
       app.quit()
@@ -308,27 +296,13 @@ const main = Effect.gen(function* () {
   for (const signal of ["SIGINT", "SIGTERM"] as const) {
     process.on(signal, () => {
       setAppQuitting()
-      try {
-        const { getVoiceBridgeModule } = require("./voice-bridge-singleton") as typeof import("./voice-bridge-singleton")
-        getVoiceBridgeModule()?.stopVoiceBridge()
-      } catch {}
       void stopSidecars().finally(() => app.exit(0))
     })
   }
 
-  process.on("exit", () => {
-    try {
-      const { getVoiceBridgeModule } = require("./voice-bridge-singleton") as typeof import("./voice-bridge-singleton")
-      getVoiceBridgeModule()?.stopVoiceBridge()
-    } catch {}
-  })
 
   process.on("uncaughtException", (error) => {
     writeLog("main", "uncaught exception", { error: String(error) }, "error")
-    try {
-      const { getVoiceBridgeModule } = require("./voice-bridge-singleton") as typeof import("./voice-bridge-singleton")
-      getVoiceBridgeModule()?.stopVoiceBridge()
-    } catch {}
   })
 
   const serverReady = Deferred.makeUnsafe<ServerReadyData, unknown>()
@@ -389,30 +363,6 @@ const main = Effect.gen(function* () {
   registerTaskDaemonIpcHandlers()
 
   void updater.start()
-
-  // Voice Bridge warm-up — starts immediately after IPC registration so the
-  // singleton is set and HTTP/Chrome come up before any mic click can fire.
-  // Non-blocking: dynamic import + fire-and-forget start, never awaits Chrome.
-  void (async () => {
-    try {
-      const voiceBridge = await import("./voice-bridge")
-      const { setVoiceBridgeModule } = await import("./voice-bridge-singleton")
-      setVoiceBridgeModule(voiceBridge)
-      voiceBridge.setRendererCallback((data) => {
-        const { BrowserWindow } = require("electron") as typeof import("electron")
-        const allWindows = BrowserWindow.getAllWindows()
-        for (const win of allWindows) {
-          if (!win.isDestroyed()) {
-            try { win.webContents.send("voice-event", data) } catch {}
-          }
-        }
-      })
-      await voiceBridge.startVoiceBridge()
-      logger.info("Voice bridge started on port 19800")
-    } catch (error) {
-      logger.warn("failed to start voice bridge", error)
-    }
-  })()
 
   const updateTimer = setInterval(() => void updater.check(), 10 * 60 * 1000)
   updateTimer.unref()

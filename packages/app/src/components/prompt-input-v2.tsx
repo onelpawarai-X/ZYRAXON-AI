@@ -8,7 +8,7 @@ import { Icon } from "@zyraxon-ai/ui/v2/icon"
 import { KeybindV2 } from "@zyraxon-ai/ui/v2/keybind-v2"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
 import type { Prompt, ReferenceInfo } from "@zyraxon-ai/sdk/v2/client"
-import { createEffect, createMemo, on, onCleanup, Show } from "solid-js"
+import { createEffect, createMemo, on, Show } from "solid-js"
 import { ModelSelectorPopoverV2 } from "@/components/dialog-select-model"
 import { DialogSelectModelUnpaidV2 } from "@/components/dialog-select-model-unpaid-v2"
 import type { PromptInputProps } from "@/components/prompt-input/contracts"
@@ -58,37 +58,6 @@ export function PromptInputV2Composer(props: PromptInputV2ComposerProps) {
 
   useCommands(props)
   useEditHandler(props)
-
-  // Voice bridge event handling — bidirectional sync without infinite loops
-  createEffect(() => {
-    const api = (window as any).api
-    if (!api?.onVoiceEvent) return
-
-    let lastSyncSent = 0
-
-    const unsub = api.onVoiceEvent((ev: any) => {
-      // Voice bridge language changed → sync TO app
-      if (ev.type === "voice-language" && ev.lang) {
-        settings.general.setVoiceLanguage(ev.lang)
-      }
-      // Voice bridge gender changed → sync TO app
-      if (ev.type === "voice-gender" && ev.gender) {
-        settings.general.setVoiceGender(ev.gender)
-      }
-      // Voice bridge connected → push current settings TO voice bridge
-      if (ev.type === "voice-mic-state") {
-        const now = Date.now()
-        if (now - lastSyncSent > 2000) {
-          lastSyncSent = now
-          const lang = settings.general.voiceLanguage()
-          const gender = settings.general.voiceGender()
-          try { api.voiceSetLanguage?.(lang) } catch {}
-          try { api.voiceSetGender?.(gender) } catch {}
-        }
-      }
-    })
-    onCleanup(unsub)
-  })
 
   return (
     <div class="flex flex-col gap-3">

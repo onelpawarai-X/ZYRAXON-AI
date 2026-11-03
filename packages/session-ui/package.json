@@ -23,7 +23,8 @@
     "./v2/prompt-input/reply-language": "./src/v2/components/prompt-input/reply-language.ts",
     "./v2/prompt-input/interaction": "./src/v2/components/prompt-input/interaction.ts",
     "./v2/prompt-input/store": "./src/v2/components/prompt-input/store.ts",
-    "./v2/prompt-input/types": "./src/v2/components/prompt-input/types.ts"
+    "./v2/prompt-input/types": "./src/v2/components/prompt-input/types.ts",
+    "./v2/prompt-input/stt-client": "./src/v2/components/prompt-input/stt-client.ts"
   },
   "scripts": {
     "typecheck": "tsgo --noEmit"
