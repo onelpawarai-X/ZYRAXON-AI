@@ -5,7 +5,7 @@
 Cross-platform: Windows (UIAutomation), Linux (AT-SPI2), macOS (AX API).
 Controls ANY app via accessibility APIs — minimized or not, no screenshots needed.
 """
-import sys, os
+import sys, os, json
 from pathlib import Path
 
 _dir = Path(__file__).parent
@@ -48,15 +48,211 @@ mcp = FastMCP(
 # 1. DISCOVERY & CONFIGURATION (7 tools)
 # ═══════════════════════════════════════════════════════════════════════════
 
+# ─── Element serialization ────────────────────────────────────────────────
+# Every element tool used to return a formatted string, but the desktop app's
+# preview tools read structured fields — matches[].element_id, elements[].name —
+# so a string reply meant find() and fill_form() never located anything and the
+# agent reported "field not found" for fields that were plainly on screen. Emit
+# JSON that carries both the id and the human-readable parts.
+
+def _element_json(el) -> dict:
+    role = el.role.value if hasattr(el.role, "value") else str(el.role)
+    states = [s.value if hasattr(s, "value") else str(s) for s in getattr(el, "states", [])]
+    pos = getattr(el, "position", (0, 0)) or (0, 0)
+    size = getattr(el, "size", (0, 0)) or (0, 0)
+    return {
+        "element_id": el.id,
+        "id": el.id,
+        "name": el.name or "",
+        "role": role,
+        "description": getattr(el, "description", "") or "",
+        "value": getattr(el, "value", None),
+        "x": pos[0],
+        "y": pos[1],
+        "width": size[0],
+        "height": size[1],
+        "states": states,
+        "actions": list(getattr(el, "actions", []) or []),
+    }
+
+def _element_line(el) -> str:
+    role = el.role.value if hasattr(el.role, "value") else str(el.role)
+    pos = getattr(el, "position", (0, 0)) or (0, 0)
+    return f"[{el.id}] {role}: '{el.name}' @({pos[0]},{pos[1]})"
+
+# Screenshots are written here rather than inlined as base64: the caller wants a
+# path it can open, and a megabyte of base64 in a tool result buries the reply.
+_SCREENSHOT_DIR = Path(os.environ.get("ZYRAXON_SCREENSHOT_DIR") or (Path.home() / ".zyraxon" / "screenshots"))
+
+def _save_screenshot(img) -> str:
+    _SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    import time as _time
+    path = _SCREENSHOT_DIR / f"shot-{int(_time.time() * 1000)}.png"
+    img.save(path, format="PNG")
+    return str(path)
+
+
+def _resolve_window(app: str = "", window_id: str = "") -> str | None:
+    """Find a window id from an app name or title fragment.
+
+    The caller scopes an action to whatever the user has attached in the Preview
+    panel by name, but the accessibility APIs take a window id. Matching by
+    substring on both the title and the owning application covers the way a user
+    and the agent refer to the same window.
+    """
+    if window_id:
+        return window_id
+    if not app:
+        return None
+    needle = app.strip().lower()
+    if not needle:
+        return None
+    candidates = []
+    for w in _all_windows():
+        candidates.append((w.title or "", w.app or "", w.id))
+    for w in _x11_windows():
+        candidates.append((w["title"], w["app"], w["id"]))
+    for title, owner, wid in candidates:
+        if needle in title.lower() or needle in owner.lower():
+            return wid
+    return None
+
+
+def _focus_app(app: str = "", window_id: str = "") -> str | None:
+    """Bring the named window forward and return its id, if it can be found.
+
+    Typing and key presses land in whatever holds focus, so an app-scoped call
+    has to activate the window first or the text goes to the wrong place.
+    """
+    target = _resolve_window(app, window_id)
+    if not target:
+        return None
+    try:
+        tp.activate_window(target)
+        import time as _time
+        _time.sleep(0.15)
+    except Exception:
+        pass
+    return target
+
+
 @mcp.tool()
 def apps() -> str:
     """List all open applications that expose accessibility elements."""
-    return str(tp.apps())
+    try:
+        apps_list = list(tp.apps())
+    except Exception:
+        apps_list = []
+    if not apps_list:
+        # No accessibility tree available; report the applications the window
+        # list can see so the caller still gets a usable answer.
+        seen = []
+        for w in _x11_windows():
+            name = w["app"] or w["title"]
+            if name and name not in seen:
+                seen.append(name)
+        apps_list = seen
+    return json.dumps({"count": len(apps_list), "apps": apps_list})
+
+def _x11_windows() -> list[dict]:
+    """List top-level X11 windows without going through the accessibility bus.
+
+    Chromium, Electron and many toolkits only register with AT-SPI once an
+    assistive client asks them to, so a plain window can be on screen and still
+    missing from the accessibility tree. The X server knows about it either way,
+    so this reads the window tree directly. It yields titles and ids only — enough
+    to show and mirror a window, which is what the Preview panel needs.
+    """
+    import platform
+    import shutil
+    import subprocess
+
+    if platform.system() != "Linux" or not shutil.which("xwininfo"):
+        return []
+
+    try:
+        result = subprocess.run(
+            ["xwininfo", "-root", "-children"],
+            capture_output=True, text=True, timeout=5,
+        )
+    except Exception:
+        return []
+    if result.returncode != 0:
+        return []
+
+    # Lines look like: 0x200003 "Title here": ("class" "Class")  900x700+10+10  +10+10
+    import re
+    pattern = re.compile(r'^\s*(0x[0-9a-fA-F]+)\s+"([^"]*)"(?::\s*\("([^"]*)"\s+"([^"]*)"\))?\s*(\d+)x(\d+)\+(-?\d+)\+(-?\d+)')
+    out = []
+    for line in result.stdout.splitlines():
+        m = pattern.match(line)
+        if not m:
+            continue
+        wid, title, cls, cls2, w, h, x, y = m.groups()
+        if not title:
+            continue
+        out.append({
+            "id": wid,
+            "handle": wid,
+            "title": title,
+            "app": cls or cls2 or "",
+            "process": cls or cls2 or "",
+            "pid": 0,
+            "x": int(x),
+            "y": int(y),
+            "width": int(w),
+            "height": int(h),
+            "is_active": False,
+            "is_visible": True,
+        })
+    return out
+
+
+def _all_windows() -> list:
+    """Every window the machine can see, accessibility tree first.
+
+    Returns Window objects from the backend when it is available, and falls back
+    to the raw X11 list on Linux when it is not — so a window the user can see is
+    a window the Preview panel can offer, whichever way it was registered.
+    """
+    try:
+        return list(tp.windows())
+    except Exception:
+        return []
+
 
 @mcp.tool()
 def windows() -> str:
     """List all windows with title, app name, PID, position, size."""
-    return str(tp.windows())
+    # JSON, not repr: the caller parses this to pick a window to mirror, and
+    # str([Window(...)]) is not parseable. `handle` and `process` are the names
+    # the desktop app's preview tools read, so emit both alongside the raw ones.
+    out = []
+    seen_titles = set()
+    for w in _all_windows():
+        title = w.title or ""
+        seen_titles.add(title.strip().lower())
+        out.append({
+            "id": w.id,
+            "handle": w.id,
+            "title": title,
+            "app": w.app,
+            "process": w.app,
+            "pid": w.pid,
+            "x": w.position[0],
+            "y": w.position[1],
+            "width": w.size[0],
+            "height": w.size[1],
+            "is_active": w.is_active,
+            "is_visible": w.is_visible,
+        })
+    # Add anything the accessibility tree missed, skipping duplicates.
+    for w in _x11_windows():
+        if w["title"].strip().lower() in seen_titles:
+            continue
+        seen_titles.add(w["title"].strip().lower())
+        out.append(w)
+    return json.dumps({"count": len(out), "windows": out})
 
 @mcp.tool()
 def elements(app: str = "", window_id: str = "", tree: bool = False, max_depth: int = 10, role: str = "", states: str = "", named_only: bool = False, source: str = "full") -> str:
@@ -69,13 +265,15 @@ def elements(app: str = "", window_id: str = "", tree: bool = False, max_depth: 
     if states: kw["states"] = [State(s.strip()) for s in states.split(",")]
     result = tp.elements(**kw)
     if isinstance(result, str):
-        return result
+        return json.dumps({"count": 0, "elements": [], "message": result})
     if not result:
-        return "No elements found"
-    lines = []
-    for el in result[:200]:
-        lines.append(f"[{el.id}] {el.role.value}: '{el.name}' @({el.position[0]},{el.position[1]})")
-    return f"Elements ({len(result)} total):\n" + "\n".join(lines)
+        return json.dumps({"count": 0, "elements": []})
+    items = [_element_json(el) for el in result]
+    return json.dumps({
+        "count": len(items),
+        "elements": items,
+        "text": f"Elements ({len(items)} total):\n" + "\n".join(_element_line(el) for el in result[:200]),
+    })
 
 @mcp.tool()
 def find(query: str, app: str = "", window_id: str = "", role: str = "", states: str = "", max_results: int = 20, source: str = "full") -> str:
@@ -88,11 +286,14 @@ def find(query: str, app: str = "", window_id: str = "", role: str = "", states:
     if states: kw["states"] = [State(s.strip()) for s in states.split(",")]
     results = tp.find(query, **kw)
     if not results:
-        return f"No elements found for '{query}'"
-    out = []
-    for el in results[:max_results]:
-        out.append(f"  [{el.id}] {el.role.value}: '{el.name}' @({el.position[0]},{el.position[1]})")
-    return f"Found {len(results)} elements for '{query}':\n" + "\n".join(out)
+        return json.dumps({"count": 0, "matches": [], "query": query})
+    items = [_element_json(el) for el in results[:max_results]]
+    return json.dumps({
+        "count": len(items),
+        "query": query,
+        "matches": items,
+        "text": f"Found {len(items)} elements for '{query}':\n" + "\n".join(_element_line(el) for el in results[:max_results]),
+    })
 
 @mcp.tool()
 def snapshot(app: str = "", window_id: str = "", max_depth: int = 10, all_elements: bool = False) -> str:
@@ -103,37 +304,47 @@ def snapshot(app: str = "", window_id: str = "", max_depth: int = 10, all_elemen
     if window_id: kw["window_id"] = window_id
     elements_list = tp.elements(**kw)
     if not elements_list:
-        return "No elements found"
-    lines = []
-    for el in elements_list[:300]:
-        if not all_elements and not el.name and el.role.value not in ("menu", "menubar", "menuitem", "toolbar", "frame", "window", "dialog", "panel", "group", "filler"):
-            continue
-        lines.append(f"[{el.id}] {el.role.value}: '{el.name}'")
-    return f"Snapshot ({len(lines)} elements):\n" + "\n".join(lines)
+        return json.dumps({"count": 0, "elements": []})
+    structural = ("menu", "menubar", "menuitem", "toolbar", "frame", "window", "dialog", "panel", "group", "filler")
+    kept = [
+        el for el in elements_list
+        if all_elements or el.name or (el.role.value if hasattr(el.role, "value") else "") in structural
+    ]
+    items = [_element_json(el) for el in kept[:300]]
+    return json.dumps({
+        "count": len(items),
+        "elements": items,
+        "text": f"Snapshot ({len(items)} elements):\n" + "\n".join(
+            f"[{el.id}] {el.role.value}: '{el.name}'" for el in kept[:300]
+        ),
+    })
 
 @mcp.tool()
 def get_element(element_id: str) -> str:
     """Get detailed info about a specific element by ID — fresh snapshot with current position, states, actions."""
     el = tp.get_element(element_id)
     if el is None:
-        return f"Element {element_id} not found"
-    actions = []
-    if hasattr(el, 'actions'):
-        actions = el.actions
-    return f"ID: {el.id}\nRole: {el.role.value}\nName: '{el.name}'\nDescription: '{getattr(el, 'description', '')}'\nPosition: {el.position}\nSize: {getattr(el, 'size', 'N/A')}\nStates: {[s.value for s in el.states]}\nActions: {actions}"
+        return json.dumps({"found": False, "element_id": element_id})
+    return json.dumps({"found": True, **_element_json(el)})
 
 @mcp.tool()
 def element_at(x: int, y: int) -> str:
     """Get the deepest element at screen coordinates (x, y)."""
     el = tp.element_at(x, y)
     if el is None:
-        return f"No element at ({x}, {y})"
-    return f"Element at ({x},{y}): [{el.id}] {el.role.value}: '{el.name}' @({el.position[0]},{el.position[1]})"
+        return json.dumps({"found": False, "x": x, "y": y})
+    return json.dumps({"found": True, **_element_json(el)})
 
 @mcp.tool()
 def diagnostics(probe: bool = True) -> str:
     """Check accessibility backend status, CDP connections, platform info."""
-    return str(tp.diagnostics(probe=probe))
+    result = tp.diagnostics(probe=probe)
+    if isinstance(result, str):
+        return json.dumps({"text": result})
+    try:
+        return json.dumps(result)
+    except (TypeError, ValueError):
+        return json.dumps({"text": str(result)})
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 2. WINDOW MANAGEMENT (8 tools)
@@ -179,43 +390,67 @@ def resize_window(window_id: str, width: int, height: int) -> str:
 @mcp.tool()
 def find_window(title: str, app: str = "") -> str:
     """Find a window by title substring match. Returns window ID for use with other tools."""
-    kw = {}
-    if app: kw["app"] = app
-    win = tp.find_window(title, **kw)
-    if win is None:
-        return f"No window matching '{title}'"
-    return f"Found: [{win.id}] '{win.title}' in {win.app} (PID: {win.pid})"
+    # tp.find_window() only takes a window_id, not a title, so a title lookup has
+    # to scan the window list itself. Matching title and app covers both ways a
+    # caller names the window it wants.
+    needle = (title or "").strip().lower()
+    app_needle = (app or "").strip().lower()
+    match = None
+    try:
+        candidates = [(w.title or "", w.app or "", w.id, w.pid, w.is_active) for w in _all_windows()]
+        candidates += [(w["title"], w["app"], w["id"], w["pid"], w["is_active"]) for w in _x11_windows()]
+        for wtitle, wapp, wid, wpid, wactive in candidates:
+            if app_needle and app_needle not in wapp.lower() and app_needle not in wtitle.lower():
+                continue
+            if needle and needle not in wtitle.lower() and needle not in wapp.lower():
+                continue
+            match = {"id": wid, "handle": wid, "title": wtitle, "app": wapp, "process": wapp, "pid": wpid}
+            if wactive:
+                break
+    except Exception as e:
+        return json.dumps({"found": False, "title": title, "error": str(e)})
+    if match is None:
+        return json.dumps({"found": False, "title": title})
+    return json.dumps({"found": True, **match})
 
 @mcp.tool()
 def monitor_count() -> str:
     """Get number of monitors/displays connected."""
-    return f"Monitors: {tp.monitor_count()}"
+    return json.dumps({"count": tp.monitor_count()})
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 3. CLICK & MOUSE (8 tools)
 # ═══════════════════════════════════════════════════════════════════════════
 
 @mcp.tool()
-def click(element_id: str) -> str:
-    """Left-click an element. Tries native accessibility first, falls back to coordinates."""
+def click(element_id: str, app: str = "", window_id: str = "") -> str:
+    """Left-click an element. Tries native accessibility first, falls back to coordinates.
+    Args: element_id, app (optional window to focus first), window_id (optional)"""
+    _focus_app(app, window_id)
     ok = tp.click(element_id)
     return f"Clicked {element_id}" if ok else f"Failed to click {element_id}"
 
 @mcp.tool()
-def double_click(element_id: str) -> str:
-    """Double-click an element."""
+def double_click(element_id: str, app: str = "", window_id: str = "") -> str:
+    """Double-click an element.
+    Args: element_id, app (optional window to focus first), window_id (optional)"""
+    _focus_app(app, window_id)
     ok = tp.double_click(element_id)
     return f"Double-clicked {element_id}" if ok else "Failed"
 
 @mcp.tool()
-def right_click(element_id: str) -> str:
-    """Right-click (context menu) on an element."""
+def right_click(element_id: str, app: str = "", window_id: str = "") -> str:
+    """Right-click (context menu) on an element.
+    Args: element_id, app (optional window to focus first), window_id (optional)"""
+    _focus_app(app, window_id)
     ok = tp.right_click(element_id)
     return f"Right-clicked {element_id}" if ok else "Failed"
 
 @mcp.tool()
-def click_at(x: int, y: int, button: str = "left") -> str:
-    """Click at exact screen coordinates. Use when element IDs aren't available."""
+def click_at(x: int, y: int, button: str = "left", app: str = "", window_id: str = "") -> str:
+    """Click at exact screen coordinates. Use when element IDs aren't available.
+    Args: x, y, button, app (optional window to focus first), window_id (optional)"""
+    _focus_app(app, window_id)
     if button == "right":
         tp.right_click_at(x, y)
     else:
@@ -223,49 +458,95 @@ def click_at(x: int, y: int, button: str = "left") -> str:
     return f"Clicked {button} at ({x},{y})"
 
 @mcp.tool()
-def double_click_at(x: int, y: int) -> str:
-    """Double-click at exact screen coordinates."""
+def double_click_at(x: int, y: int, app: str = "", window_id: str = "") -> str:
+    """Double-click at exact screen coordinates.
+    Args: x, y, app (optional window to focus first), window_id (optional)"""
+    _focus_app(app, window_id)
     tp.double_click_at(x, y)
     return f"Double-clicked at ({x},{y})"
 
 @mcp.tool()
-def right_click_at(x: int, y: int) -> str:
-    """Right-click (context menu) at exact screen coordinates."""
+def right_click_at(x: int, y: int, app: str = "", window_id: str = "") -> str:
+    """Right-click (context menu) at exact screen coordinates.
+    Args: x, y, app (optional window to focus first), window_id (optional)"""
+    _focus_app(app, window_id)
     tp.right_click_at(x, y)
     return f"Right-clicked at ({x},{y})"
 
 @mcp.tool()
-def mouse_move(x: int, y: int) -> str:
-    """Move mouse cursor to screen coordinates (x, y)."""
+def mouse_move(x: int, y: int, app: str = "", window_id: str = "") -> str:
+    """Move mouse cursor to screen coordinates (x, y).
+    Args: x, y, app (optional window to focus first), window_id (optional)"""
+    _focus_app(app, window_id)
     tp.mouse_move(x, y)
     return f"Mouse moved to ({x},{y})"
 
 @mcp.tool()
 def drag(x1: int, y1: int, x2: int, y2: int, button: str = "left") -> str:
     """Drag from (x1,y1) to (x2,y2). For drag-and-drop operations."""
+    import platform
     import time
-    tp.mouse_move(x1, y1)
-    time.sleep(0.05)
-    if button == "right":
+
+    # Press, move in steps so the target registers a drag rather than a jump, then
+    # release. The button press/release used to go through ctypes.windll, which
+    # only exists on Windows — on Linux and macOS the call raised and the drag
+    # never happened. Use the platform's own pointer layer instead.
+    system = platform.system()
+    steps = 12
+
+    if system == "Windows":
         import ctypes
-        ctypes.windll.user32.mouse_event(0x0008, 0, 0, 0, 0)
+        user32 = ctypes.windll.user32
+        down, up = (0x0008, 0x0010) if button == "right" else (0x0002, 0x0004)
+        tp.mouse_move(x1, y1)
+        time.sleep(0.05)
+        user32.mouse_event(down, 0, 0, 0, 0)
+        time.sleep(0.05)
+        for i in range(1, steps + 1):
+            tp.mouse_move(x1 + (x2 - x1) * i // steps, y1 + (y2 - y1) * i // steps)
+            time.sleep(0.01)
+        time.sleep(0.05)
+        user32.mouse_event(up, 0, 0, 0, 0)
     else:
-        import ctypes
-        ctypes.windll.user32.mouse_event(0x0002, 0, 0, 0, 0)
-    time.sleep(0.05)
-    steps = 10
-    for i in range(1, steps + 1):
-        cx = x1 + (x2 - x1) * i // steps
-        cy = y1 + (y2 - y1) * i // steps
-        tp.mouse_move(cx, cy)
-        time.sleep(0.01)
-    time.sleep(0.05)
-    if button == "right":
-        import ctypes
-        ctypes.windll.user32.mouse_event(0x0010, 0, 0, 0, 0)
-    else:
-        import ctypes
-        ctypes.windll.user32.mouse_event(0x0004, 0, 0, 0, 0)
+        try:
+            from touchpoint.backends.linux.x11.input import XdotoolInput as _X11
+        except Exception:
+            _X11 = None
+
+        tp.mouse_move(x1, y1)
+        time.sleep(0.05)
+        if system == "Linux" and _X11 is not None:
+            # xdotool drives the button state directly, which is the same layer the
+            # bundled backend already uses for clicks, so no extra dependency.
+            x11 = _X11()
+            btn = "3" if button == "right" else "1"
+            x11._run("mousedown", btn)
+            for i in range(1, steps + 1):
+                x11._move_mouse(x1 + (x2 - x1) * i // steps, y1 + (y2 - y1) * i // steps)
+                time.sleep(0.01)
+            time.sleep(0.05)
+            x11._run("mouseup", btn)
+        else:
+            # macOS (and any Linux without xdotool): Quartz CGEvent, which the
+            # macOS backend already relies on.
+            try:
+                import Quartz  # type: ignore
+                pt = lambda x, y: Quartz.CGPointMake(x, y)  # noqa: E731
+                btn = Quartz.kCGMouseButtonRight if button == "right" else Quartz.kCGMouseButtonLeft
+                down_ev = Quartz.kCGEventRightMouseDown if button == "right" else Quartz.kCGEventLeftMouseDown
+                up_ev = Quartz.kCGEventRightMouseUp if button == "right" else Quartz.kCGEventLeftMouseUp
+                drag_ev = Quartz.kCGEventRightMouseDragged if button == "right" else Quartz.kCGEventLeftMouseDragged
+                src = Quartz.CGEventSourceCreate(Quartz.kCGEventSourceStateHIDSystemState)
+                Quartz.CGEventPost(Quartz.kCGHIDEventTap, Quartz.CGEventCreateMouseEvent(src, down_ev, pt(x1, y1), btn))
+                for i in range(1, steps + 1):
+                    x = x1 + (x2 - x1) * i // steps
+                    y = y1 + (y2 - y1) * i // steps
+                    Quartz.CGEventPost(Quartz.kCGHIDEventTap, Quartz.CGEventCreateMouseEvent(src, drag_ev, pt(x, y), btn))
+                    time.sleep(0.01)
+                Quartz.CGEventPost(Quartz.kCGHIDEventTap, Quartz.CGEventCreateMouseEvent(src, up_ev, pt(x2, y2), btn))
+            except Exception as e:
+                return f"Drag failed on {system}: {e}"
+
     return f"Dragged from ({x1},{y1}) to ({x2},{y2})"
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -273,27 +554,35 @@ def drag(x1: int, y1: int, x2: int, y2: int, button: str = "left") -> str:
 # ═══════════════════════════════════════════════════════════════════════════
 
 @mcp.tool()
-def type_text(text: str) -> str:
-    """Type text via keyboard. Click/focus a field FIRST. For hotkeys use hotkey()."""
+def type_text(text: str, app: str = "", window_id: str = "") -> str:
+    """Type text via keyboard. Click/focus a field FIRST. For hotkeys use hotkey().
+    Args: text, app (optional window to focus first), window_id (optional)"""
+    _focus_app(app, window_id)
     tp.type_text(text)
     return f"Typed: '{text[:100]}{'...' if len(text)>100 else ''}'"
 
 @mcp.tool()
-def press_key(keys: str, repeat: int = 1) -> str:
-    """Press keyboard key(s). Examples: 'enter', 'tab', 'escape', 'backspace', 'delete', 'up', 'down', 'left', 'right', 'f5', 'home', 'end', 'pageup', 'pagedown'"""
+def press_key(keys: str, repeat: int = 1, app: str = "", window_id: str = "") -> str:
+    """Press keyboard key(s). Examples: 'enter', 'tab', 'escape', 'backspace', 'delete', 'up', 'down', 'left', 'right', 'f5', 'home', 'end', 'pageup', 'pagedown'
+    Args: keys, repeat, app (optional window to focus first), window_id (optional)"""
+    _focus_app(app, window_id)
     tp.press_key(keys, repeat=repeat)
     return f"Pressed: {keys}" + (f" x{repeat}" if repeat > 1 else "")
 
 @mcp.tool()
-def hotkey(keys: str) -> str:
-    """Press hotkey combination. Separator: +. Examples: 'ctrl+s', 'alt+tab', 'ctrl+shift+p', 'ctrl+c', 'ctrl+v', 'ctrl+z', 'alt+f4', 'ctrl+w'"""
+def hotkey(keys: str, app: str = "", window_id: str = "") -> str:
+    """Press hotkey combination. Separator: +. Examples: 'ctrl+s', 'alt+tab', 'ctrl+shift+p', 'ctrl+c', 'ctrl+v', 'ctrl+z', 'alt+f4', 'ctrl+w'
+    Args: keys, app (optional window to focus first), window_id (optional)"""
+    _focus_app(app, window_id)
     parts = [k.strip() for k in keys.split("+")]
     tp.hotkey(*parts)
     return f"Hotkey: {keys}"
 
 @mcp.tool()
-def scroll(dy: int = 0, dx: int = 0) -> str:
-    """Scroll at current mouse position. dy=vertical (negative=down), dx=horizontal (negative=left). Typical: dy=-3 for scroll down, dy=3 for scroll up."""
+def scroll(dy: int = 0, dx: int = 0, app: str = "", window_id: str = "") -> str:
+    """Scroll at current mouse position. dy=vertical (negative=down), dx=horizontal (negative=left). Typical: dy=-3 for scroll down, dy=3 for scroll up.
+    Args: dy, dx, app (optional window to focus first), window_id (optional)"""
+    _focus_app(app, window_id)
     tp.scroll(dy=dy, dx=dx)
     return f"Scrolled dy={dy} dx={dx}"
 
@@ -302,40 +591,47 @@ def scroll(dy: int = 0, dx: int = 0) -> str:
 # ═══════════════════════════════════════════════════════════════════════════
 
 @mcp.tool()
-def set_value(element_id: str, value: str, replace: bool = False) -> str:
+def set_value(element_id: str, value: str, replace: bool = False, app: str = "", window_id: str = "") -> str:
     """Set text value of an editable element. replace=True clears field first, replace=False inserts at cursor."""
+    _focus_app(app, window_id)
     ok = tp.set_value(element_id, value, replace=replace)
     mode = "replaced" if replace else "inserted"
     return f"{mode} value on {element_id}" if ok else "Failed"
 
 @mcp.tool()
-def set_numeric_value(element_id: str, value: float) -> str:
+def set_numeric_value(element_id: str, value: float, app: str = "", window_id: str = "") -> str:
     """Set numeric value of a slider, spinbox, or range element."""
+    _focus_app(app, window_id)
     ok = tp.set_numeric_value(element_id, value)
     return f"Set numeric {value} on {element_id}" if ok else "Failed"
 
 @mcp.tool()
-def focus(element_id: str) -> str:
-    """Move keyboard focus to an element. Required before typing into some fields."""
+def focus(element_id: str, app: str = "", window_id: str = "") -> str:
+    """Move keyboard focus to an element. Required before typing into some fields.
+    Args: element_id, app (optional window to focus first), window_id (optional)"""
+    _focus_app(app, window_id)
     ok = tp.focus(element_id)
     return f"Focused {element_id}" if ok else "Failed"
 
 @mcp.tool()
-def select_text(element_id: str, text: str, occurrence: int = 1) -> str:
+def select_text(element_id: str, text: str, occurrence: int = 1, app: str = "", window_id: str = "") -> str:
     """Select a substring within an element's text content. occurrence=which match (1-based)."""
+    _focus_app(app, window_id)
     ok = tp.select_text(element_id, text, occurrence=occurrence)
     return f"Selected '{text}' (occurrence {occurrence}) in {element_id}" if ok else "Failed"
 
 @mcp.tool()
-def select_text_range(element_id: str, start: int, end: int) -> str:
+def select_text_range(element_id: str, start: int, end: int, app: str = "", window_id: str = "") -> str:
     """Select character range [start, end) within an element's text. 0-based offsets."""
+    _focus_app(app, window_id)
     ok = tp.select_text_range(element_id, start, end)
     return f"Selected range [{start},{end}) in {element_id}" if ok else "Failed"
 
 @mcp.tool()
-def action(element_id: str, action_name: str) -> str:
+def action(element_id: str, action_name: str, app: str = "", window_id: str = "") -> str:
     """Perform a raw accessibility action by exact name. Use when click/focus/set_value don't work.
     Common actions: 'press', 'toggle', 'showContextMenu', 'setValue', 'increment', 'decrement'"""
+    _focus_app(app, window_id)
     ok = tp.action(element_id, action_name)
     return f"Action '{action_name}' on {element_id}" if ok else "Failed"
 
@@ -344,15 +640,21 @@ def action(element_id: str, action_name: str) -> str:
 # ═══════════════════════════════════════════════════════════════════════════
 
 @mcp.tool()
-def read_text(element_id: str) -> str:
+def read_text(element_id: str = "", app: str = "", window_id: str = "") -> str:
     """Read text content from element. Works on documents, terminals, text fields, web pages.
-    Prefer this over OCR from screenshots — it's faster, cheaper, and verbatim."""
-    text = tp.get_text_content(element_id)
+    Prefer this over OCR from screenshots — it's faster, cheaper, and verbatim.
+    Args: element_id (specific element) or app/window_id (read the whole window)."""
+    target = element_id
+    if not target:
+        # No element given: read the window the caller scoped to, which is what the
+        # Preview panel passes when it wants "what is on screen right now".
+        target = _resolve_window(app, window_id) or ""
+    if not target:
+        return json.dumps({"text": "", "error": "element_id or app is required"})
+    text = tp.get_text_content(target)
     if text is None:
-        return f"No text content in {element_id}"
-    if len(text) == 0:
-        return f"Element {element_id} exists but has empty text"
-    return f"Text ({len(text)} chars):\n{text[:2000]}"
+        return json.dumps({"text": "", "element_id": target, "found": False})
+    return json.dumps({"text": text[:2000], "length": len(text), "element_id": target, "found": True})
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 7. SCREENSHOT & VISION (2 tools — including MINIMIZED window capture)
@@ -572,27 +874,29 @@ def _screenshot_window_macos(window_id: str) -> "Image.Image | None":
 
 
 @mcp.tool()
-def screenshot(app: str = "") -> str:
-    """Take screenshot. If app specified, crops to that app window. Use for visual verification only — prefer read_text() for reading content."""
-    import io, base64
+def screenshot(app: str = "", window_id: str = "") -> str:
+    """Take screenshot. If app specified, crops to that app window. Use for visual verification only — prefer read_text() for reading content.
+    Returns JSON with the saved file path, width and height.
+    Args: app (window title fragment), window_id (exact window)"""
     kw = {}
-    if app: kw["app"] = app
+    target = _resolve_window(app, window_id)
+    if target:
+        kw["window_id"] = target
+    elif app:
+        kw["app"] = app
     img = tp.screenshot(**kw)
     if img is None:
-        return "Screenshot failed"
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    b64 = base64.b64encode(buf.getvalue()).decode()
-    return f"data:image/png;base64,{b64}"
+        return json.dumps({"path": None, "error": "Screenshot failed"})
+    path = _save_screenshot(img)
+    return json.dumps({"path": path, "width": img.width, "height": img.height, "croppedTo": app or None})
 
 
 @mcp.tool()
 def screenshot_window(window_id: str) -> str:
     """Take screenshot of a SPECIFIC window — even if MINIMIZED or behind other windows.
     Uses platform APIs (PrintWindow on Windows, X Composite on Linux, CGWindowList on macOS).
-    Does NOT bring the window to foreground. Returns base64 PNG.
+    Does NOT bring the window to foreground. Returns JSON with the saved file path.
     Use for verifying background/minimized app state."""
-    import io, base64
     img = _screenshot_window_platform(window_id)
     if img is None:
         # Fallback: try to activate briefly, screenshot, minimize back
@@ -600,16 +904,14 @@ def screenshot_window(window_id: str) -> str:
             tp.activate_window(window_id)
             import time
             time.sleep(0.3)
-            img = tp.screenshot(app="")
+            img = tp.screenshot()
             tp.minimize_window(window_id)
         except Exception:
-            return "Screenshot failed — window may not exist or be capturable"
+            return json.dumps({"path": None, "error": "Screenshot failed — window may not exist or be capturable"})
     if img is None:
-        return "Screenshot failed"
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    b64 = base64.b64encode(buf.getvalue()).decode()
-    return f"data:image/png;base64,{b64}"
+        return json.dumps({"path": None, "error": "Screenshot failed"})
+    path = _save_screenshot(img)
+    return json.dumps({"path": path, "width": img.width, "height": img.height, "window_id": window_id})
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 8. CHROME TAB MANAGEMENT (6 tools)
@@ -911,14 +1213,21 @@ def close_tab(tab_identifier: str = "") -> str:
 # ═══════════════════════════════════════════════════════════════════════════
 
 @mcp.tool()
-def wait_for(element: str = "", gone: bool = False, timeout: float = 10.0) -> str:
+def wait_for(element: str = "", gone: bool = False, timeout: float = 10.0, app: str = "", window_id: str = "") -> str:
     """Wait for an element to appear (or disappear if gone=True) on screen.
-    Use after actions that trigger UI changes (navigation, loading, dialogs)."""
+    Use after actions that trigger UI changes (navigation, loading, dialogs).
+    Args: element, gone, timeout, app (optional window to scope the search), window_id (optional)"""
+    target = _resolve_window(app, window_id)
+    if target:
+        try:
+            tp.activate_window(target)
+        except Exception:
+            pass
     try:
         tp.wait_for(element=element, gone=gone, timeout=timeout)
-        return f"Element '{element}' {'gone' if gone else 'found'}"
+        return json.dumps({"ready": True, "element": element, "gone": gone})
     except TimeoutError:
-        return f"Timed out waiting for '{element}'"
+        return json.dumps({"ready": False, "element": element, "error": "Timed out"})
 
 @mcp.tool()
 def wait_for_app(app: str = "", timeout: float = 10.0, gone: bool = False) -> str:
@@ -926,9 +1235,9 @@ def wait_for_app(app: str = "", timeout: float = 10.0, gone: bool = False) -> st
     Use after launching an application."""
     try:
         tp.wait_for_app(app, timeout=timeout, gone=gone)
-        return f"App '{app}' {'gone' if gone else 'found'}"
+        return json.dumps({"ready": True, "app": app, "gone": gone})
     except TimeoutError:
-        return f"Timed out waiting for app '{app}'"
+        return json.dumps({"ready": False, "app": app, "error": "Timed out"})
 
 @mcp.tool()
 def wait_for_window(title: str = "", app: str = "", timeout: float = 10.0, gone: bool = False) -> str:
@@ -937,11 +1246,14 @@ def wait_for_window(title: str = "", app: str = "", timeout: float = 10.0, gone:
     try:
         result = tp.wait_for_window(title, app=app or None, timeout=timeout, gone=gone)
         if gone:
-            return f"Window '{title}' is gone"
-        tp.activate_window(result.id)
-        return f"Window found: [{result.id}] '{result.title}' in {result.app}"
+            return json.dumps({"ready": True, "title": title, "gone": True})
+        try:
+            tp.activate_window(result.id)
+        except Exception:
+            pass
+        return json.dumps({"ready": True, "id": result.id, "title": result.title, "app": result.app})
     except TimeoutError:
-        return f"Timed out waiting for window '{title}'"
+        return json.dumps({"ready": False, "title": title, "error": "Timed out"})
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 10. CONFIGURATION (1 tool)

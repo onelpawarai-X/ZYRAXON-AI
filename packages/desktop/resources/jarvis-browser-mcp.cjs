@@ -124,13 +124,25 @@ function launchPlaywrightMCP(extraArgs) {
 
   var fullArgs = [result.cliPath].concat(extraArgs);
 
+  // Point Playwright at the Chromium that ships beside this script. Without it
+  // the browser is looked up in the per-user cache, which a packaged app does not
+  // have, and every browser tool fails with "Executable doesn't exist".
+  var env = Object.assign({}, process.env, { NODE_PATH: result.nodeModules });
+  // nodeModules is <resources>/jarvis-browser/node_modules, so browsers/ sits one
+  // level up from it, beside the package rather than inside node_modules.
+  var bundledBrowsers = path.join(result.nodeModules, '..', 'browsers');
+  if (fs.existsSync(bundledBrowsers)) {
+    env.PLAYWRIGHT_BROWSERS_PATH = bundledBrowsers;
+    log('Using bundled browsers at: ' + bundledBrowsers);
+  }
+
   var child = spawn(nodeExec, fullArgs, {
     stdio: ['pipe', 'pipe', 'pipe'],
     // Without windowsHide a Windows stdio server flashes its own console window
     // and, when the host is detached, can survive as an orphan instead of dying
     // with the parent. The host's stdio pipes are the only channel we want.
     windowsHide: true,
-    env: Object.assign({}, process.env, { NODE_PATH: result.nodeModules }),
+    env: env,
   });
 
   var startupTimeout = setTimeout(function () {

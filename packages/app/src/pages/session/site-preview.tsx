@@ -38,6 +38,19 @@ type CaptureSource = {
   thumbnail: string | null
 }
 
+/** Mirrors the shape the desktop main process accepts for preview input. */
+type PreviewInputAction = {
+  kind: "click" | "scroll" | "key" | "type" | "move"
+  x?: number
+  y?: number
+  button?: "left" | "right" | "middle"
+  double?: boolean
+  dy?: number
+  dx?: number
+  keys?: string[]
+  text?: string
+}
+
 const DEVICE_WIDTHS: Record<DeviceMode, string> = {
   desktop: "100%",
   tablet: "768px",
@@ -63,9 +76,17 @@ export function SitePreview() {
   const [attached, setAttached] = createSignal<CaptureSource | null>(null)
   const [streamError, setStreamError] = createSignal<string | null>(null)
   const [picking, setPicking] = createSignal(false)
+  // Control mode: when on, a click or a key inside the mirrored frame is forwarded
+  // to the real application instead of being swallowed by the panel. Off by default
+  // so merely looking at a window never types into it.
+  const [control, setControl] = createSignal(false)
+  const [geometry, setGeometry] = createSignal<{ x: number; y: number; width: number; height: number } | null>(null)
+  const [lastError, setLastError] = createSignal<string | null>(null)
 
   let videoRef: HTMLVideoElement | undefined
+  let frameRef: HTMLDivElement | undefined
   let stream: MediaStream | null = null
+  let lastMove = 0
 
   const stopStream = () => {
     stream?.getTracks().forEach((track) => track.stop())
@@ -117,6 +138,11 @@ export function SitePreview() {
     stopStream()
     setAttached(null)
     setMode("url")
+    // Control belongs to the window that was attached; dropping the window must drop it
+    // too, or the next attach would start out typing into whatever is in focus.
+    setControl(false)
+    setGeometry(null)
+    setLastError(null)
     // Clearing the shared signal is what also clears the file on the agent side, so the
     // panel is not left holding a window the agent already let go of.
     setAttachedWindowState(null)
@@ -131,13 +157,57 @@ export function SitePreview() {
   // mirrored to the shared state and x_preview_detach_window clears it. Reacting to that
   // signal here is what makes a tool call show the app on screen without a manual click.
   // Same signal on Windows, macOS and Linux.
+  //
+  // The agent only knows the window's OS handle and title, but getUserMedia needs an
+  // Electron desktopCapturer source id — a different id space entirely, so passing the
+  // handle straight through failed every time. Resolve the request against the live
+  // source list by title instead, which is what the two have in common.
+  const resolveSource = async (want: { id: string; name: string }): Promise<CaptureSource | null> => {
+    if (!window.api?.listPreviewSources) return null
+    const wanted = want.name.trim().toLowerCase()
+    // A newly launched app takes a moment to appear in the capturer's list, so give
+    // it a few tries before reporting nothing.
+    for (let attempt = 0; attempt < 6; attempt++) {
+      let list: CaptureSource[] = []
+      try {
+        list = await window.api.listPreviewSources()
+      } catch {
+        list = []
+      }
+      if (list.length > 0) {
+        setSources(list)
+        const exact = list.find((s) => s.name.trim().toLowerCase() === wanted)
+        if (exact) return exact
+        const contains = list.find(
+          (s) => s.name.trim().toLowerCase().includes(wanted) || wanted.includes(s.name.trim().toLowerCase()),
+        )
+        if (contains) return contains
+        // The caller may already have handed us a real source id.
+        const byId = list.find((s) => s.id === want.id)
+        if (byId) return byId
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500))
+    }
+    return null
+  }
+
   createEffect(() => {
     const want = getAttachedWindow()()
     const current = attached()
     if (!want) return
-    if (current?.id === want.id) return
+    if (current?.id === want.id || current?.name === want.name) return
     setPreviewActiveState(true)
-    void attach({ id: want.id, name: want.name, appIcon: null, thumbnail: null }, false)
+    void (async () => {
+      const source = await resolveSource(want)
+      if (source) {
+        await attach(source, false)
+        return
+      }
+      setMode("window")
+      setStreamError(
+        `Could not find a window titled "${want.name}" to mirror. It may have closed, or the title changed.`,
+      )
+    })()
   })
 
   onMount(() => {
@@ -164,6 +234,115 @@ export function SitePreview() {
   })
 
   onCleanup(stopStream)
+
+  // ─── Input forwarding ──────────────────────────────────────────────────────
+  // The frame shows the window scaled to fit, so a point inside the frame is not a
+  // point on the screen. Refresh the window's screen rectangle, then map the click
+  // through the same "contain" fit the video uses, and send absolute coordinates.
+  const toScreen = (event: MouseEvent): { x: number; y: number } | null => {
+    const rect = frameRef?.getBoundingClientRect()
+    const geo = geometry()
+    if (!rect || !geo) return null
+    // object-contain letterboxes the frame, so the drawn area is smaller than the box.
+    const scale = Math.min(rect.width / geo.width, rect.height / geo.height)
+    const drawnW = geo.width * scale
+    const drawnH = geo.height * scale
+    const offsetX = (rect.width - drawnW) / 2
+    const offsetY = (rect.height - drawnH) / 2
+    const localX = event.clientX - rect.left - offsetX
+    const localY = event.clientY - rect.top - offsetY
+    if (localX < 0 || localY < 0 || localX > drawnW || localY > drawnH) return null
+    return { x: geo.x + localX / scale, y: geo.y + localY / scale }
+  }
+
+  const refreshGeometry = async () => {
+    const source = attached()
+    if (!source || !window.api?.previewWindowGeometry) return
+    try {
+      const geo = await window.api.previewWindowGeometry(source.name)
+      if (geo) setGeometry(geo)
+    } catch {
+      /* geometry is best effort; a click simply does nothing if it is unknown */
+    }
+  }
+
+  const send = async (action: PreviewInputAction) => {
+    const api = window.api
+    if (!api?.previewInput) return
+    const result = await api.previewInput(action)
+    if (result && !result.ok && result.error) setLastError(result.error)
+    else setLastError(null)
+  }
+
+  const onFrameMouseDown = (event: MouseEvent) => {
+    if (!control()) return
+    event.preventDefault()
+    const point = toScreen(event)
+    if (!point) return
+    void send({
+      kind: "click",
+      x: point.x,
+      y: point.y,
+      button: event.button === 2 ? "right" : event.button === 1 ? "middle" : "left",
+      double: event.detail === 2,
+    })
+  }
+
+  const onFrameMouseMove = (event: MouseEvent) => {
+    if (!control()) return
+    // Pointer position is only used to aim the next click; throttle so moving the
+    // mouse does not spawn a process per pixel.
+    const now = Date.now()
+    if (now - lastMove < 60) return
+    lastMove = now
+    const point = toScreen(event)
+    if (point) void send({ kind: "move", x: point.x, y: point.y })
+  }
+
+  const onFrameWheel = (event: WheelEvent) => {
+    if (!control()) return
+    event.preventDefault()
+    const point = toScreen(event)
+    if (!point) return
+    void send({ kind: "scroll", x: point.x, y: point.y, dy: event.deltaY, dx: event.deltaX })
+  }
+
+  const onFrameKeyDown = (event: KeyboardEvent) => {
+    if (!control()) return
+    // Let the shortcuts that leave or toggle the panel through; everything else
+    // belongs to the mirrored application.
+    if (event.key === "Escape" && event.ctrlKey) return
+    event.preventDefault()
+    const named = [
+      "Enter", "Tab", "Escape", "Backspace", "Delete", "ArrowUp", "ArrowDown",
+      "ArrowLeft", "ArrowRight", "Home", "End", "PageUp", "PageDown",
+    ]
+    if (named.includes(event.key)) {
+      void send({ kind: "key", keys: [event.key.toLowerCase()] })
+      return
+    }
+    if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      void send({ kind: "type", text: event.key })
+      return
+    }
+    const combo: string[] = []
+    if (event.ctrlKey) combo.push("ctrl")
+    if (event.altKey) combo.push("alt")
+    if (event.shiftKey) combo.push("shift")
+    if (event.metaKey) combo.push("cmd")
+    if (event.key.length === 1 || /^F\d{1,2}$/.test(event.key)) combo.push(event.key.toLowerCase())
+    else combo.push(event.key.toLowerCase())
+    void send({ kind: "key", keys: combo })
+  }
+
+  // Keep the window rectangle fresh while control is on: the user can move or
+  // resize the mirrored window, and a stale rectangle sends clicks to the wrong place.
+  createEffect(() => {
+    if (!control() || !attached()) return
+    void refreshGeometry()
+    const timer = setInterval(() => void refreshGeometry(), 2000)
+    onCleanup(() => clearInterval(timer))
+  })
 
   const hasUrl = () => !!preview().url
   const isWindow = () => mode() === "window" && !!attached()
@@ -232,6 +411,18 @@ export function SitePreview() {
               </TooltipV2>
             </Show>
             <Show when={isWindow()}>
+              <TooltipV2
+                value={control() ? "Control is on — clicks and keys go to the app" : "Take control — click and type into the app"}
+                placement="bottom"
+              >
+                <IconButtonV2
+                  icon={<IconV2 name="cursor" />}
+                  variant="ghost-muted"
+                  size="normal"
+                  state={control() ? "pressed" : undefined}
+                  onClick={() => setControl((v) => !v)}
+                />
+              </TooltipV2>
               <TooltipV2 value="Stop mirroring" placement="bottom">
                 <IconButtonV2
                   icon={<IconV2 name="close" />}
@@ -281,13 +472,27 @@ export function SitePreview() {
           </Show>
 
           <Show when={!streamError() && isWindow()}>
-            <video
-              ref={videoRef}
-              class="w-full h-full object-contain"
-              autoplay
-              muted
-              playsinline
-            />
+            <div
+              ref={frameRef}
+              class="w-full h-full flex items-center justify-center relative outline-none"
+              tabIndex={control() ? 0 : -1}
+              onMouseDown={onFrameMouseDown}
+              onMouseMove={onFrameMouseMove}
+              onWheel={onFrameWheel}
+              onKeyDown={onFrameKeyDown}
+              onContextMenu={(event) => {
+                if (control()) event.preventDefault()
+              }}
+              style={{ cursor: control() ? "crosshair" : "default" }}
+            >
+              <video
+                ref={videoRef}
+                class="w-full h-full object-contain pointer-events-none"
+                autoplay
+                muted
+                playsinline
+              />
+            </div>
           </Show>
 
           <Show when={!streamError() && !isWindow() && hasUrl()}>
@@ -330,9 +535,17 @@ export function SitePreview() {
             {isWindow() ? attached()!.name : preview().url}
           </div>
           <div class="text-11-regular text-text-faint shrink-0">
-            {isWindow() ? "Live window" : DEVICE_LABELS[device()]}
+            {isWindow() ? (control() ? "Control on" : "Live window") : DEVICE_LABELS[device()]}
           </div>
         </div>
+      </Show>
+
+      <Show when={lastError()}>
+        {(err) => (
+          <div class="shrink-0 px-3 py-1.5 rounded-lg border border-red-500/40 bg-red-500/10 text-11-regular text-red-400">
+            {err()}
+          </div>
+        )}
       </Show>
     </div>
   )

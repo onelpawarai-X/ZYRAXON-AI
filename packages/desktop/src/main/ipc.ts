@@ -334,6 +334,59 @@ export function registerIpcHandlers(deps: Deps) {
     }
   })
 
+  // ─── Preview: input forwarding ─────────────────────────────────────────────
+  // Mirroring shows the window; these make it usable. A click, a key or a scroll
+  // inside the panel is translated into the real input the attached application
+  // expects, so the user drives the app from the panel instead of only watching it.
+  // The translation is per-platform and lives in preview-input.ts.
+  ipcMain.handle(
+    "preview-input",
+    async (
+      _event: IpcMainInvokeEvent,
+      action: {
+        kind: "click" | "scroll" | "key" | "type" | "move"
+        x?: number
+        y?: number
+        button?: "left" | "right" | "middle"
+        double?: boolean
+        dy?: number
+        dx?: number
+        keys?: string[]
+        text?: string
+      },
+    ) => {
+      try {
+        const mod = await import("./preview-input")
+        switch (action.kind) {
+          case "click":
+            return await mod.previewClick(action.x ?? 0, action.y ?? 0, action.button ?? "left", action.double ?? false)
+          case "scroll":
+            return await mod.previewScroll(action.x ?? 0, action.y ?? 0, action.dy ?? 0, action.dx ?? 0)
+          case "key":
+            return await mod.previewKey(action.keys ?? [])
+          case "type":
+            return await mod.previewType(action.text ?? "")
+          case "move":
+            return await mod.previewMove(action.x ?? 0, action.y ?? 0)
+          default:
+            return { ok: false, error: `unknown preview input kind: ${(action as { kind?: string }).kind}` }
+        }
+      } catch (error) {
+        console.error("[preview] input forwarding failed", error)
+        return { ok: false, error: error instanceof Error ? error.message : String(error) }
+      }
+    },
+  )
+
+  ipcMain.handle("preview-window-geometry", async (_event: IpcMainInvokeEvent, title: string) => {
+    try {
+      const mod = await import("./preview-input")
+      return await mod.previewWindowGeometry(title)
+    } catch {
+      return null
+    }
+  })
+
   // YouTube player — opens video in a new Electron BrowserWindow (no iframe needed)
   ipcMain.handle("open-youtube-player", (_event: IpcMainInvokeEvent, videoUrl: string) => {
     const win = new BrowserWindow({

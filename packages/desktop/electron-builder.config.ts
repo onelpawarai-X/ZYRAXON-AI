@@ -153,12 +153,26 @@ const getBase = (appId: string): Configuration => ({
     {
       from: "resources/jarvis-browser",
       to: "jarvis-browser",
-      filter: ["package.json", "node_modules/**/*"],
+      // browsers/ is the Playwright Chromium the server drives, provisioned by
+      // scripts/provision-browsers.ts. Without it the server has no browser to
+      // launch and every browser tool fails.
+      filter: ["package.json", "node_modules/**/*", "browsers/**/*"],
     },
     {
       from: "resources/nuphus-mcp",
       to: "nuphus-mcp",
-      filter: ["*.cjs", "*.js", "*.json", "*.md"],
+      // The native binary and its ONNX runtime libraries are the whole point of
+      // this entry; a filter of only *.cjs/*.js/*.json/*.md shipped the wrapper
+      // with no binary behind it and every nuphus tool then failed.
+      //
+      // Each build carries only its own platform's binary: the per-platform
+      // directories are ~50MB each and the Windows ones are separate files.
+      filter:
+        process.platform === "win32"
+          ? ["*.cjs", "*.js", "*.json", "*.md", "*.exe", "*.dll"]
+          : process.platform === "darwin"
+            ? ["*.cjs", "*.js", "*.json", "*.md", "osx-*/**/*"]
+            : ["*.cjs", "*.js", "*.json", "*.md", "linux-*/**/*"],
     },
     {
       from: "resources/touchpoint-mcp",

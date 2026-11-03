@@ -33,7 +33,13 @@ from touchpoint.core.element import Element
 
 try:
     from rapidfuzz import fuzz as _fuzz
-except ImportError:
+except (ImportError, AttributeError):
+    # AttributeError, not just ImportError: the bundled rapidfuzz wheel is a
+    # Windows build whose delvewheel bootstrap calls os.add_dll_directory, an
+    # attribute only os has on Windows. Importing it on Linux or macOS raises
+    # AttributeError, which used to escape this guard and take down every tool
+    # that runs a fuzzy match, `find` among them. The stage is optional, so any
+    # failure to import degrades to the non-fuzzy pipeline instead.
     _fuzz = None
 
 # ---------------------------------------------------------------------------
