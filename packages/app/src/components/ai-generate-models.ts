@@ -5,10 +5,10 @@
  *
  * AI Generate is not a separate product with its own model set: it must offer
  * exactly what the main chat offers. The catalog (`useModels().list()`) already
- * contains every model of every provider the user has connected, plus the free
- * gateways; `visible()` applies the user's show/hide choices. Keeping the
- * selection here — rather than inline in the editor — makes it testable without
- * a DOM, and keeps the two surfaces from drifting apart again.
+ * contains every model of every provider the user has connected; `visible()`
+ * applies the user's show/hide choices. Keeping the selection here — rather
+ * than inline in the editor — makes it testable without a DOM, and keeps the
+ * two surfaces from drifting apart again.
  */
 
 export type CatalogModel = {
@@ -19,14 +19,6 @@ export type CatalogModel = {
 }
 
 export type VisibilityQuery = { modelID: string; providerID: string }
-
-/**
- * The free gateways serve zero-cost models; a paid model is only reachable once
- * a paid provider is connected. This mirrors the composer's own predicate so the
- * two lists tag the same rows as free.
- */
-export const isFreeModel = (providerID: string, cost?: { input: number }) =>
-  (providerID === "zyraxon") && (!cost || cost.input === 0)
 
 /**
  * Every model of every connected provider that the user has not hidden.
@@ -40,7 +32,7 @@ export function offeredModels(
 }
 
 export function optionLabel(model: CatalogModel): string {
-  return isFreeModel(model.provider.id, model.cost) ? `${model.name} (free)` : model.name
+  return model.name
 }
 
 export function optionValue(model: CatalogModel): string {

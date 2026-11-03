@@ -1,12 +1,12 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 // AI Generate must offer what the main chat offers. The regression this guards
-// against: the editor listed only the zyraxon/zyraxon free models, so a model
+// against: the editor listed only the zyraxon free models, so a model
 // from a provider the user had connected never appeared in the selector and
 // could not be used, even though the main composer offered it.
 
 import { describe, expect, test } from "bun:test"
-import { isFreeModel, offeredModels, optionLabel, optionValue, type CatalogModel } from "./ai-generate-models"
+import { offeredModels, optionLabel, optionValue, type CatalogModel } from "./ai-generate-models"
 
 const zyraxonFree: CatalogModel = {
   id: "claude-3.5-haiku",
@@ -66,14 +66,9 @@ describe("AI Generate model list", () => {
     expect(optionLabel(connectedAnthropic)).toBe("Claude Sonnet 4.5")
   })
 
-  test("only the zero-cost gateways are tagged free", () => {
-    expect(isFreeModel("zyraxon", { input: 0 })).toBe(true)
-    expect(isFreeModel("zyraxon", undefined)).toBe(true)
-    expect(isFreeModel("zyraxon", { input: 15 })).toBe(false)
-    expect(isFreeModel("anthropic", { input: 0 })).toBe(false)
-  })
-
-  test("a free gateway model is labelled free in the list", () => {
-    expect(optionLabel(zyraxonFree)).toBe("Claude 3.5 Haiku (free)")
+  test("no model is labelled free, since every provider needs a key", () => {
+    expect(optionLabel(zyraxonFree)).toBe("Claude 3.5 Haiku")
+    expect(optionLabel(zyraxonPaid)).toBe("Claude 4 Opus")
+    expect(optionLabel(connectedOpenAI)).toBe("GPT-5")
   })
 })

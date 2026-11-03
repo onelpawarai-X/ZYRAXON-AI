@@ -63,7 +63,6 @@ export const DialogSelectModelUnpaid: Component<{ model?: ModelState }> = (props
                 <ModelTooltip
                   model={item}
                   latest={item.latest}
-                  free={item.provider.id === "zyraxon" && (!item.cost || item.cost.input === 0)}
                 />
               }
             >
