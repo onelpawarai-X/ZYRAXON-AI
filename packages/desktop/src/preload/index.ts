@@ -196,16 +196,10 @@ const api: ElectronAPI = {
   generateTTS: (config) => ipcRenderer.invoke("generate-tts", config),
   generateVideo: (config) => ipcRenderer.invoke("generate-video", config),
 
-  // Voice Bridge - Chrome speech → chat box
-  onVoiceEvent: (cb) => {
-    const handler = (_: unknown, data: any) => cb(data)
-    ipcRenderer.on("voice-event", handler)
-    return () => ipcRenderer.removeListener("voice-event", handler)
-  },
-  voiceStartListening: () => ipcRenderer.invoke("voice-start-listening"),
-  voiceStopListening: () => ipcRenderer.invoke("voice-stop-listening"),
+  // Voice — language and gender for TTS. Speech recognition runs in the
+  // renderer and streams straight to the STT endpoint, so there is no bridge
+  // IPC to drive any more.
   voiceSetLanguage: (lang: string) => ipcRenderer.invoke("voice-set-language", lang),
-  voiceSendText: (text: string) => ipcRenderer.invoke("voice-send-text", text),
   voiceTTSSpeak: (text: string) => ipcRenderer.send("voice-tts-speak", text),
   voiceTTSStop: () => ipcRenderer.invoke("voice-tts-stop"),
   setVoiceTTSActive: (active: boolean) => ipcRenderer.send("voice-tts-active", active),
@@ -225,9 +219,6 @@ const api: ElectronAPI = {
   },
   voiceSetGender: (gender: string) => ipcRenderer.invoke("voice-set-gender", gender),
   voiceRealtimeEnabled: (enabled: boolean) => ipcRenderer.invoke("voice-realtime-enabled", enabled),
-  voiceGetAccumulatedTranscript: () => ipcRenderer.invoke("voice-get-accumulated-transcript"),
-  voiceClearAccumulatedTranscript: () => ipcRenderer.invoke("voice-clear-accumulated-transcript"),
-  voiceGetTranscriptBuffer: () => ipcRenderer.invoke("voice-get-transcript-buffer"),
 
   // Daily Tasks
   dailyTasksGet: () => ipcRenderer.invoke("daily-tasks:get"),

@@ -70,7 +70,8 @@ let lastTtsTime = 0
 const TTS_DEBOUNCE_MS = 300
 
 // Voice bridge module — singleton reference (shared with index.ts)
-import { getVoiceBridgeModule } from "./voice-bridge-singleton"
+import { findChromePath } from "./chrome-path"
+import { getVoiceGender, getVoiceLanguage, setVoiceGender, setVoiceLanguage, setVoiceSpeaking } from "./voice-prefs"
 
 const pickerFilters = (ext?: string[]) => {
   if (!ext || ext.length === 0) return undefined
@@ -448,84 +449,18 @@ export function registerIpcHandlers(deps: Deps) {
   })
 
   ipcMain.handle("transcribe-audio", async (_event: IpcMainInvokeEvent, _audioBase64: string, _mimeType: string) => {
-    console.warn("[IPC] transcribe-audio is deprecated — use voice bridge IPC (voiceStartListening/voiceStopListening) instead")
-    throw new Error("Direct audio transcription is no longer supported. Use the voice bridge mic button instead.")
+    console.warn("[IPC] transcribe-audio is deprecated — use the composer mic instead")
+    throw new Error("Direct audio transcription is no longer supported. Use the composer mic button instead.")
   })
 
-  // Voice Bridge — Chrome speech recognition controls
-  // resolve as soon as the module is registered so start-listening can queue
-  // while HTTP/Chrome finish warming in the background.
-  let voiceBridgeStarting: Promise<boolean> | null = null
-  async function ensureVoiceBridge(): Promise<typeof import("./voice-bridge") | null> {
-    const existing = getVoiceBridgeModule()
-    if (existing) return existing
-    if (!voiceBridgeStarting) {
-      voiceBridgeStarting = (async () => {
-        try {
-          const voiceBridge = await import("./voice-bridge")
-          const { setVoiceBridgeModule } = await import("./voice-bridge-singleton")
-          setVoiceBridgeModule(voiceBridge)
-          voiceBridge.setRendererCallback((data) => {
-            const allWindows = BrowserWindow.getAllWindows()
-            for (const win of allWindows) {
-              if (!win.isDestroyed()) {
-                try { win.webContents.send("voice-event", data) } catch {}
-              }
-            }
-          })
-          void voiceBridge.startVoiceBridge()
-          return true
-        } catch (e) {
-          console.error("[VoiceBridge] lazy start failed:", e)
-          return false
-        } finally {
-          voiceBridgeStarting = null
-        }
-      })()
-    }
-    const ok = await voiceBridgeStarting
-    return ok ? getVoiceBridgeModule() : null
-  }
-
-  ipcMain.handle("voice-start-listening", async () => {
-    const vb = (await ensureVoiceBridge()) ?? getVoiceBridgeModule()
-    if (!vb) return false
-    vb.setVoiceListening(true)
-    return true
-  })
-  ipcMain.handle("voice-stop-listening", async () => {
-    const vb = (await ensureVoiceBridge()) ?? getVoiceBridgeModule()
-    if (!vb) return false
-    vb.setVoiceListening(false)
-    return true
-  })
+  // Voice preferences — the language and voice TTS reads. Speech recognition no
+  // longer runs in a separate Chrome window; the composer streams the microphone
+  // to the STT endpoint itself, so these are the only voice controls left here.
   ipcMain.handle("voice-set-language", async (_event: IpcMainInvokeEvent, lang: string) => {
-    const vb = (await ensureVoiceBridge()) ?? getVoiceBridgeModule()
-    if (!vb) return false
-    vb.setVoiceLanguage(lang)
+    setVoiceLanguage(lang)
     return true
   })
-  ipcMain.handle("voice-send-text", async (_event: IpcMainInvokeEvent, text: string) => {
-    const vb = (await ensureVoiceBridge()) ?? getVoiceBridgeModule()
-    if (!vb) return false
-    vb.sendVoiceTranscript(text)
-    return true
-  })
-
-  // Voice transcript persistence — accumulate across navigation
-  ipcMain.handle("voice-get-accumulated-transcript", () => {
-    const vb = getVoiceBridgeModule()
-    return vb ? vb.getAccumulatedTranscript() : ""
-  })
-  ipcMain.handle("voice-clear-accumulated-transcript", () => {
-    const vb = getVoiceBridgeModule()
-    if (vb) vb.clearAccumulatedTranscript()
-    return true
-  })
-  ipcMain.handle("voice-get-transcript-buffer", () => {
-    const vb = getVoiceBridgeModule()
-    return vb ? vb.getTranscriptBuffer() : []
-  })
+  ipcMain.handle("voice-get-transcript-buffer", () => [])
 
   // TTS restart — called from renderer when server is down
   ipcMain.handle("tts-restart", async () => {
@@ -564,11 +499,10 @@ export function registerIpcHandlers(deps: Deps) {
       event.reply("voice-tts-error", "TTS server failed to start")
       return
     }
-    const vb = getVoiceBridgeModule()
     // Mark TTS active for the whole synthesis so the mic cannot capture the echo
-    if (vb) vb.setVoiceTTSActive(true)
-    const lang = vb?.getCurrentLanguage()?.split("-")[0] || "bn"
-    const gender = vb?.getCurrentVoiceGender() === "male" ? "m" : "f"
+    setVoiceSpeaking(true)
+    const lang = getVoiceLanguage().split("-")[0] || "bn"
+    const gender = getVoiceGender() === "male" ? "m" : "f"
 
     // Split into sentences — larger chunks = fewer HTTP requests = faster
     const sentences: string[] = []
@@ -614,22 +548,19 @@ export function registerIpcHandlers(deps: Deps) {
     }
   })
 
-  // Renderer TTS playback lifecycle — activates the echo guard in voice-bridge
-  // so assistant audio picked up by the mic is never treated as user speech.
+  // Renderer TTS playback lifecycle — marks the assistant as speaking so audio
+  // picked up by the microphone is never treated as user speech.
   ipcMain.on("voice-tts-active", (_event: IpcMainEvent, active: boolean) => {
-    const vb = getVoiceBridgeModule()
-    if (vb) vb.setVoiceTTSActive(!!active)
+    setVoiceSpeaking(!!active)
   })
 
   ipcMain.handle("voice-tts-stop", () => {
-    // Voice bridge no longer handles TTS — main app does
-    const vb = getVoiceBridgeModule()
-    if (vb) vb.setVoiceTTSActive(false)
+    setVoiceSpeaking(false)
     return true
   })
 
-  ipcMain.handle("voice-tts-enabled", (_event: IpcMainInvokeEvent, enabled: boolean) => {
-    // Voice bridge no longer handles TTS — main app does
+  ipcMain.handle("voice-tts-enabled", (_event: IpcMainInvokeEvent, _enabled: boolean) => {
+    // The renderer owns TTS playback; nothing to switch here.
     return true
   })
 
@@ -639,16 +570,13 @@ export function registerIpcHandlers(deps: Deps) {
   // the ordinary speaker stays off. Without this handler the toggle silently
   // did nothing and turning it on killed all speech.
   ipcMain.handle("voice-realtime-enabled", (_event: IpcMainInvokeEvent, enabled: boolean) => {
-    const vb = getVoiceBridgeModule()
     // Realtime still needs the microphone, so listening must not be torn down.
-    if (vb && enabled) vb.setVoiceTTSActive(false)
+    if (enabled) setVoiceSpeaking(false)
     return true
   })
 
   ipcMain.handle("voice-set-gender", (_event: IpcMainInvokeEvent, gender: string) => {
-    const vb = getVoiceBridgeModule()
-    if (!vb) return false
-    vb.setVoiceGender(gender)
+    setVoiceGender(gender)
     return true
   })
 
@@ -1012,7 +940,6 @@ ipcMain.handle("cloud-agent:open", async () => {
 
   // Try to open in system Chrome browser for full mic + speech support
   try {
-    const { findChromePath } = await import("./voice-bridge")
     const chromePath = findChromePath()
     if (chromePath) {
       const { spawn } = await import("child_process")

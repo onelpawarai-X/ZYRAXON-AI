@@ -5,8 +5,7 @@ import { IconButton } from "@zyraxon-ai/ui/icon-button"
 import { MenuV2 } from "@zyraxon-ai/ui/v2/menu-v2"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
 import { VOICE_LANGUAGES } from "./reply-language"
-
-type VoiceState = "idle" | "recording" | "processing"
+import { createRealtimeStt, type RealtimeStt, type SttState } from "./stt-client"
 
 export type MicButtonProps = {
   onTranscript: (text: string, lang: string) => void
@@ -15,44 +14,19 @@ export type MicButtonProps = {
   disabled?: boolean
   language?: string
   onLanguageChange?: (lang: string) => void
-  /** Submit the prompt. Needed because the bridge window cannot press Send itself. */
-  onSubmit?: () => void
 }
 
-const isInsideIframe = (() => {
-  try {
-    return window !== window.parent && !!window.parent
-  } catch {
-    return false
-  }
-})()
-
 export function PromptInputV2MicButton(props: MicButtonProps) {
-  const [state, setState] = createSignal<VoiceState>("idle")
+  const [state, setState] = createSignal<SttState>("idle")
   const [selectedLang, setSelectedLang] = createSignal(props.language || "auto")
-  let finalText = ""
-  let removeVoiceListener: (() => void) | null = null
-  let safetyTimeout: ReturnType<typeof setTimeout> | null = null
-  // Browser-only recogniser. Outside Electron there is no voice bridge to call,
-  // and the mic used to just report "not available" — a dead button in the plain
-  // web app. The platform's own SpeechRecognition is used instead.
-  let browserRecognition: any = null
+  let stt: RealtimeStt | null = null
 
-  // Create the effect only when the component is created, not on every render.
-  //
-  // `userChosen` is what makes this work, and its absence is what broke it. The old effect
-  // compared the incoming locale against the previously seen selection to decide whether the
-  // change came from outside. That comparison could not tell an external change from the
-  // user's own pick, because after picking a voice language the two differ by definition:
-  // the app locale is "en-US" and the choice is "bn", so the effect read every user pick as
-  // an external change and snapped the selection straight back to the app locale. The
-  // language menu went back to Auto-Detect the moment you chose anything, which read as the
-  // setting refusing to save.
-  //
-  // So the fact is recorded directly instead of inferred. While the user has chosen
-  // nothing, an external locale is adopted — that is the initial value coming in. Once they
-  // choose, the app locale stops being their voice language, and it starts being again if
-  // the component remounts, which is what a new session does.
+  // The incoming locale is adopted only until the user picks a language of their
+  // own. After that the app locale stops being their voice language, and it
+  // becomes it again on remount — which is what a new session does. Comparing
+  // the two to decide instead could not tell an external change from the user's
+  // own pick, so the menu snapped back to Auto-Detect the moment anything was
+  // chosen and read as the setting refusing to save.
   let userChosen = false
   createEffect(() => {
     const lang = props.language
@@ -60,296 +34,53 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     if (lang !== selectedLang()) setSelectedLang(lang)
   })
 
-  const clearSafetyTimeout = () => {
-    if (safetyTimeout) { clearTimeout(safetyTimeout); safetyTimeout = null }
-  }
-
-  const cleanupListener = () => {
-    if (removeVoiceListener) { removeVoiceListener(); removeVoiceListener = null }
-  }
-
-  // voice-send and voice-mic-state can both arrive for the same utterance;
-  // dropping the second delivery prevents the transcript from being inserted twice.
-  let transcriptDelivered = false
-  // Only speech we painted ourselves may be wiped when the mic re-opens, so a
-  // hand-typed draft in the chat box survives untouched.
-  let livePainted = false
-  const deliverOnce = (text: string, lang: string) => {
-    if (transcriptDelivered) return
-    const trimmed = text.trim()
-    if (!trimmed) return
-    transcriptDelivered = true
-    clearSafetyTimeout()
-    cleanupListener()
-    livePainted = true
-    props.onTranscript(trimmed, lang)
-    setState("idle")
-  }
-
-  const finishWithText = () => {
-    if (state() !== "processing" && state() !== "recording") return
-    if (transcriptDelivered) return
-    clearSafetyTimeout()
-    cleanupListener()
-    const text = finalText.trim()
-    finalText = ""
-    if (text) {
-      transcriptDelivered = true
-      livePainted = true
-      props.onTranscript(text, selectedLang())
-    }
-    setState("idle")
-  }
-
-  const registerVoiceListener = () => {
-    cleanupListener()
-    transcriptDelivered = false
-    const api = (window as any).api
-    if (!api?.onVoiceEvent) return
-
-    removeVoiceListener = api.onVoiceEvent((event: any) => {
-      // While the assistant is speaking, the mic captures its own voice. Those
-      // transcripts are echo — never paint them into the chat box.
-      if ((window as any).__zyraxonTTSActiveRender && event.type === "voice-transcript") return
-      if (event.type === "voice-transcript") {
-        const t = (event.fullText || event.text || "").trim()
-        if (t) {
-          finalText = t
-          clearSafetyTimeout()
-          // Stream interim text into the chat box as the user speaks — no waiting for stop
-          livePainted = true
-          props.onLiveText?.(t)
-        }
-      } else if (event.type === "voice-mic-state") {
-        if (event.active) {
-          setState("recording")
-          clearSafetyTimeout()
-        } else {
-          finishWithText()
-        }
-      } else if (event.type === "voice-send") {
-        deliverOnce(event.text || "", event.lang || selectedLang())
-        // The bridge's own Send button was pressed, so the composer must submit too.
-        // Waiting for the next tick left the text on screen with nothing sent.
-        if (event.submit) requestAnimationFrame(() => props.onSubmit?.())
-      }
-    })
-  }
-
-  // Browser speech recognition fallback. Interim results stream into the chat box
-  // through onLiveText exactly like the bridge does, so the composer behaves the
-  // same whichever path is active. Returns false when the API is unavailable.
-  const startBrowserRecognition = (): boolean => {
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SR) return false
-    try {
-      const recognition = new SR()
-      recognition.continuous = true
-      recognition.interimResults = true
-      const lang = selectedLang()
-      recognition.lang = !lang || lang === "auto" ? navigator.language || "en-US" : lang
-      recognition.onresult = (event: any) => {
-        let interim = ""
-        let final = ""
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const result = event.results[i]
-          if (result.isFinal) final += result[0].transcript
-          else interim += result[0].transcript
-        }
-        if (final) finalText = (finalText + " " + final).trim()
-        const shown = (finalText + (interim ? " " + interim : "")).trim()
-        if (shown) {
-          livePainted = true
-          props.onLiveText?.(shown)
-        }
-      }
-      recognition.onerror = (event: any) => {
-        if (event?.error === "not-allowed" || event?.error === "service-not-allowed") {
-          props.onError?.("Microphone permission was denied.")
-        }
-        stopBrowserRecognition()
-        setState("idle")
-      }
-      recognition.onend = () => {
-        // Fires on silence as well as on stop; only settle the draft here, never
-        // re-open the mic, or a paused user would be recorded again unexpectedly.
-        if (state() === "recording") finishWithText()
-      }
-      browserRecognition = recognition
-      recognition.start()
-      setState("recording")
-      return true
-    } catch {
-      browserRecognition = null
-      return false
-    }
-  }
-
-  const stopBrowserRecognition = () => {
-    if (!browserRecognition) return
-    const recognition = browserRecognition
-    browserRecognition = null
-    try { recognition.stop() } catch {}
+  const disposeStt = () => {
+    stt?.dispose()
+    stt = null
   }
 
   const startListening = async () => {
-    finalText = ""
+    disposeStt()
     // Re-opening the mic must never replay what was said in a previous session.
-    if (livePainted) {
-      livePainted = false
-      props.onLiveText?.("")
-    }
-
-    if (isInsideIframe) {
-      const bridgeId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
-
-      const handleMessage = (ev: MessageEvent) => {
-        if (ev.data?.type === "zyraxon-speech-result" && ev.data?.bridgeId === bridgeId) {
-          window.removeEventListener("message", handleMessage)
-          if (ev.data.result) {
-            finalText = ev.data.result
-          }
-          finishWithText()
-        }
-      }
-
-      window.addEventListener("message", handleMessage)
-      removeVoiceListener = () => window.removeEventListener("message", handleMessage)
-
-      window.parent.postMessage(
-        { type: "zyraxon-speech-start", bridgeId, lang: selectedLang() === "auto" ? "" : selectedLang() },
-        "*",
-      )
-
-      setState("recording")
-      safetyTimeout = setTimeout(() => {
-        if (state() === "recording" && !finalText) {
-          setState("idle")
-          cleanupListener()
-          props.onError?.("Speech recognition timeout. Please try again.")
-        }
-      }, 15000)
-
-      return
-    }
-
-    const api = (window as any).api
-    if (!api) {
-      // No Electron bridge: fall back to the browser's own recogniser rather than
-      // failing the click outright.
-      if (startBrowserRecognition()) return
-      props.onError?.("Speech recognition is not available in this browser.")
-      return
-    }
-
-    // Optimistic UI — show recording before any IPC so the click feels instant
-    setState("recording")
-    registerVoiceListener()
-
-    // Push selected language as-is — keep "auto" so the bridge uses the
-    // browser locale; never force en-US for non-English selections.
-    const lang = selectedLang()
-    await Promise.all([
-      Promise.resolve(api.voiceClearAccumulatedTranscript?.()).catch(() => {}),
-      Promise.resolve(api.voiceSetLanguage?.(lang || "auto")).catch(() => {}),
-    ])
-
-    try {
-      const result = await api.voiceStartListening()
-      if (result === false) {
-        props.onError?.("Voice bridge module not ready. Please restart the app.")
-        setState("idle")
-        cleanupListener()
-        return
-      }
-    } catch {
-      props.onError?.("Failed to start voice bridge.")
+    props.onLiveText?.("")
+    const client = createRealtimeStt({
+      onLive: (text) => props.onLiveText?.(text),
+      onFinal: (text) => props.onTranscript(text, selectedLang()),
+      onError: (message) => props.onError?.(message),
+      onState: (next) => setState(next),
+    })
+    stt = client
+    const started = await client.start(selectedLang())
+    if (!started) {
+      disposeStt()
       setState("idle")
-      cleanupListener()
-      return
     }
-
-    // The bridge confirmed the session, so the mic is live. Silence here just
-    // means the user has not spoken yet, which is not a failure: this used to
-    // throw "Voice bridge timeout" after 8 seconds and throw away a recording
-    // that was working exactly as intended. If the bridge really is unreachable
-    // it reports that itself, and the user can stop with the same button.
-    setState("recording")
   }
 
   const stopListening = async () => {
-    clearSafetyTimeout()
-
-    if (browserRecognition) {
-      stopBrowserRecognition()
-      finishWithText()
-      return
-    }
-
-    if (isInsideIframe) {
-      setState("processing")
-      window.parent.postMessage({ type: "zyraxon-speech-stop" }, "*")
-      safetyTimeout = setTimeout(() => {
-        finishWithText()
-      }, 5000)
-      return
-    }
-
-    const api = (window as any).api
-    if (api) {
-      try { await api.voiceStopListening() } catch {}
-      // Final text may already be live in the box; settle from bridge buffer as fallback
-      if (!finalText) {
-        try {
-          const accumulated = await api.voiceGetAccumulatedTranscript?.()
-          if (accumulated && accumulated.trim()) {
-            finalText = accumulated.trim()
-          }
-        } catch {}
-      }
-      try { await api.voiceClearAccumulatedTranscript?.() } catch {}
-    }
-    // Final transcript arrives via voice-transcript (final:true) then mic-state false —
-    // finishWithText settles without a long processing state (text already streamed).
-    if (state() === "recording") {
-      finishWithText()
-    } else {
-      setState("processing")
-      safetyTimeout = setTimeout(() => {
-        finishWithText()
-      }, 3000)
-    }
+    const client = stt
+    if (!client) return
+    await client.stop()
+    if (stt === client) stt = null
   }
 
   const toggleMic = (e: MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    if (state() === "recording") {
-      stopListening()
-    } else if (state() === "idle") {
-      startListening()
-    }
+    if (state() === "recording") void stopListening()
+    else if (state() === "idle") void startListening()
   }
 
   const selectLang = (code: string) => {
-    // Recorded before anything else so the adoption effect above leaves it alone.
     userChosen = true
     setSelectedLang(code)
     props.onLanguageChange?.(code)
-    const api = (window as any).api
-    // Switching language mid-sentence has to take effect on the utterance being
-    // recorded right now, not on the next one. Without this the recogniser kept
-    // transcribing in the language picked before the mic was opened.
-    if (api && (state() === "recording" || state() === "processing")) {
-      Promise.resolve(api.voiceSetLanguage?.(code)).catch(() => {})
-    }
+    // A change mid-sentence must reach the utterance being recorded now, so the
+    // client is told while it is live rather than only on the next start.
+    stt?.setLanguage(code)
   }
 
-  onCleanup(() => {
-    clearSafetyTimeout()
-    cleanupListener()
-    stopBrowserRecognition()
-  })
+  onCleanup(() => disposeStt())
 
   const langLabel = () =>
     VOICE_LANGUAGES.find((l) => l.code === selectedLang())?.label || "Auto-Detect"

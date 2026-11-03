@@ -281,10 +281,6 @@ function registerWindow(win: BrowserWindow, id: string) {
   win.on("session-end", () => registry.setQuitting())
   win.on("closed", () => {
     registry.closed(id)
-    try {
-      const { getVoiceBridgeModule } = require("./voice-bridge-singleton") as typeof import("./voice-bridge-singleton")
-      getVoiceBridgeModule()?.stopVoiceBridge()
-    } catch {}
   })
 }
 
@@ -489,20 +485,16 @@ function allowRendererPermissions(win: BrowserWindow) {
   }
 
   win.webContents.session.setPermissionRequestHandler((webContents, permission, callback, details) => {
-    const url = details.requestingUrl || ""
-    const isVoiceBridge = url.includes("127.0.0.1:19800")
-    const allowed = (rendererPermissions.has(permission) && (
-      isTrustedRendererUrl(details.requestingUrl) ||
-      webContents.id === rendererId ||
-      isChildOfRenderer(webContents)
-    )) || (isVoiceBridge && (permission === "media" || permission === "clipboard-sanitized-write"))
+    const allowed =
+      rendererPermissions.has(permission) &&
+      (isTrustedRendererUrl(details.requestingUrl) ||
+        webContents.id === rendererId ||
+        isChildOfRenderer(webContents))
     callback(allowed)
   })
   win.webContents.session.setPermissionCheckHandler((webContents, permission, requestingOrigin, details) => {
-    const url = details.requestingUrl || requestingOrigin || ""
-    const isVoiceBridge = url.includes("127.0.0.1:19800")
-    if (!rendererPermissions.has(permission) && !isVoiceBridge) return false
-    return isTrustedRendererUrl(details.requestingUrl) || isTrustedRendererUrl(requestingOrigin) || isVoiceBridge
+    if (!rendererPermissions.has(permission)) return false
+    return isTrustedRendererUrl(details.requestingUrl) || isTrustedRendererUrl(requestingOrigin)
   })
 
   // Microphone and camera access is granted through the permission request and
@@ -526,8 +518,7 @@ function addSpeechRecognitionHeaders(value: string, headers: Record<string, any>
   const url = new URL(value)
   const isCloudAgent = url.hostname.includes("zyraxon-pro-x.lovable.app") ||
     url.hostname.includes("zyraxonai.lovable.app")
-  const isVoiceBridge = url.hostname === "127.0.0.1" && url.port === "19800"
-  if (!isCloudAgent && !isVoiceBridge) return
+  if (!isCloudAgent) return
 
   // Allow microphone access
   upsertKeyValue(headers, "Permissions-Policy", [
