@@ -30,6 +30,7 @@ export function SettingsSubscription() {
   const [code, setCode] = createSignal("")
   const [codeMessage, setCodeMessage] = createSignal("")
   const [showSuccess, setShowSuccess] = createSignal(false)
+  const [isVerifying, setIsVerifying] = createSignal(false)
 
   const [zyOpen, setZyOpen] = createSignal(false)
   const [zyInput, setZyInput] = createSignal("")
@@ -69,15 +70,28 @@ export function SettingsSubscription() {
     setTimeout(() => setAdminMsg(""), 3000)
   }
 
-  function handleActivateCode() {
-    const result = subscription.activateWithCode(code())
-    setCodeMessage(result.message)
-    if (result.success) {
-      setCode("")
-      setShowSuccess(true)
-      setTimeout(() => setShowSuccess(false), 3000)
+  async function handleActivateCode() {
+    const val = code().trim()
+    if (!val) {
+      setCodeMessage("দয়া করে অ্যাক্টিভেশন কোডটি দিন")
+      return
     }
-    setTimeout(() => setCodeMessage(""), 5000)
+
+    setIsVerifying(true)
+    setCodeMessage("সার্ভারের সাথে লাইভ ভেরিফাই করা হচ্ছে...")
+
+    try {
+      const result = await subscription.activateWithCode(val)
+      setCodeMessage(result.message)
+      if (result.success) {
+        setCode("")
+        setShowSuccess(true)
+        setTimeout(() => setShowSuccess(false), 4000)
+      }
+    } finally {
+      setIsVerifying(false)
+      setTimeout(() => setCodeMessage(""), 6000)
+    }
   }
 
   function handleStripePay(tier: SubscriptionTier) {
@@ -85,13 +99,11 @@ export function SettingsSubscription() {
       openStripeCheckout(tier)
       return
     }
-    setCodeMessage("Stripe not configured yet. Use secret code to activate.")
+    setCodeMessage("Website payment is active. Please visit the website to purchase a license code.")
     setTimeout(() => setCodeMessage(""), 3000)
   }
 
   function handleReset() {
-    // resetToFree in the shared store cannot reach this module's admin key, so a full
-    // local reset has to clear both or the admin panel stays open after a reset.
     subscription.resetToFree()
     setAdminUnlocked(false)
   }
@@ -282,7 +294,7 @@ export function SettingsSubscription() {
                         "color": "#000",
                       }}
                     >
-                      Upgrade to {plan.name} — ${TIER_DURATION[tierId]?.price ?? plan.price}/{TIER_DURATION[tierId]?.label ?? "month"}
+                      Get {plan.name} — ${TIER_DURATION[tierId]?.price ?? plan.price}/{TIER_DURATION[tierId]?.label ?? "month"}
                     </button>
                   </div>
                 </Show>
@@ -301,20 +313,20 @@ export function SettingsSubscription() {
         </For>
       </div>
 
-      {/* Secret Code Activation */}
+      {/* Secret Code Activation with Server Handshake */}
       <div class="rounded-xl p-4"
         style={{
           "background": "rgba(255,255,255,0.02)",
           "border": "1px solid rgba(255,255,255,0.05)",
         }}>
-        <h3 class="text-sm font-bold text-[var(--text-strong)] mb-1">Secret Code Activation</h3>
-        <p class="text-[11px] text-[var(--text-weak)] mb-3">Enter a secret code for permanent unlock — no expiry, no limitations</p>
+        <h3 class="text-sm font-bold text-[var(--text-strong)] mb-1">Server License Activation</h3>
+        <p class="text-[11px] text-[var(--text-weak)] mb-3">Enter your issued one-time license code to unlock Pro, Max or Ultra tier.</p>
         <p class="text-[11px] text-[var(--text-weak)] mb-3">
-          Need a code? Join{" "}
-          <a href="https://zyraxon-group-x.lovable.app/" target="_blank" rel="noopener noreferrer" class="text-[#00D4FF] underline hover:opacity-80">
-            ZYRAXON GROUP X
+          Need a license code? Visit{" "}
+          <a href="https://zyraxon-group-x.lovable.app/payment" target="_blank" rel="noopener noreferrer" class="text-[#00D4FF] underline hover:opacity-80">
+            ZYRAXON Payment Portal
           </a>{" "}
-          to get one.
+          to pay and receive your activation code.
         </p>
         <div class="flex gap-2">
           <input
@@ -322,21 +334,24 @@ export function SettingsSubscription() {
             value={code()}
             onInput={(e) => setCode(e.currentTarget.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleActivateCode() }}
-            placeholder="Enter access code"
-            class="flex-1 px-3 py-2 rounded-lg text-xs font-mono bg-black/30 text-[var(--text-strong)] border border-white/10 focus:outline-none focus:border-white/30 placeholder:text-white/20"
+            placeholder="Enter license code (e.g. ZAC-PRO-XXXX)"
+            disabled={isVerifying()}
+            class="flex-1 px-3 py-2 rounded-lg text-xs font-mono bg-black/30 text-[var(--text-strong)] border border-white/10 focus:outline-none focus:border-white/30 placeholder:text-white/20 disabled:opacity-50"
           />
           <button
             onClick={handleActivateCode}
-            class="px-4 py-2 rounded-lg text-xs font-bold bg-white/10 text-white hover:bg-white/20 transition-colors"
+            disabled={isVerifying()}
+            class="px-4 py-2 rounded-lg text-xs font-bold bg-white/10 text-white hover:bg-white/20 transition-colors disabled:opacity-50"
           >
-            Activate
+            {isVerifying() ? "Verifying..." : "Activate"}
           </button>
         </div>
         <Show when={codeMessage()}>
           <div class="mt-2 px-3 py-1.5 rounded-lg text-xs"
             classList={{
-              "bg-red-500/15 text-red-400": codeMessage().includes("Invalid") || codeMessage().includes("not configured"),
-              "bg-white/10 text-white/70": !codeMessage().includes("Invalid") && !codeMessage().includes("not configured"),
+              "bg-red-500/15 text-red-400": codeMessage().includes("Invalid") || codeMessage().includes("অবৈধ") || codeMessage().includes("বাতিল") || codeMessage().includes("মেয়াদ"),
+              "bg-emerald-500/15 text-emerald-300": codeMessage().includes("সফলভাবে") || codeMessage().includes("activated"),
+              "bg-white/10 text-white/70": !codeMessage().includes("Invalid") && !codeMessage().includes("অবৈধ") && !codeMessage().includes("সফলভাবে"),
             }}>
             {codeMessage()}
           </div>
@@ -361,8 +376,8 @@ export function SettingsSubscription() {
             <div><span class="text-[var(--text-weak)]">Price: </span><span class="text-[var(--text-strong)]">${currentPlan().price}</span></div>
             <div><span class="text-[var(--text-weak)]">Tools: </span><span class="text-[var(--text-strong)]">{currentPlan().toolCount}</span></div>
             <div><span class="text-[var(--text-weak)]">Memory: </span><span class="text-[var(--text-strong)]">{currentPlan().memoryOptimization}</span></div>
-            <div><span class="text-[var(--text-weak)]">Expiry: </span><span class="text-[var(--text-strong)]">{daysRemaining() !== null ? `${daysRemaining()} days` : "Never (permanent)"}</span></div>
-            <div><span class="text-[var(--text-weak)]">Type: </span><span class="text-[var(--text-strong)]">{subscription.secretCode() ? "Secret Code" : subscription.stripeSessionId() ? "Stripe" : "Free"}</span></div>
+            <div><span class="text-[var(--text-weak)]">Expiry: </span><span class="text-[var(--text-strong)]">{daysRemaining() !== null ? `${daysRemaining()} days remaining` : "Never (permanent)"}</span></div>
+            <div><span class="text-[var(--text-weak)]">Type: </span><span class="text-[var(--text-strong)]">{subscription.secretCode() ? "Cloud License" : "Free"}</span></div>
           </div>
         </div>
       </Show>
