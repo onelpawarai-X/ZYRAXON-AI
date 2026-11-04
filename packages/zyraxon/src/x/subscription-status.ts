@@ -20,6 +20,7 @@ interface SubStatusResult {
     toolsVisible: string
     toolsUsable: string
     daysRemaining: number | null
+    hoursRemaining: number | null
     isPermanent: boolean
     activatedAt: string | null
     expiresAt: string | null
@@ -86,7 +87,6 @@ const FEATURE_INFO: Record<Tier, string> = {
 export function execute(args: any): SubStatusResult {
   const state = readSubStateLocal()
   const currentTier = state.tier
-  const activeTier = getCurrentTier()
 
   let tier = currentTier
   let hint: string | undefined
@@ -95,17 +95,18 @@ export function execute(args: any): SubStatusResult {
     const candidate = TIER_ORDER.find((t) => requested.toLowerCase() === t)
     if (candidate) {
       tier = candidate
-      hint = `Simulated preview only: you are currently on "${currentTier}". To actually upgrade, tune subscription.json in ~/.zyraxon.`
+      hint = `Simulated preview only: you are currently on "${currentTier}". To upgrade, obtain a valid license code from https://zyraxon-group-x.lovable.app/payment.`
     }
   }
   const toolCount = getToolCountForTier(tier)
-  const currentCount = getToolCountForTier(currentTier)
   const agentInfo = AGENT_INFO[tier]
 
   let daysRemaining: number | null = null
+  let hoursRemaining: number | null = null
   if (state.expiresAt) {
     const diff = state.expiresAt - Date.now()
     daysRemaining = Math.max(0, Math.ceil(diff / (24 * 60 * 60 * 1000)))
+    hoursRemaining = Math.max(0, Math.ceil(diff / (60 * 60 * 1000)))
   }
 
   const isPermanent = tier !== "free" && state.expiresAt === null
@@ -114,13 +115,11 @@ export function execute(args: any): SubStatusResult {
     ok: true,
     data: {
       tier,
-      // The whole catalog is visible to the agent on every tier; the tier only
-      // decides which of those tools may actually run. Report both so the agent
-      // never undercounts itself by equating "usable" with "existing".
       toolsVisible: `${xToolRegistry.length} tools (always visible in every tier and mode)`,
       toolsUsable: `${toolCount} of ${xToolRegistry.length} tools usable on ${tier}`,
       toolAccess: `${toolCount} usable of ${xToolRegistry.length} visible`,
       daysRemaining,
+      hoursRemaining,
       isPermanent,
       activatedAt: state.activatedAt ? new Date(state.activatedAt).toISOString() : null,
       expiresAt: state.expiresAt ? new Date(state.expiresAt).toISOString() : null,
