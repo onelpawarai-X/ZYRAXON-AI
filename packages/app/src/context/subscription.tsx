@@ -109,19 +109,18 @@ export const { use: useSubscription, provider: SubscriptionProvider } = createSi
     const isPermanentUnlock = (): boolean => state.tier !== "free" && !state.expiresAt
 
     // 1-2 Second Live Handshake with Server
-    async function activateWithCode(code: string): Promise<{ success: boolean; message: string }> {
+    async function activateWithCode(
+      code: string,
+    ): Promise<{ success: boolean; messageKey: string; params?: Record<string, string | number> }> {
       const clean = code.trim().toUpperCase()
-      if (!clean) return { success: false, message: "দয়া করে অ্যাক্টিভেশন কোডটি লিখুন।" }
+      if (!clean) return { success: false, messageKey: "subscription.license.error.empty" }
 
       const res = await verifyLicenseWithServer(clean)
       if (!res.valid || !res.tier) {
-        if (res.reason === "expired") {
-          return { success: false, message: "এই লাইসেন্স কোডের মেয়াদ শেষ হয়ে গেছে।" }
-        }
-        if (res.reason === "revoked") {
-          return { success: false, message: "এই কোডটি বাতিল করা হয়েছে।" }
-        }
-        return { success: false, message: "অবৈধ অ্যাক্টিভেশন কোড! সঠিক কোড দিন অথবা ওয়েবসাইট থেকে কোড সংগ্রহ করুন।" }
+        if (res.reason === "expired") return { success: false, messageKey: "subscription.license.error.expired" }
+        if (res.reason === "revoked") return { success: false, messageKey: "subscription.license.error.revoked" }
+        if (res.reason === "server_error") return { success: false, messageKey: "subscription.license.error.server" }
+        return { success: false, messageKey: "subscription.license.error.invalid" }
       }
 
       const now = Date.now()
@@ -136,7 +135,11 @@ export const { use: useSubscription, provider: SubscriptionProvider } = createSi
       })
       setRestoreProblem(null)
       saveState(state)
-      return { success: true, message: `${SUBSCRIPTION_PLANS[res.tier].name} প্ল্যান সফলভাবে আনলক হয়েছে!` }
+      return {
+        success: true,
+        messageKey: "subscription.admin.msg.activated",
+        params: { plan: SUBSCRIPTION_PLANS[res.tier].name },
+      }
     }
 
     function activateTier(tier: SubscriptionTier, durationDays?: number | null): void {

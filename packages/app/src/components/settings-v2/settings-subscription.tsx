@@ -1,6 +1,7 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import { createSignal, For, Show } from "solid-js"
+import { useLanguage } from "@/context/language"
 import { useSubscription } from "@/context/subscription"
 import {
   openStripeCheckout,
@@ -19,16 +20,23 @@ const TIER_COLORS: Record<SubscriptionTier, string> = {
   ultra: "#fb923c",
 }
 
-const TIER_DURATION: Record<string, { label: string; price: number }> = {
-  pro: { label: "15 Days", price: 5 },
-  max: { label: "2 Months", price: 15 },
-  ultra: { label: "1 Year", price: 99 },
+const TIER_DURATION: Record<string, { labelKey: string; price: number }> = {
+  pro: { labelKey: "subscription.duration.days15", price: 5 },
+  max: { labelKey: "subscription.duration.months2", price: 15 },
+  ultra: { labelKey: "subscription.duration.year1", price: 99 },
 }
+
+/** Which tone an activation message carries, so the badge colour is driven by the
+ *  result rather than by matching words inside a translated string. */
+type CodeTone = "error" | "success" | "info"
 
 export function SettingsSubscription() {
   const subscription = useSubscription()
+  const language = useLanguage()
+  const t = (key: string, params?: Record<string, string | number>) => language.t(key as never, params as never)
   const [code, setCode] = createSignal("")
   const [codeMessage, setCodeMessage] = createSignal("")
+  const [codeTone, setCodeTone] = createSignal<CodeTone>("info")
   const [showSuccess, setShowSuccess] = createSignal(false)
   const [isVerifying, setIsVerifying] = createSignal(false)
 
@@ -56,15 +64,15 @@ export function SettingsSubscription() {
     if (tier === "unlock") {
       setAdminUnlocked(true)
       setAdminOpen(true)
-      setAdminMsg("Admin panel unlocked!")
+      setAdminMsg(t("subscription.admin.msg.unlocked"))
     } else if (tier === "lock") {
       subscription.resetToFree()
-      setAdminMsg("All subscriptions locked to Free!")
+      setAdminMsg(t("subscription.admin.msg.locked"))
     } else if (["pro", "max", "ultra"].includes(tier)) {
       subscription.activateTier(tier as SubscriptionTier, null)
-      setAdminMsg(`${SUBSCRIPTION_PLANS[tier as SubscriptionTier].name} activated!`)
+      setAdminMsg(t("subscription.admin.msg.activated", { plan: SUBSCRIPTION_PLANS[tier as SubscriptionTier].name }))
     } else {
-      setAdminMsg("Invalid. Use: UNLOCK, PRO, MAX, ULTRA, LOCK")
+      setAdminMsg(t("subscription.admin.msg.invalid"))
     }
     setAdminTier("")
     setTimeout(() => setAdminMsg(""), 3000)
@@ -73,16 +81,19 @@ export function SettingsSubscription() {
   async function handleActivateCode() {
     const val = code().trim()
     if (!val) {
-      setCodeMessage("দয়া করে অ্যাক্টিভেশন কোডটি দিন")
+      setCodeTone("error")
+      setCodeMessage(t("subscription.license.error.empty"))
       return
     }
 
     setIsVerifying(true)
-    setCodeMessage("সার্ভারের সাথে লাইভ ভেরিফাই করা হচ্ছে...")
+    setCodeTone("info")
+    setCodeMessage(t("subscription.license.verifying.server"))
 
     try {
       const result = await subscription.activateWithCode(val)
-      setCodeMessage(result.message)
+      setCodeTone(result.success ? "success" : "error")
+      setCodeMessage(t(result.messageKey, result.params))
       if (result.success) {
         setCode("")
         setShowSuccess(true)
@@ -99,7 +110,8 @@ export function SettingsSubscription() {
       openStripeCheckout(tier)
       return
     }
-    setCodeMessage("Website payment is active. Please visit the website to purchase a license code.")
+    setCodeTone("info")
+    setCodeMessage(t("subscription.stripe.notConfigured"))
     setTimeout(() => setCodeMessage(""), 3000)
   }
 
@@ -113,8 +125,8 @@ export function SettingsSubscription() {
       {/* Header */}
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-lg font-bold text-[var(--text-strong)]">Subscription Plans</h2>
-          <p class="text-xs text-[var(--text-weak)] mt-1">Choose the plan that fits your needs.</p>
+          <h2 class="text-lg font-bold text-[var(--text-strong)]">{t("subscription.plans")}</h2>
+          <p class="text-xs text-[var(--text-weak)] mt-1">{t("subscription.plans.description")}</p>
         </div>
         <div class="relative">
           <button
@@ -135,14 +147,14 @@ export function SettingsSubscription() {
                 "border": "1px solid rgba(255,255,255,0.1)",
                 "box-shadow": "0 12px 40px rgba(0,0,0,0.6)",
               }}>
-              <div class="text-[11px] text-white/50 mb-2 font-medium">Enter admin access code</div>
+              <div class="text-[11px] text-white/50 mb-2 font-medium">{t("subscription.admin.code")}</div>
               <div class="flex gap-2">
                 <input
                   type="password"
                   value={zyInput()}
                   onInput={(e) => setZyInput(e.currentTarget.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") handleZySubmit() }}
-                  placeholder="Access code"
+                  placeholder={t("subscription.admin.placeholder")}
                   autofocus
                   class="flex-1 px-3 py-2 rounded-lg text-xs font-mono bg-black/40 text-white border border-white/10 focus:outline-none focus:border-white/30 placeholder:text-white/20"
                 />
@@ -150,7 +162,7 @@ export function SettingsSubscription() {
                   onClick={handleZySubmit}
                   class="px-4 py-2 rounded-lg text-[11px] font-bold bg-white/10 text-white hover:bg-white/20 transition-colors"
                 >
-                  Unlock
+                  {t("subscription.admin.unlock")}
                 </button>
               </div>
             </div>
@@ -165,8 +177,8 @@ export function SettingsSubscription() {
             "background": "rgba(255,255,255,0.03)",
             "backdrop-filter": "blur(16px)",
           }}>
-          <div class="text-xs font-bold text-white/70 mb-2">Admin Control Panel</div>
-          <p class="text-[11px] text-white/40 mb-2">Type tier name + Enter to activate. Type LOCK to disable.</p>
+          <div class="text-xs font-bold text-white/70 mb-2">{t("subscription.admin.panel")}</div>
+          <p class="text-[11px] text-white/40 mb-2">{t("subscription.admin.hint")}</p>
           <div class="flex gap-2 mb-2">
             <input
               type="text"
@@ -180,7 +192,7 @@ export function SettingsSubscription() {
               onClick={handleAdminUnlock}
               class="px-4 py-2 rounded-lg text-[11px] font-bold bg-white/10 text-white hover:bg-white/20 transition-colors"
             >
-              Set
+              {t("subscription.admin.set")}
             </button>
           </div>
           <Show when={adminMsg()}>
@@ -198,8 +210,7 @@ export function SettingsSubscription() {
       <Show when={subscription.restoreProblem()}>
         {(problem) => (
           <div class="rounded-xl p-3 text-xs border border-red-500/20 bg-red-500/10 text-red-300">
-            Saved subscription could not be read ({problem()}). Access is currently Free — re-enter your
-            activation code to restore it.
+            {t("subscription.restore.problem", { reason: problem() })}
           </div>
         )}
       </Show>
@@ -220,16 +231,20 @@ export function SettingsSubscription() {
           </div>
           <div class="flex-1">
             <div class="text-sm font-bold text-[var(--text-strong)]">
-              Current Plan: {currentPlan().name}
+              {t("subscription.currentPlan", { plan: currentPlan().name })}
               <Show when={daysRemaining() !== null}>
-                <span class="text-[11px] text-[var(--text-weak)] ml-2 font-normal">{daysRemaining()} days remaining</span>
+                <span class="text-[11px] text-[var(--text-weak)] ml-2 font-normal">{t("subscription.daysRemaining", { days: daysRemaining() ?? 0 })}</span>
               </Show>
               <Show when={subscription.isPermanentUnlock()}>
-                <span class="text-[11px] text-emerald-400 ml-2 font-normal">Permanent unlock</span>
+                <span class="text-[11px] text-emerald-400 ml-2 font-normal">{t("subscription.admin.permanentUnlock")}</span>
               </Show>
             </div>
             <div class="text-xs text-[var(--text-weak)] mt-0.5">
-              {currentPlan().toolCount} tools · {currentPlan().maxAgents === -1 ? "Unlimited" : currentPlan().maxAgents} agents · {currentPlan().memoryOptimization}
+              {t("subscription.plan.summary", {
+                tools: currentPlan().toolCount,
+                agents: currentPlan().maxAgents === -1 ? t("subscription.unlimited") : currentPlan().maxAgents,
+                memory: currentPlan().memoryOptimization,
+              })}
             </div>
           </div>
         </div>
@@ -253,7 +268,7 @@ export function SettingsSubscription() {
                 <Show when={isCurrent}>
                   <div class="absolute -top-2.5 left-4 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider text-black"
                     style={{ background: color }}>
-                    Current
+                    {t("subscription.badge.current")}
                   </div>
                 </Show>
 
@@ -261,12 +276,16 @@ export function SettingsSubscription() {
                 <div class="text-xl font-extrabold text-[var(--text-strong)] mb-1">
                   ${plan.price}
                   <span class="text-[11px] font-normal text-[var(--text-weak)] ml-1">
-                    {tierId === "free" ? "/forever" : tierId === "pro" ? "/15 days" : tierId === "max" ? "/2 months" : "/year"}
+                    {tierId === "free" ? t("subscription.duration.forever") : t(`subscription.duration.${tierId}`)}
                   </span>
                 </div>
                 <div class="text-[11px] text-[var(--text-weak)] mb-2">{plan.description}</div>
                 <div class="text-[11px] text-[var(--text-weak)] mb-2">
-                  {plan.toolCount} tools · {plan.maxAgents === -1 ? "Unlimited" : plan.maxAgents} agents
+                  {t("subscription.plan.summary", {
+                    tools: plan.toolCount,
+                    agents: plan.maxAgents === -1 ? t("subscription.unlimited") : plan.maxAgents,
+                    memory: plan.memoryOptimization,
+                  })}
                 </div>
 
                 <div class="flex-1">
@@ -279,7 +298,7 @@ export function SettingsSubscription() {
                   </For>
                   <Show when={plan.features.length > 5}>
                     <div class="text-[10px] text-[var(--text-weak)] mt-1 opacity-60">
-                      +{plan.features.length - 5} more features
+                      {t("subscription.features.more", { count: plan.features.length - 5 })}
                     </div>
                   </Show>
                 </div>
@@ -294,7 +313,11 @@ export function SettingsSubscription() {
                         "color": "#000",
                       }}
                     >
-                      Get {plan.name} — ${TIER_DURATION[tierId]?.price ?? plan.price}/{TIER_DURATION[tierId]?.label ?? "month"}
+                      {t("subscription.cta.buy", {
+                        plan: plan.name,
+                        price: TIER_DURATION[tierId]?.price ?? plan.price,
+                        label: TIER_DURATION[tierId] ? t(TIER_DURATION[tierId]!.labelKey) : t("subscription.duration.months2"),
+                      })}
                     </button>
                   </div>
                 </Show>
@@ -304,7 +327,7 @@ export function SettingsSubscription() {
                     disabled
                     class="w-full mt-3 py-2 rounded-lg text-xs font-semibold border border-white/10 text-white/30 cursor-default"
                   >
-                    Active Plan
+                    {t("subscription.badge.active")}
                   </button>
                 </Show>
               </div>
@@ -319,14 +342,14 @@ export function SettingsSubscription() {
           "background": "rgba(255,255,255,0.02)",
           "border": "1px solid rgba(255,255,255,0.05)",
         }}>
-        <h3 class="text-sm font-bold text-[var(--text-strong)] mb-1">Server License Activation</h3>
-        <p class="text-[11px] text-[var(--text-weak)] mb-3">Enter your issued one-time license code to unlock Pro, Max or Ultra tier.</p>
+        <h3 class="text-sm font-bold text-[var(--text-strong)] mb-1">{t("subscription.license.title")}</h3>
+        <p class="text-[11px] text-[var(--text-weak)] mb-3">{t("subscription.license.description")}</p>
         <p class="text-[11px] text-[var(--text-weak)] mb-3">
-          Need a license code? Visit{" "}
+          {t("subscription.license.need.before")}{" "}
           <a href="https://zyraxon-group-x.lovable.app/payment" target="_blank" rel="noopener noreferrer" class="text-[#00D4FF] underline hover:opacity-80">
-            ZYRAXON Payment Portal
+            {t("subscription.license.need.link")}
           </a>{" "}
-          to pay and receive your activation code.
+          {t("subscription.license.need.after")}
         </p>
         <div class="flex gap-2">
           <input
@@ -334,7 +357,7 @@ export function SettingsSubscription() {
             value={code()}
             onInput={(e) => setCode(e.currentTarget.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleActivateCode() }}
-            placeholder="Enter license code (e.g. ZAC-PRO-XXXX)"
+            placeholder={t("subscription.license.placeholder")}
             disabled={isVerifying()}
             class="flex-1 px-3 py-2 rounded-lg text-xs font-mono bg-black/30 text-[var(--text-strong)] border border-white/10 focus:outline-none focus:border-white/30 placeholder:text-white/20 disabled:opacity-50"
           />
@@ -343,22 +366,22 @@ export function SettingsSubscription() {
             disabled={isVerifying()}
             class="px-4 py-2 rounded-lg text-xs font-bold bg-white/10 text-white hover:bg-white/20 transition-colors disabled:opacity-50"
           >
-            {isVerifying() ? "Verifying..." : "Activate"}
+            {isVerifying() ? t("subscription.license.verifying") : t("subscription.license.button")}
           </button>
         </div>
         <Show when={codeMessage()}>
           <div class="mt-2 px-3 py-1.5 rounded-lg text-xs"
             classList={{
-              "bg-red-500/15 text-red-400": codeMessage().includes("Invalid") || codeMessage().includes("অবৈধ") || codeMessage().includes("বাতিল") || codeMessage().includes("মেয়াদ"),
-              "bg-emerald-500/15 text-emerald-300": codeMessage().includes("সফলভাবে") || codeMessage().includes("activated"),
-              "bg-white/10 text-white/70": !codeMessage().includes("Invalid") && !codeMessage().includes("অবৈধ") && !codeMessage().includes("সফলভাবে"),
+              "bg-red-500/15 text-red-400": codeTone() === "error",
+              "bg-emerald-500/15 text-emerald-300": codeTone() === "success",
+              "bg-white/10 text-white/70": codeTone() === "info",
             }}>
             {codeMessage()}
           </div>
         </Show>
         <Show when={showSuccess()}>
           <div class="mt-2 px-3 py-1.5 rounded-lg text-xs bg-emerald-500/20 text-emerald-400 font-semibold">
-            Tier upgraded! All {currentPlan().toolCount} tools unlocked.
+            {t("subscription.license.toast", { tools: currentPlan().toolCount })}
           </div>
         </Show>
       </div>
@@ -370,14 +393,14 @@ export function SettingsSubscription() {
             "background": "rgba(255,255,255,0.02)",
             "border": "1px solid rgba(255,255,255,0.05)",
           }}>
-          <div class="text-xs text-[var(--text-weak)] mb-2">Subscription Details</div>
+          <div class="text-xs text-[var(--text-weak)] mb-2">{t("subscription.details")}</div>
           <div class="grid grid-cols-2 gap-2 text-xs">
-            <div><span class="text-[var(--text-weak)]">Plan: </span><span class="text-[var(--text-strong)] font-semibold">{currentPlan().name}</span></div>
-            <div><span class="text-[var(--text-weak)]">Price: </span><span class="text-[var(--text-strong)]">${currentPlan().price}</span></div>
-            <div><span class="text-[var(--text-weak)]">Tools: </span><span class="text-[var(--text-strong)]">{currentPlan().toolCount}</span></div>
-            <div><span class="text-[var(--text-weak)]">Memory: </span><span class="text-[var(--text-strong)]">{currentPlan().memoryOptimization}</span></div>
-            <div><span class="text-[var(--text-weak)]">Expiry: </span><span class="text-[var(--text-strong)]">{daysRemaining() !== null ? `${daysRemaining()} days remaining` : "Never (permanent)"}</span></div>
-            <div><span class="text-[var(--text-weak)]">Type: </span><span class="text-[var(--text-strong)]">{subscription.secretCode() ? "Cloud License" : "Free"}</span></div>
+            <div><span class="text-[var(--text-weak)]">{t("subscription.details.plan")}</span><span class="text-[var(--text-strong)] font-semibold">{currentPlan().name}</span></div>
+            <div><span class="text-[var(--text-weak)]">{t("subscription.details.price")}</span><span class="text-[var(--text-strong)]">${currentPlan().price}</span></div>
+            <div><span class="text-[var(--text-weak)]">{t("subscription.details.tools")}</span><span class="text-[var(--text-strong)]">{currentPlan().toolCount}</span></div>
+            <div><span class="text-[var(--text-weak)]">{t("subscription.details.memory")}</span><span class="text-[var(--text-strong)]">{currentPlan().memoryOptimization}</span></div>
+            <div><span class="text-[var(--text-weak)]">{t("subscription.details.expiry")}</span><span class="text-[var(--text-strong)]">{daysRemaining() !== null ? t("subscription.daysRemaining", { days: daysRemaining() ?? 0 }) : t("subscription.details.never")}</span></div>
+            <div><span class="text-[var(--text-weak)]">{t("subscription.details.type")}</span><span class="text-[var(--text-strong)]">{subscription.secretCode() ? t("subscription.type.cloud") : t("subscription.type.free")}</span></div>
           </div>
         </div>
       </Show>
@@ -387,7 +410,7 @@ export function SettingsSubscription() {
         onClick={handleReset}
         class="w-full py-2 rounded-lg text-[11px] text-white/30 border border-white/5 hover:bg-white/5 hover:text-white/50 transition-all"
       >
-        Reset to Free
+        {t("subscription.reset")}
       </button>
     </div>
   )
