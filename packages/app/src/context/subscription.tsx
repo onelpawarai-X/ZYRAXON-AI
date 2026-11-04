@@ -9,19 +9,15 @@ import {
   SUBSCRIPTION_PLANS,
   TIER_ORDER,
   hasAccess,
-  validateSecretCode,
+  verifyLicenseWithServer,
   getToolRequiredTier,
   parseSubscriptionState,
   FREE_STATE,
 } from "./subscription-types"
 
 const STORAGE_KEY = "zyraxon-subscription"
-const CHECK_INTERVAL_MS = 60 * 1000
+const HEARTBEAT_INTERVAL_MS = 40 * 1000
 
-// The backend enforces tiers from ~/.zyraxon/subscription.json (see
-// packages/zyraxon/src/subscription/canonical.ts), written by the desktop main process
-// over the set-subscription-state IPC channel. If this push is skipped the UI shows an
-// unlocked plan while every premium tool stays denied at execution time.
 function pushToBackend(state: SubscriptionState) {
   const send = window.api?.setSubscriptionState
   if (!send) {
@@ -64,8 +60,6 @@ function readStoredState(): { state: SubscriptionState; problem: string | null }
     saveState({ ...FREE_STATE })
     return { state: { ...FREE_STATE }, problem: null }
   }
-  // The renderer store is the authority for the UI, so a paid activation found in storage
-  // must reach the backend too, not just the UI.
   pushToBackend(parsed.state)
   return { state: parsed.state, problem: null }
 }
@@ -114,23 +108,35 @@ export const { use: useSubscription, provider: SubscriptionProvider } = createSi
     }
     const isPermanentUnlock = (): boolean => state.tier !== "free" && !state.expiresAt
 
-    function activateWithCode(code: string): { success: boolean; message: string } {
-      const result = validateSecretCode(code)
-      if (!result) return { success: false, message: "Invalid activation code" }
+    // 1-2 Second Live Handshake with Server
+    async function activateWithCode(code: string): Promise<{ success: boolean; message: string }> {
+      const clean = code.trim().toUpperCase()
+      if (!clean) return { success: false, message: "দয়া করে অ্যাক্টিভেশন কোডটি লিখুন।" }
+
+      const res = await verifyLicenseWithServer(clean)
+      if (!res.valid || !res.tier) {
+        if (res.reason === "expired") {
+          return { success: false, message: "এই লাইসেন্স কোডের মেয়াদ শেষ হয়ে গেছে।" }
+        }
+        if (res.reason === "revoked") {
+          return { success: false, message: "এই কোডটি বাতিল করা হয়েছে।" }
+        }
+        return { success: false, message: "অবৈধ অ্যাক্টিভেশন কোড! সঠিক কোড দিন অথবা ওয়েবসাইট থেকে কোড সংগ্রহ করুন।" }
+      }
 
       const now = Date.now()
-      const expiresAt = result.durationDays ? computeExpiresAt(result.durationDays) : null
+      const expiry = res.expiresAt ? new Date(res.expiresAt).getTime() : now + (res.remainingMs ?? 30 * 86400000)
 
       setState({
-        tier: result.tier,
+        tier: res.tier,
         activatedAt: now,
-        expiresAt,
-        secretCode: code.trim().toUpperCase(),
+        expiresAt: expiry,
+        secretCode: clean,
         stripeSessionId: null,
       })
       setRestoreProblem(null)
       saveState(state)
-      return { success: true, message: `${SUBSCRIPTION_PLANS[result.tier].name} plan activated!` }
+      return { success: true, message: `${SUBSCRIPTION_PLANS[res.tier].name} প্ল্যান সফলভাবে আনলক হয়েছে!` }
     }
 
     function activateTier(tier: SubscriptionTier, durationDays?: number | null): void {
@@ -178,14 +184,37 @@ export const { use: useSubscription, provider: SubscriptionProvider } = createSi
       return false
     }
 
-    onMount(() => {
-      const check = () => {
+    // 40-second Heartbeat: Verifies with server and auto-locks on expiry
+    async function heartbeatCheck() {
+      if (!state.secretCode || state.tier === "free") {
         if (state.expiresAt && Date.now() > state.expiresAt && state.tier !== "free") {
           resetToFree()
         }
+        return
       }
-      check()
-      const interval = setInterval(check, CHECK_INTERVAL_MS)
+
+      const res = await verifyLicenseWithServer(state.secretCode)
+      if (!res.valid) {
+        console.warn("[Subscription] License expired or revoked by server. Reverting to Free tier.")
+        resetToFree()
+      } else if (res.expiresAt) {
+        const expMs = new Date(res.expiresAt).getTime()
+        if (expMs !== state.expiresAt || (res.tier && res.tier !== state.tier)) {
+          setState({
+            ...state,
+            tier: res.tier || state.tier,
+            expiresAt: expMs,
+          })
+          saveState(state)
+        }
+      }
+    }
+
+    onMount(() => {
+      void heartbeatCheck()
+      const interval = setInterval(() => {
+        void heartbeatCheck()
+      }, HEARTBEAT_INTERVAL_MS)
       return () => clearInterval(interval)
     })
 
