@@ -9,10 +9,12 @@ import type { McpClientLike } from "../../../../../MCP Hub/plugin"
 import { useLanguage } from "@/context/language"
 import { useLayout } from "@/context/layout"
 import { usePlatform } from "@/context/platform"
+import { usePrompt } from "@/context/prompt"
 import { useServerSDK } from "@/context/server-sdk"
 import { useServerSync } from "@/context/server-sync"
 import type { DirectorySync } from "@/context/sync"
 import { useServiceStatus } from "@/components/sidebar/sidebar-status"
+import { showToast } from "@/utils/toast"
 import { SettingsLocationsV2 } from "./storage-locations"
 
 /**
@@ -32,7 +34,7 @@ function useSettingsDirectorySync(): Accessor<DirectorySync | undefined> {
   })
 }
 
-type Pane = "mcp" | "plugins" | "lsp" | "marketplace"
+type Pane = "mcp" | "plugins" | "skills" | "lsp" | "marketplace"
 
 /**
  * Where each extension kind is configured, relative to the project root. Kept
@@ -41,12 +43,14 @@ type Pane = "mcp" | "plugins" | "lsp" | "marketplace"
 const CONFIG_PATHS = {
   mcp: ".zyraxon/zyraxon.jsonc",
   plugins: ".zyraxon/plugin",
+  skills: ".zyraxon/skills",
   lsp: ".zyraxon/lsp.jsonc",
 } as const
 
 const PANES: readonly { value: Pane; icon: Parameters<typeof Icon>[0]["name"] }[] = [
   { value: "mcp", icon: "zy-mcp" },
   { value: "plugins", icon: "zy-plugins" },
+  { value: "skills", icon: "zy-skills" },
   { value: "lsp", icon: "zy-code" },
   { value: "marketplace", icon: "zy-ecosystem" },
 ]
@@ -78,6 +82,70 @@ export const SettingsExtensionsV2: Component = () => {
   const service = useServiceStatus(useSettingsDirectorySync())
   const [pane, setPane] = createSignal<Pane>("mcp")
   const [busy, setBusy] = createSignal<string | undefined>(undefined)
+  const [skillName, setSkillName] = createSignal("")
+  const prompt = usePrompt()
+
+  async function openPath(absolute: string) {
+    if (platform.revealPath) {
+      const revealed = await platform.revealPath(absolute).catch(() => false)
+      if (revealed) return
+    }
+    if (platform.openPath) {
+      await platform.openPath(absolute).catch(() => {})
+      return
+    }
+    platform.openLink(`file://${absolute}`)
+  }
+
+  function currentConfigPath() {
+    if (pane() === "plugins") return CONFIG_PATHS.plugins
+    if (pane() === "skills") return CONFIG_PATHS.skills
+    if (pane() === "lsp") return CONFIG_PATHS.lsp
+    return CONFIG_PATHS.mcp
+  }
+
+  function openCurrentConfig() {
+    const root = directory()
+    if (!root) return
+    return openPath(`${root}/${currentConfigPath()}`)
+  }
+
+  function createExtensionPrompt(kind: "skill" | "plugin" | "lsp") {
+    const raw = skillName().trim() || (kind === "plugin" ? "new-plugin" : kind === "lsp" ? "new-lsp-adapter" : "custom-skill")
+    const id = raw.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "new-extension"
+    const body =
+      kind === "skill"
+        ? [
+            `Create a new skill named "${raw}" for this repository.`,
+            "",
+            `Use id: ${id}`,
+            `Write it to .zyraxon/skills/${id}/SKILL.md.`,
+            "The completed SKILL.md must include valid YAML frontmatter with name and description, then concise operational instructions, required inputs, example prompts, and verification steps.",
+            "After writing it, verify the file exists and explain how to invoke the skill.",
+          ].join("\n")
+        : kind === "plugin"
+          ? [
+              `Create a new ZYRAXON plugin named "${raw}" for this repository.`,
+              "",
+              `Use id: ${id}`,
+              `Write it to .zyraxon/plugin/${id}/ with any manifest, source, README, and smoke test it needs.`,
+              "The plugin must register its tools, commands, and configuration clearly.",
+              "After writing it, verify the files exist and explain how to enable the plugin.",
+            ].join("\n")
+          : [
+              `Create a new LSP/adapter configuration named "${raw}" for this repository.`,
+              "",
+              `Use id: ${id}`,
+              `Write it to .zyraxon/lsp.jsonc with a complete, documented entry for the target language.`,
+              "Include command, args, language ids, initialization options, and an environment-variable-safe configuration.",
+              "After writing it, verify the configuration parses and explain how to enable it.",
+            ].join("\n")
+    prompt.set([{ type: "text", content: body, start: 0, end: body.length }], body.length)
+    setSkillName("")
+    dialog.close()
+  }
+
+  const createSkillPrompt = () => createExtensionPrompt("skill")
 
   /**
    * The Hub is a plugin loaded from the repository, so it is imported only when
@@ -113,6 +181,12 @@ export const SettingsExtensionsV2: Component = () => {
     setBusy(name)
     try {
       await serverSync().mcp.toggle(path, name)
+    } catch (error) {
+      showToast({
+        variant: "error",
+        title: "Couldn’t update MCP server",
+        description: error instanceof Error ? error.message : `Failed to toggle ${name}`,
+      })
     } finally {
       setBusy(undefined)
     }
@@ -239,7 +313,7 @@ export const SettingsExtensionsV2: Component = () => {
                         hideLabel
                         class="zy-ext-switch"
                         checked={item.on}
-                        disabled={busy() === item.id}
+                        disabled={busy() !== undefined}
                         onChange={() => void toggle(item.id)}
                       >
                         {item.label}
@@ -250,8 +324,28 @@ export const SettingsExtensionsV2: Component = () => {
               </ul>
             </Show>
 
-            <footer class="zy-ext-foot">
-              {language.t("settings.extensions.config.hint")} <code>{CONFIG_PATHS.mcp}</code>
+            <footer class="zy-ext-foot flex flex-wrap items-center gap-2">
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-1.5 text-[11px] text-v2-text-text-faint">
+                  <span>{language.t("settings.extensions.config.hint")}</span>
+                  <code class="rounded bg-black/25 px-1.5 py-0.5">{CONFIG_PATHS.mcp}</code>
+                </div>
+                <button
+                  type="button"
+                  class="mt-1 text-left text-[11px] text-v2-text-text-faint underline decoration-white/10 underline-offset-2 hover:text-v2-text-text-muted"
+                  onClick={() => void openPath(`${serverSync().data.path.config ?? "~/.config/zyraxon"}/zyraxon.jsonc`)}
+                >
+                  Global: {serverSync().data.path.config ?? "~/.config/zyraxon"}/zyraxon.jsonc
+                </button>
+              </div>
+              <button type="button" class="zy-ext-open ml-auto shrink-0" data-action="settings-extensions-open-path" onClick={openConfig}>
+                <Icon name="zy-code" size="small" />
+                <span>Project</span>
+              </button>
+              <button type="button" class="zy-ext-open shrink-0" data-action="settings-extensions-open-path" onClick={() => void openPath(`${serverSync().data.path.config ?? "~/.config/zyraxon"}/zyraxon.jsonc`)}>
+                <Icon name="zy-code" size="small" />
+                <span>Global</span>
+              </button>
             </footer>
 
             <SettingsLocationsV2
@@ -271,6 +365,15 @@ export const SettingsExtensionsV2: Component = () => {
                   {language.t("settings.extensions.plugins.summary", { total: pluginItems().length })}
                 </p>
               </div>
+              <button
+                type="button"
+                class="zy-ext-open shrink-0"
+                data-action="settings-extensions-create-plugin"
+                onClick={() => createExtensionPrompt("plugin")}
+              >
+                <Icon name="zy-add" size="small" />
+                <span>Create</span>
+              </button>
             </header>
             <Show
               when={pluginItems().length > 0}
@@ -295,9 +398,96 @@ export const SettingsExtensionsV2: Component = () => {
                 </For>
               </ul>
             </Show>
-            <footer class="zy-ext-foot">
-              {language.t("settings.extensions.config.hint")} <code>{CONFIG_PATHS.plugins}</code>
+            <footer class="zy-ext-foot flex flex-wrap items-center gap-2">
+              <span>{language.t("settings.extensions.config.hint")} <code>{CONFIG_PATHS.plugins}</code></span>
+              <button type="button" class="zy-ext-open ml-auto" data-action="settings-extensions-open-path" onClick={() => void openPath(`${directory()}/${CONFIG_PATHS.plugins}`)}>
+                <Icon name="zy-code" size="small" />
+                <span>Open location</span>
+              </button>
             </footer>
+          </section>
+        </Show>
+
+        <Show when={pane() === "skills"}>
+          <section class="zy-ext-pane">
+            <header class="zy-ext-pane-head">
+              <div class="zy-ext-pane-heading">
+                <h3 class="zy-ext-pane-title">Skills</h3>
+                <p class="zy-ext-pane-sub">Composable AI playbooks with direct file access and one-click creation.</p>
+              </div>
+              <button
+                type="button"
+                class="zy-ext-open shrink-0"
+                data-action="settings-extensions-open-path"
+                onClick={() => {
+                  const root = directory()
+                  if (root) void openPath(`${root}/${CONFIG_PATHS.skills}`)
+                }}
+              >
+                <Icon name="zy-code" size="small" />
+                <span>Open folder</span>
+              </button>
+            </header>
+
+            <div class="mx-5 mb-4 rounded-xl border border-cyan-400/10 bg-[linear-gradient(135deg,rgba(0,212,255,0.075),rgba(20,184,166,0.03)_50%,rgba(255,255,255,0.018))] p-3">
+              <div class="flex items-center gap-3">
+                <div class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-cyan-400/20 bg-cyan-400/10 text-cyan-300">
+                  <Icon name="zy-skills" size="small" />
+                </div>
+                <div class="min-w-0">
+                  <div class="text-[12px] font-semibold text-v2-text-text-base">Create a new skill with AI</div>
+                  <div class="mt-0.5 text-[11px] leading-4 text-v2-text-text-faint">Pick a name, then AI will write SKILL.md, wire triggers, and verify the skill.</div>
+                </div>
+              </div>
+
+              <form
+                class="mt-3 flex gap-2"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  createSkillPrompt()
+                }}
+              >
+                <input
+                  value={skillName()}
+                  onInput={(event) => setSkillName(event.currentTarget.value)}
+                  placeholder="e.g. release-engineer, security-audit"
+                  class="h-9 min-w-0 flex-1 rounded-lg border border-v2-border-border-weaker-base bg-black/25 px-3 text-[12px] text-v2-text-text-base outline-none placeholder:text-v2-text-text-faint focus:border-cyan-400/40 focus:ring-2 focus:ring-cyan-400/10"
+                />
+                <button type="submit" class="h-9 shrink-0 rounded-lg bg-cyan-400 px-3 text-[12px] font-semibold text-black transition-all hover:brightness-110">
+                  Create
+                </button>
+              </form>
+            </div>
+
+            <div class="grid gap-2 px-5">
+              <div class="text-[10px] font-semibold uppercase tracking-[0.2em] text-v2-text-text-faint">Starter blueprints</div>
+              <div class="grid grid-cols-1 gap-2">
+                <For each={[
+                  { name: "release-engineer", description: "Draft release plans, changelogs, and verification steps" },
+                  { name: "security-audit", description: "Scan code, configs, secrets, and unsafe dependencies" },
+                  { name: "web-debugger", description: "Inspect frontend states, logs, and broken flows" },
+                ]}>
+                  {(starter) => (
+                    <button
+                      type="button"
+                      class="group flex items-center gap-3 rounded-lg border border-white/[0.05] bg-white/[0.025] px-3 py-2 text-left transition-all hover:border-cyan-400/20 hover:bg-cyan-400/[0.045]"
+                      onClick={() => setSkillName(starter.name)}
+                    >
+                      <Icon name="zy-skills" size="small" class="text-v2-icon-icon-interactive-base" />
+                      <span class="min-w-0 flex-1">
+                        <span class="block truncate text-[12px] font-medium text-v2-text-text-base">{starter.name}</span>
+                        <span class="block truncate text-[11px] text-v2-text-text-faint">{starter.description}</span>
+                      </span>
+                      <Icon name="zy-add" size="small" class="opacity-50 transition-opacity group-hover:opacity-100" />
+                    </button>
+                  )}
+                </For>
+              </div>
+            </div>
+
+            <div class="mt-auto px-5 pb-4 pt-3 text-[11px] leading-5 text-v2-text-text-faint">
+              Skills are loaded from <code class="px-1 py-0.5 rounded bg-black/25 text-v2-text-text-muted">.zyraxon/skills</code>. Each skill folder needs <code class="px-1 py-0.5 rounded bg-black/25 text-v2-text-text-muted">SKILL.md</code> with YAML frontmatter.
+            </div>
           </section>
         </Show>
 
@@ -310,6 +500,15 @@ export const SettingsExtensionsV2: Component = () => {
                   {language.t("settings.extensions.lsp.summary", { total: lspItems().length })}
                 </p>
               </div>
+              <button
+                type="button"
+                class="zy-ext-open shrink-0"
+                data-action="settings-extensions-create-lsp"
+                onClick={() => createExtensionPrompt("lsp")}
+              >
+                <Icon name="zy-add" size="small" />
+                <span>Create</span>
+              </button>
             </header>
             <Show
               when={lspItems().length > 0}
@@ -334,8 +533,15 @@ export const SettingsExtensionsV2: Component = () => {
                 </For>
               </ul>
             </Show>
-            <footer class="zy-ext-foot">
-              {language.t("settings.extensions.config.hint")} <code>{CONFIG_PATHS.lsp}</code>
+            <footer class="zy-ext-foot flex flex-wrap items-center gap-2">
+              <span>{language.t("settings.extensions.config.hint")} <code>{CONFIG_PATHS.lsp}</code></span>
+              <button type="button" class="zy-ext-open ml-auto" data-action="settings-extensions-open-path" onClick={() => {
+                const root = directory()
+                if (root) void openPath(`${root}/${CONFIG_PATHS.lsp}`)
+              }}>
+                <Icon name="zy-code" size="small" />
+                <span>Open file</span>
+              </button>
             </footer>
           </section>
         </Show>

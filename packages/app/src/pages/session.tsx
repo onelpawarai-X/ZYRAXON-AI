@@ -42,6 +42,7 @@ import { showToast } from "@/utils/toast"
 import { base64Encode, checksum } from "@zyraxon-ai/core/util/encode"
 import { useLocation, useNavigate, useParams, useSearchParams } from "@solidjs/router"
 import { NewSessionView, SessionHeader } from "@/components/session"
+import { BackgroundMonitor } from "@/components/background-monitor"
 import { ErrorPage } from "@/pages/error"
 import { CommentsProvider, useComments } from "@/context/comments"
 import { useCommand } from "@/context/command"
@@ -2516,6 +2517,8 @@ const queueEnabled = createMemo(() => {
           </Show>
         </Show>
       </div>
+
+      <BackgroundMonitor />
 
       <Show when={!newSessionDesign()}>
         <TerminalPanel />

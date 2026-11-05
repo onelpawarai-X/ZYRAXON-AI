@@ -316,6 +316,18 @@ export const SettingsGeneralV2: Component<{
         </SettingsRowV2>
 
         <SettingsRowV2
+          title={language.t("settings.general.row.realtimeResponse.title")}
+          description={language.t("settings.general.row.realtimeResponse.description")}
+        >
+          <div data-action="settings-feed-realtime-response">
+            <Switch
+              checked={settings.general.responseRealtime()}
+              onChange={(checked) => settings.general.setResponseRealtime(checked)}
+            />
+          </div>
+        </SettingsRowV2>
+
+        <SettingsRowV2
           title={language.t("settings.general.row.reasoningSummaries.title")}
           description={language.t("settings.general.row.reasoningSummaries.description")}
         >

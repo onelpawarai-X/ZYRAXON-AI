@@ -1790,6 +1790,7 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
           <Match when={part().state.status === "error" && (part().state as any).error}>
             {(error) => {
               const cleaned = error().replace("Error: ", "")
+              const timedOut = /timeout|timed out|deadline/i.test(cleaned)
               if (part().tool === "question" && cleaned.includes("dismissed this question")) {
                 return (
                   <div style="width: 100%; display: flex; justify-content: flex-end;">
@@ -1809,6 +1810,7 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
                   onOpenChange={props.onToolOpenChange ? handleToolOpenChange : undefined}
                   subtitle={taskSubtitle()}
                   href={taskHref()}
+                  kind={timedOut ? "timeout" : "error"}
                 />
               )
             }}
@@ -2431,6 +2433,7 @@ ToolRegistry.register({
       <BasicTool
         {...props}
         icon="console"
+        class="zyraxon-shell-tool"
         trigger={(open) => (
           <div data-slot="basic-tool-tool-info-structured">
             <div data-slot="basic-tool-tool-info-main">

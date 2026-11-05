@@ -26,7 +26,8 @@ export type TimelineRowMap = {
     group: PartGroup
     previousAssistantPart: boolean
   }
-  Thinking: { userMessageID: string; reasoningHeading?: string }
+  Working: { userMessageID: string }
+  Thinking: { userMessageID: string; reasoningHeading?: string; reasoningText?: string }
   Retry: { userMessageID: string }
   DiffSummary: { userMessageID: string; diffs: SummaryDiff[] }
   Error: { userMessageID: string; text: string }
@@ -102,6 +103,10 @@ export namespace Timeline {
       )
     }
 
+    if (isActive && status === "busy" && !error) {
+      rows.push(new TimelineRow.Working({ userMessageID: userMessage.id }))
+    }
+
     let assistantGroupIndex = 0
     assistantItems.forEach((item) => {
       if (item.type === "interrupted") {
@@ -125,15 +130,20 @@ export namespace Timeline {
     })
 
     if (isActive && status === "busy" && !error && (showReasoning ? assistantPartRefs.length === 0 : true)) {
-      const heading = assistantMessages
+      const reasoningParts = assistantMessages
         .flatMap((message) => getMessageParts(message.id))
-        .map((part) => (part.type === "reasoning" && part.text ? reasoningHeading(part.text) : undefined))
-        .find((value): value is string => !!value)
+        .filter((part): part is typeof part & { text: string } => {
+          const text = (part as { text?: unknown }).text
+          return part.type === "reasoning" && typeof text === "string" && text.trim().length > 0
+        })
+      const reasoningText = reasoningParts.map((part) => part.text!).join("\n\n").trim()
+      const heading = reasoningParts.map((part) => reasoningHeading(part.text!)).find((value): value is string => !!value)
 
       rows.push(
         new TimelineRow.Thinking({
           userMessageID: userMessage.id,
           reasoningHeading: heading,
+          reasoningText: reasoningText || undefined,
         }),
       )
     }
