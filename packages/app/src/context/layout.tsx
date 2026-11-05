@@ -23,6 +23,7 @@ import { requireServerKey } from "@/utils/session-route"
 import { type DraftTab, useTabs } from "./tabs"
 import { closeSessionTab, openSessionTab, previewSessionTab, type SessionTabs } from "./layout-tabs"
 import { getPreviewActive, setPreviewActiveState } from "@/pages/session/preview-state"
+import { getBrowserActive, setBrowserActiveState } from "@/pages/session/browser-state"
 
 export { createSessionKeyReader, ensureSessionKey, pruneSessionKeys }
 
@@ -912,6 +913,22 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
             },
             toggle() {
               setPreviewActiveState(!getPreviewActive())
+              setReviewPanelOpened(true, "other")
+            },
+          },
+          browserPanel: {
+            opened: getBrowserActive,
+            open() {
+              setBrowserActiveState(true)
+              setPreviewActiveState(false)
+              setReviewPanelOpened(true, "other")
+            },
+            close() {
+              setBrowserActiveState(false)
+            },
+            toggle() {
+              setBrowserActiveState(!getBrowserActive())
+              setPreviewActiveState(false)
               setReviewPanelOpened(true, "other")
             },
           },

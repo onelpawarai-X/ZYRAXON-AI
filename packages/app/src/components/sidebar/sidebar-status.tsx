@@ -237,7 +237,7 @@ function SidebarReviewToggle(props: { placement: "top" | "bottom" | "left" | "ri
       >
         <Icon
           size="small"
-          name={opened() ? "review-active" : "review"}
+          name="bubble-5"
           classList={{ "text-icon-strong": opened(), "text-icon-weak": !opened() }}
         />
         <span class="flex-1 text-left truncate">{language.t("command.review.toggle")}</span>
