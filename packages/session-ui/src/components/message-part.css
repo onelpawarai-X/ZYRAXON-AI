@@ -365,6 +365,57 @@
   }
 }
 
+.zyraxon-shell-tool {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border-weaker) 55%, transparent);
+  border-radius: 14px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--background-stronger) 82%, #05070a 18%), var(--background-base));
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+
+  [data-component="tool-trigger"] {
+    position: relative;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-weaker) 45%, transparent);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--background-stronger) 72%, #020509 28%), transparent);
+  }
+
+  [data-slot="basic-tool-tool-trigger-content"] {
+    min-height: 44px;
+    padding: 0 14px;
+  }
+
+  [data-slot="basic-tool-tool-title"] {
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 10.5px;
+    color: color-mix(in srgb, var(--text-weak) 65%, #9be8ff 35%);
+  }
+
+  [data-component="bash-output"] {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  [data-slot="bash-copy"] {
+    top: 8px;
+    right: 8px;
+  }
+
+  [data-slot="bash-scroll"] {
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, #00d4ff 1.8%, transparent));
+  }
+
+  [data-slot="bash-pre"] {
+    padding: 13px 15px 16px;
+  }
+
+  [data-slot="bash-pre"] code {
+    color: color-mix(in srgb, var(--text-base) 78%, #c9f4ff 22%);
+    text-shadow: 0 0 18px rgba(0, 212, 255, 0.07);
+  }
+}
+
 [data-component="bash-output"] {
   width: 100%;
   border: 0.5px solid var(--v2-border-border-base);
@@ -618,6 +669,27 @@
       text-decoration: line-through;
       color: var(--v2-text-text-faint);
     }
+  }
+}
+
+html[data-light-mode] .zyraxon-shell-tool,
+body[data-theme="light"] .zyraxon-shell-tool {
+  border-color: rgba(0, 0, 0, 0.1);
+  background: linear-gradient(160deg, #f8fbff, #eef5fb);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+
+  [data-component="tool-trigger"] {
+    border-bottom-color: rgba(15, 23, 42, 0.09);
+    background: linear-gradient(180deg, #f0f7ff, transparent);
+  }
+
+  [data-slot="basic-tool-tool-title"] {
+    color: #0369a1;
+  }
+
+  [data-slot="bash-pre"] code {
+    color: #0f172a;
+    text-shadow: none;
   }
 }
 

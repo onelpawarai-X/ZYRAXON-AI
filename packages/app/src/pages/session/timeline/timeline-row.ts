@@ -29,6 +29,10 @@ export namespace TimelineRow {
   export class Thinking extends Data.TaggedClass("Thinking")<{
     userMessageID: string
     reasoningHeading?: string
+    reasoningText?: string
+  }> {}
+  export class Working extends Data.TaggedClass("Working")<{
+    userMessageID: string
   }> {}
   export class DiffSummary extends Data.TaggedClass("DiffSummary")<{
     userMessageID: string
@@ -48,6 +52,7 @@ export namespace TimelineRow {
     | UserMessage
     | TurnDivider
     | AssistantPart
+    | Working
     | Thinking
     | DiffSummary
     | Error
@@ -65,6 +70,8 @@ export namespace TimelineRow {
         return `turn-divider:${row.userMessageID}:${row.label}`
       case "AssistantPart":
         return `assistant-part:${row.userMessageID}:${row.group.key}`
+      case "Working":
+        return `working:${row.userMessageID}`
       case "Thinking":
         return `thinking:${row.userMessageID}`
       case "DiffSummary":
