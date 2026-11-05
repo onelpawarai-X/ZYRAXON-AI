@@ -29,6 +29,8 @@ import { ModelV2 } from "@zyraxon-ai/core/model"
 import { isRecord } from "@/util/record"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 
+const debugToolLog = process.env.ZYRAXON_DEBUG_TOOLS === "1" ? console.log : () => {}
+
 const MCP_RESOURCE_TOOLS = {
   list: "list_mcp_resources",
   listTemplates: "list_mcp_resource_templates",
@@ -125,7 +127,7 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
     agent: input.agent,
     permission: input.session.permission,
   })).filter((item) => isLocalVisibleTool(input.model, item.id))
-  console.log(`[SessionTools.resolve] registry.tools: ${registryTools.length} tools in ${Date.now() - _tRegTools}ms`)
+  debugToolLog(`[SessionTools.resolve] registry.tools: ${registryTools.length} tools in ${Date.now() - _tRegTools}ms`)
   for (const item of registryTools) {
     const schema = ProviderTransform.schema(input.model, ToolJsonSchema.fromTool(item))
     tools[item.id] = tool({
@@ -207,7 +209,7 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
   // catalog and let it reach MCP servers through the built-in catalog/connect
   // tools when it actually needs one.
   if (isLocalModel(input.model)) {
-    console.log(`[SessionTools.resolve] DONE: ${Object.keys(tools).length} tools (local core) in ${Date.now() - _tToolsStart}ms`)
+    debugToolLog(`[SessionTools.resolve] DONE: ${Object.keys(tools).length} tools (local core) in ${Date.now() - _tToolsStart}ms`)
     return tools
   }
 
@@ -464,7 +466,7 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
   }
 
   if (flags.experimentalCodeMode) {
-    console.log(`[SessionTools.resolve] DONE: ${Object.keys(tools).length} tools in ${Date.now() - _tToolsStart}ms (experimentalCodeMode)`)
+    debugToolLog(`[SessionTools.resolve] DONE: ${Object.keys(tools).length} tools in ${Date.now() - _tToolsStart}ms (experimentalCodeMode)`)
     return tools
   }
 
@@ -493,7 +495,7 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
   const _tMcpTools = Date.now()
   const mcpToolsList = yield* mcp.tools()
   const mcpToolEntries = Object.entries(mcpToolsList).filter(([key]) => isActivated(key))
-  console.log(
+  debugToolLog(
     `[SessionTools.resolve] mcp.tools: ${mcpToolEntries.length} injected of ${Object.keys(mcpToolsList).length} connected in ${Date.now() - _tMcpTools}ms`,
   )
   for (const [key, entry] of mcpToolEntries) {
@@ -598,7 +600,7 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
     tools[key] = item
   }
 
-  console.log(`[SessionTools.resolve] DONE: ${Object.keys(tools).length} tools in ${Date.now() - _tToolsStart}ms`)
+  debugToolLog(`[SessionTools.resolve] DONE: ${Object.keys(tools).length} tools in ${Date.now() - _tToolsStart}ms`)
   return tools
 })
 

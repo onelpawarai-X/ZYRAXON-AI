@@ -5,6 +5,8 @@ import type { BuiltinTuiPlugin } from "../builtins"
 import { createMemo, Match, Show, Switch } from "solid-js"
 import { abbreviateHome } from "../../runtime"
 import { useTuiPaths } from "../../context/runtime"
+import { useLocal } from "../../context/local"
+import { useCommandShortcut } from "../../keymap"
 import { useHomeSessionDestination } from "../../routes/home/session-destination"
 
 const id = "internal:home-footer"
@@ -53,6 +55,31 @@ function Mcp(props: { api: TuiPluginApi }) {
   )
 }
 
+function Hint(props: { api: TuiPluginApi }) {
+  const theme = () => props.api.theme.current
+  const commandShortcut = useCommandShortcut("command.palette.show")
+  const modelShortcut = useCommandShortcut("model.list")
+  const local = useLocal()
+  const currentModel = createMemo(() => {
+    const value = local.model.current()
+    if (!value) return undefined
+    return `${value.providerID}/${value.modelID}`
+  })
+
+  return (
+    <box gap={2} flexDirection="row" alignItems="center" flexShrink={0}>
+      <text fg={theme().textMuted}>
+        {commandShortcut()} commands
+      </text>
+      <text fg={theme().textMuted}>·</text>
+      <text fg={theme().textMuted}>
+        {modelShortcut()} model
+      </text>
+      <Show when={currentModel()}>{(value) => <text fg={theme().text}>{value()}</text>}</Show>
+    </box>
+  )
+}
+
 function Version(props: { api: TuiPluginApi }) {
   const theme = () => props.api.theme.current
 
@@ -77,6 +104,8 @@ function View(props: { api: TuiPluginApi }) {
     >
       <Directory api={props.api} />
       <Mcp api={props.api} />
+      <box flexGrow={1} />
+      <Hint api={props.api} />
       <box flexGrow={1} />
       <Version api={props.api} />
     </box>
