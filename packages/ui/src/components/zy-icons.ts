@@ -17,6 +17,9 @@ export const ZY_ICONS = {
   /** Brand mark: a layered prism that reads as "many models, one surface". */
   "zy-mark": `<path d="M10 1.75 18 6v8l-8 4.25L2 14V6l8-4.25Z" ${stroke} stroke-width="1.3" opacity=".45"/><path d="m10 5.5 4.5 2.4v4.2L10 14.5l-4.5-2.4V7.9L10 5.5Z" ${solid} opacity=".9"/><path d="M10 5.5v9M5.5 7.9 10 10.3l4.5-2.4" ${stroke} stroke-width="1.1" opacity=".55"/>`,
 
+  /** Home — a gabled house with a recessed door, the start destination. */
+  "zy-home": `<path d="M2.8 9.7 10 3.3l7.2 6.4" ${stroke} stroke-width="1.5"/><path d="M5.1 8.3V17h9.8V8.3" ${stroke} stroke-width="1.5"/><path d="M8.7 17v-4.6h2.6V17" ${solid} opacity=".92"/>`,
+
   /** Projects — a stack of layers with the top one pulled forward. */
   "zy-projects": `<path d="M3.5 6.4 10 3.3l6.5 3.1L10 9.5 3.5 6.4Z" ${stroke} stroke-width="1.4"/><path d="m3.5 10.1 6.5 3.1 6.5-3.1" ${stroke} stroke-width="1.4" opacity=".55"/><path d="m3.5 13.6 6.5 3.1 6.5-3.1" ${stroke} stroke-width="1.4" opacity=".3"/>`,
 

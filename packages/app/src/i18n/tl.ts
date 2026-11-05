@@ -1,4 +1,4 @@
-// Copyright (c) 2026 onelpawarai. All rights reserved.
+﻿// Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import { dict as en } from "./en"
 
@@ -82,7 +82,7 @@ export const dict = {
   "settings.tab.about.description": "Bersyon, platform, mga link at sino ang gumawa ng ZYRAXON",
   "settings.tab.agents.description": "Ang sarili mong ahent at ang rules file na sinusunod nila",
   "settings.tab.extensions.description": "Mga MCP server, plugin, language server at marketplace",
-  "settings.tab.storage.description": "Saan nakatira ang mga usapan, gaano kat占据 ang espasyo at paano ibabalik",
+  "settings.tab.storage.description": "Saan nakatira ang mga usapan, gaano katå æ® ang espasyo at paano ibabalik",
   "settings.tab.security.description": "Mga pahintulot, naka-save na kredensyal at ang maaabot ng app",
   "settings.tab.advanced.description": "Mga landas, kapaligiran at gawi na bihari nang gagalawin",
 
@@ -230,7 +230,7 @@ export const dict = {
   "settings.general.sounds.errors.description": "Magpatugtog kapag may naganap na error",
 
   "settings.storage.title": "Data at storage",
-  "settings.storage.title.description": "Saan nakatira ang mga usapan, gaano kat占据 ang espasyo at paano ibabalik",
+  "settings.storage.title.description": "Saan nakatira ang mga usapan, gaano katå æ® ang espasyo at paano ibabalik",
   "settings.storage.database.title": "File ng database",
   "settings.storage.database.loading": "Binabasa ang database...",
   "settings.storage.contents.title": "Nasa loob",
@@ -749,8 +749,6 @@ export const dict = {
   "subscription.admin.placeholder": "Access code",
   "subscription.admin.panel": "Admin control panel",
   "subscription.admin.permanentUnlock": "Permanenteng unlock",
-  "subscription.activation.title": "Pag-activate ng secret code",
-  "subscription.activation.placeholder": "Ilagay ang access code",
   "subscription.details": "Detalye ng subscription",
   "subscription.type": "Uri",
   "subscription.type.secret": "Secret code",
@@ -761,23 +759,23 @@ export const dict = {
   "subscription.agents": "ahent",
 
   "language.en": "English",
-  "language.zh": "简体中文",
-  "language.zht": "繁體中文",
-  "language.ko": "한국어",
+  "language.zh": "ç®€ä½“ä¸­æ–‡",
+  "language.zht": "ç¹é«”ä¸­æ–‡",
+  "language.ko": "í•œêµ­ì–´",
   "language.de": "Deutsch",
-  "language.es": "Español",
-  "language.fr": "Français",
+  "language.es": "EspaÃ±ol",
+  "language.fr": "FranÃ§ais",
   "language.da": "Dansk",
-  "language.ja": "日本語",
+  "language.ja": "æ—¥æœ¬èªž",
   "language.pl": "Polski",
-  "language.ru": "Русский",
-  "language.ar": "العربية",
+  "language.ru": "Ð ÑƒÑÑÐºÐ¸Ð¹",
+  "language.ar": "Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©",
   "language.no": "Norsk",
-  "language.br": "Português (Brasil)",
+  "language.br": "PortuguÃªs (Brasil)",
   "language.bs": "Bosanski",
-  "language.uk": "Українська",
-  "language.th": "ไทย",
-  "language.tr": "Türkçe",
+  "language.uk": "Ð£ÐºÑ€Ð°Ñ—Ð½ÑÑŒÐºÐ°",
+  "language.th": "à¹„à¸—à¸¢",
+  "language.tr": "TÃ¼rkÃ§e",
 
   "shortcut.goto.home": "Pumunta sa home screen",
   "shortcut.goto.settings": "Buksan ang mga setting",
@@ -867,7 +865,7 @@ export const dict = {
   "wsl.onboarding.distroStatus.checking": "Sinusuri...",
   "wsl.onboarding.distroStatus.zyraxonMissing": "Hindi naka-install ang ZYRAXON",
   "wsl.onboarding.distroStatus.missingTools": "Kulang sa bash o curl",
-  "wsl.onboarding.distroStatus.unsupported": "Hindi suportado · Gumamit ng WSL 2",
+  "wsl.onboarding.distroStatus.unsupported": "Hindi suportado Â· Gumamit ng WSL 2",
   "wsl.onboarding.needAnotherDistro": "Kailangan ng ibang distro?",
   "wsl.onboarding.needAnotherDistroHint": "Mag-install ng Linux distribution mula sa WSL catalog",
   "wsl.onboarding.wslNotInstalled.title": "Hindi naka-install ang WSL",
