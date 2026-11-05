@@ -1,0 +1,448 @@
+/* Copyright (c) 2026 onelpawarai. All rights reserved. */
+/* ZYRAXON session dock — a living, animated tab well for the left sidebar.
+   The border is a slowly orbiting conic gradient; the body is swept by a
+   scanline; active rows breathe; the count badge pulses. */
+
+.session-dock {
+  position: relative;
+  border-radius: 18px;
+  padding: 1.5px;
+  overflow: hidden;
+  background: rgba(34, 211, 238, 0.08);
+  isolation: isolate;
+}
+
+.session-dock::before {
+  content: "";
+  position: absolute;
+  width: 220%;
+  aspect-ratio: 1;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(34, 211, 238, 0.95) 34deg,
+    rgba(103, 232, 249, 0.35) 58deg,
+    transparent 96deg,
+    transparent 158deg,
+    rgba(192, 38, 211, 0.9) 196deg,
+    rgba(217, 70, 239, 0.3) 224deg,
+    transparent 262deg,
+    transparent 318deg,
+    rgba(52, 211, 153, 0.85) 344deg,
+    transparent 360deg
+  );
+  animation: session-dock-orbit 6s linear infinite;
+  z-index: -1;
+}
+
+.session-dock::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 17px;
+  box-shadow:
+    0 0 26px rgba(34, 211, 238, 0.12),
+    0 0 54px rgba(192, 38, 211, 0.08),
+    inset 0 0 20px rgba(34, 211, 238, 0.05);
+  pointer-events: none;
+  animation: session-dock-breathe 3.2s ease-in-out infinite;
+}
+
+.session-dock-inner {
+  position: relative;
+  border-radius: 16.5px;
+  background:
+    radial-gradient(130% 90% at 12% 0%, rgba(34, 211, 238, 0.1), transparent 55%),
+    radial-gradient(120% 100% at 100% 100%, rgba(192, 38, 211, 0.1), transparent 55%),
+    linear-gradient(165deg, #0a1420 0%, #0d1b2c 48%, #0a101c 100%);
+  overflow: hidden;
+}
+
+.session-dock-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -72px;
+  height: 64px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(103, 232, 249, 0.14) 35%,
+    rgba(216, 180, 254, 0.12) 65%,
+    transparent
+  );
+  animation: session-dock-scan 3.8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.session-dock-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px 7px;
+  border-bottom: 1px solid rgba(103, 232, 249, 0.1);
+}
+
+.session-dock-header-icon {
+  color: #67e8f9;
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.65));
+  animation: session-dock-icon-flicker 4.6s steps(1, end) infinite;
+}
+
+.session-dock-title {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #67e8f9 0%, #e879f9 22%, #a5f3fc 40%, #67e8f9 60%);
+  background-size: 240% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: session-dock-shimmer 2.6s linear infinite;
+  white-space: nowrap;
+}
+
+.session-dock-count {
+  margin-left: auto;
+  min-width: 20px;
+  height: 17px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #040d14;
+  background: linear-gradient(120deg, #22d3ee, #34d399);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.45);
+  animation: session-dock-count-pulse 2.2s ease-in-out infinite;
+}
+
+.session-scroll-wrap {
+  position: relative;
+  z-index: 2;
+}
+
+.session-scroll {
+  position: relative;
+  max-height: 196px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 7px 8px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.45) transparent;
+}
+
+.session-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.session-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.session-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: linear-gradient(rgba(34, 211, 238, 0.75), rgba(192, 38, 211, 0.6));
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
+}
+
+.session-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(rgba(103, 232, 249, 0.95), rgba(217, 70, 239, 0.8));
+}
+
+.session-scroll-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 16px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.session-scroll-fade-top {
+  top: 0;
+  background: linear-gradient(to bottom, #0b1524 8%, transparent);
+}
+
+.session-scroll-fade-bottom {
+  bottom: 0;
+  background: linear-gradient(to top, #0a101c 8%, transparent);
+}
+
+.session-item {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  height: 34px;
+  border-radius: 10px;
+}
+
+.session-item-main {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 30px 0 9px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 260ms ease,
+    transform 160ms ease;
+}
+
+.session-item-main:hover {
+  background: rgba(34, 211, 238, 0.07);
+  border-color: rgba(103, 232, 249, 0.18);
+  transform: translateX(2px);
+}
+
+.session-item-main:focus-visible {
+  border-color: rgba(103, 232, 249, 0.55);
+  box-shadow: 0 0 0 1px rgba(103, 232, 249, 0.55), 0 0 18px rgba(34, 211, 238, 0.25);
+}
+
+.session-item-rail {
+  position: absolute;
+  left: 0;
+  top: 16%;
+  bottom: 16%;
+  width: 3px;
+  border-radius: 3px;
+  background: transparent;
+  transition: background 200ms ease, box-shadow 200ms ease;
+}
+
+.session-item[data-active="true"] .session-item-main {
+  background:
+    linear-gradient(90deg, rgba(34, 211, 238, 0.16), rgba(34, 211, 238, 0.05) 46%, rgba(192, 38, 211, 0.12));
+  border-color: rgba(103, 232, 249, 0.4);
+  box-shadow:
+    0 0 22px rgba(34, 211, 238, 0.24),
+    inset 0 0 16px rgba(34, 211, 238, 0.08);
+}
+
+.session-item[data-active="true"] .session-item-rail {
+  background: linear-gradient(to bottom, #22d3ee, #a78bfa);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.8);
+  animation: session-rail-breathe 1.7s ease-in-out infinite;
+}
+
+.session-item-icon {
+  flex-shrink: 0;
+  color: #64748b;
+  transition: color 180ms ease, filter 180ms ease;
+}
+
+.session-item[data-active="true"] .session-item-icon {
+  color: #22d3ee;
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.7));
+}
+
+.session-item:hover .session-item-icon {
+  color: #a5f3fc;
+}
+
+.session-item-text {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 550;
+  letter-spacing: 0.01em;
+  color: #cbd5e1;
+}
+
+.session-item[data-active="true"] .session-item-text {
+  color: #f0fdff;
+  text-shadow: 0 0 14px rgba(34, 211, 238, 0.45);
+}
+
+.session-item-kbd {
+  flex-shrink: 0;
+  opacity: 0;
+  transform: translateX(4px);
+  transition: opacity 160ms ease, transform 160ms ease;
+  font-size: 8.5px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid rgba(103, 232, 249, 0.3);
+  color: #67e8f9;
+  background: rgba(34, 211, 238, 0.08);
+  font-family: ui-monospace, monospace;
+}
+
+.session-item:hover .session-item-kbd {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.session-item-close {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 2;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: #64748b;
+  opacity: 0;
+  transition: opacity 140ms ease, color 140ms ease, background 140ms ease;
+}
+
+.session-item:hover .session-item-close,
+.session-item-close:focus-visible {
+  opacity: 1;
+}
+
+.session-item-close:hover {
+  color: #fda4af;
+  background: rgba(244, 63, 94, 0.14);
+}
+
+.session-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 10px 14px;
+  color: #475569;
+  text-align: center;
+}
+
+.session-empty-icon {
+  color: #164e63;
+  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.35));
+  animation: session-dock-breathe 2.6s ease-in-out infinite;
+}
+
+.session-empty p {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #7c8ea6;
+}
+
+.session-empty span {
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #33475e;
+}
+
+/* Rail Home button — lit cyan while on the home route */
+.sidebar-home-active {
+  color: #22d3ee !important;
+  border-radius: 12px;
+  background: rgba(34, 211, 238, 0.09);
+  box-shadow:
+    0 0 20px rgba(34, 211, 238, 0.38),
+    inset 0 0 12px rgba(34, 211, 238, 0.16);
+  animation: session-dock-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes session-dock-orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes session-dock-scan {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  52%,
+  100% {
+    transform: translateY(420px);
+    opacity: 0;
+  }
+}
+
+@keyframes session-dock-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 240% 50%;
+  }
+}
+
+@keyframes session-dock-breathe {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes session-dock-count-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(34, 211, 238, 0.4);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(52, 211, 153, 0.55);
+    transform: scale(1.08);
+  }
+}
+
+@keyframes session-rail-breathe {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 16px rgba(167, 139, 250, 0.85);
+  }
+}
+
+@keyframes session-dock-icon-flicker {
+  0%,
+  91%,
+  94.5%,
+  100% {
+    opacity: 1;
+  }
+  92.5% {
+    opacity: 0.55;
+  }
+  93.5% {
+    opacity: 0.8;
+  }
+}

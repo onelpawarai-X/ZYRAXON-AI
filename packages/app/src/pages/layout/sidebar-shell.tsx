@@ -14,7 +14,12 @@ import { IconButton } from "@zyraxon-ai/ui/icon-button"
 import { Tooltip, TooltipKeybind } from "@zyraxon-ai/ui/tooltip"
 import { SidebarStatus, toggleSidebarStatus } from "@/components/sidebar/sidebar-status"
 import { type LocalProject } from "@/context/layout"
+import { useTabs } from "@/context/tabs"
+import { useLayout } from "@/context/layout"
+import { useCommand } from "@/context/command"
+import { useLanguage } from "@/context/language"
 import { EditorModeToggle } from "./editor-mode-toggle"
+import { SidebarSessionTabs } from "./sidebar-session-tabs"
 
 export const SidebarContent = (props: {
   mobile?: boolean
@@ -42,6 +47,13 @@ export const SidebarContent = (props: {
 }): JSX.Element => {
   const expanded = createMemo(() => !!props.mobile || props.opened())
   const placement = () => (props.mobile ? "bottom" : "right")
+  const tabs = useTabs()
+  const layout = useLayout()
+  const command = useCommand()
+  const language = useLanguage()
+  const homeActive = () => layout.route().type === "home"
+  const homeKeybind = () => command.keybind("home.toggle")
+  const toggleHome = () => tabs.toggleHome({ home: homeActive() })
   let panel: HTMLDivElement | undefined
 
   createEffect(() => {
@@ -61,6 +73,29 @@ export const SidebarContent = (props: {
         class="w-16 shrink-0 bg-background-base flex flex-col items-center overflow-hidden"
         onMouseMove={props.aimMove}
       >
+        <div class="flex w-full shrink-0 flex-col items-center gap-1 border-b border-border-weak-base pb-2.5 pt-2.5">
+          <Tooltip
+            placement={placement()}
+            value={
+              <div class="flex items-center gap-2">
+                <span>{language.t("home.title")}</span>
+                <Show when={!props.mobile && !!homeKeybind()}>
+                  <span class="text-icon-base text-12-medium">{homeKeybind()}</span>
+                </Show>
+              </div>
+            }
+          >
+            <IconButton
+              icon="zy-home"
+              variant="ghost"
+              size="large"
+              classList={{ "sidebar-home-active": homeActive() }}
+              onClick={toggleHome}
+              aria-label={language.t("home.title")}
+              aria-pressed={homeActive()}
+            />
+          </Tooltip>
+        </div>
         <div class="flex-1 min-h-0 w-full">
           <DragDropProvider
             onDragStart={props.handleDragStart}
@@ -137,6 +172,9 @@ export const SidebarContent = (props: {
         aria-hidden={!expanded()}
       >
         <div class="flex h-full w-full min-w-0 flex-col">
+          <div class="shrink-0 px-2.5 pt-2">
+            <SidebarSessionTabs />
+          </div>
           <div class="shrink-0 px-3 pt-2 pb-1">
             <EditorModeToggle directory={props.editorDirectory} />
           </div>

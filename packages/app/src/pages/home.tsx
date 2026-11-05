@@ -1,4 +1,4 @@
-// Copyright (c) 2026 onelpawarai. All rights reserved.
+﻿// Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import type { Session } from "@zyraxon-ai/sdk/v2/client"
 import type { McpClientLike } from "../../../../MCP Hub/plugin"
@@ -72,6 +72,7 @@ import { useMarked } from "@zyraxon-ai/ui/context/marked"
 import { preloadMarkdown } from "@zyraxon-ai/session-ui/markdown-cache"
 import { archiveHomeSession } from "./home-session-archive"
 import { shouldOpenSessionInBackground } from "./home-session-open"
+import "./home.css"
 import { showToast } from "@/utils/toast"
 import { fileManagerApp } from "@/utils/file-manager"
 import {
@@ -365,7 +366,7 @@ export function NewHome() {
   zlog("HOME", "homedir created")
   const selectedProject = createMemo(() => projects().find((project) => project.worktree === selection().directory))
 
-  // Default project — always exists so users can create sessions without adding a project first
+  // Default project â€” always exists so users can create sessions without adding a project first
   const DEFAULT_PROJECT = createMemo<LocalProject>(() => ({
     worktree: homedir() || "/",
     expanded: true,
@@ -639,7 +640,7 @@ export function NewHome() {
         openProjectNewSession(conn, homeDir)
         return
       }
-      // Last resort: server cwd — never a dangling Linux path on Windows
+      // Last resort: server cwd â€” never a dangling Linux path on Windows
       openProjectNewSession(conn, homedir() || "/")
     }
   }
@@ -732,8 +733,20 @@ export function NewHome() {
     })
   }
 
-  return (
-    <div class="rounded-[10px] shadow-[var(--v2-elevation-raised)] m-2 min-h-0 overflow-hidden bg-v2-background-bg-base self-stretch flex-1">
+   return (
+    <div class="relative rounded-[12px] shadow-[var(--v2-elevation-raised)] m-2 min-h-0 overflow-hidden bg-[linear-gradient(135deg,var(--v2-background-bg-base),#08111d_55%,#091d2b_100%)] self-stretch flex-1">
+      <div
+        aria-hidden="true"
+        class="pointer-events-none absolute inset-0 opacity-70 [background-image:radial-gradient(circle_at_1px_1px,rgba(0,212,255,0.035)_1px,transparent_0),radial-gradient(ellipse_at_80%_8%,rgba(0,212,255,0.10),transparent_42%),radial-gradient(ellipse_at_10%_94%,rgba(147,51,234,0.07),transparent_48%)] [background-size:24px_24px,auto,auto]"
+      />
+      <div
+        aria-hidden="true"
+        class="pointer-events-none absolute -right-40 top-10 h-[520px] w-[520px] rounded-full border border-cyan-400/10 bg-cyan-400/5 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        class="pointer-events-none absolute -left-56 bottom-16 h-[560px] w-[560px] rounded-full bg-fuchsia-500/[0.045] blur-3xl"
+      />
       <ScrollView
         class="h-full [container-type:size]"
         thumbContainer={sessionThumbTrack}
@@ -749,7 +762,86 @@ export function NewHome() {
           containHomeWheel(event, sessionViewport)
         }}
       >
-        <div class="mx-auto grid min-h-full w-full max-w-[1080px] grid-rows-[auto_minmax(0,1fr)_auto] gap-4 px-3 lg:grid-cols-[280px_minmax(0,720px)] lg:grid-rows-1 lg:gap-8 lg:px-6">
+        <div class="mx-auto grid min-h-full w-full max-w-[1200px] grid-cols-1 grid-rows-[auto_minmax(0,1fr)_auto] gap-4 px-3 lg:grid-rows-1 lg:gap-6 lg:px-6">
+          <section class="relative isolate col-span-full mb-1 mt-2 min-h-[280px] overflow-hidden rounded-3xl border border-cyan-400/15 bg-[linear-gradient(135deg,rgba(0,212,255,0.13),rgba(0,212,255,0.03)_30%,rgba(10,16,29,0.62)_100%)] p-5 lg:p-7 shadow-[0_40px_140px_rgba(0,0,0,0.48)]">
+            <div aria-hidden="true" class="hero-beam" style="left: 18%" />
+            <div aria-hidden="true" class="hero-beam" style="left: 55%; width: 140px; opacity: 0.7" />
+            <span aria-hidden="true" class="hero-watermark">ZYRAXON</span>
+            <div aria-hidden="true" class="absolute -right-24 top-0 h-52 w-52 rounded-full border border-cyan-300/25 bg-cyan-400/10 blur-3xl" />
+            <div aria-hidden="true" class="absolute -bottom-28 left-1/3 h-60 w-60 rounded-full bg-fuchsia-500/10 blur-3xl" />
+            <div class="relative z-10 grid items-center gap-6 xl:grid-cols-[minmax(0,1fr)_370px]">
+              <div class="flex flex-col gap-5">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="flex items-center gap-1.5 rounded-full border border-cyan-300/25 bg-cyan-400/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-200">
+                    <span class="h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_8px_rgba(34,211,238,0.9)]" />
+                    ZYRAXON ULTRA
+                  </span>
+                  <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-fuchsia-200/90">Agent shell</span>
+                </div>
+                <div class="flex flex-col gap-3">
+                  <h1 class="text-5xl font-black leading-[0.95] tracking-[-0.055em] text-v2-text-text-base lg:text-7xl">
+                    One mind.<br />
+                    <span class="hero-accent">Every command.</span>
+                  </h1>
+                  <p class="max-w-[620px] text-sm leading-6 text-v2-text-text-muted">
+                    à¦†à¦ªà¦¨à¦¾à¦° à¦•à§‹à¦¡à¦¿à¦‚ à¦à¦œà§‡à¦¨à§à¦Ÿ à¦¶à§à¦§à§ à¦‰à¦¤à§à¦¤à¦° à¦¦à§‡à¦¯à¦¼ à¦¨à¦¾ â€” à¦à¦Ÿà¦¿ <span class="text-cyan-300">à¦šà¦²à§‡</span>: à¦ªà§à¦°à¦¸à¦™à§à¦— à¦ªà¦¡à¦¼à§‡, à¦«à¦¾à¦‡à¦² à¦à¦¡à¦¿à¦Ÿ à¦•à¦°à§‡, à¦Ÿà§à¦² à¦šà¦¾à¦²à¦¾à¦¯à¦¼, à¦«à¦¿à¦•à§à¦¸ à¦¶à¦¿à¦ª à¦•à¦°à§‡, à¦ªà§à¦°à§‹ à¦¸à§à¦Ÿà§à¦¯à¦¾à¦• à¦à¦•à¦¨à¦œà¦°à§‡ à¦°à¦¾à¦–à§‡à¥¤
+                  </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 pt-1">
+                  <ButtonV2
+                    data-action="home-hero-new-session"
+                    variant="contrast"
+                    size="large"
+                    icon="edit"
+                    onClick={openNewSession}
+                    class="h-12 px-6 text-sm font-bold shadow-[0_12px_44px_rgba(34,211,238,0.35)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_52px_rgba(34,211,238,0.45)]"
+                  >
+                    New agent session
+                  </ButtonV2>
+                  <ButtonV2
+                    data-action="home-hero-settings"
+                    variant="ghost-muted"
+                    size="large"
+                    icon="settings-gear"
+                    onClick={openSettings}
+                    class="h-12 px-6 text-sm transition-transform duration-200 hover:-translate-y-0.5"
+                  >
+                    Extensions
+                  </ButtonV2>
+                </div>
+                <div class="flex flex-wrap items-center gap-x-5 gap-y-1.5 pt-1 text-[11px] font-semibold text-v2-text-text-faint">
+                  <span><span class="text-cyan-300">888+</span> tools</span>
+                  <span class="text-v2-text-text-faint opacity-50">|</span>
+                  <span><span class="text-cyan-300">8,200+</span> MCP integrations</span>
+                  <span class="text-v2-text-text-faint opacity-50">|</span>
+                  <span><span class="text-cyan-300">Local-first</span> memory</span>
+                  <span class="text-v2-text-text-faint opacity-50">|</span>
+                  <span><span class="text-emerald-300">â—</span> self-healing</span>
+                </div>
+              </div>
+              <div
+                aria-hidden="true"
+                class="hero-terminal hidden select-none flex-col gap-2.5 rounded-2xl bg-[#060c16]/85 p-4 font-mono text-[10.5px] leading-[1.7] text-slate-300 xl:flex"
+              >
+                <div class="flex items-center gap-2 border-b border-white/5 pb-2">
+                  <span class="hero-terminal-dot bg-[#ff5f57]" />
+                  <span class="hero-terminal-dot bg-[#febc2e]" />
+                  <span class="hero-terminal-dot bg-[#28c840]" />
+                  <span class="ml-2 text-[9px] uppercase tracking-[0.22em] text-slate-500">zyraxon Â· agent.log</span>
+                  <span class="ml-auto flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-[8px] font-bold tracking-[0.18em] text-emerald-300">
+                    <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                    LIVE
+                  </span>
+                </div>
+                <p class="hero-line" style="animation-delay: 0.08s"><span class="text-emerald-400">â¯</span> zyraxon status</p>
+                <p class="hero-line text-slate-500" style="animation-delay: 0.3s">â†’ workspace scanned <span class="text-slate-600">(214ms)</span></p>
+                <p class="hero-line" style="animation-delay: 0.52s">â†’ <span class="text-cyan-300">214</span> tools registered Â· <span class="text-cyan-300">8,243</span> MCP servers</p>
+                <p class="hero-line" style="animation-delay: 0.74s">â†’ memory graph <span class="text-fuchsia-300">95.2%</span> health Â· <span class="text-fuchsia-300">1,409</span> patterns cached</p>
+                <p class="hero-line" style="animation-delay: 0.96s">â†’ shadow clone <span class="text-emerald-300">ready</span> Â· zero-trust redaction <span class="text-emerald-300">on</span></p>
+                <p class="hero-line" style="animation-delay: 1.18s"><span class="text-emerald-400">â¯</span> <span class="hero-cursor" /></p>
+              </div>
+            </div>
+          </section>
           <HomeProjectColumn
             projects={projects()}
             recentlyClosed={recentlyClosed()}
@@ -808,7 +900,7 @@ export function NewHome() {
                 onClose={closeSearch}
                 onSelect={selectSearchSession}
               />
-              {/* Always show "New session" button — default project ensures it works */}
+              {/* Always show "New session" button â€” default project ensures it works */}
               <div class="pointer-events-none absolute right-0 top-[84px] z-20 flex gap-1 lg:top-[108px]">
                   <ButtonV2
                     data-action="home-mcp-connect"
@@ -832,7 +924,7 @@ export function NewHome() {
                   </ButtonV2>
                 </div>
             </div>
-            {/* Sticky chrome for the portaled session scrollbar — matches old sessions ScrollView bounds */}
+            {/* Sticky chrome for the portaled session scrollbar â€” matches old sessions ScrollView bounds */}
             <div class="pointer-events-none sticky top-[84px] z-40 h-0 -mr-3 lg:top-[108px]">
               <div
                 ref={setSessionThumbTrack}
@@ -971,7 +1063,7 @@ function HomeProjectColumn(props: {
                 when={props.projects.length > 0}
                 fallback={
                   <div class="flex min-w-0 flex-col gap-1 pr-3">
-                    {/* Default Project — always visible */}
+                    {/* Default Project â€” always visible */}
                     <button
                       type="button"
                       data-action="home-default-project"
@@ -1108,7 +1200,7 @@ function HomeUtilityNav(props: {
 }
 
 function CloudAgentDialog(props: { show: boolean; onClose: () => void; language: ReturnType<typeof useLanguage> }) {
-  // Open Cloud Agent in system Chrome browser — full mic + speech support
+  // Open Cloud Agent in system Chrome browser â€” full mic + speech support
   createEffect(() => {
     if (props.show) {
       const api = (window as any).api
