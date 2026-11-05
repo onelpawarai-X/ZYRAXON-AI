@@ -7,6 +7,14 @@ import { AppNodeBuilder } from "@zyraxon-ai/core/effect/app-node-builder"
 import { Global } from "@zyraxon-ai/core/global"
 
 export function runTui(transport: { url: string; headers: RequestInit["headers"] }) {
+  if (process.env.ZYRAXON_CLI_LOG !== "1") {
+    const noop = () => {}
+    console.log = noop
+    console.info = noop
+    console.debug = noop
+    console.warn = noop
+    console.error = noop
+  }
   const config = TuiConfig.resolve({}, { terminalSuspend: false })
   return run({
     ...transport,

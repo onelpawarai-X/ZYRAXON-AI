@@ -16,6 +16,8 @@ import { Global } from "@zyraxon-ai/core/global"
 import type { MessageV2 } from "./message-v2"
 import type { MessageID } from "./schema"
 
+const debugInstructionLog = process.env.ZYRAXON_DEBUG_INSTRUCTION_LOG === "1" ? console.log : () => {}
+
 function extract(messages: SessionV1.WithParts[]) {
   const paths = new Set<string>()
   for (const msg of messages) {
@@ -152,7 +154,7 @@ const layer: Layer.Layer<
         }
       }
 
-      console.log(`[instruction.systemPaths] found ${paths.size} files in ${Date.now() - _t}ms`)
+      debugInstructionLog(`[instruction.systemPaths] found ${paths.size} files in ${Date.now() - _t}ms`)
       return paths
     })
 
