@@ -83,6 +83,30 @@ const icons = {
     viewBox: "0 0 16 16",
     body: `<path d="M1.5 2.5H9.5V8.5H1.5V2.5Z" stroke="currentColor"/><path d="M6.5 13.5H14.5V7.5H6.5V13.5Z" stroke="currentColor"/><path d="M4 6H7" stroke="currentColor" stroke-linecap="round"/>`,
   },
+  back: {
+    viewBox: "0 0 16 16",
+    body: `<path d="M10 3.5L5.5 8L10 12.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+  forward: {
+    viewBox: "0 0 16 16",
+    body: `<path d="M6 3.5L10.5 8L6 12.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+  stop: {
+    viewBox: "0 0 16 16",
+    body: `<rect x="4" y="4" width="8" height="8" rx="1" stroke="currentColor"/>`,
+  },
+  lock: {
+    viewBox: "0 0 16 16",
+    body: `<rect x="3.25" y="6.75" width="9.5" height="6.5" rx="1.5" stroke="currentColor"/><path d="M5.25 6.75V5.25a2.75 2.75 0 0 1 5.5 0v1.5" stroke="currentColor"/>`,
+  },
+  unlock: {
+    viewBox: "0 0 16 16",
+    body: `<rect x="3.25" y="6.75" width="9.5" height="6.5" rx="1.5" stroke="currentColor"/><path d="M5.25 6.75V5.25a2.75 2.75 0 0 1 5.4-.75" stroke="currentColor"/>`,
+  },
+  "message-square": {
+    viewBox: "0 0 16 16",
+    body: `<path d="M2.75 3.25h10.5v8H8l-3 3v-3h-2.25v-8Z" stroke="currentColor" stroke-linejoin="round"/><path d="M5.5 6.25h5M5.5 8.75h3" stroke="currentColor" stroke-linecap="round"/>`,
+  },
   refresh: {
     viewBox: "0 0 16 16",
     body: `<path d="M13.5 8C13.5 11.0376 11.0376 13.5 8 13.5C4.96243 13.5 2.5 11.0376 2.5 8C2.5 4.96243 4.96243 2.5 8 2.5" stroke="currentColor" stroke-linecap="round"/><path d="M8 2.5L6 0.5M8 2.5L10 0.5" stroke="currentColor" stroke-linecap="round"/><path d="M8 2.5V6" stroke="currentColor" stroke-linecap="round"/>`,
@@ -178,6 +202,10 @@ const icons = {
   archive: {
     viewBox: "0 0 16 16",
     body: `<path d="M13.1112 13.5555V14.0555H13.6112V13.5555H13.1112ZM2.889 13.5555H2.389L2.389 14.0555H2.889V13.5555ZM3.38901 5.55546L3.38901 5.05546L2.38901 5.05546L2.38901 5.55546L2.88901 5.55546L3.38901 5.55546ZM14.4446 2.44434H14.9446V1.94434L14.4446 1.94434L14.4446 2.44434ZM14.4446 5.55545L14.4446 6.05545L14.9446 6.05545V5.55545H14.4446ZM1.55566 5.55546L1.05566 5.55545L1.05566 6.05546L1.55566 6.05546L1.55566 5.55546ZM1.5557 2.44436L1.5557 1.94436L1.05571 1.94436L1.0557 2.44435L1.5557 2.44436ZM13.1112 5.55546H12.6112V13.5555H13.1112H13.6112V5.55546H13.1112ZM2.889 13.5555H3.389L3.38901 5.55546L2.88901 5.55546L2.38901 5.55546L2.389 13.5555H2.889ZM14.4446 2.44434H13.9446V5.55545H14.4446H14.9446V2.44434H14.4446ZM1.55566 5.55546L2.05566 5.55547L2.0557 2.44436L1.5557 2.44436L1.0557 2.44435L1.05566 5.55545L1.55566 5.55546ZM6.22234 8.22213V8.72213H9.7779V8.22213V7.72213H6.22234V8.22213ZM13.1112 13.5555V13.0555H2.889V13.5555V14.0555H13.1112V13.5555ZM1.5557 2.44436L1.5557 2.94436L14.4446 2.94434L14.4446 2.44434L14.4446 1.94434L1.5557 1.94436L1.5557 2.44436ZM14.4446 5.55545L14.4446 5.05545L1.55566 5.05546L1.55566 5.55546L1.55566 6.05546L14.4446 6.05545L14.4446 5.55545Z" fill="currentColor"/>`,
+  },
+  browser: {
+    viewBox: "0 0 16 16",
+    body: `<rect x="1.75" y="2.25" width="12.5" height="11.5" rx="2.25" stroke="currentColor"/><path d="M1.75 5.25H14.25" stroke="currentColor"/><path d="M4 3.75H4.5M6.5 3.75H7" stroke="currentColor" stroke-linecap="round"/>`,
   },
   globe: {
     viewBox: "0 0 20 20",

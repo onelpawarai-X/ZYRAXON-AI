@@ -35,6 +35,7 @@ import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
 import { useTitlebarRightMount } from "../titlebar"
 import { StatusPopoverV2 } from "@/components/status-popover"
 import { getPreviewActive } from "@/pages/session/preview-state"
+import { getBrowserActive } from "@/pages/session/browser-state"
 
 const OPEN_APPS = [
   "vscode",
@@ -244,6 +245,9 @@ export function SessionHeader() {
     previewVisible: isDesktop(),
     previewOpened: getPreviewActive()(),
     onPreviewToggle: () => view().previewPanel.toggle(),
+    browserVisible: isDesktop(),
+    browserOpened: getBrowserActive()(),
+    onBrowserToggle: () => view().browserPanel.toggle(),
     onOpenSubscription: openSettings,
     /* The session header always carries the status bar and the review toggle. The
        status used to be hidden unless the General setting was on, which is why the
@@ -527,6 +531,9 @@ type SessionHeaderV2ActionsState = {
   previewVisible: boolean
   previewOpened: boolean
   onPreviewToggle: () => void
+  browserVisible: boolean
+  browserOpened: boolean
+  onBrowserToggle: () => void
   onOpenSubscription: () => void
   statusVisible: boolean
   terminalOpened: boolean
@@ -569,7 +576,7 @@ function SessionHeaderV2Actions(props: { state: SessionHeaderV2ActionsState }) {
           aria-label={language.t("command.review.toggle")}
           aria-expanded={props.state.reviewOpened}
           aria-controls="review-panel"
-          icon={<IconV2 name={props.state.reviewOpened ? "review-active" : "review"} />}
+          icon={<IconV2 name="message-square" />}
         />
       </TooltipV2>
       <Show when={props.state.previewVisible}>
@@ -589,6 +596,22 @@ function SessionHeaderV2Actions(props: { state: SessionHeaderV2ActionsState }) {
             aria-expanded={props.state.previewOpened}
             aria-controls="preview-panel"
             icon={<IconV2 name="preview" />}
+          />
+        </TooltipV2>
+      </Show>
+      <Show when={props.state.browserVisible}>
+        <TooltipV2 class="shrink-0" placement="bottom" value="Browser — open real web in ZYRAXON">
+          <IconButtonV2
+            type="button"
+            variant="ghost-muted"
+            size="large"
+            class="!w-9 shrink-0"
+            state={props.state.browserOpened ? "pressed" : undefined}
+            onClick={props.state.onBrowserToggle}
+            aria-label="Browser"
+            aria-expanded={props.state.browserOpened}
+            aria-controls="browser-panel"
+            icon={<IconV2 name="browser" />}
           />
         </TooltipV2>
       </Show>

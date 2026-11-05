@@ -100,6 +100,60 @@ export type TaskDaemonState = {
   reason?: string
 }
 
+export type BrowserState = {
+  url: string
+  title: string
+  loading: boolean
+  canGoBack: boolean
+  canGoForward: boolean
+  secure: boolean
+  error?: string
+}
+
+export type BrowserBounds = {
+  x: number
+  y: number
+  width: number
+  height: number
+  visible: boolean
+}
+
+export type BrowserPermissionRequest = {
+  id: string
+  permission: string
+  requestingUrl?: string
+  origin?: string
+  isMainFrame?: boolean
+}
+
+export type BrowserReviewSelection = {
+  url: string
+  title: string
+  selector: string
+  text: string
+  rect: { x: number; y: number; width: number; height: number }
+  html: string
+}
+
+export type BrowserAPI = {
+  create: (url?: string) => Promise<boolean>
+  navigate: (url: string) => Promise<boolean>
+  back: () => Promise<boolean>
+  forward: () => Promise<boolean>
+  reload: () => Promise<boolean>
+  stop: () => Promise<boolean>
+  setBounds: (bounds: BrowserBounds) => Promise<boolean>
+  getState: () => Promise<BrowserState>
+  openExternal: () => Promise<boolean>
+  respondPermission: (response: { id: string; allowed: boolean }) => Promise<boolean>
+  setReviewMode: (enabled: boolean) => Promise<boolean>
+  getReviewMode: () => Promise<boolean>
+  onState: (cb: (state: BrowserState) => void) => () => void
+  onPermissionRequest: (cb: (request: BrowserPermissionRequest) => void) => () => void
+  onReviewSelection: (cb: (selection: BrowserReviewSelection) => void) => () => void
+  onReviewModeChanged: (cb: (enabled: boolean) => void) => () => void
+}
+
 /**
  * A window that can be mirrored into the in-app Preview panel. Produced by
  * Electron's desktopCapturer, which enumerates windows identically on
@@ -231,6 +285,7 @@ export type ElectronAPI = {
   setPreviewState: (state: PreviewState) => Promise<void>
   listPreviewSources: () => Promise<CaptureSource[]>
   openPreviewTarget: (target: string) => Promise<boolean>
+  browser: BrowserAPI
   onSitePreviewUpdate: (cb: (state: PreviewState) => void) => () => void
   /**
    * Forward real input into the window the panel is mirroring, so the panel is

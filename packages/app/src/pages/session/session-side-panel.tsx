@@ -40,9 +40,12 @@ const reviewTabPanelID = "session-side-panel-review-tabpanel"
 const fileBrowserTabPanelID = "session-side-panel-file-browser-tabpanel"
 const previewTabID = "session-side-panel-preview-tab"
 const previewTabPanelID = "session-side-panel-preview-tabpanel"
+const browserTabID = "session-side-panel-browser-tab"
+const browserTabPanelID = "session-side-panel-browser-tabpanel"
 import { SessionContextTab, SortableTab, SortableTabV2, FileVisual } from "@/components/session"
 import { OpenInAppV2 } from "@/components/session/open-in-app-v2"
 import { SitePreview } from "@/pages/session/site-preview"
+import { BrowserPanel } from "@/pages/session/browser-panel"
 import { useCommand } from "@/context/command"
 import { useFile, type SelectedLineRange } from "@/context/file"
 import { useLanguage } from "@/context/language"
@@ -64,6 +67,7 @@ import { useSessionLayout } from "@/pages/session/session-layout"
 import { SessionFileBrowserTab, type SessionFileBrowserState } from "@/pages/session/v2/session-file-browser-tab"
 import { EcosystemPanel } from "@/pages/session/ecosystem-panel"
 import { getPreviewActive, setPreviewActiveState, getPreviewWidth, setPreviewWidthState } from "@/pages/session/preview-state"
+import { getBrowserActive, setBrowserActiveState, getBrowserWidth, setBrowserWidthState } from "@/pages/session/browser-state"
 
 
 type RenderDiff = (SnapshotFileDiff & { file: string }) | VcsFileDiff
@@ -106,6 +110,9 @@ export function SessionSidePanel(props: {
   const previewActive = getPreviewActive()
   const setPreviewActive = setPreviewActiveState
   const previewWidth = getPreviewWidth()
+  const browserActive = getBrowserActive()
+  const setBrowserActive = setBrowserActiveState
+  const browserWidth = getBrowserWidth()
 
   const reviewOpen = createMemo(() => isDesktop() && view().reviewPanel.opened())
   const reviewTab = createMemo(() => isDesktop())
@@ -188,10 +195,12 @@ export function SessionSidePanel(props: {
   // the panel at the preview width, because session.tsx already mounts the panel as
   // soon as the tab is selected.
   const showingPreview = createMemo(() => previewActive() || activeTab() === "preview")
-  const open = createMemo(() => reviewOpen() || showingPreview() || activeTab() === "allfiles")
+  const showingBrowser = createMemo(() => browserActive() || activeTab() === "browser")
+  const open = createMemo(() => reviewOpen() || showingPreview() || showingBrowser() || activeTab() === "allfiles")
   const panelWidth = createMemo(() => {
     if (!open()) return "0px"
-    if (showingPreview()) return `${previewWidth()}px`
+    if (showingPreview() || showingBrowser())
+      return `${showingBrowser() && !showingPreview() ? browserWidth() : previewWidth()}px`
     return "auto"
   })
   const treeWidth = createMemo(() => "0px")
@@ -231,7 +240,10 @@ export function SessionSidePanel(props: {
     // The preview surface owns the panel's split width through the global preview
     // singleton, so selecting its tab has to open that mode and every other tab has to
     // close it. Without this the tab mounts SitePreview inside a collapsed panel.
+    // The preview and embedded browser surfaces own the panel's split width through
+    // their shared state, so selecting one tab has to close the other's mode.
     setPreviewActive(next === "preview")
+    setBrowserActive(next === "browser")
     tabs().setActive(next)
   }
 
@@ -241,6 +253,7 @@ export function SessionSidePanel(props: {
   createEffect(
     on(activeTab, (tab) => {
       if (tab !== "preview") setPreviewActive(false)
+      if (tab !== "browser") setBrowserActive(false)
     }, { defer: true }),
   )
   const browserTab = createMemo(() => {
@@ -259,7 +272,7 @@ export function SessionSidePanel(props: {
   })
   const fileBrowserVisible = createMemo(() => {
     const active = activeTab()
-    return active !== "review" && active !== "context" && active !== "empty"
+    return active !== "review" && active !== "context" && active !== "empty" && active !== "browser"
   })
   const openFileKeybind = createMemo(() => command.keybindParts("file.open"))
   const closeTabKeybind = createMemo(() => command.keybindParts("tab.close"))
@@ -349,17 +362,18 @@ export function SessionSidePanel(props: {
                 }}
               >
                 {/* Preview resize handle — drag to make preview bigger/smaller */}
-                <Show when={showingPreview()}>
+                <Show when={showingPreview() || showingBrowser()}>
                   <div onPointerDown={() => props.size.start()}>
                     <ResizeHandle
                       direction="horizontal"
                       edge="start"
-                      size={previewWidth()}
+                      size={showingBrowser() && !showingPreview() ? browserWidth() : previewWidth()}
                       min={360}
                       max={1200}
                       onResize={(width) => {
                         props.size.touch()
-                        setPreviewWidthState(width)
+                        if (showingBrowser() && !showingPreview()) setBrowserWidthState(width)
+                        else setPreviewWidthState(width)
                       }}
                     />
                   </div>
@@ -420,6 +434,18 @@ export function SessionSidePanel(props: {
                                 <div class="flex items-center gap-1.5">
                                   <IconV2 name="preview" />
                                   <div>{language.t("session.tab.preview")}</div>
+                                </div>
+                              </Tabs.Trigger>
+                            </Show>
+                            <Show when={canPreview()}>
+                              <Tabs.Trigger
+                                value="browser"
+                                id={browserTabID}
+                                aria-controls={activeTab() === "browser" ? browserTabPanelID : undefined}
+                              >
+                                <div class="flex items-center gap-1.5">
+                                  <IconV2 name="globe" />
+                                  <div>Browser</div>
                                 </div>
                               </Tabs.Trigger>
                             </Show>
@@ -554,6 +580,19 @@ export function SessionSidePanel(props: {
                           </div>
                         </Show>
 
+                        <Show when={canPreview() && activeTab() === "browser"}>
+                          <div
+                            id={browserTabPanelID}
+                            role="tabpanel"
+                            aria-labelledby={browserTabID}
+                            tabIndex={0}
+                            data-slot="tabs-content"
+                            class="flex flex-col h-full overflow-hidden contain-strict"
+                          >
+                            <BrowserPanel />
+                          </div>
+                        </Show>
+
                         <Show when={activeTab() === "daily-tasks"}>
                             <div class="flex flex-col h-full overflow-hidden">
                               <DailyTasksPanel />
@@ -664,6 +703,18 @@ export function SessionSidePanel(props: {
                                 <div class="flex items-center gap-1.5">
                                   <IconV2 name="preview" />
                                   <span>{language.t("session.tab.preview")}</span>
+                                </div>
+                              </Tabs.Trigger>
+                            </Show>
+                            <Show when={canPreview()}>
+                              <Tabs.Trigger
+                                value="browser"
+                                id={browserTabID}
+                                aria-controls={activeTab() === "browser" ? browserTabPanelID : undefined}
+                              >
+                                <div class="flex items-center gap-1.5">
+                                  <IconV2 name="globe" />
+                                  <span>Browser</span>
                                 </div>
                               </Tabs.Trigger>
                             </Show>
@@ -813,6 +864,19 @@ export function SessionSidePanel(props: {
                             class="flex flex-col h-full overflow-hidden contain-strict"
                           >
                             <SitePreview />
+                          </div>
+                        </Show>
+
+                        <Show when={canPreview() && activeTab() === "browser"}>
+                          <div
+                            id={browserTabPanelID}
+                            role="tabpanel"
+                            aria-labelledby={browserTabID}
+                            tabIndex={0}
+                            data-slot="tabs-content"
+                            class="flex flex-col h-full overflow-hidden contain-strict"
+                          >
+                            <BrowserPanel />
                           </div>
                         </Show>
 

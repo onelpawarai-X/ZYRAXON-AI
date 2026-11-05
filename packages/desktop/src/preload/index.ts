@@ -1,7 +1,7 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import { contextBridge, ipcRenderer, webUtils } from "electron"
-import type { ElectronAPI, PreviewInputAction, PreviewState, StreamState, WslServersEvent } from "./types"
+import type { BrowserPermissionRequest, BrowserReviewSelection, BrowserState, ElectronAPI, PreviewInputAction, PreviewState, StreamState, WslServersEvent } from "./types"
 import type { UpdaterState } from "@zyraxon-ai/app/updater"
 
 const updaterCallbacks = new Set<(state: UpdaterState) => void>()
@@ -173,6 +173,40 @@ const api: ElectronAPI = {
   setPreviewState: (state) => ipcRenderer.invoke("set-preview-state", state),
   listPreviewSources: () => ipcRenderer.invoke("preview-list-sources"),
   openPreviewTarget: (target) => ipcRenderer.invoke("preview-open-external", target),
+  browser: {
+    create: (url) => ipcRenderer.invoke("browser-create", url),
+    navigate: (url) => ipcRenderer.invoke("browser-navigate", url),
+    back: () => ipcRenderer.invoke("browser-back"),
+    forward: () => ipcRenderer.invoke("browser-forward"),
+    reload: () => ipcRenderer.invoke("browser-reload"),
+    stop: () => ipcRenderer.invoke("browser-stop"),
+    setBounds: (bounds) => ipcRenderer.invoke("browser-set-bounds", bounds),
+    getState: () => ipcRenderer.invoke("browser-get-state"),
+    openExternal: () => ipcRenderer.invoke("browser-open-external"),
+    respondPermission: (response) => ipcRenderer.invoke("browser-permission-response", response),
+    setReviewMode: (enabled) => ipcRenderer.invoke("browser-set-review-mode", enabled),
+    getReviewMode: () => ipcRenderer.invoke("browser-get-review-mode"),
+    onState: (cb) => {
+      const handler = (_: unknown, state: BrowserState) => cb(state)
+      ipcRenderer.on("browser-state", handler)
+      return () => ipcRenderer.removeListener("browser-state", handler)
+    },
+    onPermissionRequest: (cb) => {
+      const handler = (_: unknown, request: BrowserPermissionRequest) => cb(request)
+      ipcRenderer.on("browser-permission-request", handler)
+      return () => ipcRenderer.removeListener("browser-permission-request", handler)
+    },
+    onReviewSelection: (cb) => {
+      const handler = (_: unknown, selection: BrowserReviewSelection) => cb(selection)
+      ipcRenderer.on("browser-review-selection", handler)
+      return () => ipcRenderer.removeListener("browser-review-selection", handler)
+    },
+    onReviewModeChanged: (cb) => {
+      const handler = (_: unknown, enabled: boolean) => cb(Boolean(enabled))
+      ipcRenderer.on("browser-review-mode-changed", handler)
+      return () => ipcRenderer.removeListener("browser-review-mode-changed", handler)
+    },
+  },
   previewInput: (action: PreviewInputAction) => ipcRenderer.invoke("preview-input", action),
   previewWindowGeometry: (title: string) => ipcRenderer.invoke("preview-window-geometry", title),
   onSitePreviewUpdate: (cb) => {
