@@ -823,6 +823,8 @@ export const dict = {
   "sidebar.nav.projectsAndSessions": "Projects and sessions",
   "sidebar.settings": "Settings",
   "sidebar.help": "Help",
+  "sidebar.sessions": "Open sessions",
+  "sidebar.sessions.empty": "Fresh canvas — open a session",
   "sidebar.workspaces.enable": "Enable workspaces",
   "sidebar.workspaces.disable": "Disable workspaces",
   "sidebar.gettingStarted.title": "Getting started",
