@@ -12,8 +12,12 @@ import { createEffect, createMemo, createResource, createSignal, For, Match, onC
 import { commandPaletteOptions, formatKeybindParts, useCommand } from "@/context/command"
 import { useGlobal } from "@/context/global"
 import { useLanguage } from "@/context/language"
+import { useLayout } from "@/context/layout"
+import { usePlatform } from "@/context/platform"
 import { ServerConnection } from "@/context/server"
+import { useServerSDK } from "@/context/server-sdk"
 import { useTabs } from "@/context/tabs"
+import { fetchOmniSymbols, fetchOmniTextMatches } from "@/components/omni-search"
 import { SessionTabAvatar } from "@/pages/layout/session-tab-avatar"
 import { getRelativeTime } from "@/utils/time"
 import {
@@ -39,17 +43,96 @@ function matchesEntry(entry: CommandPaletteEntry, query: string) {
 
 export function DialogCommandPaletteV2(props: { onOpenFile?: (path: string) => void }) {
   const palette = createCommandPaletteModel(props)
+  const serverSDK = useServerSDK()()
+  const platform = usePlatform()
+  const layout = useLayout()
+  const global = useGlobal()
+  const appTabs = useTabs()
+
+  const startAsk = async (query: string) => {
+    try {
+      const selection = layout.home.selection()
+      const conn =
+        global.servers.list().find((item) => ServerConnection.key(item) === selection.server) ??
+        global.servers.list()[0] ??
+        serverSDK.server
+      if (!conn) return
+      const ctx = global.ensureServerCtx(conn)
+      const selected = ctx.projects.list().find((project) => project.worktree === selection.directory)?.worktree
+      const directory = selected ?? ctx.projects.list()[0]?.worktree ?? ctx.sync.data.path.home ?? ""
+      if (selected === undefined && directory) ctx.projects.open(directory)
+      await appTabs.newDraft({ server: ServerConnection.key(conn), directory }, query)
+    } catch {
+      // Ask is best-effort; the palette just closes on failure.
+    }
+  }
+
   const loadItems = async (text: string) => {
     const q = text.trim()
     if (!q) return [...palette.preferredCommandEntries(), ...palette.recentFileEntries()]
 
-    const [files, nextSessions] = await Promise.all([palette.file.searchFiles(q), Promise.resolve(palette.sessions(q))])
-    const category = palette.language.t("palette.group.files")
+    const language = palette.language
+    const symbolCategory = language.t("palette.group.symbols")
+    const contentCategory = language.t("palette.group.content")
+    const webCategory = language.t("palette.group.web")
+    const askCategory = language.t("palette.group.ask")
+    const fileCategory = language.t("palette.group.files")
+
+    const filesPromise = palette.file.searchFiles(q, { limit: 8 })
+    const symbolsPromise =
+      q.length >= 2 ? fetchOmniSymbols(serverSDK.client, q, symbolCategory, 6) : Promise.resolve([])
+    const textsPromise =
+      q.length >= 3 ? fetchOmniTextMatches(serverSDK.client, q, contentCategory, 4) : Promise.resolve([])
+
+    const [files, nextSessions, symbols, texts] = await Promise.all([
+      filesPromise,
+      Promise.resolve(palette.sessions(q)),
+      symbolsPromise,
+      textsPromise,
+    ])
+
     return [
+      {
+        id: `ask:${q}`,
+        type: "ask" as const,
+        title: language.t("palette.ask.action", { query: q }),
+        description: language.t("palette.ask.description"),
+        category: askCategory,
+        askQuery: q,
+      },
       ...palette.commandEntries().filter((entry) => matchesEntry(entry, q)),
       ...nextSessions,
-      ...files.map((path) => createCommandPaletteFileEntry(path, category)),
+      ...symbols,
+      ...files.map((path) => createCommandPaletteFileEntry(path, fileCategory)),
+      ...texts,
+      {
+        id: `web:${q}`,
+        type: "web" as const,
+        title: language.t("palette.web.action", { query: q }),
+        description: language.t("palette.web.description"),
+        category: webCategory,
+        webQuery: q,
+      },
     ]
+  }
+
+  const select = (item: CommandPaletteEntry | undefined) => {
+    if (!item) return
+    if (item.type === "web") {
+      palette.close()
+      platform.openLink(`https://www.google.com/search?q=${encodeURIComponent(item.webQuery ?? item.title)}`)
+      return
+    }
+    if (item.type === "ask") {
+      palette.close()
+      void startAsk(item.askQuery ?? item.title)
+      return
+    }
+    if (item.type === "symbol" || item.type === "text") {
+      palette.select({ ...item, type: "file" })
+      return
+    }
+    palette.select(item)
   }
 
   return (
@@ -57,7 +140,7 @@ export function DialogCommandPaletteV2(props: { onOpenFile?: (path: string) => v
       placeholder={palette.language.t("palette.search.placeholder")}
       loadItems={loadItems}
       highlight={palette.highlight}
-      select={palette.select}
+      select={select}
       close={palette.close}
     />
   )
@@ -288,6 +371,32 @@ function PaletteRow(props: {
           </div>
         }
       >
+        <Match when={props.item.type === "text"}>
+          <div class="command-palette-v2-row-main">
+            <Icon name="magnifying-glass" size="normal" class="mt-0.5 shrink-0 text-v2-text-text-faint" />
+            <div class="command-palette-v2-file-path">
+              <span class="command-palette-v2-file-name">{props.item.title}</span>
+              <Show when={props.item.description}>
+                <span class="command-palette-v2-file-dir">{props.item.description}</span>
+              </Show>
+            </div>
+          </div>
+        </Match>
+        <Match when={props.item.type === "web" || props.item.type === "ask"}>
+          <div class="command-palette-v2-row-main">
+            <Icon
+              name={props.item.type === "web" ? "globe" : "terminal"}
+              size="normal"
+              class="shrink-0 text-v2-text-text-faint"
+            />
+            <div class="command-palette-v2-row-text">
+              <span class="command-palette-v2-title">{props.item.title}</span>
+              <Show when={props.item.description}>
+                <span class="command-palette-v2-description">{props.item.description}</span>
+              </Show>
+            </div>
+          </div>
+        </Match>
         <Match when={props.item.type === "command"}>
           <div class="command-palette-v2-row-main">
             <div class="command-palette-v2-row-text">

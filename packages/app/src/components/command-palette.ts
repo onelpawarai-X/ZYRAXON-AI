@@ -18,7 +18,7 @@ import { useSessionLayout } from "@/pages/session/session-layout"
 
 export type CommandPaletteEntry = {
   id: string
-  type: "command" | "file" | "session"
+  type: "command" | "file" | "session" | "symbol" | "text" | "web" | "ask"
   title: string
   description?: string
   keybind?: string
@@ -31,6 +31,8 @@ export type CommandPaletteEntry = {
   project?: LocalProject
   archived?: number
   updated?: number
+  webQuery?: string
+  askQuery?: string
 }
 
 const ENTRY_LIMIT = 5

@@ -43,6 +43,7 @@ import { useDirectoryPicker } from "@/components/directory-picker"
 import { useSettingsCommand } from "@/components/settings-dialog"
 import { useAppShortcuts } from "@/hooks/use-app-shortcuts"
 import { DialogSelectServer, useServerManagementController } from "@/components/dialog-select-server"
+import { DialogCommandPaletteV2 } from "@/components/dialog-command-palette-v2"
 import { DialogServerV2 } from "@/components/settings-v2/dialog-server-v2"
 import { ServerConnection, serverName, useServer } from "@/context/server"
 import { sessionHasOpenTab, useTabs } from "@/context/tabs"
@@ -807,6 +808,17 @@ export function NewHome() {
                     class="h-12 px-6 text-sm transition-transform duration-200 hover:-translate-y-0.5"
                   >
                     Extensions
+                  </ButtonV2>
+                  <ButtonV2
+                    data-action="home-hero-search"
+                    variant="outline"
+                    size="large"
+                    icon="magnifying-glass"
+                    onClick={() => dialog.show(() => <DialogCommandPaletteV2 />)}
+                    class="h-12 px-6 text-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-400/40 hover:shadow-[0_0_30px_rgba(34,211,238,0.18)]"
+                  >
+                    Universal search
+                    <kbd class="ml-2 rounded-md border border-white/15 bg-white/5 px-1.5 py-0.5 font-mono text-[10px] text-cyan-200/80">Ctrl K</kbd>
                   </ButtonV2>
                 </div>
                 <div class="flex flex-wrap items-center gap-x-5 gap-y-1.5 pt-1 text-[11px] font-semibold text-v2-text-text-faint">
