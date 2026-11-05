@@ -60,10 +60,10 @@ function Hint(props: { api: TuiPluginApi }) {
   const commandShortcut = useCommandShortcut("command.palette.show")
   const modelShortcut = useCommandShortcut("model.list")
   const local = useLocal()
-  const currentModel = createMemo(() => {
+  const label = createMemo(() => {
+    const agent = local.agent.current()
     const value = local.model.current()
-    if (!value) return undefined
-    return `${value.providerID}/${value.modelID}`
+    return [agent?.name, value ? `${value.providerID}/${value.modelID}` : undefined].filter(Boolean).join(" · ")
   })
 
   return (
@@ -75,7 +75,7 @@ function Hint(props: { api: TuiPluginApi }) {
       <text fg={theme().textMuted}>
         {modelShortcut()} model
       </text>
-      <Show when={currentModel()}>{(value) => <text fg={theme().text}>{value()}</text>}</Show>
+      <Show when={label()}>{(value) => <text fg={theme().text}>{value()}</text>}</Show>
     </box>
   )
 }
