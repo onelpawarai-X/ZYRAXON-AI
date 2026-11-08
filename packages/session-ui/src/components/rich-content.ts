@@ -5,6 +5,8 @@
  * Renders special code blocks as visual content in chat messages
  */
 
+import "./rich-content.css"
+
 // ═══════════════════════════════════════════════════════════════
 // MERMAID DIAGRAMS
 // ═══════════════════════════════════════════════════════════════
@@ -385,14 +387,15 @@ export function renderAllRichContent(root: HTMLElement, streaming = false) {
   // streamed token is what made a reply containing HTML or a diagram feel like it
   // was crawling: the frame was torn down and reloaded for every word. Nothing is
   // lost by waiting — the block is replaced the moment streaming ends, which is
-  // when anyone could have finished reading it anyway. The cheap text-level work
-  // still runs, so the reply keeps its styling as it arrives.
+  // when anyone could have finished reading it anyway. The markdown keeps its
+  // styling as it arrives either way, so embedded content simply snaps in when
+  // the reply settles instead of stuttering in.
   if (!streaming) {
     renderMermaidBlocks(root)
     renderHTMLBlocks(root)
     renderSVGBlocks(root)
+    renderVideoBlocks(root)
+    renderAudioBlocks(root)
+    renderNotebookBlocks(root)
   }
-  renderVideoBlocks(root)
-  renderAudioBlocks(root)
-  renderNotebookBlocks(root)
 }

@@ -34,6 +34,7 @@ import { shouldResetCodeTokens, type RenderedCodeState } from "./markdown-code-s
 import { getCachedMarkdown, sanitizeMarkdown, touchCachedMarkdown, type MarkdownCacheEntry } from "./markdown-cache"
 import { inlineCodeKind } from "./markdown-inline-code-kind"
 import { renderAllRichContent } from "./rich-content"
+import { decorateSiteLinks } from "./site-preview"
 
 type RenderedBlock =
   | (MarkdownCacheEntry & { key: string; mode: Exclude<Block["mode"], "code"> })
@@ -498,6 +499,7 @@ function decorate(root: HTMLDivElement, labels: CopyLabels, streaming: boolean) 
   autoLinkBareUrls(root)
   embedYouTube(root)
   makeImagesExpandable(root)
+  decorateSiteLinks(root)
   renderAllRichContent(root, streaming)
   if (!document.body.hasAttribute("data-new-layout")) return
   markInlineCode(root)

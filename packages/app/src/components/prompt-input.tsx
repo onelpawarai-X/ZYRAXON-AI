@@ -83,6 +83,7 @@ import { PromptPopover, type AtOption, type SlashCommand } from "./prompt-input/
 import { PromptContextItems } from "./prompt-input/context-items"
 import { PromptImageAttachments } from "./prompt-input/image-attachments"
 import { PromptDragOverlay } from "./prompt-input/drag-overlay"
+import { PromptLinkChips } from "./prompt-input/link-chips"
 import { promptDesignPlaceholder, promptPlaceholder } from "./prompt-input/placeholder"
 import { createPromptInputTransientState } from "./prompt-input/transient-state"
 import { showToast } from "@/utils/toast"
@@ -1523,6 +1524,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
           removeLabel={language.t("prompt.attachment.remove")}
           newLayoutDesigns={false}
         />
+        <PromptLinkChips getText={() => editorRef?.innerText ?? ""} />
         <div
           class="relative"
           onMouseDown={(e) => {

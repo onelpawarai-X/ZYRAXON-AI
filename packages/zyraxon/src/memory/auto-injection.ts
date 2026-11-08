@@ -233,6 +233,19 @@ async function initDb(): Promise<void> {
   )`)
   db.run(`CREATE INDEX IF NOT EXISTS idx_compaction_session ON compaction_summary(session_id, time_updated DESC)`)
 
+  // Eternal Epoch — 24h active-work consolidation ledger. Tracks accumulated
+  // AI working time, holds the consolidated full-DB digest re-injected every turn.
+  db.run(`CREATE TABLE IF NOT EXISTS eternal_epoch (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    active_ms INTEGER NOT NULL DEFAULT 0,
+    epoch_count INTEGER NOT NULL DEFAULT 0,
+    last_consolidation INTEGER NOT NULL DEFAULT 0,
+    last_digest TEXT NOT NULL DEFAULT '',
+    last_stats TEXT NOT NULL DEFAULT '{}',
+    consolidating INTEGER NOT NULL DEFAULT 0
+  )`)
+  try { db.run(`INSERT OR IGNORE INTO eternal_epoch (id, active_ms, epoch_count, last_consolidation) VALUES (1, 0, 0, 0)`) } catch {}
+
   try { db.run(`INSERT OR IGNORE INTO memories_fts(memories_fts) VALUES('rebuild')`) } catch {}
 }
 
@@ -285,6 +298,139 @@ function selectMessagesByTokens(
     head: serialized.slice(0, split).join("\n\n"),
     recent: serialized.slice(split).join("\n\n"),
   }
+}
+
+// ============================================
+// ETERNAL EPOCH — every 24 hours of active AI work re-indexes the ENTIRE DB
+// The consolidated digest is re-injected on every turn, so the agent re-reads
+// everything it has ever been told, then continues where it left off.
+// ============================================
+
+const ETERNAL_EPOCH_TRIGGER_MS = 24 * 60 * 60 * 1000
+const EPOCH_STEP_CAP_MS = 60_000
+const EPOCH_DIGEST_MAX_CHARS = 30_000
+const EPOCH_MEMORY_LINES = 200
+const EPOCH_SESSION_LINES = 60
+
+let epochLastMark = 0
+
+export async function eternalEpochAccumulate(): Promise<{
+  consolidated: boolean
+  epoch?: number
+  stats?: { memories: number; turns: number; sessions: number; ringBuffer: number; oldestMemory: string; consolidatedAt: string }
+}> {
+  const now = Date.now()
+  if (!epochLastMark) epochLastMark = now
+  const delta = Math.min(Math.max(0, now - epochLastMark), EPOCH_STEP_CAP_MS)
+  epochLastMark = now
+
+  const d = await getDb()
+  const row = qget(d, `SELECT active_ms, epoch_count, consolidating FROM eternal_epoch WHERE id = 1`)
+  const active = (row?.active_ms ?? 0) + delta
+  if ((row?.consolidating ?? 0) === 1) {
+    d.run(`UPDATE eternal_epoch SET active_ms = ? WHERE id = 1`, [active])
+    return { consolidated: false }
+  }
+  if (active < ETERNAL_EPOCH_TRIGGER_MS) {
+    d.run(`UPDATE eternal_epoch SET active_ms = ? WHERE id = 1`, [active])
+    return { consolidated: false }
+  }
+
+  d.run(`UPDATE eternal_epoch SET consolidating = 1 WHERE id = 1`)
+  try {
+    // Re-index EVERYTHING in the DB first — a full FTS rebuild covers every memory row
+    try { d.run(`INSERT INTO memories_fts(memories_fts) VALUES('rebuild')`) } catch {}
+    const digest = buildEternalEpochDigest(d)
+    const stats = eternalEpochStats(d)
+    const epoch = (row?.epoch_count ?? 0) + 1
+    d.run(
+      `UPDATE eternal_epoch SET active_ms = 0, epoch_count = ?, last_consolidation = ?, last_digest = ?, last_stats = ?, consolidating = 0 WHERE id = 1`,
+      [epoch, now, digest, JSON.stringify(stats)],
+    )
+    // Persist as a top-importance memory so recall always reaches it
+    await storeMemory({
+      key: `eternal_epoch_${epoch}`,
+      content: digest,
+      summary: `Eternal epoch #${epoch} — full-DB consolidation on ${new Date(now).toISOString()}`,
+      tags: ["eternal-epoch", "consolidation", "master"],
+      category: "eternal-epoch",
+      importance: 10,
+      source: "eternal-epoch",
+    })
+    console.log(`[eternal_epoch] epoch #${epoch} consolidated — ${JSON.stringify(stats)}`)
+    return { consolidated: true, epoch, stats }
+  } catch (error) {
+    d.run(`UPDATE eternal_epoch SET consolidating = 0 WHERE id = 1`)
+    console.log(`[eternal_epoch] consolidation failed: ${String(error)}`)
+    return { consolidated: false }
+  }
+}
+
+function eternalEpochStats(d: DB): {
+  memories: number; turns: number; sessions: number; ringBuffer: number; oldestMemory: string; consolidatedAt: string
+} {
+  const memories = qget(d, `SELECT COUNT(*) as c FROM memories`)?.c ?? 0
+  const turns = qget(d, `SELECT COUNT(*) as c FROM conversations`)?.c ?? 0
+  const sessions = qget(d, `SELECT COUNT(DISTINCT session_id) as c FROM conversations`)?.c ?? 0
+  const ringBuffer = qget(d, `SELECT COUNT(*) as c FROM ring_buffer`)?.c ?? 0
+  const oldest = qget(d, `SELECT MIN(timestamp) as t FROM conversations`)?.t
+  return {
+    memories, turns, sessions, ringBuffer,
+    oldestMemory: oldest ? new Date(oldest).toISOString() : "none",
+    consolidatedAt: new Date().toISOString(),
+  }
+}
+
+function buildEternalEpochDigest(d: DB): string {
+  const stats = eternalEpochStats(d)
+  const parts: string[] = []
+  parts.push(
+    `ZYRAXON Eternal Memory — Epoch Consolidation\n` +
+    `Consolidated ${stats.memories} memories, ${stats.turns} conversation turns across ${stats.sessions} sessions ` +
+    `into one indexed digest. Everything the agent has ever been told is re-read below — continue from where you left off.`,
+  )
+
+  const top = d
+    .query(`SELECT key, summary, importance, category FROM memories WHERE importance >= 6 ORDER BY importance DESC, timestamp DESC LIMIT ?`)
+    .all(EPOCH_MEMORY_LINES) as any[]
+  if (top.length > 0) {
+    parts.push(
+      `High-value knowledge — the strongest ${top.length} memories:`,
+      top.map((m) => `- [${m.importance}/10|${m.category}] ${m.key}: ${String(m.summary).slice(0, 220)}`).join("\n"),
+    )
+  }
+
+  const sessions = d
+    .query(
+      `SELECT c1.session_id, COUNT(*) as c, MAX(c1.timestamp) as last,
+        (SELECT c2.content FROM conversations c2 WHERE c2.session_id = c1.session_id AND c2.role = 'user'
+         ORDER BY c2.turn_index DESC LIMIT 1) as last_user
+       FROM conversations c1 GROUP BY c1.session_id ORDER BY last DESC LIMIT ?`,
+    )
+    .all(EPOCH_SESSION_LINES) as any[]
+  if (sessions.length > 0) {
+    parts.push(
+      `Session-by-session index — the ${sessions.length} most recent threads:`,
+      sessions
+        .map(
+          (s) =>
+            `- ${String(s.session_id).slice(0, 8)} · ${s.c} turns · last user message: ${String(s.last_user ?? "").replace(/\s+/g, " ").slice(0, 90)}`,
+        )
+        .join("\n"),
+    )
+  }
+
+  return parts.join("\n\n").slice(0, EPOCH_DIGEST_MAX_CHARS)
+}
+
+export async function eternalEpochDigest(): Promise<string> {
+  const d = await getDb()
+  const row = qget(d, `SELECT last_digest, epoch_count FROM eternal_epoch WHERE id = 1`)
+  if (!row?.last_digest) return ""
+  return (
+    `[ZYRAXON ETERNAL EPOCH #${row.epoch_count} — the entire DB was re-indexed and re-read this turn; ` +
+    `this is everything you have ever known, consolidated]\n${row.last_digest}\n[/ZYRAXON ETERNAL EPOCH]`
+  )
 }
 
 export interface MemoryEntry {
@@ -802,6 +948,17 @@ export async function autoInjectContext(userMessage: string, agent: string, sess
   } catch (e: any) {
     console.log(`[autoInjectContext] memory_search ERROR: ${e?.message ?? e}`)
   }
+
+  // Eternal epoch — the digest is re-read every turn, and the full DB re-indexes
+  // automatically every 24h of active work (loading state doubles as the thinking row).
+  try {
+    const epoch = await eternalEpochAccumulate()
+    if (epoch.consolidated) {
+      console.log(`[autoInjectContext] eternal epoch consolidated — full DB re-indexed:`, epoch.stats)
+    }
+    const digest = await eternalEpochDigest()
+    if (digest) parts.push(digest)
+  } catch {}
 
   // Update cached context for next time
   if (ctx) {
@@ -1603,4 +1760,6 @@ export const autoMemory = {
   // Compaction system (v5 — 100x better than Zyraxon)
   compaction,
   getCompactionSummary, storeCompactionSummary, updateCompactionSummary, checkCompactionNeeded,
+  // Eternal epoch (24h full-DB re-index + re-injection)
+  eternalEpochAccumulate, eternalEpochDigest,
 }

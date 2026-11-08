@@ -26,58 +26,6 @@ async function signWindows(configuration: { path: string }) {
   )
 }
 
-function copyMcpBundles(configuration: { appOutDir: string }) {
-  const resourcesDst = path.join(configuration.appOutDir, "resources")
-
-  // Copy jarvis-browser node_modules
-  const jarvisSrc = path.join(packageDir, "resources", "jarvis-browser", "node_modules")
-  const jarvisDst = path.join(resourcesDst, "jarvis-browser", "node_modules")
-  if (existsSync(jarvisSrc)) {
-    cpSync(jarvisSrc, jarvisDst, { recursive: true })
-    console.log("[afterPack] Copied jarvis-browser node_modules to", jarvisDst)
-  }
-
-  // Copy nuphus-mcp bundle (build script creates this)
-  const nuphusSrc = path.join(packageDir, "resources", "nuphus-mcp")
-  const nuphusDst = path.join(resourcesDst, "nuphus-mcp")
-  if (existsSync(nuphusSrc)) {
-    cpSync(nuphusSrc, nuphusDst, { recursive: true })
-    // Git tracks these binaries 755, but a checkout with core.filemode=false (CI does
-    // this) drops the exec bit and every Linux/macOS build then fails with EACCES.
-    // Set it here so packaging does not depend on how the tree was checked out.
-    if (process.platform !== "win32") {
-      for (const arch of ["linux-x64", "osx-arm64", "osx-x64"]) {
-        const bin = path.join(nuphusDst, arch, "nuphus-mcp")
-        if (existsSync(bin)) {
-          chmodSync(bin, 0o755)
-          console.log("[afterPack] chmod +x", bin)
-        }
-      }
-    }
-    console.log("[afterPack] Copied nuphus-mcp to", nuphusDst)
-  }
-
-  // Copy touchpoint-mcp bundle (accessibility-based desktop automation)
-  const touchpointSrc = path.join(packageDir, "resources", "touchpoint-mcp")
-  const touchpointDst = path.join(resourcesDst, "touchpoint-mcp")
-  if (existsSync(touchpointSrc)) {
-    cpSync(touchpointSrc, touchpointDst, { recursive: true })
-    console.log("[afterPack] Copied touchpoint-mcp to", touchpointDst)
-  }
-
-  // Copy desktop-commander bundle (wrapper + ESM dist + node_modules)
-  const commanderSrc = path.join(packageDir, "resources", "desktop-commander")
-  const commanderDst = path.join(resourcesDst, "desktop-commander")
-  if (existsSync(commanderSrc)) {
-    cpSync(commanderSrc, commanderDst, { recursive: true })
-    console.log("[afterPack] Copied desktop-commander to", commanderDst)
-  }
-}
-
-const afterPack = (context: { appOutDir: string }) => {
-  copyMcpBundles(context)
-}
-
 const channel = (() => {
   const raw = process.env.ZYRAXON_CHANNEL
   if (raw === "dev" || raw === "beta" || raw === "prod") return raw
@@ -101,7 +49,7 @@ const PRODUCT_SLUGS = {
 } as const
 
 const getBase = (appId: string): Configuration => ({
-  afterPack,
+  compression: "normal",
   artifactName: "zyraxon-desktop-${os}-${arch}.${ext}",
   directories: {
     output: "dist",
@@ -137,6 +85,12 @@ const getBase = (appId: string): Configuration => ({
       // fresh install without the user installing anything.
       from: "resources/bin/",
       to: "bin/",
+      filter:
+        process.platform === "win32"
+          ? ["ffmpeg.exe", "ffprobe.exe", "README.md"]
+          : process.platform === "darwin"
+            ? ["ffmpeg", "ffprobe", "README.md"]
+            : ["ffmpeg", "ffprobe", "README.md"],
     },
     {
       from: "resources/jarvis-browser-mcp.cjs",
@@ -234,10 +188,13 @@ const getBase = (appId: string): Configuration => ({
     verifyUpdateCodeSignature: false,
   },
   nsis: {
-    oneClick: true,
+    oneClick: false,
     perMachine: false,
+    allowToChangeInstallationDirectory: false,
     installerIcon: `resources/icons/icon.ico`,
     installerHeaderIcon: `resources/icons/icon.ico`,
+    installerSidebar: `resources/installer-sidebar.bmp`,
+    uninstallerSidebar: `resources/uninstaller-sidebar.bmp`,
     // The task daemon registers itself for logon under HKCU on first run, so the
     // uninstaller has to take that entry (and the copied script) back out.
     include: "resources/installer.nsh",
