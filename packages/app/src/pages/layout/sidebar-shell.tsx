@@ -72,6 +72,9 @@ export const SidebarContent = (props: {
         data-component="sidebar-rail"
         class="w-16 shrink-0 bg-background-base flex flex-col items-center overflow-hidden"
         onMouseMove={props.aimMove}
+        onMouseEnter={() => {
+          layout.sidebar.open()
+        }}
       >
         <div class="flex w-full shrink-0 flex-col items-center gap-1 border-b border-border-weak-base pb-2.5 pt-2.5">
           <Tooltip

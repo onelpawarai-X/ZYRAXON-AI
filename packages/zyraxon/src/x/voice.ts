@@ -99,6 +99,7 @@ export class ZyraxonVoice {
   private _lang = "auto"
   private _finalText = ""
   private _interimText = ""
+  private _userInitiated = false
   private _noSpeechCount = 0
   private _lastResultTime = 0
 
@@ -173,6 +174,7 @@ export class ZyraxonVoice {
     if (lang) this._lang = lang
     this._noSpeechCount = 0
     this._lastResultTime = 0
+    this._userInitiated = true
 
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     this.recognition = new SR()
@@ -181,8 +183,11 @@ export class ZyraxonVoice {
     this.applyLang()
 
     this.recognition.onstart = () => {
-      this._finalText = ""
-      this._interimText = ""
+      if (this._userInitiated) {
+        this._finalText = ""
+        this._interimText = ""
+      }
+      this._userInitiated = false
       this._noSpeechCount = 0
       this.setState("listening")
     }
@@ -209,7 +214,7 @@ export class ZyraxonVoice {
             this.onLangDetected?.(detectedLang)
           }
 
-          this.onResult?.({ text, lang: detectedLang, confidence })
+          this.onResult?.({ text: this._finalText, lang: detectedLang, confidence })
         } else {
           interim += result[0].transcript
         }
@@ -217,7 +222,7 @@ export class ZyraxonVoice {
 
       if (interim) {
         this._interimText = interim
-        this.onInterim?.(interim)
+        this.onInterim?.(this._finalText ? `${this._finalText} ${interim}` : interim)
       }
     }
 
