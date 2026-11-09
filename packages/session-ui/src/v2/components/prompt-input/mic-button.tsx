@@ -123,16 +123,14 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
         value={
           state() === "recording"
             ? "Recording... Click to stop"
-            : state() === "processing"
-              ? "Processing..."
-              : `Mic (${langLabel()}) — Click to record`
+            : `Mic (${langLabel()}) — Click to record`
         }
       >
         <IconButton
           data-action="prompt-mic"
           type="button"
-          disabled={props.disabled || state() === "processing"}
-          icon={state() === "processing" ? "loader" : state() === "recording" ? "mic-off" : "mic"}
+          disabled={props.disabled}
+          icon={state() === "recording" ? "mic-off" : "mic"}
           variant={state() === "recording" ? "danger" : "ghost-muted"}
           class={`size-7 rounded-md p-[6px] ${
             state() === "recording"

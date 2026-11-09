@@ -87,7 +87,13 @@ function showErrors(input: {
 export const loadGlobalConfigQuery = (scope: ServerScope, sdk: ZyraxonClient) =>
   queryOptions({
     queryKey: [scope, "config"],
-    queryFn: () => retry(() => sdk.global.config.get().then((x) => x.data!), { attempts: 12, delay: 1000, maxDelay: 5000 }),
+    queryFn: () =>
+      retry(() => sdk.global.config.get().then((x) => x.data!), {
+        attempts: 12,
+        delay: 1000,
+        maxDelay: 5000,
+        retryIf: () => true,
+      }),
   })
 
 export const loadProjectsQuery = (scope: ServerScope, sdk: ZyraxonClient) =>
@@ -188,7 +194,18 @@ function warmSessions(input: {
 export const loadProvidersQuery = (scope: ServerScope, directory: string | null, sdk: ZyraxonClient) =>
   queryOptions({
     queryKey: [scope, directory, "providers"],
-    queryFn: () => retry(() => sdk.provider.list().then((x) => normalizeProviderList(x.data!)), { attempts: 12, delay: 1000, maxDelay: 5000 }),
+    // A cold start answers with a 500/connection error until the server has loaded
+    // the external models catalog. The default retry only fires for a handful of
+    // transient messages, so that error was thrown on the first try and the provider
+    // and model lists stayed empty. Waiting for the server is the point here, so
+    // every failure is retried.
+    queryFn: () =>
+      retry(() => sdk.provider.list().then((x) => normalizeProviderList(x.data!)), {
+        attempts: 12,
+        delay: 1000,
+        maxDelay: 5000,
+        retryIf: () => true,
+      }),
   })
 
 // After a cold start the server loads the external models catalog in the
@@ -197,14 +214,20 @@ export const loadProvidersQuery = (scope: ServerScope, directory: string | null,
 function scheduleProviderRefetch(queryClient: QueryClient, scope: ServerScope, directory: string | null, attempts = 12) {
   if (attempts <= 0) return
   setTimeout(() => {
+    // Refetch the exact key rather than only "active" queries: the providers query
+    // may not be mounted when the app starts on a non-session screen, and an
+    // "active"-only refetch then did nothing and the loop spun out empty.
     void queryClient
-      .refetchQueries({ queryKey: [scope, directory, "providers"], type: "active" })
+      .refetchQueries({ queryKey: [scope, directory, "providers"], exact: true })
       .then(() => {
         const data = queryClient.getQueryData<NormalizedProviderListResponse>([scope, directory, "providers"])
         const loaded = (data?.all?.size ?? 0) > 0
         if (!loaded) scheduleProviderRefetch(queryClient, scope, directory, attempts - 1)
       })
-      .catch(() => {})
+      .catch(() => {
+        // A failed refetch is not the end — keep trying until the budget runs out.
+        scheduleProviderRefetch(queryClient, scope, directory, attempts - 1)
+      })
   }, 2500)
 }
 

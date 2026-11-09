@@ -598,21 +598,17 @@ const layer = Layer.effect(
 
         // Merge the bundled default MCP config so the built-in servers
         // (jarvis-browser, nuphus-desktop, touchpoint-mcp, desktop-commander) are
-        // declared in every project, but not started: they ship with `enabled: false`
-        // and only run when something asks for them.
+        // declared and started in every project.
         //
-        // They used to be merged with `enabled: true`, which spawned four local
-        // processes — a headless Chrome among them — for every session in every
-        // project, whether or not the task touched a browser or the desktop. Four idle
-        // servers is memory and start-up time the user pays for on work that never
-        // uses them, and their tools were then injected into every request on top.
-        // The agent wakes one with `mcp_connect` when a task actually needs it.
+        // They ship with `enabled: true`: they are the desktop app's own capabilities
+        // and are the reason it is useful out of the box, so they come up with the app.
+        // Shipping them disabled meant they never started on a clean install and the
+        // agent had no way to know it should wake them.
         //
         // User entries still win, so an explicitly configured server overrides its
         // bundled default. Gating this on an empty mcp block silently dropped all four
         // as soon as the user had any unrelated server (e.g. a remote one), which made
-        // the built-ins vanish from the status bar — so the merge stays unconditional
-        // and only the default enabled state changed.
+        // the built-ins vanish from the status bar — so the merge stays unconditional.
         {
           try {
             const fsSync = require("fs") as typeof import("fs")

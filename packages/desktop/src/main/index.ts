@@ -16,7 +16,6 @@ import contextMenu from "electron-context-menu"
 import type { ServerReadyData, PreviewState } from "../preload/types"
 import { checkAppExists, resolveAppPath } from "./apps"
 import { CHANNEL } from "./constants"
-import { disableBundledDefaults } from "./mcp-defaults"
 import { registerIpcHandlers, sendDeepLinks, sendMenuCommand, broadcastPreviewState, closeCloudAgentWindow } from "./ipc"
 import { forwardInitializationFailure } from "./initialization"
 import { exportDebugLogs, initCrashReporter, initLogging, startNetLog, write as writeLog } from "./logging"
@@ -578,7 +577,7 @@ const main = Effect.gen(function* () {
           "jarvis-browser": {
             "type": "local",
             "command": ["node", "__RESOURCES_PATH__/jarvis-browser-mcp.cjs", "--headless", "--browser", "chromium", "--no-sandbox"],
-            "enabled": false,
+            "enabled": true,
             "timeout": 30000,
             "environment": {
               "PLAYWRIGHT_MCP_HEADLESS": "true"
@@ -587,14 +586,14 @@ const main = Effect.gen(function* () {
           "nuphus-desktop": {
             "type": "local",
             "command": ["node", "__RESOURCES_PATH__/nuphus-mcp/nuphus-mcp.cjs"],
-            "enabled": false,
+            "enabled": true,
             "timeout": 30000,
             "environment": {}
           },
           "touchpoint-mcp": {
             "type": "local",
             "command": ["node", "__RESOURCES_PATH__/touchpoint-mcp/touchpoint-mcp.cjs"],
-            "enabled": false,
+            "enabled": true,
             "timeout": 30000,
             "environment": {
               "TOUCHPOINT_MODE": "no-vision"
@@ -603,7 +602,7 @@ const main = Effect.gen(function* () {
           "desktop-commander": {
             "type": "local",
             "command": ["node", "__RESOURCES_PATH__/desktop-commander/desktop-commander.cjs"],
-            "enabled": false,
+            "enabled": true,
             "timeout": 60000,
             "environment": {
               "DESKTOP_COMMANDER_NO_ANALYTICS": "1"
@@ -621,6 +620,10 @@ const main = Effect.gen(function* () {
         const configPath = join(configDir, "zyraxon.jsonc")
 
         if (!existsSync(configPath)) {
+          // Fresh profile: the bundled servers must be usable straight away, so they
+          // are written enabled. They used to be written disabled here and only
+          // force-enabled in the branch below, which a first run never reached —
+          // that is why they never started on a clean install.
           writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2), "utf-8")
           logger.info("created default MCP config", { path: configPath })
         } else {

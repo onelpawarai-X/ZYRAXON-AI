@@ -29,24 +29,36 @@ function readJsonc(path: string) {
   return JSON.parse(stripped)
 }
 
-describe("bundled MCP servers ship switched off", () => {
-  test("default-mcp-config.json declares all four, none enabled", () => {
+describe("bundled MCP servers ship switched on", () => {
+  // The four built-in servers are the desktop app's own capabilities (embedded
+  // browser, desktop control, UI touchpoints, file/shell commander). They are the
+  // reason the app is useful out of the box, so they start with the app instead of
+  // waiting for an `mcp_connect` the user has no way to know about.
+  test("default-mcp-config.json declares all four, all enabled", () => {
     const config = readJsonc(join(repoRoot, "packages", "desktop", "resources", "default-mcp-config.json"))
     for (const name of BUNDLED) {
       expect(config.mcp[name], `${name} should be declared`).toBeDefined()
-      expect(config.mcp[name].enabled, `${name} must not start on its own`).toBe(false)
+      expect(config.mcp[name].enabled, `${name} must start with the app`).toBe(true)
     }
   })
 
-  test("the desktop auto-create writes the same disabled defaults", () => {
+  test("the desktop auto-create writes the same enabled defaults", () => {
     const main = readFileSync(join(repoRoot, "packages", "desktop", "src", "main", "index.ts"), "utf-8")
     for (const name of BUNDLED) {
-      // Each bundled entry must be followed by `enabled: false` before the next entry.
-      const entry = main.slice(main.indexOf(`"${name}": {`), main.indexOf(`"${name}": {`) + 400)
+      const at = main.indexOf(`"${name}": {`)
+      expect(at, `${name} block should be present`).toBeGreaterThan(-1)
+      const entry = main.slice(at, at + 400)
       expect(entry, `${name} block should be present`).toContain('"type": "local"')
-      expect(entry, `${name} must not start on its own`).toContain('"enabled": false')
-      expect(entry, `${name} must not be force-enabled`).not.toContain('"enabled": true')
+      expect(entry, `${name} must start with the app`).toContain('"enabled": true')
     }
+  })
+
+  test("a fresh profile gets the enabled defaults written, not just existing ones", () => {
+    // The first-run branch wrote the raw defaults and the enable step only ran for
+    // configs that already existed, so a clean install never started them.
+    const main = readFileSync(join(repoRoot, "packages", "desktop", "src", "main", "index.ts"), "utf-8")
+    const fresh = main.slice(main.indexOf("if (!existsSync(configPath))"), main.indexOf("} else {"))
+    expect(fresh).toContain("writeFileSync(configPath, JSON.stringify(defaultConfig")
   })
 })
 

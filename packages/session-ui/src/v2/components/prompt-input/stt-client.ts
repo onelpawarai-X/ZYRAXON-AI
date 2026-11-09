@@ -168,6 +168,35 @@ function autoCandidates(): string[] {
   return out.slice(0, 3)
 }
 
+/**
+ * Fold a fresh rolling result into the transcript already on screen.
+ *
+ * The rolling endpoint re-reads the last window every tick, so consecutive
+ * answers overlap: one tick says "hello world", the next says "world how are
+ * you". The old code replaced the transcript with each answer, which is why a
+ * second sentence wiped the first. This keeps the longer of two answers when one
+ * contains the other, and otherwise joins them on their shared words.
+ */
+export function mergeGrowing(previous: string, incoming: string): string {
+  const before = previous.trim()
+  const after = incoming.trim()
+  if (!before) return after
+  if (!after) return before
+  if (after === before) return before
+  if (after.startsWith(before)) return after
+  if (before.startsWith(after)) return before
+
+  const a = before.split(/\s+/)
+  const b = after.split(/\s+/)
+  const most = Math.min(a.length, b.length)
+  for (let overlap = most; overlap > 0; overlap--) {
+    if (a.slice(a.length - overlap).join(" ") === b.slice(0, overlap).join(" ")) {
+      return [...a, ...b.slice(overlap)].join(" ")
+    }
+  }
+  return `${before} ${after}`
+}
+
 export class RealtimeStt {
   private handlers: SttHandlers
   private ctx: AudioContext | null = null
@@ -178,6 +207,7 @@ export class RealtimeStt {
   private ring = new PcmRing()
   private timer: ReturnType<typeof setInterval> | null = null
   private running = false
+  private disposed = false
   private ticking = false
   private committed = ""
   private transcript = ""
@@ -263,11 +293,13 @@ export class RealtimeStt {
   }
 
   private apply(result: SttResponse) {
-    const text = (result.text || "").trim()
+    const incoming = (result.text || "").trim()
     this.committed = result.committed ?? this.committed
-    if (!text || text === this.transcript) return
-    this.transcript = text
-    this.handlers.onLive?.(text)
+    if (!incoming) return
+    const merged = mergeGrowing(this.transcript, incoming)
+    if (merged === this.transcript) return
+    this.transcript = merged
+    this.handlers.onLive?.(merged)
   }
 
   private async tick() {
@@ -305,6 +337,7 @@ export class RealtimeStt {
 
   async start(language: string): Promise<boolean> {
     if (this.running) return true
+    this.disposed = false
     this.language = language || "auto"
     this.locked = this.language === "auto" ? null : this.language
     this.committed = ""
@@ -379,30 +412,37 @@ export class RealtimeStt {
     if (!this.running) return
     this.running = false
     if (this.timer) { clearInterval(this.timer); this.timer = null }
-    this.setState("processing")
 
-    // A tick in flight is about to paint text; let it land before the final pass.
-    while (this.ticking) await new Promise((resolve) => setTimeout(resolve, 50))
+    // Stop the capture and the indicator at once. The old code sat in a
+    // "processing" state until a whole-recording request came back, so the mic
+    // stayed lit and disabled for seconds after the person stopped talking.
+    this.teardown()
+    this.setState("idle")
 
-    let finalText = this.transcript
-    try {
-      if (this.ring.size >= MIN_TICK_SAMPLES) {
-        const window = this.ring.last(Math.min(this.ring.size, MAX_TICK_SAMPLES))
-        if (!this.locked) this.locked = await this.detectLanguage(this.ring.last(SAMPLE_RATE * WINDOW_SECONDS))
-        // The whole recording in one call is more accurate than the last window,
-        // so it is what the composer is finally given.
-        const result = await this.postBatch(window, this.locked)
-        const text = (result.text || "").trim()
-        if (text) finalText = text
-      }
-    } catch {
-      // Fall back to whatever the ticks already produced.
+    // The final pass only refines wording. It must not delay the button, and a
+    // failure must not cost the text the ticks already produced.
+    const settle = this.transcript
+    if (this.ring.size >= MIN_TICK_SAMPLES) {
+      const window = this.ring.last(Math.min(this.ring.size, MAX_TICK_SAMPLES))
+      void (async () => {
+        try {
+          if (!this.locked) this.locked = await this.detectLanguage(this.ring.last(SAMPLE_RATE * WINDOW_SECONDS))
+          const result = await this.postBatch(window, this.locked)
+          if (this.disposed) return
+          const text = (result.text || "").trim()
+          if (!text) return
+          const merged = mergeGrowing(settle, text)
+          if (merged === settle) return
+          this.transcript = merged
+          this.handlers.onFinal?.(merged)
+        } catch {
+          // Keep whatever the ticks already painted.
+        }
+      })()
+      return
     }
 
-    this.teardown()
-    this.transcript = finalText
-    this.setState("idle")
-    if (finalText) this.handlers.onFinal?.(finalText)
+    if (settle) this.handlers.onFinal?.(settle)
   }
 
   /**
@@ -422,6 +462,7 @@ export class RealtimeStt {
   dispose() {
     if (this.timer) { clearInterval(this.timer); this.timer = null }
     this.running = false
+    this.disposed = true
     this.teardown()
   }
 }

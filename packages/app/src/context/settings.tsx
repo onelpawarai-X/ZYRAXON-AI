@@ -160,7 +160,12 @@ export function resolveNewLayoutDesigns(retired: boolean, preference: boolean | 
 
 const monoFallback =
   'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
-const sansFallback = 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+// The script fonts must stay in the JS-written stack too. This value is applied to
+// --font-family-sans on every settings change, and without the script faces here it
+// overwrote the CSS stack that carried them — so Bengali fell back to whatever the OS
+// had, which on a Linux container is nothing.
+const sansFallback =
+  'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Bengali", "Noto Sans Devanagari", "Noto Sans Arabic", sans-serif'
 const terminalFallback =
   '"JetBrainsMono Nerd Font Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
 

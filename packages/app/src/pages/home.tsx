@@ -857,6 +857,7 @@ export function NewHome() {
             </div>
           </section>
           <HomeSearchGuide />
+          <HomeProjectColumn
             projects={projects()}
             recentlyClosed={recentlyClosed()}
             homedir={homedir()}
