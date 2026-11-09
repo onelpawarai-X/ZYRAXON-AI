@@ -96,6 +96,20 @@ export const SidebarContent = (props: {
             />
           </Tooltip>
         </div>
+        <div class="relative flex w-full shrink-0 flex-col items-center gap-1 border-b border-border-weak-base pb-2.5 pt-2.5">
+          <Tooltip placement={placement()} value={language.t("sidebar.sessions")}>
+            <IconButton
+              icon="zy-sessions"
+              variant="ghost"
+              size="large"
+              onClick={() => layout.sidebar.open()}
+              aria-label={language.t("sidebar.sessions")}
+            />
+          </Tooltip>
+          <span class="pointer-events-none absolute right-2 top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-cyan-400 px-1 text-[9px] font-bold text-black">
+            {useTabs().store.length}
+          </span>
+        </div>
         <div class="flex-1 min-h-0 w-full">
           <DragDropProvider
             onDragStart={props.handleDragStart}

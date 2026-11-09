@@ -132,7 +132,7 @@ export function createServerSyncContextInner(serverSDK: ServerSDK) {
 
   const [globalStore, setGlobalStore] = createStore<GlobalStore>({
     get ready() {
-      return !bootstrap.isPending
+      return true
     },
     project: [],
     provider_auth: {},
