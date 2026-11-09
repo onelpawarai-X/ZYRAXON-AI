@@ -1328,8 +1328,10 @@
 .zy-ext-pane {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 18px;
   min-height: 0;
+  min-width: 0;
+  position: relative;
 }
 
 .zy-ext-pane-head {
@@ -1337,19 +1339,22 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-weaker) 72%, transparent);
 }
 
 .zy-ext-pane-heading {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
 }
 
 .zy-ext-pane-title {
   margin: 0;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
   color: var(--text-strong, inherit);
 }
 
@@ -1362,7 +1367,7 @@
 .zy-ext-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 7px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1371,23 +1376,48 @@
 .zy-ext-row {
   display: flex;
   align-items: center;
-  gap: 11px;
-  border: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.07));
-  border-radius: 11px;
-  padding: 9px 12px;
-  background: var(--surface-raised-base, rgb(255 255 255 / 0.02));
-  transition: border-color 130ms ease, background-color 130ms ease;
+  gap: 12px;
+  border: 1px solid color-mix(in srgb, var(--border-weak-base, transparent) 86%, #22d3ee 14%);
+  border-radius: 14px;
+  padding: 11px 14px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--surface-raised-base, transparent) 84%, #050b13 16%), color-mix(in srgb, var(--v2-background-bg-base, #05070a) 82%, #00d4ff 18%));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 2.5%, transparent), 0 10px 30px rgba(0, 0, 0, 0.18);
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
 }
 
 .zy-ext-row:hover {
-  border-color: var(--border-strong-base, rgb(255 255 255 / 0.13));
-  background: var(--surface-raised-hover, rgb(255 255 255 / 0.04));
+  border-color: color-mix(in srgb, var(--border-strong-base, transparent) 78%, #00d4ff 22%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--surface-raised-base, transparent) 78%, #060d16 22%), color-mix(in srgb, var(--v2-background-bg-base, #05070a) 78%, #00d4ff 22%));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 3.5%, transparent), 0 16px 40px rgba(0, 0, 0, 0.24), 0 0 30px rgba(0, 212, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.zy-ext-row:focus-within {
+  outline: 2px solid color-mix(in srgb, #00d4ff 35%, transparent);
+  outline-offset: 2px;
 }
 
 .zy-ext-row[data-busy="true"] {
-  opacity: 0.65;
+  opacity: 0.72;
   pointer-events: none;
 }
+
+.zy-ext-row[data-tone="positive"]::before,
+.zy-ext-row[data-tone="warning"]::before,
+.zy-ext-row[data-tone="danger"]::before {
+  content: "";
+  width: 2px;
+  height: 100%;
+  min-height: 28px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.45;
+  margin-right: -3px;
+}
+
+.zy-ext-row[data-tone="positive"]::before { color: rgb(74 222 128); }
+.zy-ext-row[data-tone="warning"]::before { color: rgb(250 204 21); }
+.zy-ext-row[data-tone="danger"]::before { color: rgb(248 113 113); }
 
 .zy-ext-dot {
   width: 8px;
@@ -1398,18 +1428,22 @@
 }
 
 .zy-ext-dot[data-tone="positive"] {
-  background: rgb(74 222 128);
-  box-shadow: 0 0 0 3px rgb(74 222 128 / 0.15);
+  background: #73f2ac;
+  box-shadow: 0 0 0 4px rgb(74 222 128 / 0.16), 0 0 16px rgb(74 222 128 / 0.36);
 }
 
 .zy-ext-dot[data-tone="warning"] {
-  background: rgb(250 204 21);
-  box-shadow: 0 0 0 3px rgb(250 204 21 / 0.15);
+  background: #fde047;
+  box-shadow: 0 0 0 4px rgb(250 204 21 / 0.16), 0 0 16px rgb(250 204 21 / 0.34);
 }
 
 .zy-ext-dot[data-tone="danger"] {
-  background: rgb(248 113 113);
-  box-shadow: 0 0 0 3px rgb(248 113 113 / 0.15);
+  background: #ff9aa5;
+  box-shadow: 0 0 0 4px rgb(248 113 113 / 0.16), 0 0 16px rgb(248 113 113 / 0.34);
+}
+
+.zy-ext-dot[data-tone="muted"] {
+  background: rgb(255 255 255 / 0.28);
 }
 
 .zy-ext-row-text {
@@ -1470,8 +1504,14 @@
 }
 
 .zy-ext-open:hover {
-  background: var(--overlay-hover, rgb(255 255 255 / 0.06));
+  background: color-mix(in srgb, var(--overlay-hover, transparent) 78%, #00d4ff 22%);
   color: var(--text-strong, rgb(255 255 255 / 0.9));
+  box-shadow: 0 0 0 1px color-mix(in srgb, #00d4ff 18%, transparent);
+}
+
+.zy-ext-open:focus-visible {
+  outline: 2px solid color-mix(in srgb, #00d4ff 35%, transparent);
+  outline-offset: 2px;
 }
 
 .zy-ext-empty {
@@ -1483,6 +1523,9 @@
   text-align: center;
   color: var(--text-weak, rgb(255 255 255 / 0.45));
   font-size: 12.5px;
+  border: 1px dashed color-mix(in srgb, #00d4ff 16%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--v2-background-bg-base, #05070a) 84%, #00d4ff 16%);
 }
 
 .zy-ext-empty p {
@@ -1490,8 +1533,8 @@
 }
 
 .zy-ext-foot {
-  border-top: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.06));
-  padding-top: 11px;
+  border-top: 1px solid color-mix(in srgb, #00d4ff 10%, var(--border-weak-base, rgb(255 255 255 / 0.06)));
+  padding-top: 12px;
   font-size: 11.5px;
   color: var(--text-weak, rgb(255 255 255 / 0.45));
 }
@@ -1500,8 +1543,9 @@
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 11px;
   border-radius: 5px;
-  padding: 1px 6px;
-  background: rgb(255 255 255 / 0.06);
+  padding: 1.5px 7px;
+  background: color-mix(in srgb, #00d4ff 8%, rgb(255 255 255 / 0.04));
+  color: color-mix(in srgb, #9be8ff 45%, var(--text-strong, white));
 }
 /* --- Left rail: every destination, one column, ZY icons ---
    height is pinned rather than left to flex so the rail scrolls inside the

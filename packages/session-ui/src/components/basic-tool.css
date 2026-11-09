@@ -328,6 +328,61 @@ body[data-new-layout] {
   }
 }
 
+@keyframes zyraxon-tool-running-sweep {
+  from { background-position: -120% 0; }
+  to { background-position: 220% 0; }
+}
+@keyframes zyraxon-tool-fail-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  60% { transform: translateX(2px); }
+}
+@keyframes zyraxon-tool-timeout-pulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(251, 191, 36, 0); }
+  50% { box-shadow: 0 0 24px rgba(251, 191, 36, 0.22); }
+}
+@keyframes zyraxon-tool-success-pop {
+  0% { transform: scale(0.92); filter: brightness(1.5); }
+  55% { transform: scale(1.06); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+[data-component="tool-trigger"][data-status="pending"] [data-slot="basic-tool-tool-title"],
+[data-component="tool-trigger"][data-status="running"] [data-slot="basic-tool-tool-title"] {
+  color: #9be8ff;
+  background-image: linear-gradient(100deg, transparent 0%, rgba(0, 212, 255, 0.1) 38%, #fff 50%, rgba(0, 212, 255, 0.1) 62%, transparent 100%);
+  background-size: 220% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: zyraxon-tool-running-sweep 1.35s ease-in-out infinite;
+}
+
+[data-component="tool-trigger"][data-status="completed"] [data-slot="basic-tool-tool-title"],
+[data-component="tool-trigger"][data-status="success"] [data-slot="basic-tool-tool-title"],
+[data-component="tool-trigger"][data-status="passed"] [data-slot="basic-tool-tool-title"] {
+  color: #a7f3d0;
+  animation: zyraxon-tool-success-pop 0.5s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+[data-component="tool-trigger"][data-status="error"] [data-slot="basic-tool-tool-title"],
+[data-component="tool-trigger"][data-status="failed"] [data-slot="basic-tool-tool-title"] {
+  color: #fda4af;
+  animation: zyraxon-tool-fail-shake 0.34s ease-in-out;
+}
+
+[data-component="tool-trigger"][data-status="timeout"] [data-slot="basic-tool-tool-title"],
+[data-component="tool-trigger"][data-status="timed_out"] [data-slot="basic-tool-tool-title"] {
+  color: #fde68a;
+  animation: zyraxon-tool-timeout-pulse 0.9s ease-in-out 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-component="tool-trigger"][data-status] [data-slot="basic-tool-tool-title"] {
+    animation: none !important;
+  }
+}
+
 body:not([data-new-layout]) {
   [data-component="tool-trigger"] {
     [data-slot="basic-tool-tool-spinner"] {

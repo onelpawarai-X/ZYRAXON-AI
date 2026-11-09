@@ -570,6 +570,8 @@ export const dict = {
   "settings.general.row.mobileTitlebarBottom.description": "মোবাইলে টাইটেল বার ও সেশন ট্যাব স্ক্রিনের নিচে রাখুন",
   "settings.general.row.showCustomAgents.title": "এজেন্ট দেখান",
   "settings.general.row.showCustomAgents.description": "কম্পোজারে এজেন্ট বদলান। লুকালে ডিফল্টভাবে Build এজেন্ট বসে।",
+  "settings.general.row.realtimeResponse.title": "রিয়েল-টাইম রেসপন্স",
+  "settings.general.row.realtimeResponse.description": "মডেল উত্তর দেওয়ার সময় থিংকিং ও ওয়ার্কিং লাইভ দেখাবে; বন্ধ থাকলে Thinking ও Working কমপ্যাক্ট থাকবে, দরকারে বিস্তারিত খোলা যাবে",
   "settings.general.row.reasoningSummaries.title": "যুক্তির সারাংশ দেখান",
   "settings.general.row.reasoningSummaries.description": "টাইমলাইনে মডেলের যুক্তির সারাংশ দেখান",
   "settings.general.row.shellToolPartsExpanded.title": "শেল টুল অংশ বিস্তারিত করুন",
@@ -1191,7 +1193,7 @@ export const dict = {
 
   // ── Status, LSP, terminal and editor ──────────────────────────────────────
   "directory.error.invalidUrl": "URL-এ ডিরেক্টরি অবৈধ।",
-  "status.popover.trigger": "অবস্থা",
+  "status.popover.trigger": "সেশনের বিবরণ",
   "status.popover.ariaLabel": "সার্ভারের কনফিগারেশন",
   "status.popover.tab.servers": "সার্ভার",
   "status.popover.tab.mcp": "MCP",

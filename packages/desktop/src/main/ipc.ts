@@ -20,6 +20,7 @@ import type { UpdaterController } from "./updater-controller"
 import { createUpdaterSubscriptions } from "./updater-subscriptions"
 import { YouTubeStreamManager } from "./youtube-stream"
 import type { BackendType } from "./backend-manager"
+import { registerBrowserIpcHandlers } from "./browser-view"
 
 // Backend Manager — lazy-loaded
 let backendManager: typeof import("./backend-manager") | null = null
@@ -103,6 +104,7 @@ type Deps = {
 }
 
 export function registerIpcHandlers(deps: Deps) {
+  registerBrowserIpcHandlers()
   const updaterSubscriptions = createUpdaterSubscriptions()
   app.once("will-quit", updaterSubscriptions.clear)
 

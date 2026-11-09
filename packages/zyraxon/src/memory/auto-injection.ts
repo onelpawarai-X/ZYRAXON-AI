@@ -13,6 +13,8 @@ type DB = import("bun:sqlite").Database
 let db: DB | null = null
 let dbInitPromise: Promise<void> | null = null
 
+const debugAutoLog = process.env.ZYRAXON_DEBUG_MEMORY === "1" ? console.log : () => {}
+
 const MEMORY_DIR = path.join(Global.Path.data, "memory")
 const DB_PATH = path.join(MEMORY_DIR, "infinite_memory.db")
 
@@ -944,9 +946,9 @@ export async function autoInjectContext(userMessage: string, agent: string, sess
       }).join("\n")
       parts.push(`Unlimited memory recall (${memories.length} matches):\n${memStr}`)
     }
-    console.log(`[autoInjectContext] memory_search: ${memories.length} results in ${Date.now() - _tMem}ms`)
+    debugAutoLog(`[autoInjectContext] memory_search: ${memories.length} results in ${Date.now() - _tMem}ms`)
   } catch (e: any) {
-    console.log(`[autoInjectContext] memory_search ERROR: ${e?.message ?? e}`)
+    debugAutoLog(`[autoInjectContext] memory_search ERROR: ${e?.message ?? e}`)
   }
 
   // Eternal epoch — the digest is re-read every turn, and the full DB re-indexes
@@ -968,7 +970,7 @@ export async function autoInjectContext(userMessage: string, agent: string, sess
   }
 
   if (parts.length === 0) return ""
-  console.log(`[autoInjectContext] total: ${Date.now() - _t}ms, memories: ${memoryCount}, parts: ${parts.length}`)
+  debugAutoLog(`[autoInjectContext] total: ${Date.now() - _t}ms, memories: ${memoryCount}, parts: ${parts.length}`)
   return `[ZYRAXON ETERNAL MEMORY v5]\n${parts.join("\n\n")}\n[/ZYRAXON ETERNAL MEMORY]\n\n`
 }
 

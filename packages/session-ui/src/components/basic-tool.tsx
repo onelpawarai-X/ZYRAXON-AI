@@ -28,6 +28,7 @@ export interface BasicToolProps {
   icon: IconProps["name"]
   trigger: TriggerTitle | JSX.Element | ((open: Accessor<boolean>) => JSX.Element)
   children?: JSX.Element
+  class?: string
   status?: string
   hideDetails?: boolean
   defaultOpen?: boolean
@@ -186,6 +187,7 @@ export function BasicTool(props: BasicToolProps) {
   const trigger = () => (
     <div
       data-component="tool-trigger"
+      data-status={props.status}
       data-clickable={props.clickable ? "true" : undefined}
       data-hide-details={props.hideDetails ? "true" : undefined}
     >
@@ -256,7 +258,7 @@ export function BasicTool(props: BasicToolProps) {
   )
 
   return (
-    <Collapsible open={open()} onOpenChange={handleOpenChange} class="tool-collapsible">
+    <Collapsible open={open()} onOpenChange={handleOpenChange} class={["tool-collapsible", props.class].filter(Boolean).join(" ")}>
       <Show
         when={props.triggerAsLink || props.triggerHref}
         fallback={

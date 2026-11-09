@@ -18,6 +18,7 @@ export interface ToolErrorCardProps extends Omit<ComponentProps<typeof Card>, "c
   onOpenChange?: (open: boolean) => void
   subtitle?: string
   href?: string
+  kind?: "error" | "timeout"
 }
 
 export function ToolErrorCard(props: ToolErrorCardProps) {
@@ -37,6 +38,7 @@ export function ToolErrorCard(props: ToolErrorCardProps) {
     "onOpenChange",
     "subtitle",
     "href",
+    "kind",
   ])
   const setOpen = (value: boolean) => {
     if (props.open === undefined) setState("open", value)
@@ -69,8 +71,10 @@ export function ToolErrorCard(props: ToolErrorCardProps) {
     return value
   })
 
+  const isTimeout = createMemo(() => split.kind === "timeout")
   const subtitle = createMemo(() => {
     if (split.subtitle) return split.subtitle
+    if (isTimeout()) return "Timed out"
     const parts = tail().split(": ")
     if (parts.length <= 1) return i18n.t("ui.toolErrorCard.failed")
     const head = (parts[0] ?? "").trim()
@@ -93,7 +97,7 @@ export function ToolErrorCard(props: ToolErrorCardProps) {
   }
 
   return (
-    <Card {...rest} data-kind="tool-error-card" data-open={open() ? "true" : "false"} variant="error">
+    <Card {...rest} data-kind="tool-error-card" data-error-kind={split.kind ?? "error"} data-open={open() ? "true" : "false"} variant="error">
       <Collapsible class="tool-collapsible" data-open={open() ? "true" : "false"} open={open()} onOpenChange={setOpen}>
         <Collapsible.Trigger>
           <div data-component="tool-trigger">

@@ -133,15 +133,112 @@ const markBoundaryGesture = (input: {
   }
 }
 
-function TimelineThinkingRow(props: { reasoningHeading?: string; showReasoningSummaries: boolean }) {
+function TimelineThinkingRow(props: { reasoningHeading?: string; reasoningText?: string; realtimeResponse: boolean }) {
   const language = useLanguage()
+  const [expanded, setExpanded] = createSignal(false)
+  const detail = () => props.reasoningText?.trim() || props.reasoningHeading?.trim() || ""
+  const isExpanded = () => props.realtimeResponse || expanded()
 
   return (
-    <div data-slot="session-turn-thinking" class="thinking-container">
-      <span class="thinking-pulse-ring" />
-      <TextShimmer text={language.t("ui.sessionTurn.status.thinking")} />
-      <Show when={props.showReasoningSummaries}>
-        <TextReveal text={props.reasoningHeading} class="session-turn-thinking-heading" travel={25} duration={700} />
+    <div data-slot="session-turn-thinking" class="thinking-container overflow-hidden rounded-xl border border-white/[0.06] bg-[var(--v2-background-bg-base)] shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
+      <button
+        type="button"
+        class="flex h-10 w-full items-center gap-2 px-3 text-left outline-none transition-colors hover:bg-white/[0.025] focus-visible:ring-2 focus-visible:ring-cyan-400/30"
+        onClick={() => setExpanded((value) => !value)}
+        aria-expanded={isExpanded()}
+        disabled={props.realtimeResponse && !detail()}
+      >
+        <span class="thinking-pulse-ring" />
+        <TextShimmer text={language.t("ui.sessionTurn.status.thinking")} />
+        <span class="ml-auto flex items-center gap-2 text-[11px] font-medium text-v2-text-text-faint">
+          {props.realtimeResponse ? "live" : expanded() ? "hide" : "show"}
+          <Show when={detail()}>
+            <IconV2 name="outline-chevron-down" class={`size-3 transition-transform duration-300 ${isExpanded() ? "rotate-180" : ""}`} />
+          </Show>
+        </span>
+      </button>
+      <Show when={isExpanded() && detail()}>
+        <div class="border-t border-white/[0.06] px-4 py-3 text-[13px] leading-6 text-v2-text-text-muted">
+          <Show when={props.reasoningHeading?.trim()}>
+            {(heading) => <TextReveal text={heading()} class="mb-2 session-turn-thinking-heading" travel={25} duration={700} />}
+          </Show>
+          <div class="whitespace-pre-wrap opacity-90">{detail()}</div>
+        </div>
+      </Show>
+    </div>
+  )
+}
+
+function TimelineWorkingRow(props: {
+  realtimeResponse: boolean
+  toolCount: number
+  open: boolean
+  onToggle: () => void
+  tools: () => ToolPart[]
+  label: "Processing" | "Thinking" | "Working"
+  reasoningCount?: () => number
+  editedFiles?: () => string[]
+}) {
+  const isExpanded = () => props.realtimeResponse || props.open
+
+  return (
+    <div
+      data-slot="session-turn-working"
+      data-realtime={props.realtimeResponse || undefined}
+      class="working-container overflow-hidden rounded-xl border border-cyan-400/15 bg-[linear-gradient(135deg,rgba(0,212,255,0.105),rgba(20,184,166,0.04)_45%,rgba(255,255,255,0.015))] shadow-[0_18px_50px_rgba(0,0,0,0.18)]"
+    >
+      <button
+        type="button"
+        class="flex h-10 w-full items-center gap-2 px-3 text-left outline-none transition-colors hover:bg-white/[0.025] focus-visible:ring-2 focus-visible:ring-cyan-400/30 disabled:cursor-default"
+        onClick={props.onToggle}
+        disabled={props.realtimeResponse}
+        aria-expanded={isExpanded()}
+      >
+        <span class="flex size-2.5 items-center justify-center">
+          <span class="absolute size-2.5 rounded-full bg-cyan-400/25 animate-ping" />
+          <span class="size-2 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(0,212,255,0.8)]" />
+        </span>
+        <TextShimmer text={props.label} />
+        <span class="text-[11px] font-medium text-v2-text-text-faint">{props.toolCount > 0 ? `${props.toolCount} step${props.toolCount === 1 ? "" : "s"}` : "preparing"}</span>
+        <span class="ml-auto flex items-center gap-2 text-[11px] font-medium text-v2-text-text-faint">
+          {props.realtimeResponse ? "live" : props.open ? "hide" : "show"}
+          <IconV2 name="outline-chevron-down" class={`size-3 transition-transform duration-300 ${isExpanded() ? "rotate-180" : ""}`} />
+        </span>
+      </button>
+      <Show when={isExpanded() && props.tools().length > 0}>
+        <div class="border-t border-cyan-400/10">
+          <div class="grid gap-1.5 px-4 pb-1">
+            <Show when={(props.reasoningCount?.() ?? 0) > 0}>
+              <div class="flex items-center gap-2 rounded-md border border-fuchsia-400/15 bg-fuchsia-400/[0.06] px-2 py-1 text-[10px] text-fuchsia-200/75">
+                <span class="uppercase tracking-wider text-fuchsia-300/70">Thoughts</span>
+                <span class="truncate">{props.reasoningCount?.()} reasoning segment{(props.reasoningCount?.() ?? 0) === 1 ? "" : "s"}</span>
+              </div>
+            </Show>
+            <Show when={(props.editedFiles?.() ?? []).length > 0}>
+              <div class="rounded-md border border-teal-400/15 bg-teal-400/[0.055] px-2 py-1.5 text-[10px] text-teal-200/80">
+                <div class="flex items-center gap-2">
+                  <span class="uppercase tracking-wider text-teal-300/70">Files</span>
+                  <span>{props.editedFiles?.().length} edited</span>
+                </div>
+                <div class="mt-1 truncate text-teal-100/50">{props.editedFiles?.().slice(0, 3).join(" · ")}</div>
+              </div>
+            </Show>
+          </div>
+          <div class="px-4 pt-2 text-[10px] uppercase tracking-[0.2em] text-cyan-300/70">Live tool trace</div>
+          <div class="grid gap-1 px-3 pb-3 pt-1.5">
+            <For each={props.tools()}>
+              {(tool) => (
+                <div class="flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] leading-4">
+                  <span class="flex size-5 shrink-0 items-center justify-center rounded-md border border-cyan-400/15 bg-cyan-400/5 text-[9px] font-bold uppercase text-cyan-300">
+                    {tool.tool.slice(0, 2)}
+                  </span>
+                  <span class="min-w-0 truncate font-medium text-cyan-50/80">{tool.tool}</span>
+                  <span class="ml-auto shrink-0 font-mono text-[9px] uppercase text-cyan-400/60">{tool.state.status}</span>
+                </div>
+              )}
+            </For>
+          </div>
+        </div>
       </Show>
     </div>
   )
@@ -1878,6 +1975,51 @@ export function MessageTimeline(props: {
   }
 
   const workingTurn = (userMessageID: string) => sessionStatus().type !== "idle" && activeMessageID() === userMessageID
+  const [workingOpen, setWorkingOpen] = createSignal(false)
+  const workingTools = (userMessageID: string) => {
+    const tools: ToolPart[] = []
+    for (const message of assistantMessagesByParent().get(userMessageID) ?? []) {
+      for (const part of getMsgParts(message.id)) {
+        if (part?.type === "tool") tools.push(part)
+      }
+    }
+    return tools
+  }
+  const workingToolIDs = (userMessageID: string) => workingTools(userMessageID).map((tool) => tool.id)
+  const workingReasoningCount = (userMessageID: string) => {
+    let count = 0
+    for (const message of assistantMessagesByParent().get(userMessageID) ?? []) {
+      for (const part of getMsgParts(message.id)) {
+        if (part?.type === "reasoning" && part.text?.trim()) count += 1
+      }
+    }
+    return count
+  }
+  const pathFromInput = (input: Record<string, unknown> | undefined) => {
+    if (!input) return undefined
+    for (const key of ["filePath", "path", "targetPath", "filename", "file"]) {
+      const value = input[key]
+      if (typeof value === "string" && value.trim()) return value.trim()
+    }
+  }
+  const workingEditedFiles = (userMessageID: string) => {
+    const files = new Set<string>()
+    for (const message of assistantMessagesByParent().get(userMessageID) ?? []) {
+      for (const part of getMsgParts(message.id)) {
+        if (part?.type !== "tool") continue
+        if (!["edit", "write", "apply_patch", "patch"].includes(part.tool)) continue
+        const path = pathFromInput((part.state as { input?: Record<string, unknown> }).input)
+        if (path) files.add(path)
+      }
+    }
+    return [...files].slice(0, 6)
+  }
+  const toggleWorking = (userMessageID: string) => {
+    const ids = workingToolIDs(userMessageID)
+    const next = !workingOpen()
+    setWorkingOpen(next)
+    for (const id of ids) setToolOpen(id, next)
+  }
 
   // A large audio/video part is re-encoded (and possibly split) before the model
   // sees it, which can take a while. Surface that as a live animation while the
@@ -1940,7 +2082,7 @@ export function MessageTimeline(props: {
       })
       const contextOpenKey = () => `context:${row().group.key}`
       const open = createMemo(() => {
-        return toolOpen[contextOpenKey()] === true
+        return settings.general.responseRealtime() || toolOpen[contextOpenKey()] === true
       })
 
       return (
@@ -1969,7 +2111,11 @@ export function MessageTimeline(props: {
     const defaultOpen = createMemo(() => {
       const item = part()
       if (!item) return
-      return partDefaultOpen(item, settings.general.shellToolPartsExpanded(), settings.general.editToolPartsExpanded())
+      return partDefaultOpen(
+        item,
+        settings.general.responseRealtime() || settings.general.shellToolPartsExpanded(),
+        settings.general.responseRealtime() || settings.general.editToolPartsExpanded(),
+      )
     })
 
     return (
@@ -2138,6 +2284,37 @@ export function MessageTimeline(props: {
           </TimelineRowFrame>
         )
       }
+      case "Working": {
+        const workingRow = row as Accessor<TimelineRowByTag<"Working">>
+        const tools = () => workingTools(workingRow().userMessageID)
+        const ids = () => workingToolIDs(workingRow().userMessageID)
+        const assistantMessages = () => assistantMessagesByParent().get(workingRow().userMessageID) ?? []
+        const phase = () => {
+          const hasReasoning = assistantMessages()
+            .flatMap((message) => getMsgParts(message.id))
+            .some((part) => part?.type === "reasoning" && part.text?.trim())
+          if (hasReasoning && tools().length === 0) return "Thinking"
+          if (tools().length > 0) return "Working"
+          return "Processing"
+        }
+        const open = () => settings.general.responseRealtime() || workingOpen()
+        return (
+          <TimelineRowFrame row={workingRow}>
+            <div data-slot="session-turn-message-container" class="w-full px-4 md:px-5">
+              <TimelineWorkingRow
+                realtimeResponse={settings.general.responseRealtime()}
+                toolCount={ids().length}
+                open={workingOpen()}
+                onToggle={() => toggleWorking(workingRow().userMessageID)}
+                tools={tools}
+                label={phase()}
+                reasoningCount={() => workingReasoningCount(workingRow().userMessageID)}
+                editedFiles={() => workingEditedFiles(workingRow().userMessageID)}
+              />
+            </div>
+          </TimelineRowFrame>
+        )
+      }
       case "AssistantPart": {
         const assistantPartRow = row as Accessor<TimelineRowByTag<"AssistantPart">>
         return (
@@ -2167,7 +2344,8 @@ export function MessageTimeline(props: {
               </Show>
               <TimelineThinkingRow
                 reasoningHeading={thinkingRow().reasoningHeading}
-                showReasoningSummaries={settings.general.showReasoningSummaries()}
+                reasoningText={thinkingRow().reasoningText}
+                realtimeResponse={settings.general.responseRealtime()}
               />
             </div>
           </TimelineRowFrame>

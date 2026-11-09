@@ -33,6 +33,8 @@ export interface Settings {
     showStatus: boolean
     showTerminal: boolean
     showReasoningSummaries: boolean
+    /** Send updates visible as they arrive. Off means compact Thinking/Working rows until clicked. */
+    responseRealtime?: boolean
     shellToolPartsExpanded: boolean
     editToolPartsExpanded: boolean
     showCustomAgents: boolean
@@ -218,6 +220,8 @@ const defaultSettings: Settings = {
     showStatus: true,
     showTerminal: false,
     showReasoningSummaries: false,
+    // The live answer is the most useful state to watch while the model works, so this is on by default.
+    responseRealtime: true,
     shellToolPartsExpanded: false,
     editToolPartsExpanded: false,
     showCustomAgents: false,
@@ -438,6 +442,13 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         ),
         setShowReasoningSummaries(value: boolean) {
           setStore("general", "showReasoningSummaries", value)
+        },
+        responseRealtime: withFallback(
+          () => store.general?.responseRealtime,
+          defaultSettings.general.responseRealtime ?? true,
+        ),
+        setResponseRealtime(value: boolean) {
+          setStore("general", "responseRealtime", value)
         },
         shellToolPartsExpanded: withFallback(
           () => store.general?.shellToolPartsExpanded,

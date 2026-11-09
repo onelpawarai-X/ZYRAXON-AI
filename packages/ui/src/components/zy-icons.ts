@@ -64,6 +64,7 @@ export const ZY_ICONS = {
 
   /** Help — a lifebuoy, distinct from About's information disc. */
   "zy-help": `<circle cx="10" cy="10" r="7.2" ${stroke} stroke-width="1.4"/><circle cx="10" cy="10" r="2.9" ${stroke} stroke-width="1.4"/><path d="m4.7 4.7 3.1 3.1M12.2 12.2l3.1 3.1M15.3 4.7l-3.1 3.1M7.8 12.2l-3.1 3.1" ${stroke} stroke-width="1.35"/>`,
+  "zy-skills": `<path d="M10 2.35 12.05 7.3l5.15.17-3.93 3.32 1.3 5-4.57-2.7-4.57 2.7 1.3-5L3.72 7.47l5.15-.17L10 2.35Z" ${stroke} stroke-width="1.4" stroke-linejoin="round"/><circle cx="10" cy="10" r="1.45" ${solid}/>`,
 
   /** Sessions — stacked chat bubbles, newest in front. */
   "zy-sessions": `<path d="M3 4.4h11.2v7.3H7.6L4.2 14.6v-2.9H3V4.4Z" ${stroke} stroke-width="1.35" opacity=".55"/><path d="M6.2 7.9h10.8v6.6a1 1 0 0 1-1 1h-3.1v2.6l-3-2.6H7.2a1 1 0 0 1-1-1V7.9Z" ${solid} opacity=".92"/>`,
