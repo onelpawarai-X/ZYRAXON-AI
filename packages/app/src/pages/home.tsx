@@ -74,6 +74,7 @@ import { preloadMarkdown } from "@zyraxon-ai/session-ui/markdown-cache"
 import { archiveHomeSession } from "./home-session-archive"
 import { shouldOpenSessionInBackground } from "./home-session-open"
 import "./home.css"
+import { HomeSearchGuide } from "./home-search-guide"
 import { showToast } from "@/utils/toast"
 import { fileManagerApp } from "@/utils/file-manager"
 import {
@@ -854,7 +855,7 @@ export function NewHome() {
               </div>
             </div>
           </section>
-          <HomeProjectColumn
+          <HomeSearchGuide />
             projects={projects()}
             recentlyClosed={recentlyClosed()}
             homedir={homedir()}
