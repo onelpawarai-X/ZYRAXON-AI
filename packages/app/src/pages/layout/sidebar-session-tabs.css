@@ -365,6 +365,59 @@
   animation: session-dock-breathe 2.4s ease-in-out infinite;
 }
 
+/* Home row inside the expanded sidebar. The rail carries no Home button: the
+   rail is the hover target that opens the sidebar, and Home lives here with
+   every other navigation entry. */
+.sidebar-home-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 10px;
+  color: #9fb3c8;
+  transition:
+    color 140ms ease,
+    background 140ms ease;
+}
+
+.sidebar-home-row:hover {
+  color: #dbeafe;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sidebar-home-row[data-active="true"] {
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.1);
+  box-shadow: inset 0 0 12px rgba(34, 211, 238, 0.14);
+}
+
+.sidebar-home-row-icon {
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+.sidebar-home-row-label {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-home-row-kbd {
+  flex-shrink: 0;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #4b5f76;
+}
+
 @keyframes session-dock-orbit {
   from {
     transform: rotate(0deg);

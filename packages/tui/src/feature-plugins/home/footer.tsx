@@ -59,12 +59,14 @@ function Hint(props: { api: TuiPluginApi }) {
   const theme = () => props.api.theme.current
   const commandShortcut = useCommandShortcut("command.palette.show")
   const modelShortcut = useCommandShortcut("model.list")
+  const agentShortcut = useCommandShortcut("agent.list")
   const local = useLocal()
   const currentModel = createMemo(() => {
     const value = local.model.current()
     if (!value) return undefined
     return `${value.providerID}/${value.modelID}`
   })
+  const currentAgent = createMemo(() => local.agent.current()?.name)
 
   return (
     <box gap={2} flexDirection="row" alignItems="center" flexShrink={0}>
@@ -76,6 +78,17 @@ function Hint(props: { api: TuiPluginApi }) {
         {modelShortcut()} model
       </text>
       <Show when={currentModel()}>{(value) => <text fg={theme().text}>{value()}</text>}</Show>
+      <Show when={currentAgent()}>
+        {(value) => (
+          <>
+            <text fg={theme().textMuted}>·</text>
+            <text fg={theme().textMuted}>
+              {agentShortcut()} agent
+            </text>
+            <text fg={theme().text}>{value()}</text>
+          </>
+        )}
+      </Show>
     </box>
   )
 }

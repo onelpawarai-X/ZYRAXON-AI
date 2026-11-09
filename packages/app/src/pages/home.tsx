@@ -368,7 +368,7 @@ export function NewHome() {
   zlog("HOME", "homedir created")
   const selectedProject = createMemo(() => projects().find((project) => project.worktree === selection().directory))
 
-  // Default project â€” always exists so users can create sessions without adding a project first
+  // Default project — always exists so users can create sessions without adding a project first
   const DEFAULT_PROJECT = createMemo<LocalProject>(() => ({
     worktree: homedir() || "/",
     expanded: true,
@@ -642,7 +642,7 @@ export function NewHome() {
         openProjectNewSession(conn, homeDir)
         return
       }
-      // Last resort: server cwd â€” never a dangling Linux path on Windows
+      // Last resort: server cwd — never a dangling Linux path on Windows
       openProjectNewSession(conn, homedir() || "/")
     }
   }
@@ -830,7 +830,7 @@ export function NewHome() {
                   <span class="text-v2-text-text-faint opacity-50">|</span>
                   <span><span class="text-cyan-300">Local-first</span> memory</span>
                   <span class="text-v2-text-text-faint opacity-50">|</span>
-                  <span><span class="text-emerald-300">â—</span> self-healing</span>
+                  <span><span class="text-emerald-300">●</span> self-healing</span>
                 </div>
               </div>
               <div
@@ -841,18 +841,18 @@ export function NewHome() {
                   <span class="hero-terminal-dot bg-[#ff5f57]" />
                   <span class="hero-terminal-dot bg-[#febc2e]" />
                   <span class="hero-terminal-dot bg-[#28c840]" />
-                  <span class="ml-2 text-[9px] uppercase tracking-[0.22em] text-slate-500">zyraxon Â· agent.log</span>
+                  <span class="ml-2 text-[9px] uppercase tracking-[0.22em] text-slate-500">zyraxon · agent.log</span>
                   <span class="ml-auto flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-[8px] font-bold tracking-[0.18em] text-emerald-300">
                     <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
                     LIVE
                   </span>
                 </div>
-                <p class="hero-line" style="animation-delay: 0.08s"><span class="text-emerald-400">â¯</span> zyraxon status</p>
-                <p class="hero-line text-slate-500" style="animation-delay: 0.3s">â†’ workspace scanned <span class="text-slate-600">(214ms)</span></p>
-                <p class="hero-line" style="animation-delay: 0.52s">â†’ <span class="text-cyan-300">214</span> tools registered Â· <span class="text-cyan-300">8,243</span> MCP servers</p>
-                <p class="hero-line" style="animation-delay: 0.74s">â†’ memory graph <span class="text-fuchsia-300">95.2%</span> health Â· <span class="text-fuchsia-300">1,409</span> patterns cached</p>
-                <p class="hero-line" style="animation-delay: 0.96s">â†’ shadow clone <span class="text-emerald-300">ready</span> Â· zero-trust redaction <span class="text-emerald-300">on</span></p>
-                <p class="hero-line" style="animation-delay: 1.18s"><span class="text-emerald-400">â¯</span> <span class="hero-cursor" /></p>
+                <p class="hero-line" style="animation-delay: 0.08s"><span class="text-emerald-400">❯</span> zyraxon status</p>
+                <p class="hero-line text-slate-500" style="animation-delay: 0.3s">→ workspace scanned <span class="text-slate-600">(214ms)</span></p>
+                <p class="hero-line" style="animation-delay: 0.52s">→ <span class="text-cyan-300">214</span> tools registered · <span class="text-cyan-300">8,243</span> MCP servers</p>
+                <p class="hero-line" style="animation-delay: 0.74s">→ memory graph <span class="text-fuchsia-300">95.2%</span> health · <span class="text-fuchsia-300">1,409</span> patterns cached</p>
+                <p class="hero-line" style="animation-delay: 0.96s">→ shadow clone <span class="text-emerald-300">ready</span> · zero-trust redaction <span class="text-emerald-300">on</span></p>
+                <p class="hero-line" style="animation-delay: 1.18s"><span class="text-emerald-400">❯</span> <span class="hero-cursor" /></p>
               </div>
             </div>
           </section>
@@ -915,7 +915,7 @@ export function NewHome() {
                 onClose={closeSearch}
                 onSelect={selectSearchSession}
               />
-              {/* Always show "New session" button â€” default project ensures it works */}
+              {/* Always show "New session" button — default project ensures it works */}
               <div class="pointer-events-none absolute right-0 top-[84px] z-20 flex gap-1 lg:top-[108px]">
                   <ButtonV2
                     data-action="home-mcp-connect"
@@ -939,7 +939,7 @@ export function NewHome() {
                   </ButtonV2>
                 </div>
             </div>
-            {/* Sticky chrome for the portaled session scrollbar â€” matches old sessions ScrollView bounds */}
+            {/* Sticky chrome for the portaled session scrollbar — matches old sessions ScrollView bounds */}
             <div class="pointer-events-none sticky top-[84px] z-40 h-0 -mr-3 lg:top-[108px]">
               <div
                 ref={setSessionThumbTrack}
@@ -1078,7 +1078,7 @@ function HomeProjectColumn(props: {
                 when={props.projects.length > 0}
                 fallback={
                   <div class="flex min-w-0 flex-col gap-1 pr-3">
-                    {/* Default Project â€” always visible */}
+                    {/* Default Project — always visible */}
                     <button
                       type="button"
                       data-action="home-default-project"
@@ -1215,7 +1215,7 @@ function HomeUtilityNav(props: {
 }
 
 function CloudAgentDialog(props: { show: boolean; onClose: () => void; language: ReturnType<typeof useLanguage> }) {
-  // Open Cloud Agent in system Chrome browser â€” full mic + speech support
+  // Open Cloud Agent in system Chrome browser — full mic + speech support
   createEffect(() => {
     if (props.show) {
       const api = (window as any).api

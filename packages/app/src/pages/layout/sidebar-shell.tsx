@@ -10,6 +10,7 @@ import {
   type DragEvent,
 } from "@thisbeyond/solid-dnd"
 import { ConstrainDragXAxis } from "@/utils/solid-dnd"
+import { Icon } from "@zyraxon-ai/ui/icon"
 import { IconButton } from "@zyraxon-ai/ui/icon-button"
 import { Tooltip, TooltipKeybind } from "@zyraxon-ai/ui/tooltip"
 import { SidebarStatus, toggleSidebarStatus } from "@/components/sidebar/sidebar-status"
@@ -83,30 +84,7 @@ export const SidebarContent = (props: {
           closeTimer = setTimeout(() => props.onCloseSidebar(), 400)
         }}
       >
-        <div class="flex w-full shrink-0 flex-col items-center gap-1 border-b border-border-weak-base pb-2.5 pt-2.5">
-          <Tooltip
-            placement={placement()}
-            value={
-              <div class="flex items-center gap-2">
-                <span>{language.t("home.title")}</span>
-                <Show when={!props.mobile && !!homeKeybind()}>
-                  <span class="text-icon-base text-12-medium">{homeKeybind()}</span>
-                </Show>
-              </div>
-            }
-          >
-            <IconButton
-              icon="zy-home"
-              variant="ghost"
-              size="large"
-              classList={{ "sidebar-home-active": homeActive() }}
-              onClick={toggleHome}
-              aria-label={language.t("home.title")}
-              aria-pressed={homeActive()}
-            />
-          </Tooltip>
-        </div>
-        <div class="flex-1 min-h-0 w-full">
+        <div class="flex-1 min-h-0 w-full pt-2.5">
           <DragDropProvider
             onDragStart={props.handleDragStart}
             onDragEnd={props.handleDragEnd}
@@ -184,6 +162,21 @@ export const SidebarContent = (props: {
         onMouseLeave={() => { closeTimer = setTimeout(() => props.onCloseSidebar(), 400) }}
       >
         <div class="flex h-full w-full min-w-0 flex-col">
+          <div class="shrink-0 px-3 pt-3 pb-1">
+            <button
+              type="button"
+              class="sidebar-home-row"
+              data-active={homeActive()}
+              aria-pressed={homeActive()}
+              onClick={toggleHome}
+            >
+              <Icon name="zy-home" size="small" class="sidebar-home-row-icon" />
+              <span class="sidebar-home-row-label">{language.t("home.title")}</span>
+              <Show when={!props.mobile && !!homeKeybind()}>
+                <kbd class="sidebar-home-row-kbd">{homeKeybind()}</kbd>
+              </Show>
+            </button>
+          </div>
           <div class="shrink-0 px-2.5 pt-2">
             <SidebarSessionTabs />
           </div>

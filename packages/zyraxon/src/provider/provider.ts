@@ -1126,7 +1126,17 @@ export function toPublicInfo(provider: Info): Info {
 }
 
 export function defaultModelIDs<T extends { models: Record<string, { id: string }> }>(providers: Record<string, T>) {
-  return mapValues(providers, (item) => sort(Object.values(item.models))[0].id)
+  // A provider can legitimately expose no models — a catalog entry whose remote
+  // list failed to load, or a local provider before the first GGUF is written.
+  // Indexing [0] on the empty list threw and took the whole /provider response
+  // with it, which the app showed as "no providers". Such a provider simply has
+  // no default.
+  const out: Record<string, string> = {}
+  for (const [id, item] of Object.entries(providers)) {
+    const first = sort(Object.values(item.models))[0]
+    if (first) out[id] = first.id
+  }
+  return out
 }
 
 export class ModelNotFoundError extends Schema.TaggedErrorClass<ModelNotFoundError>()("ProviderModelNotFoundError", {

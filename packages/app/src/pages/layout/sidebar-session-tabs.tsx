@@ -94,7 +94,7 @@ export function SidebarSessionTabs() {
                 <div class="session-empty">
                   <Icon name="zy-sessions" size="large" class="session-empty-icon" />
                   <p>{language.t("sidebar.sessions.empty")}</p>
-                  <span>Ctrl+1 â€“ Ctrl+9</span>
+                  <span>Ctrl+1 – Ctrl+9</span>
                 </div>
               }
             >
