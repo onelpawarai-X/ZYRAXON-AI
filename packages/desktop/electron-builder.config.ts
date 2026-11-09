@@ -48,7 +48,19 @@ const PRODUCT_SLUGS = {
   prod: "ZYRAXON",
 } as const
 
-const getBase = (appId: string): Configuration => ({
+const afterPack = (context: { appOutDir: string }) => {
+  const resourcesDst = path.join(context.appOutDir, "resources")
+  // extraResources filters miss node_modules for some bundled MCPs; copy them
+  // explicitly so the servers can actually start in the packaged app.
+  for (const name of ["jarvis-browser", "desktop-commander"]) {
+    const src = path.join(packageDir, "resources", name, "node_modules")
+    const dst = path.join(resourcesDst, name, "node_modules")
+    if (existsSync(src) && !existsSync(dst)) {
+      cpSync(src, dst, { recursive: true })
+      console.log("[afterPack] Copied", name, "node_modules to", dst)
+    }
+  }
+}
   compression: "normal",
   artifactName: "zyraxon-desktop-${os}-${arch}.${ext}",
   directories: {
