@@ -25,6 +25,8 @@ export const SidebarContent = (props: {
   mobile?: boolean
   opened: Accessor<boolean>
   aimMove: (event: MouseEvent) => void
+  onOpenSidebar: () => void
+  onCloseSidebar: () => void
   projects: Accessor<LocalProject[]>
   renderProject: (project: LocalProject) => JSX.Element
   handleDragStart: (event: unknown) => void
@@ -54,6 +56,7 @@ export const SidebarContent = (props: {
   const homeActive = () => layout.route().type === "home"
   const homeKeybind = () => command.keybind("home.toggle")
   const toggleHome = () => tabs.toggleHome({ home: homeActive() })
+  let closeTimer: ReturnType<typeof setTimeout> | undefined
   let panel: HTMLDivElement | undefined
 
   createEffect(() => {
@@ -71,9 +74,13 @@ export const SidebarContent = (props: {
       <div
         data-component="sidebar-rail"
         class="w-16 shrink-0 bg-background-base flex flex-col items-center overflow-hidden"
-        onMouseMove={props.aimMove}
+        onMouseMove={(e) => { props.aimMove(e); props.onOpenSidebar() }}
         onMouseEnter={() => {
-          layout.sidebar.open()
+          if (closeTimer) { clearTimeout(closeTimer); closeTimer = undefined }
+          props.onOpenSidebar()
+        }}
+        onMouseLeave={() => {
+          closeTimer = setTimeout(() => props.onCloseSidebar(), 400)
         }}
       >
         <div class="flex w-full shrink-0 flex-col items-center gap-1 border-b border-border-weak-base pb-2.5 pt-2.5">
@@ -98,20 +105,6 @@ export const SidebarContent = (props: {
               aria-pressed={homeActive()}
             />
           </Tooltip>
-        </div>
-        <div class="relative flex w-full shrink-0 flex-col items-center gap-1 border-b border-border-weak-base pb-2.5 pt-2.5">
-          <Tooltip placement={placement()} value={language.t("sidebar.sessions")}>
-            <IconButton
-              icon="zy-sessions"
-              variant="ghost"
-              size="large"
-              onClick={() => layout.sidebar.open()}
-              aria-label={language.t("sidebar.sessions")}
-            />
-          </Tooltip>
-          <span class="pointer-events-none absolute right-2 top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-cyan-400 px-1 text-[9px] font-bold text-black">
-            {useTabs().store.length}
-          </span>
         </div>
         <div class="flex-1 min-h-0 w-full">
           <DragDropProvider
@@ -187,6 +180,8 @@ export const SidebarContent = (props: {
         }}
         classList={{ "flex-1 flex h-full min-h-0 min-w-0 overflow-hidden": true, "pointer-events-none": !expanded() }}
         aria-hidden={!expanded()}
+        onMouseEnter={() => { if (closeTimer) { clearTimeout(closeTimer); closeTimer = undefined } }}
+        onMouseLeave={() => { closeTimer = setTimeout(() => props.onCloseSidebar(), 400) }}
       >
         <div class="flex h-full w-full min-w-0 flex-col">
           <div class="shrink-0 px-2.5 pt-2">

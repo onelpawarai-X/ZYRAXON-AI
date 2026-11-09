@@ -232,9 +232,6 @@ export default function LegacyLayout(props: ParentProps) {
       if (document.visibilityState !== "hidden") return
       reset()
     }
-    // Force the left sidebar open on first paint so the session dock is visible
-    // (the hover-only trigger was too easy to miss).
-    try { layout.sidebar.open() } catch {}
     makeEventListener(window, "pointerup", stop)
     makeEventListener(window, "pointercancel", stop)
     makeEventListener(window, "blur", stop)
@@ -2240,6 +2237,8 @@ export default function LegacyLayout(props: ParentProps) {
       mobile={mobile}
       opened={() => layout.sidebar.opened()}
       aimMove={aim.move}
+      onOpenSidebar={() => layout.sidebar.open()}
+      onCloseSidebar={() => layout.sidebar.close()}
       projects={projects}
       renderProject={(project) => (
         <SortableProject ctx={projectSidebarCtx} project={project} sortNow={sortNow} mobile={mobile} />
