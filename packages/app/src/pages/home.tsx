@@ -661,11 +661,13 @@ export function NewHome() {
   }
 
   function unseenCount(conn: ServerConnection.Any, project: LocalProject) {
+    if (!conn) return 0
     const state = notification.ensureServerState(ServerConnection.key(conn))
     return directories(project).reduce((total, directory) => total + state.project.unseenCount(directory), 0)
   }
 
   function clearNotifications(conn: ServerConnection.Any, project: LocalProject) {
+    if (!conn) return
     const state = notification.ensureServerState(ServerConnection.key(conn))
     directories(project)
       .filter((directory) => state.project.unseenCount(directory) > 0)
@@ -785,7 +787,7 @@ export function NewHome() {
                     <span class="hero-accent">Every command.</span>
                   </h1>
                   <p class="max-w-[620px] text-sm leading-6 text-v2-text-text-muted">
-                    à¦†à¦ªà¦¨à¦¾à¦° à¦•à§‹à¦¡à¦¿à¦‚ à¦à¦œà§‡à¦¨à§à¦Ÿ à¦¶à§à¦§à§ à¦‰à¦¤à§à¦¤à¦° à¦¦à§‡à¦¯à¦¼ à¦¨à¦¾ â€” à¦à¦Ÿà¦¿ <span class="text-cyan-300">à¦šà¦²à§‡</span>: à¦ªà§à¦°à¦¸à¦™à§à¦— à¦ªà¦¡à¦¼à§‡, à¦«à¦¾à¦‡à¦² à¦à¦¡à¦¿à¦Ÿ à¦•à¦°à§‡, à¦Ÿà§à¦² à¦šà¦¾à¦²à¦¾à¦¯à¦¼, à¦«à¦¿à¦•à§à¦¸ à¦¶à¦¿à¦ª à¦•à¦°à§‡, à¦ªà§à¦°à§‹ à¦¸à§à¦Ÿà§à¦¯à¦¾à¦• à¦à¦•à¦¨à¦œà¦°à§‡ à¦°à¦¾à¦–à§‡à¥¤
+                    আপনার কোডিং এজেন্ট শুধু উত্তর দেয় না — এটি <span class="text-cyan-300">চলে</span>: প্রসঙ্গ পড়ে, ফাইল এডিট করে, টুল চালায়, ফিক্স শিপ করে, পুরো স্ট্যাক একনজরে রাখে।
                   </p>
                 </div>
                 <div class="flex flex-wrap items-center gap-3 pt-1">
