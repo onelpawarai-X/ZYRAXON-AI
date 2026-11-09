@@ -1,21 +1,13 @@
 /* Copyright (c) 2026 onelpawarai. All rights reserved. */
-/* Rich embeds are deliberately heavy widgets (iframes, SVGs, media) that the
-   streaming pipeline already gates. This pass contains what is left on screen so
-   long conversations with many embeds stop repainting wholesale per token. */
+/* Light containment for heavy embeds only - avoid content-visibility which
+   caused text rendering glitches in the packaged app. */
 
 [data-component="html-preview"],
 [data-component="svg-preview"],
 [data-component="mermaid-diagram"],
 [data-component="notebook-paper"],
-[data-component="video-embed-wrapper"],
-[data-component="ai-link-preview"] {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 220px;
-}
-
-[data-component="markdown"] img {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 120px;
+[data-component="video-embed-wrapper"] {
+  contain: layout paint;
 }
 
 .zyraxon-site-favicon {

@@ -74,6 +74,7 @@ import { preloadMarkdown } from "@zyraxon-ai/session-ui/markdown-cache"
 import { archiveHomeSession } from "./home-session-archive"
 import { shouldOpenSessionInBackground } from "./home-session-open"
 import "./home.css"
+import { HomeSearchGuide } from "./home-search-guide"
 import { showToast } from "@/utils/toast"
 import { fileManagerApp } from "@/utils/file-manager"
 import {
@@ -767,7 +768,6 @@ export function NewHome() {
           <section class="relative isolate col-span-full mb-1 mt-2 min-h-[280px] overflow-hidden rounded-3xl border border-cyan-400/15 bg-[linear-gradient(135deg,rgba(0,212,255,0.13),rgba(0,212,255,0.03)_30%,rgba(10,16,29,0.62)_100%)] p-5 lg:p-7 shadow-[0_40px_140px_rgba(0,0,0,0.48)]">
             <div aria-hidden="true" class="hero-beam" style="left: 18%" />
             <div aria-hidden="true" class="hero-beam" style="left: 55%; width: 140px; opacity: 0.7" />
-            <span aria-hidden="true" class="hero-watermark">ZYRAXON</span>
             <div aria-hidden="true" class="absolute -right-24 top-0 h-52 w-52 rounded-full border border-cyan-300/25 bg-cyan-400/10 blur-3xl" />
             <div aria-hidden="true" class="absolute -bottom-28 left-1/3 h-60 w-60 rounded-full bg-fuchsia-500/10 blur-3xl" />
             <div class="relative z-10 grid items-center gap-6 xl:grid-cols-[minmax(0,1fr)_370px]">
@@ -854,7 +854,7 @@ export function NewHome() {
               </div>
             </div>
           </section>
-          <HomeProjectColumn
+          <HomeSearchGuide />
             projects={projects()}
             recentlyClosed={recentlyClosed()}
             homedir={homedir()}

@@ -2237,6 +2237,8 @@ export default function LegacyLayout(props: ParentProps) {
       mobile={mobile}
       opened={() => layout.sidebar.opened()}
       aimMove={aim.move}
+      onOpenSidebar={() => layout.sidebar.open()}
+      onCloseSidebar={() => layout.sidebar.close()}
       projects={projects}
       renderProject={(project) => (
         <SortableProject ctx={projectSidebarCtx} project={project} sortNow={sortNow} mobile={mobile} />
