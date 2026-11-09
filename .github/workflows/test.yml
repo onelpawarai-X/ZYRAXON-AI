@@ -93,7 +93,10 @@ jobs:
       matrix:
         settings:
           - name: linux
-            host: ubuntu-latest
+            # Playwright does not ship Chromium builds for ubuntu26.04, which is
+            # what ubuntu-latest now resolves to, so browser install fails there.
+            # Pin the last supported image until Playwright adds 26.04.
+            host: ubuntu-24.04
           - name: windows
             host: windows-latest
     runs-on: ${{ matrix.settings.host }}
