@@ -232,6 +232,13 @@ export default function LegacyLayout(props: ParentProps) {
       if (document.visibilityState !== "hidden") return
       reset()
     }
+    // Hover-to-open: any mouse movement in the left 80px opens the sidebar.
+    const hoverOpen = (e: MouseEvent) => {
+      if (e.clientX <= 80 && !layout.sidebar.opened()) {
+        layout.sidebar.open()
+      }
+    }
+    makeEventListener(window, "mousemove", hoverOpen)
     makeEventListener(window, "pointerup", stop)
     makeEventListener(window, "pointercancel", stop)
     makeEventListener(window, "blur", stop)
@@ -2289,6 +2296,7 @@ export default function LegacyLayout(props: ParentProps) {
               }}
               onMouseEnter={() => {
                 disarm()
+                layout.sidebar.open()
               }}
               onMouseLeave={() => {
                 aim.reset()
