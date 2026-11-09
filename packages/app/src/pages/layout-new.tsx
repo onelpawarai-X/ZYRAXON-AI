@@ -8,6 +8,7 @@ import { Titlebar, type TitlebarUpdate } from "@/components/titlebar"
 import { usePlatform } from "@/context/platform"
 import { setNavigate } from "@/utils/notification-click"
 import { setV2Toast, ToastRegion } from "@/utils/toast"
+import { NewSidebarRail } from "./layout/new-sidebar"
 
 export default function NewLayout(props: ParentProps) {
   const platform = usePlatform()
@@ -35,9 +36,12 @@ export default function NewLayout(props: ParentProps) {
       }}
     >
       <Titlebar update={update} />
-      <main class="flex-1 min-h-0 min-w-0 overflow-x-hidden flex flex-col items-start">
-        <Suspense>{props.children}</Suspense>
-      </main>
+      <div class="flex flex-1 min-h-0 min-w-0 overflow-hidden">
+        <NewSidebarRail />
+        <main class="flex-1 min-h-0 min-w-0 overflow-x-hidden flex flex-col items-start">
+          <Suspense>{props.children}</Suspense>
+        </main>
+      </div>
       {import.meta.env.DEV && <DebugBar inline />}
       <TabsInfoPopup />
       <ToastRegion v2 />
