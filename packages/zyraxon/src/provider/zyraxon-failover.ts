@@ -72,6 +72,11 @@ export function zyraxonModelRank(modelID: string): number {
  */
 export function zyraxonFailoverChain(providerID: string, modelID: string): string[] {
   if (providerID !== ZYRAXON_PROVIDER_ID) return [modelID]
+  // Only a model the ZYRAXON endpoint actually serves may be retried elsewhere.
+  // A user override on this provider (a model id outside the zyraxon- family) is
+  // their explicit choice and must be left alone, the same as any other provider,
+  // or the reply would silently come from a different model than the one shown.
+  if (!modelID.startsWith("zyraxon-")) return [modelID]
   const rest = ZYRAXON_MODEL_PRIORITY.filter((id) => id !== modelID)
   return [modelID, ...rest]
 }
