@@ -87,21 +87,23 @@ function showErrors(input: {
 export const loadGlobalConfigQuery = (scope: ServerScope, sdk: ZyraxonClient) =>
   queryOptions({
     queryKey: [scope, "config"],
-    queryFn: () => retry(() => sdk.global.config.get().then((x) => x.data!)),
+    queryFn: () => retry(() => sdk.global.config.get().then((x) => x.data!), { attempts: 12, delay: 1000, maxDelay: 5000 }),
   })
 
 export const loadProjectsQuery = (scope: ServerScope, sdk: ZyraxonClient) =>
   queryOptions({
     queryKey: [scope, "project"],
     queryFn: () =>
-      retry(() =>
-        sdk.project.list().then((x) => {
-          return (x.data ?? [])
-            .filter((p) => !!p?.id)
-            .filter((p) => !!p.worktree && !p.worktree.includes("zyraxon-test"))
-            .slice()
-            .sort((a, b) => cmp(a.id, b.id))
-        }),
+      retry(
+        () =>
+          sdk.project.list().then((x) => {
+            return (x.data ?? [])
+              .filter((p) => !!p?.id)
+              .filter((p) => !!p.worktree && !p.worktree.includes("zyraxon-test"))
+              .slice()
+              .sort((a, b) => cmp(a.id, b.id))
+          }),
+        { attempts: 12, delay: 1000, maxDelay: 5000 },
       ),
   })
 
@@ -186,13 +188,13 @@ function warmSessions(input: {
 export const loadProvidersQuery = (scope: ServerScope, directory: string | null, sdk: ZyraxonClient) =>
   queryOptions({
     queryKey: [scope, directory, "providers"],
-    queryFn: () => retry(() => sdk.provider.list().then((x) => normalizeProviderList(x.data!))),
+    queryFn: () => retry(() => sdk.provider.list().then((x) => normalizeProviderList(x.data!)), { attempts: 12, delay: 1000, maxDelay: 5000 }),
   })
 
 // After a cold start the server loads the external models catalog in the
 // background, so the first provider.list responses are empty. Refetch a few
 // times (only while the list stays empty) so models appear without a reload.
-function scheduleProviderRefetch(queryClient: QueryClient, scope: ServerScope, directory: string | null, attempts = 3) {
+function scheduleProviderRefetch(queryClient: QueryClient, scope: ServerScope, directory: string | null, attempts = 12) {
   if (attempts <= 0) return
   setTimeout(() => {
     void queryClient
@@ -215,7 +217,7 @@ export const loadAgentsQuery = (scope: ServerScope, directory: string | null, sd
 export const loadPathQuery = (scope: ServerScope, directory: string | null, sdk: ZyraxonClient) =>
   queryOptions<Path>({
     queryKey: [scope, directory, "path"],
-    queryFn: () => retry(() => sdk.path.get().then((x) => x.data!)),
+    queryFn: () => retry(() => sdk.path.get().then((x) => x.data!), { attempts: 12, delay: 1000, maxDelay: 5000 }),
   })
 
 export const loadReferencesQuery = (scope: ServerScope, directory: string, sdk: ZyraxonClient) =>
