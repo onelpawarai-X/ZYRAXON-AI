@@ -61,6 +61,11 @@ const afterPack = (context: { appOutDir: string }) => {
     }
   }
 }
+
+// Shared config for every channel; each channel below spreads it and overrides
+// the identity fields (appId, productName, publish channel).
+const getBase = (appId: string): Configuration =>
+  ({
   compression: "normal",
   artifactName: "zyraxon-desktop-${os}-${arch}.${ext}",
   directories: {
@@ -231,7 +236,7 @@ const afterPack = (context: { appOutDir: string }) => {
     },
     target: ["AppImage", "deb", "rpm"],
   },
-})
+  }) as Configuration
 
 function getConfig() {
   const appId = APP_IDS[channel]
