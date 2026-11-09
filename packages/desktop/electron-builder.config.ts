@@ -50,14 +50,36 @@ const PRODUCT_SLUGS = {
 
 const afterPack = (context: { appOutDir: string }) => {
   const resourcesDst = path.join(context.appOutDir, "resources")
-  // extraResources filters miss node_modules for some bundled MCPs; copy them
-  // explicitly so the servers can actually start in the packaged app.
-  for (const name of ["jarvis-browser", "desktop-commander"]) {
+  // extraResources filters miss node_modules and native bundles for the bundled
+  // MCP servers, so copy each one wholesale. Skipping this leaves the packaged
+  // app with servers that cannot start.
+  for (const name of ["jarvis-browser"]) {
     const src = path.join(packageDir, "resources", name, "node_modules")
     const dst = path.join(resourcesDst, name, "node_modules")
     if (existsSync(src) && !existsSync(dst)) {
       cpSync(src, dst, { recursive: true })
       console.log("[afterPack] Copied", name, "node_modules to", dst)
+    }
+  }
+  for (const name of ["nuphus-mcp", "touchpoint-mcp", "desktop-commander"]) {
+    const src = path.join(packageDir, "resources", name)
+    const dst = path.join(resourcesDst, name)
+    if (existsSync(src)) {
+      cpSync(src, dst, { recursive: true })
+      console.log("[afterPack] Copied", name, "to", dst)
+    }
+  }
+  // Git tracks the nuphus binaries 755, but a checkout with core.filemode=false
+  // (CI does this) drops the exec bit and every Linux/macOS build then fails
+  // with EACCES. Restore it here so packaging does not depend on the checkout.
+  if (process.platform !== "win32") {
+    const nuphusDst = path.join(resourcesDst, "nuphus-mcp")
+    for (const arch of ["linux-x64", "osx-arm64", "osx-x64"]) {
+      const bin = path.join(nuphusDst, arch, "nuphus-mcp")
+      if (existsSync(bin)) {
+        chmodSync(bin, 0o755)
+        console.log("[afterPack] chmod +x", bin)
+      }
     }
   }
 }
@@ -66,6 +88,7 @@ const afterPack = (context: { appOutDir: string }) => {
 // the identity fields (appId, productName, publish channel).
 const getBase = (appId: string): Configuration =>
   ({
+  afterPack,
   compression: "normal",
   artifactName: "zyraxon-desktop-${os}-${arch}.${ext}",
   directories: {
