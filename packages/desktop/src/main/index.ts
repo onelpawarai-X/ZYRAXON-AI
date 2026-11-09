@@ -629,28 +629,19 @@ const main = Effect.gen(function* () {
           const parsed = JSON.parse(existing)
           let changed = false
           if (!parsed.mcp) { parsed.mcp = {} }
-          // Ensure all 4 MCP servers exist
+          // Ensure all 4 MCP servers exist and are ENABLED (bundled MCPs must actually work)
           for (const [name, def] of Object.entries(defaultConfig.mcp)) {
             if (!parsed.mcp[name]) {
               parsed.mcp[name] = def
               changed = true
               logger.info(`added ${name} to MCP config`, { path: configPath })
             }
-          }
-          // One-time switch-off of the bundled servers. Earlier versions wrote these four
-          // with `enabled: true`, so an existing install still starts them — a headless
-          // Chrome included — on every session, and changing only the shipped default
-          // would not reach those configs. The marker file keeps it to one run, so a user
-          // who turns one back on afterwards keeps it on.
-          const migrationMarker = join(configDir, ".mcp-defaults-disabled")
-          if (!existsSync(migrationMarker)) {
-            const disabled = disableBundledDefaults(parsed, defaultConfig.mcp)
-            if (disabled.length > 0) {
+            // Force-enable bundled servers so they actually start (user requirement)
+            if (parsed.mcp[name].enabled !== true) {
+              parsed.mcp[name].enabled = true
               changed = true
-              logger.info("disabled bundled MCP servers an earlier version had switched on", { disabled })
+              logger.info(`enabled ${name} MCP server`, { path: configPath })
             }
-            mkdirSync(configDir, { recursive: true })
-            writeFileSync(migrationMarker, "bundled MCP servers are opt-in as of this version\n", "utf-8")
           }
 
           // Fix broken paths (hardcoded absolute paths into deleted dirs, asar, etc.)
