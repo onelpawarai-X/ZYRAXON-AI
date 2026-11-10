@@ -190,11 +190,15 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
       const sidebar = value.sidebar
       const migratedSidebar = (() => {
         if (!isRecord(sidebar)) return sidebar
-        if (typeof sidebar.workspaces !== "boolean") return sidebar
+        // The session sidebar is reveal-on-hover; it must never start pinned open.
+        const workspaces = typeof sidebar.workspaces === "boolean" ? {} : sidebar.workspaces
+        const workspacesDefault =
+          typeof sidebar.workspaces === "boolean" ? sidebar.workspaces : sidebar.workspacesDefault
         return {
           ...sidebar,
-          workspaces: {},
-          workspacesDefault: sidebar.workspaces,
+          opened: false,
+          workspaces,
+          workspacesDefault,
         }
       })()
 
@@ -276,7 +280,7 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
       { ...target, migrate },
       createStore({
         sidebar: {
-          opened: true,
+          opened: false,
           width: DEFAULT_SIDEBAR_WIDTH,
           workspaces: {} as Record<string, boolean>,
           workspacesDefault: false,

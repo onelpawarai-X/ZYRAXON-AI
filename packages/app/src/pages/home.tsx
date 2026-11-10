@@ -43,7 +43,6 @@ import { useDirectoryPicker } from "@/components/directory-picker"
 import { useSettingsCommand } from "@/components/settings-dialog"
 import { useAppShortcuts } from "@/hooks/use-app-shortcuts"
 import { DialogSelectServer, useServerManagementController } from "@/components/dialog-select-server"
-import { DialogCommandPaletteV2 } from "@/components/dialog-command-palette-v2"
 import { DialogServerV2 } from "@/components/settings-v2/dialog-server-v2"
 import { ServerConnection, serverName, useServer } from "@/context/server"
 import { sessionHasOpenTab, useTabs } from "@/context/tabs"
@@ -517,41 +516,54 @@ export function NewHome() {
     if (!options?.background) closeSearch()
   }
 
+  // The home surface has no directory-scoped FileProvider, so the universal
+  // search opens the home-safe palette (no `useFile`) instead of the session
+  // one, which would throw the moment it renders here.
+  async function openUniversalSearch() {
+    const conn = focusedServer()
+    if (!conn) return
+    const ctx = global.ensureServerCtx(conn)
+    const { DialogHomeCommandPaletteV2 } = await import("@/components/dialog-command-palette-v2")
+    void dialog.show(() => (
+      <DialogHomeCommandPaletteV2
+        server={conn}
+        onSelectSession={(entry) => {
+          if (!entry.sessionID || !entry.directory || !entry.server) return
+          const sessionID = entry.sessionID
+          const server = entry.server
+          const directory = entry.project?.worktree ?? entry.directory
+          ctx.projects.open(directory)
+          ctx.projects.touch(directory)
+          void startTransition(() => {
+            const tab = tabs.addSessionTab({ server, sessionId: sessionID })
+            tabs.select(tab)
+          })
+        }}
+        onAsk={(query) => {
+          const directory = selection().directory ?? ctx.projects.list()[0]?.worktree ?? homedir() ?? "/"
+          if (selection().directory === undefined && directory) {
+            ctx.projects.open(directory)
+            setSelection({ server: ServerConnection.key(conn), directory })
+          }
+          void tabs.newDraft({ server: ServerConnection.key(conn), directory }, query)
+        }}
+      />
+    ))
+  }
+
   command.register("home", () => [
     {
       id: "command.palette",
       title: language.t("command.palette"),
       hidden: true,
-      onSelect: async () => {
-        const conn = focusedServer()
-        if (!conn) return
-        const ctx = global.ensureServerCtx(conn)
-        const { DialogHomeCommandPaletteV2 } = await import("@/components/dialog-command-palette-v2")
-        void dialog.show(() => (
-          <DialogHomeCommandPaletteV2
-            server={conn}
-            onSelectSession={(entry) => {
-              if (!entry.sessionID || !entry.directory || !entry.server) return
-              const sessionID = entry.sessionID
-              const server = entry.server
-              const directory = entry.project?.worktree ?? entry.directory
-              ctx.projects.open(directory)
-              ctx.projects.touch(directory)
-              void startTransition(() => {
-                const tab = tabs.addSessionTab({ server, sessionId: sessionID })
-                tabs.select(tab)
-              })
-            }}
-          />
-        ))
-      },
+      onSelect: () => void openUniversalSearch(),
     },
     {
       id: "home.sessions.search.focus",
       title: searchPlaceholder(),
       keybind: "mod+f",
       hidden: true,
-      onSelect: () => focusSessionSearch?.(),
+      onSelect: () => void openUniversalSearch(),
     },
   ])
 
@@ -738,18 +750,18 @@ export function NewHome() {
   }
 
    return (
-    <div class="relative rounded-[12px] shadow-[var(--v2-elevation-raised)] m-2 min-h-0 overflow-hidden bg-[linear-gradient(135deg,var(--v2-background-bg-base),#08111d_55%,#091d2b_100%)] self-stretch flex-1">
+    <div class="relative rounded-[12px] shadow-[var(--v2-elevation-raised)] m-2 min-h-0 overflow-hidden bg-v2-background-bg-base self-stretch flex-1">
       <div
         aria-hidden="true"
-        class="pointer-events-none absolute inset-0 opacity-70 [background-image:radial-gradient(circle_at_1px_1px,rgba(0,212,255,0.035)_1px,transparent_0),radial-gradient(ellipse_at_80%_8%,rgba(0,212,255,0.10),transparent_42%),radial-gradient(ellipse_at_10%_94%,rgba(147,51,234,0.07),transparent_48%)] [background-size:24px_24px,auto,auto]"
+        class="home-decor pointer-events-none absolute inset-0 opacity-70 [background-image:radial-gradient(circle_at_1px_1px,rgba(0,212,255,0.035)_1px,transparent_0),radial-gradient(ellipse_at_80%_8%,rgba(0,212,255,0.10),transparent_42%),radial-gradient(ellipse_at_10%_94%,rgba(147,51,234,0.07),transparent_48%)] [background-size:24px_24px,auto,auto]"
       />
       <div
         aria-hidden="true"
-        class="pointer-events-none absolute -right-40 top-10 h-[520px] w-[520px] rounded-full border border-cyan-400/10 bg-cyan-400/5 blur-3xl"
+        class="home-decor pointer-events-none absolute -right-40 top-10 h-[520px] w-[520px] rounded-full border border-cyan-400/10 bg-cyan-400/5 blur-3xl"
       />
       <div
         aria-hidden="true"
-        class="pointer-events-none absolute -left-56 bottom-16 h-[560px] w-[560px] rounded-full bg-fuchsia-500/[0.045] blur-3xl"
+        class="home-decor pointer-events-none absolute -left-56 bottom-16 h-[560px] w-[560px] rounded-full bg-fuchsia-500/[0.045] blur-3xl"
       />
       <ScrollView
         class="h-full [container-type:size]"
@@ -767,27 +779,27 @@ export function NewHome() {
         }}
       >
         <div class="mx-auto grid min-h-full w-full max-w-[1200px] grid-cols-1 grid-rows-[auto_minmax(0,1fr)_auto] gap-4 px-3 lg:grid-rows-1 lg:gap-6 lg:px-6">
-          <section class="relative isolate col-span-full mb-1 mt-2 min-h-[280px] overflow-hidden rounded-3xl border border-cyan-400/15 bg-[linear-gradient(135deg,rgba(0,212,255,0.13),rgba(0,212,255,0.03)_30%,rgba(10,16,29,0.62)_100%)] p-5 lg:p-7 shadow-[0_40px_140px_rgba(0,0,0,0.48)]">
+          <section class="home-hero relative isolate col-span-full mb-1 mt-2 min-h-[280px] overflow-hidden rounded-3xl border border-cyan-400/15 p-5 lg:p-7">
             <div aria-hidden="true" class="hero-beam" style="left: 18%" />
             <div aria-hidden="true" class="hero-beam" style="left: 55%; width: 140px; opacity: 0.7" />
-            <div aria-hidden="true" class="absolute -right-24 top-0 h-52 w-52 rounded-full border border-cyan-300/25 bg-cyan-400/10 blur-3xl" />
-            <div aria-hidden="true" class="absolute -bottom-28 left-1/3 h-60 w-60 rounded-full bg-fuchsia-500/10 blur-3xl" />
+            <div aria-hidden="true" class="home-decor absolute -right-24 top-0 h-52 w-52 rounded-full border border-cyan-300/25 bg-cyan-400/10 blur-3xl" />
+            <div aria-hidden="true" class="home-decor absolute -bottom-28 left-1/3 h-60 w-60 rounded-full bg-fuchsia-500/10 blur-3xl" />
             <div class="relative z-10 grid items-center gap-6 xl:grid-cols-[minmax(0,1fr)_370px]">
               <div class="flex flex-col gap-5">
                 <div class="flex flex-wrap items-center gap-2">
                   <span class="flex items-center gap-1.5 rounded-full border border-cyan-300/25 bg-cyan-400/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-200">
                     <span class="h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_8px_rgba(34,211,238,0.9)]" />
-                    ZYRAXON ULTRA
+                    {language.t("home.hero.badge.mode")}
                   </span>
-                  <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-fuchsia-200/90">Agent shell</span>
+                  <span class="rounded-full border border-fuchsia-300/20 bg-fuchsia-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-fuchsia-200/90">{language.t("home.hero.badge.shell")}</span>
                 </div>
                 <div class="flex flex-col gap-3">
                   <h1 class="text-5xl font-black leading-[0.95] tracking-[-0.055em] text-v2-text-text-base lg:text-7xl">
-                    One mind.<br />
-                    <span class="hero-accent">Every command.</span>
+                    {language.t("home.hero.title.1")}<br />
+                    <span class="hero-accent">{language.t("home.hero.title.2")}</span>
                   </h1>
                   <p class="max-w-[620px] text-sm leading-6 text-v2-text-text-muted">
-                    আপনার কোডিং এজেন্ট শুধু উত্তর দেয় না — এটি <span class="text-cyan-300">চলে</span>: প্রসঙ্গ পড়ে, ফাইল এডিট করে, টুল চালায়, ফিক্স শিপ করে, পুরো স্ট্যাক একনজরে রাখে।
+                    {language.t("home.hero.subtitle")}
                   </p>
                 </div>
                 <div class="flex flex-wrap items-center gap-3 pt-1">
@@ -799,7 +811,7 @@ export function NewHome() {
                     onClick={openNewSession}
                     class="h-12 px-6 text-sm font-bold shadow-[0_12px_44px_rgba(34,211,238,0.35)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_52px_rgba(34,211,238,0.45)]"
                   >
-                    New agent session
+                    {language.t("home.hero.cta.newSession")}
                   </ButtonV2>
                   <ButtonV2
                     data-action="home-hero-settings"
@@ -809,28 +821,38 @@ export function NewHome() {
                     onClick={openSettings}
                     class="h-12 px-6 text-sm transition-transform duration-200 hover:-translate-y-0.5"
                   >
-                    Extensions
+                    {language.t("home.hero.cta.extensions")}
+                  </ButtonV2>
+                  <ButtonV2
+                    data-action="home-mcp-connect"
+                    variant="outline"
+                    size="large"
+                    icon="dot-grid"
+                    onClick={openMcpHub}
+                    class="h-12 px-6 text-sm transition-transform duration-200 hover:-translate-y-0.5"
+                  >
+                    {language.t("home.mcpConnect")}
                   </ButtonV2>
                   <ButtonV2
                     data-action="home-hero-search"
                     variant="outline"
                     size="large"
                     icon="magnifying-glass"
-                    onClick={() => dialog.show(() => <DialogCommandPaletteV2 />)}
+                    onClick={() => void openUniversalSearch()}
                     class="h-12 px-6 text-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-400/40 hover:shadow-[0_0_30px_rgba(34,211,238,0.18)]"
                   >
-                    Universal search
+                    {language.t("home.hero.cta.search")}
                     <kbd class="ml-2 rounded-md border border-white/15 bg-white/5 px-1.5 py-0.5 font-mono text-[10px] text-cyan-200/80">Ctrl K</kbd>
                   </ButtonV2>
                 </div>
                 <div class="flex flex-wrap items-center gap-x-5 gap-y-1.5 pt-1 text-[11px] font-semibold text-v2-text-text-faint">
-                  <span><span class="text-cyan-300">888+</span> tools</span>
+                  <span><span class="text-cyan-300">888+</span> {language.t("home.hero.stat.tools")}</span>
                   <span class="text-v2-text-text-faint opacity-50">|</span>
-                  <span><span class="text-cyan-300">8,200+</span> MCP integrations</span>
+                  <span><span class="text-cyan-300">8,200+</span> {language.t("home.hero.stat.mcp")}</span>
                   <span class="text-v2-text-text-faint opacity-50">|</span>
-                  <span><span class="text-cyan-300">Local-first</span> memory</span>
+                  <span><span class="text-cyan-300">{language.t("home.hero.stat.memory")}</span></span>
                   <span class="text-v2-text-text-faint opacity-50">|</span>
-                  <span><span class="text-emerald-300">●</span> self-healing</span>
+                  <span><span class="text-emerald-300">●</span> {language.t("home.hero.stat.selfHealing")}</span>
                 </div>
               </div>
               <div
@@ -892,53 +914,7 @@ export function NewHome() {
             class="min-h-0 min-w-0 flex-1 flex flex-col"
             aria-label={language.t("sidebar.project.recentSessions")}
           >
-            <div
-              class="sticky top-0 z-30 shrink-0 bg-v2-background-bg-base pb-3 pt-6 lg:pt-12"
-              onWheel={(event) => {
-                if (sessionViewport) containHomeWheel(event, sessionViewport)
-              }}
-            >
-              <HomeSessionSearch
-                value={state.search}
-                placeholder={searchPlaceholder()}
-                open={searchOpen()}
-                loading={sessionLoad.isLoading}
-                results={searchResults()}
-                showProjectName={!selectedProject()}
-                server={selection().server}
-                noResultsLabel={language.t("home.sessions.search.noResults", { query: search() })}
-                bindFocus={(focus) => {
-                  focusSessionSearch = focus
-                }}
-                onInput={(value) => setState("search", value)}
-                onFocus={() => setState("searchFocused", true)}
-                onClose={closeSearch}
-                onSelect={selectSearchSession}
-              />
-              {/* Always show "New session" button — default project ensures it works */}
-              <div class="pointer-events-none absolute right-0 top-[84px] z-20 flex gap-1 lg:top-[108px]">
-                  <ButtonV2
-                    data-action="home-mcp-connect"
-                    variant="ghost-muted"
-                    size="normal"
-                    icon="dot-grid"
-                    class="pointer-events-auto h-7 px-2 [font-weight:530]"
-                    onClick={openMcpHub}
-                  >
-                    {language.t("home.mcpConnect")}
-                  </ButtonV2>
-                  <ButtonV2
-                    data-action="home-new-session"
-                    variant="ghost-muted"
-                    size="normal"
-                    icon="edit"
-                    class="pointer-events-auto h-7 px-2 [font-weight:530]"
-                    onClick={openNewSession}
-                  >
-                    {language.t("command.session.new")}
-                  </ButtonV2>
-                </div>
-            </div>
+            <div class="shrink-0 pb-3 pt-6 lg:pt-12" />
             {/* Sticky chrome for the portaled session scrollbar — matches old sessions ScrollView bounds */}
             <div class="pointer-events-none sticky top-[84px] z-40 h-0 -mr-3 lg:top-[108px]">
               <div
@@ -1043,7 +1019,7 @@ function HomeProjectColumn(props: {
     <Show when={firstServer()} keyed>
       {(server) => (
     <aside
-      class="mt-6 flex min-h-0 min-w-0 flex-col gap-4 overflow-hidden lg:sticky lg:top-14 lg:mt-14 lg:h-[calc(100cqh-56px)] lg:self-start lg:pt-[52px]"
+      class="mt-6 flex min-h-0 min-w-0 flex-col gap-4 overflow-hidden lg:mt-6 lg:self-start"
       aria-label={props.language.t("home.projects")}
       onWheel={(event) => {
         if (event.target === event.currentTarget) return
@@ -1898,7 +1874,7 @@ function HomeSessionGroupHeader(props: {
   return (
     <div
       ref={props.ref}
-      class={`pointer-events-none sticky top-[84px] lg:top-[108px] flex h-7 min-w-0 items-center justify-between pl-3 bg-v2-background-bg-base ${props.elevated ? "home-session-group-header z-[5]" : "z-10"}`}
+      class={`flex h-7 min-w-0 items-center justify-between pl-3 ${props.elevated ? "home-session-group-header" : ""}`}
     >
       <div class={HOME_SECTION_LABEL} style={{ opacity: props.titleOpacity }}>
         {props.title}

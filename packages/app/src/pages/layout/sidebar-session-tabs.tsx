@@ -12,7 +12,7 @@ import { useCommand } from "@/context/command"
 import { createTabPromptState } from "@/context/prompt"
 import { useDialog } from "@zyraxon-ai/ui/context/dialog"
 import { IconButtonV2 } from "@zyraxon-ai/ui/v2/icon-button-v2"
-import { DialogCommandPaletteV2 } from "@/components/dialog-command-palette-v2"
+import { DialogHomeCommandPaletteV2 } from "@/components/dialog-command-palette-v2"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
 import { base64Encode } from "@zyraxon-ai/core/util/encode"
 import "./sidebar-session-tabs.css"
@@ -60,6 +60,7 @@ export function SidebarSessionTabs() {
   const tabs = useTabs()
   const language = useLanguage()
   const dialog = useDialog()
+  const server = useServer()
   const { route, session } = useRouteSession()
   const currentTab = createMemo(() => matchRouteTab(route(), tabs.store, session()))
 
@@ -70,15 +71,31 @@ export function SidebarSessionTabs() {
         <div class="session-dock-header">
           <Icon name="zy-sessions" size="small" class="session-dock-header-icon" />
           <span class="session-dock-title">{language.t("sidebar.sessions")}</span>
-          <TooltipV2 placement="bottom" value="Universal search">
+          <TooltipV2 placement="bottom" value={language.t("home.hero.cta.search")}>
             <IconButtonV2
               type="button"
               variant="ghost-muted"
               size="small"
               class="ml-auto !w-6 !h-6"
               icon={<IconV2 name="magnifying-glass" size="small" />}
-              onClick={() => dialog.show(() => <DialogCommandPaletteV2 />)}
-              aria-label="Universal search"
+              onClick={() => {
+                const conn = server.current
+                if (!conn) return
+                dialog.show(() => (
+                  <DialogHomeCommandPaletteV2
+                    server={conn}
+                    onSelectSession={(entry) => {
+                      if (!entry.sessionID) return
+                      const tab = tabs.addSessionTab({
+                        server: entry.server ?? ServerConnection.key(conn),
+                        sessionId: entry.sessionID,
+                      })
+                      tabs.select(tab)
+                    }}
+                  />
+                ))
+              }}
+              aria-label={language.t("home.hero.cta.search")}
             />
           </TooltipV2>
           <span class="session-dock-count" aria-hidden="true">

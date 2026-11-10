@@ -11,8 +11,9 @@ import { formatKeybindParts, useCommand } from "@/context/command"
 import { useLanguage } from "@/context/language"
 import { useLayout } from "@/context/layout"
 import { useServerSDK } from "@/context/server-sdk"
+import { useServerSync } from "@/context/server-sync"
 import { useSettings } from "@/context/settings"
-import { useSync, type DirectorySync } from "@/context/sync"
+import { type DirectorySync } from "@/context/sync"
 import { SessionRouteKey, SessionStateKey } from "@/utils/server-scope"
 
 export const SIDEBAR_STATUS_KEYBIND = "mod+x"
@@ -60,9 +61,25 @@ export function ServiceStatusDot(props: { status?: string }) {
   )
 }
 
+// The sidebar shell sits above the directory-scoped SDK/Sync providers, so it cannot
+// call useSync() (which reads the directory SDK context) without crashing the whole app.
+// Resolve the directory from the layout instead, mirroring useSettingsDirectorySync.
+function useSidebarDirectorySync(): Accessor<DirectorySync | undefined> {
+  const serverSync = useServerSync()
+  const layout = useLayout()
+  const directory = createMemo(
+    () => layout.home.selection().directory ?? layout.projects.list()[0]?.worktree ?? serverSync().data.path.home,
+  )
+  return createMemo(() => {
+    const value = directory()
+    if (!value) return
+    return serverSync().ensureDirSyncContext(value)
+  })
+}
+
 export function SidebarStatus(props: { mobile?: boolean }) {
   const language = useLanguage()
-  const service = useServiceStatus(useSync())
+  const service = useServiceStatus(useSidebarDirectorySync())
   const settings = useSettings()
   const expanded = createMemo(() => !sidebarStatusCollapsed())
 

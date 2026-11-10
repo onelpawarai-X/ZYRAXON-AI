@@ -9,7 +9,8 @@ import type { McpClientLike } from "../../../../../MCP Hub/plugin"
 import { useLanguage } from "@/context/language"
 import { useLayout } from "@/context/layout"
 import { usePlatform } from "@/context/platform"
-import { usePrompt } from "@/context/prompt"
+import { ServerConnection, useServer } from "@/context/server"
+import { useTabs } from "@/context/tabs"
 import { useServerSDK } from "@/context/server-sdk"
 import { useServerSync } from "@/context/server-sync"
 import type { DirectorySync } from "@/context/sync"
@@ -83,7 +84,8 @@ export const SettingsExtensionsV2: Component = () => {
   const [pane, setPane] = createSignal<Pane>("mcp")
   const [busy, setBusy] = createSignal<string | undefined>(undefined)
   const [skillName, setSkillName] = createSignal("")
-  const prompt = usePrompt()
+  const tabs = useTabs()
+  const server = useServer()
 
   async function openPath(absolute: string) {
     if (platform.revealPath) {
@@ -140,11 +142,15 @@ export const SettingsExtensionsV2: Component = () => {
               "Include command, args, language ids, initialization options, and an environment-variable-safe configuration.",
               "After writing it, verify the configuration parses and explain how to enable it.",
             ].join("\n")
-    prompt.set([{ type: "text", content: body, start: 0, end: body.length }], body.length)
+    // Settings is a dialog that sits outside the prompt provider, so it cannot
+    // write into a composer directly. A new draft tab is opened instead and the
+    // request is carried there, which is the same path the palette's "Ask" uses.
+    const conn = server.current
+    const root = directory()
+    if (conn && root) void tabs.newDraft({ server: ServerConnection.key(conn), directory: root }, body)
     setSkillName("")
     dialog.close()
   }
-
   const createSkillPrompt = () => createExtensionPrompt("skill")
 
   /**

@@ -1,6 +1,47 @@
 /* Copyright (c) 2026 onelpawarai. All rights reserved. */
 /* ZYRAXON home hero — cinematic, living surface. */
 
+/* The home panels follow the app theme: light stays white/matching, dark stays
+   dark. Decorative cyan/fuchsia glows are only shown in dark so light mode
+   never reads as a fixed dark panel. */
+.home-hero {
+  background: linear-gradient(135deg, var(--v2-background-bg-layer-02), var(--v2-background-bg-base));
+  box-shadow: var(--v2-elevation-raised);
+}
+
+.home-guide {
+  background: var(--v2-background-bg-layer-01);
+}
+
+.home-decor {
+  display: none;
+}
+
+html[data-color-scheme="dark"] .home-decor {
+  display: block;
+}
+
+html[data-color-scheme="dark"] .home-hero {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 212, 255, 0.1),
+    rgba(0, 212, 255, 0.02) 32%,
+    var(--v2-background-bg-base) 100%
+  );
+}
+
+/* Cyan accents need more contrast on a light surface. */
+html[data-color-scheme="light"] .home-hero .text-cyan-200,
+html[data-color-scheme="light"] .home-hero .text-cyan-300,
+html[data-color-scheme="light"] .home-guide .text-cyan-300 {
+  color: #0e7490;
+}
+
+html[data-color-scheme="light"] .home-hero .text-fuchsia-200\/90,
+html[data-color-scheme="light"] .home-guide .text-cyan-200 {
+  color: #a21caf;
+}
+
 .hero-watermark {
   position: absolute;
   right: -14px;

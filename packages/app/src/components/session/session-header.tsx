@@ -599,22 +599,6 @@ function SessionHeaderV2Actions(props: { state: SessionHeaderV2ActionsState }) {
           />
         </TooltipV2>
       </Show>
-      <Show when={props.state.browserVisible}>
-        <TooltipV2 class="shrink-0" placement="bottom" value="Browser — open real web in ZYRAXON">
-          <IconButtonV2
-            type="button"
-            variant="ghost-muted"
-            size="large"
-            class="!w-9 shrink-0"
-            state={props.state.browserOpened ? "pressed" : undefined}
-            onClick={props.state.onBrowserToggle}
-            aria-label="Browser"
-            aria-expanded={props.state.browserOpened}
-            aria-controls="browser-panel"
-            icon={<IconV2 name="browser" />}
-          />
-        </TooltipV2>
-      </Show>
       <TooltipV2
         class="shrink-0"
         placement="bottom"

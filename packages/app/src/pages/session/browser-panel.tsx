@@ -2,6 +2,7 @@
 
 import { createSignal, onCleanup, onMount, Show, For } from "solid-js"
 import { IconButtonV2 } from "@zyraxon-ai/ui/v2/icon-button-v2"
+import { ButtonV2 } from "@zyraxon-ai/ui/v2/button-v2"
 import { Icon as IconV2 } from "@zyraxon-ai/ui/v2/icon"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
 import { usePrompt } from "@/context/prompt"
@@ -80,9 +81,17 @@ export function BrowserPanel() {
 
   const navigate = () => {
     const value = address().trim()
-    if (!value || !window.api?.browser) return
-    void window.api.browser.navigate(value)
-    viewportRef?.focus()
+    if (!value) return
+    if (window.api?.browser) {
+      void window.api.browser.navigate(value)
+      viewportRef?.focus()
+      return
+    }
+    // Web fallback: there is no embedded browser outside the desktop app, so open
+    // the address in a real browser window instead.
+    const url = /^https?:\/\//i.test(value) ? value : `https://${value}`
+    setAddress(url)
+    window.open(url, "_blank", "noopener")
   }
 
   const toggleReview = () => {
@@ -284,7 +293,26 @@ export function BrowserPanel() {
       </Show>
 
       <div class="min-h-0 flex-1 bg-black">
-        <div ref={viewportRef} class="h-full w-full outline-none" tabIndex={0} aria-label="ZYRAXON browser viewport" />
+        <Show
+          when={!!window.api?.browser}
+          fallback={
+            <div class="flex h-full w-full flex-col items-center justify-center gap-4 bg-v2-background-bg-base px-8 text-center">
+              <IconV2 name="globe" class="text-3xl text-v2-text-text-faint" />
+              <div class="text-[13px] text-v2-text-text-muted">
+                The embedded real browser runs inside the ZYRAXON desktop app.
+              </div>
+              <ButtonV2
+                variant="contrast"
+                size="normal"
+                onClick={() => window.open(address() || "https://www.google.com/", "_blank", "noopener")}
+              >
+                Open in real browser
+              </ButtonV2>
+            </div>
+          }
+        >
+          <div ref={viewportRef} class="h-full w-full outline-none" tabIndex={0} aria-label="ZYRAXON browser viewport" />
+        </Show>
       </div>
 
       <Show when={selection()}>

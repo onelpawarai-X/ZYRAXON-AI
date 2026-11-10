@@ -14,6 +14,7 @@ import { KeybindV2 } from "@zyraxon-ai/ui/v2/keybind-v2"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
 
 import { LayoutRoute, useLayout } from "@/context/layout"
+import { setSidebarLocked, setSidebarPinned, sidebarLocked } from "@/pages/layout/sidebar-pin"
 import { usePlatform } from "@/context/platform"
 import { useCommand } from "@/context/command"
 import { useLanguage } from "@/context/language"
@@ -28,7 +29,6 @@ import { ServerConnection, useServer } from "@/context/server"
 import { useTabs } from "@/context/tabs"
 import type { PromptSession } from "@/context/prompt"
 import "./titlebar.css"
-import { newTabTooltipKeybind } from "./command-tooltip-keybind"
 import { viewerCount, streamStatus, captureMode, setCaptureMode } from "@/hooks/stream-state"
 
 type TauriDesktopWindow = {
@@ -474,30 +474,49 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
                   "md:pl-4": !mac(),
                 }}
               >
-                <ChannelIndicator />
-                <Show when={windows() || linux()}>
-                  <WindowsAppMenu command={command} platform={platform} variant="v2" />
-                </Show>
-                <Show when={!creating()}>
-                  <TooltipV2
-                    placement="bottom"
-                    value={
-                      <>
-                        {language.t("command.session.new")}
-                        <KeybindV2 keys={newTabTooltipKeybind(command)} variant="neutral" />
-                      </>
-                    }
-                  >
+                <Show when={layout.route().type !== "home"}>
+                  <TooltipV2 placement="bottom" value={language.t("command.sidebar.toggle")}>
                     <IconButtonV2
                       type="button"
                       variant="ghost-muted"
                       size="large"
-                      class="shrink-0"
-                      icon={<IconV2 name="plus" />}
-                      onClick={openNewTab}
-                      aria-label={language.t("command.session.new")}
+                      class="shrink-0 titlebar-sidebar-toggle"
+                      icon={<IconV2 name={layout.sidebar.opened() ? "sidebar-active" : "sidebar"} />}
+                      onClick={(event) => {
+                        if (event.detail > 1) return
+                        if (sidebarLocked()) {
+                          setSidebarLocked(false)
+                          setSidebarPinned(true)
+                          layout.sidebar.open()
+                          return
+                        }
+                        const next = !layout.sidebar.opened()
+                        setSidebarPinned(next)
+                        if (next) layout.sidebar.open()
+                        else layout.sidebar.close()
+                      }}
+                      onDblClick={() => {
+                        setSidebarLocked(true)
+                        setSidebarPinned(false)
+                        layout.sidebar.close()
+                      }}
+                      onContextMenu={(event) => {
+                        event.preventDefault()
+                        const lock = !sidebarLocked()
+                        setSidebarLocked(lock)
+                        setSidebarPinned(!lock)
+                        if (lock) layout.sidebar.close()
+                        else layout.sidebar.open()
+                      }}
+                      aria-label={language.t("command.sidebar.toggle")}
+                      aria-expanded={layout.sidebar.opened()}
+                      data-locked={sidebarLocked() ? "" : undefined}
                     />
                   </TooltipV2>
+                </Show>
+                <ChannelIndicator />
+                <Show when={windows() || linux()}>
+                  <WindowsAppMenu command={command} platform={platform} variant="v2" />
                 </Show>
                 <div class="flex-1" />
                 <TooltipV2
@@ -624,42 +643,6 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
                   </Button>
                 </TooltipKeybind>
                 <div class="hidden xl:flex items-center shrink-0">
-                  <Show when={params.dir}>
-                    <div
-                      class="flex items-center shrink-0 w-8 mr-1"
-                      aria-hidden={layout.sidebar.opened() ? "true" : undefined}
-                    >
-                      <div
-                        class="transition-opacity"
-                        classList={{
-                          "opacity-100 duration-120 ease-out": !layout.sidebar.opened(),
-                          "opacity-0 duration-120 ease-in delay-0 pointer-events-none": layout.sidebar.opened(),
-                        }}
-                      >
-                        <TooltipKeybind
-                          placement="bottom"
-                          title={language.t("command.session.new")}
-                          keybind={command.keybind("session.new")}
-                          openDelay={800}
-                        >
-                          <Button
-                            variant="ghost"
-                            class="titlebar-icon w-8 h-6 p-0 box-border"
-                            disabled={layout.sidebar.opened()}
-                            tabIndex={layout.sidebar.opened() ? -1 : undefined}
-                            onClick={() => {
-                              if (!params.dir) return
-                              navigate(`/${params.dir}/session`)
-                            }}
-                            aria-label={language.t("command.session.new")}
-                            aria-current={creating() ? "page" : undefined}
-                          >
-                            <IconV2 name="edit" size="small" />
-                          </Button>
-                        </TooltipKeybind>
-                      </div>
-                    </div>
-                  </Show>
                   <div
                     class="flex items-center shrink-0"
                     classList={{

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 import { createSignal, createEffect, onCleanup, Show, For } from "solid-js"
+import { useNavigate } from "@solidjs/router"
 import { Button } from "@zyraxon-ai/ui/button"
 import { showToast } from "@/utils/toast"
 import { useLanguage } from "@/context/language"
@@ -50,6 +51,7 @@ const AUDIO_OPTIONS = [
 
 export default function StreamPage() {
   const language = useLanguage()
+  const navigate = useNavigate()
   const [streamKey, setStreamKey] = createSignal("")
   const [streamUrl, setStreamUrl] = createSignal("rtmp://a.rtmp.youtube.com/live2")
   const [youtubeApiKey, setYoutubeApiKey] = createSignal("")
@@ -191,6 +193,14 @@ export default function StreamPage() {
     <div class="flex-1 overflow-auto">
       <div class="max-w-3xl mx-auto p-8">
         <div class="flex items-center gap-4 mb-8">
+          <Button
+            variant="ghost"
+            icon="chevron-left"
+            onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))}
+            aria-label="Back"
+          >
+            Back
+          </Button>
           <div
             style={{ "background-color": statusColor() }}
             class="w-4 h-4 rounded-full"

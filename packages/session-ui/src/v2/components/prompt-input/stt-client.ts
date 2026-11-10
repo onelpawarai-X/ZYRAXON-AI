@@ -168,14 +168,52 @@ function autoCandidates(): string[] {
   return out.slice(0, 3)
 }
 
+const WORD_KEYS = /[^\p{L}\p{N}]+/gu
+
+function wordKey(word: string) {
+  return word.toLowerCase().replace(WORD_KEYS, "")
+}
+
+/** Edit distance capped at 2 — enough to treat "knot"/"not" as the same word. */
+function withinOneEdit(left: string, right: string) {
+  if (left === right) return true
+  if (Math.abs(left.length - right.length) > 1) return false
+  const [shorter, longer] = left.length <= right.length ? [left, right] : [right, left]
+  let i = 0
+  let j = 0
+  let edits = 0
+  while (i < shorter.length && j < longer.length) {
+    if (shorter[i] === longer[j]) {
+      i++
+      j++
+      continue
+    }
+    if (++edits > 1) return false
+    if (shorter.length === longer.length) i++
+    j++
+  }
+  return edits + (longer.length - j) <= 1
+}
+
+function sameWord(left: string, right: string) {
+  const a = wordKey(left)
+  const b = wordKey(right)
+  if (!a || !b) return a === b
+  if (a === b) return true
+  // The recogniser spells a re-read tail differently on the second pass ("knot" then
+  // "not"); one edit is treated as the same word so the repeat is joined, not printed.
+  return a.length >= 3 && b.length >= 3 && withinOneEdit(a, b)
+}
+
 /**
  * Fold a fresh rolling result into the transcript already on screen.
  *
- * The rolling endpoint re-reads the last window every tick, so consecutive
- * answers overlap: one tick says "hello world", the next says "world how are
- * you". The old code replaced the transcript with each answer, which is why a
- * second sentence wiped the first. This keeps the longer of two answers when one
- * contains the other, and otherwise joins them on their shared words.
+ * The rolling endpoint re-reads the last window every tick, so consecutive answers
+ * overlap: one tick says "hello world", the next says "world how are you". The old
+ * code replaced the transcript with each answer, which is why a second sentence
+ * wiped the first. This keeps the longer of two answers when one contains the
+ * other, and otherwise joins them on their shared words — matching words fuzzily so
+ * a re-read tail spelled differently is not appended a second time.
  */
 export function mergeGrowing(previous: string, incoming: string): string {
   const before = previous.trim()
@@ -185,14 +223,24 @@ export function mergeGrowing(previous: string, incoming: string): string {
   if (after === before) return before
   if (after.startsWith(before)) return after
   if (before.startsWith(after)) return before
+  // A rolling window often re-emits the tail it already reported, either on its own
+  // ("world") or wrapped in the new sentence ("world how are you"). Treating those as
+  // a suffix or a contained run is what stops the last words being printed twice.
+  if (before.endsWith(after)) return before
+  if (after.includes(before)) return after
 
   const a = before.split(/\s+/)
   const b = after.split(/\s+/)
   const most = Math.min(a.length, b.length)
   for (let overlap = most; overlap > 0; overlap--) {
-    if (a.slice(a.length - overlap).join(" ") === b.slice(0, overlap).join(" ")) {
-      return [...a, ...b.slice(overlap)].join(" ")
+    let matched = true
+    for (let i = 0; i < overlap; i++) {
+      if (!sameWord(a[a.length - overlap + i], b[i])) {
+        matched = false
+        break
+      }
     }
+    if (matched) return [...a, ...b.slice(overlap)].join(" ")
   }
   return `${before} ${after}`
 }
@@ -294,7 +342,11 @@ export class RealtimeStt {
 
   private apply(result: SttResponse) {
     const incoming = (result.text || "").trim()
-    this.committed = result.committed ?? this.committed
+    // The host clears `committed` on ticks that produced no new text. Adopting that
+    // empty string as the new anchor dropped the anchor entirely, so the next tick
+    // re-reported text that was already on screen and it was printed a second time.
+    // Only a non-empty `committed` is a new anchor.
+    if (result.committed) this.committed = result.committed
     if (!incoming) return
     const merged = mergeGrowing(this.transcript, incoming)
     if (merged === this.transcript) return

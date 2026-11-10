@@ -44,6 +44,7 @@ import { Dynamic } from "solid-js/web"
 import { makeEventListener } from "@solid-primitives/event-listener"
 import { CommandProvider, useCommand, type CommandOption } from "@/context/command"
 import { CommentsProvider } from "@/context/comments"
+import { InAppBrowserOverlay } from "@/components/in-app-browser"
 import { FileProvider } from "@/context/file"
 import { ServerSDKProvider } from "@/context/server-sdk"
 import { ServerSyncProvider, useServerSync } from "@/context/server-sync"
@@ -503,7 +504,10 @@ export function AppBaseProviders(props: ParentProps<{ locale?: Locale }>) {
                 <WslServersProvider>
                   <DialogProvider>
                     <MarkedProvider>
-                      <FileComponentProvider component={File}>{props.children}</FileComponentProvider>
+                      <FileComponentProvider component={File}>
+                        {props.children}
+                        <InAppBrowserOverlay />
+                      </FileComponentProvider>
                     </MarkedProvider>
                   </DialogProvider>
                 </WslServersProvider>

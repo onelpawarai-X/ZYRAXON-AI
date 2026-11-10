@@ -18,6 +18,7 @@ import { ServerConnection } from "@/context/server"
 import { useServerSDK } from "@/context/server-sdk"
 import { useTabs } from "@/context/tabs"
 import { fetchOmniSymbols, fetchOmniTextMatches } from "@/components/omni-search"
+import { openInAppBrowser } from "@/components/in-app-browser"
 import { SessionTabAvatar } from "@/pages/layout/session-tab-avatar"
 import { getRelativeTime } from "@/utils/time"
 import {
@@ -120,7 +121,7 @@ export function DialogCommandPaletteV2(props: { onOpenFile?: (path: string) => v
     if (!item) return
     if (item.type === "web") {
       palette.close()
-      platform.openLink(`https://www.google.com/search?q=${encodeURIComponent(item.webQuery ?? item.title)}`)
+      openInAppBrowser(`https://www.google.com/search?q=${encodeURIComponent(item.webQuery ?? item.title)}`)
       return
     }
     if (item.type === "ask") {
@@ -146,14 +147,21 @@ export function DialogCommandPaletteV2(props: { onOpenFile?: (path: string) => v
   )
 }
 
+// The home palette cannot reach the directory-scoped FileProvider (home has no
+// directory SDK), so unlike DialogCommandPaletteV2 it never touches `useFile`.
+// It still offers the omniscient surface — symbols, content, web and ask — by
+// talking to the server-level client, which resolves find queries against the
+// server's working directory.
 export function DialogHomeCommandPaletteV2(props: {
   server: ServerConnection.Any
   onSelectSession: (entry: CommandPaletteEntry) => void
+  onAsk?: (query: string) => void
 }) {
   const command = useCommand()
   const dialog = useDialog()
   const global = useGlobal()
   const language = useLanguage()
+  const platform = usePlatform()
   const serverCtx = global.ensureServerCtx(props.server)
   const state = { cleanup: undefined as (() => void) | void, committed: false }
   const commandEntries = createMemo(() => {
@@ -180,6 +188,16 @@ export function DialogHomeCommandPaletteV2(props: {
     if (!item) return
     state.committed = true
     state.cleanup = undefined
+    if (item.type === "web") {
+      dialog.close()
+      openInAppBrowser(`https://www.google.com/search?q=${encodeURIComponent(item.webQuery ?? item.title)}`)
+      return
+    }
+    if (item.type === "ask") {
+      dialog.close()
+      props.onAsk?.(item.askQuery ?? item.title)
+      return
+    }
     dialog.close()
     if (item.type === "command") {
       item.option?.onSelect?.("palette")
@@ -190,7 +208,37 @@ export function DialogHomeCommandPaletteV2(props: {
   const loadItems = async (text: string) => {
     const query = text.trim()
     if (!query) return commandEntries().slice(0, 5)
-    return [...commandEntries().filter((entry) => matchesEntry(entry, query)), ...(await sessions(query))]
+    const symbolCategory = language.t("palette.group.symbols")
+    const contentCategory = language.t("palette.group.content")
+    const webCategory = language.t("palette.group.web")
+    const askCategory = language.t("palette.group.ask")
+    const [nextSessions, symbols, texts] = await Promise.all([
+      sessions(query),
+      query.length >= 2 ? fetchOmniSymbols(serverCtx.sdk.client, query, symbolCategory, 6) : Promise.resolve([]),
+      query.length >= 3 ? fetchOmniTextMatches(serverCtx.sdk.client, query, contentCategory, 4) : Promise.resolve([]),
+    ])
+    return [
+      {
+        id: `ask:${query}`,
+        type: "ask" as const,
+        title: language.t("palette.ask.action", { query }),
+        description: language.t("palette.ask.description"),
+        category: askCategory,
+        askQuery: query,
+      },
+      ...commandEntries().filter((entry) => matchesEntry(entry, query)),
+      ...nextSessions,
+      ...symbols,
+      ...texts,
+      {
+        id: `web:${query}`,
+        type: "web" as const,
+        title: language.t("palette.web.action", { query }),
+        description: language.t("palette.web.description"),
+        category: webCategory,
+        webQuery: query,
+      },
+    ]
   }
 
   onCleanup(() => {

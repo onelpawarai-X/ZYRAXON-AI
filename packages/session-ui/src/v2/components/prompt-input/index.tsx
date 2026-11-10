@@ -53,11 +53,22 @@ export function PromptInputV2(props: PromptInputV2Props) {
   // setText replaces the whole draft, so a naive voice insert destroyed whatever the
   // user had typed before pressing the mic. Capture the pre-recording draft once and
   // append every transcript segment to it instead.
+  //
+  // `voicePaint` is the exact string the mic last wrote. Comparing it to the box on
+  // every update is what tells an untouched box apart from one the user edited: if
+  // they match, the speech portion is replaced and the original base is kept; if they
+  // differ, the user typed, cut, or cleared the box, so their current text becomes the
+  // new base. Without that, deleting everything mid-recording and then stopping made
+  // the mic resurrect the whole transcript it still held.
   let voiceBase: string | undefined
-  const appendVoice = (text: string) => {
-    voiceBase ??= props.controller.value()
+  let voicePaint: string | undefined
+  const paintVoice = (text: string) => {
+    const current = props.controller.value()
+    if (voiceBase === undefined || current !== voicePaint) voiceBase = current
     const separator = voiceBase.trim() && text.trim() ? "\n" : ""
-    return voiceBase + separator + text
+    const next = text ? voiceBase + separator + text : voiceBase
+    voicePaint = next
+    props.controller.setText(next)
   }
   const updateCursor = () => {
     if (!editor || !window.getSelection()?.isCollapsed) return
@@ -268,8 +279,10 @@ export function PromptInputV2(props: PromptInputV2Props) {
           >
             <PromptInputV2MicButton
               onTranscript={(text, _lang) => {
-                // Final settle only — live text already streamed via onLiveText; never auto-send
-                props.controller.setText(appendVoice(text))
+                // The final pass refines wording only. The live ticks already painted
+                // the transcript, so re-appending it here is what printed every
+                // sentence twice; paint over the same base instead.
+                if (text) paintVoice(text)
                 requestAnimationFrame(() => editor?.focus())
               }}
               onLiveText={(text) => {
@@ -277,9 +290,10 @@ export function PromptInputV2(props: PromptInputV2Props) {
                 if (!text) {
                   // The mic clears its own previous paint before each new recording.
                   voiceBase = undefined
+                  voicePaint = undefined
                   return
                 }
-                props.controller.setText(appendVoice(text))
+                paintVoice(text)
               }}
               onError={(err) => console.error("[Mic]", err)}
               disabled={state.mode === "shell"}

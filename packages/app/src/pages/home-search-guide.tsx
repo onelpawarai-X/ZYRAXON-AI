@@ -18,7 +18,7 @@ export function HomeSearchGuide() {
   ]
 
   return (
-    <section class="relative col-span-full overflow-hidden rounded-2xl border border-cyan-400/12 bg-[linear-gradient(135deg,rgba(0,212,255,0.06),rgba(10,16,29,0.55)_100%)] p-4 lg:p-5">
+    <section class="home-guide relative col-span-full overflow-hidden rounded-2xl border border-cyan-400/12 p-4 lg:p-5">
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-2.5">
           <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-300">
