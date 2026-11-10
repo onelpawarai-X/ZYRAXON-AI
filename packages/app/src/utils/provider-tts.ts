@@ -79,6 +79,39 @@ export function resolveSpeechLocale(text: string, preferred?: string): string | 
 }
 
 /**
+ * The gender the endpoint should voice, or undefined to leave it to the endpoint.
+ *
+ * The endpoint picks a female voice when the field is absent, so a missing gender
+ * is not a neutral default — it is a silent "female". Anything that is not an
+ * explicit male request therefore has to fall back to undefined only when the
+ * caller genuinely has no preference; the app's own setting is "male" or "female"
+ * and is always passed through.
+ */
+export function speechGender(gender: string | undefined): "male" | "female" | undefined {
+  if (gender === "male" || gender === "m") return "male"
+  if (gender === "female" || gender === "f") return "female"
+  return undefined
+}
+
+/**
+ * The JSON body the endpoint expects. Kept separate from the fetch so the exact
+ * shape — text, detected locale, and gender — is unit-testable without a network
+ * call or a mocked `fetch`.
+ */
+export function providerSpeechBody(
+  text: string,
+  locale?: string,
+  gender?: string,
+): { text: string; locale?: string; gender?: "male" | "female" } {
+  const resolvedGender = speechGender(gender)
+  return {
+    text,
+    locale: locale ?? detectSpeechLocale(text),
+    ...(resolvedGender ? { gender: resolvedGender } : {}),
+  }
+}
+
+/**
  * A request whose body is the spoken audio, in the same shape the built-in
  * engine's prefetch returns so both engines share one playback path.
  *
@@ -89,6 +122,7 @@ export function resolveSpeechLocale(text: string, preferred?: string): string | 
 export function providerSpeechRequest(
   text: string,
   locale?: string,
+  gender?: string,
   signal?: AbortSignal,
 ): { promise: Promise<Response | null>; controller: AbortController } {
   const controller = new AbortController()
@@ -96,7 +130,7 @@ export function providerSpeechRequest(
   const promise = fetch(PROVIDER_TTS_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, locale: locale ?? detectSpeechLocale(text) }),
+    body: JSON.stringify(providerSpeechBody(text, locale, gender)),
     signal: controller.signal,
   })
     .then((resp) => {
@@ -116,7 +150,7 @@ export function providerSpeechRequest(
  * path. One utterance at a time, in order, and `stop()` silences the current one
  * so a cancelled reply cannot keep talking.
  */
-export function createProviderSpeaker() {
+export function createProviderSpeaker(getGender?: () => string | undefined) {
   let queue: string[] = []
   let playing = false
   let audio: HTMLAudioElement | null = null
@@ -128,7 +162,7 @@ export function createProviderSpeaker() {
     try {
       while (!stopped && queue.length > 0) {
         const piece = queue.shift()!
-        const { promise } = providerSpeechRequest(piece, resolveSpeechLocale(piece))
+        const { promise } = providerSpeechRequest(piece, resolveSpeechLocale(piece), getGender?.())
         const resp = await promise
         if (!resp || stopped) continue
         const blob = await resp.blob()

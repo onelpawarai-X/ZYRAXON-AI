@@ -12,10 +12,6 @@ import { SettingsListV2 } from "./parts/list"
 import { SettingsRowV2 } from "./parts/row"
 import "./settings-v2.css"
 
-/** One speaker for the settings panel, so repeated test taps replace each other
- *  instead of layering up. */
-const providerTestSpeaker = createProviderSpeaker()
-
 function NotificationsSection() {
   const language = useLanguage()
   const settings = useSettings()
@@ -68,6 +64,11 @@ function NotificationsSection() {
 function VoiceSection() {
   const language = useLanguage()
   const settings = useSettings()
+
+  // One speaker for the voice panel, so repeated test taps replace each other
+  // instead of layering up. The gender is read at speak time, so the test always
+  // reflects the buttons above it.
+  const providerTestSpeaker = createProviderSpeaker(() => settings.general.voiceGender())
 
   const languages = [
     { id: "auto", value: "auto", label: language.t("settings.voice.language.auto") },

@@ -76,7 +76,7 @@ import { sessionTitle } from "@/utils/session-title"
 import { scheduleConnectedMeasure } from "./measure"
 import { observeElementOffsetReconnectAware } from "./observe-element-offset"
 import { createTimelineProjection } from "./projection"
-import { providerSpeechRequest, resolveSpeechLocale } from "@/utils/provider-tts"
+import { providerSpeechRequest, resolveSpeechLocale, speechGender } from "@/utils/provider-tts"
 import { MessageComment, SummaryDiff, TimelineRow, TimelineRowMap } from "./rows"
 import { MediaProcessingIndicator } from "./media-processing"
 import { filterVirtualIndexes } from "./virtual-items"
@@ -1084,6 +1084,18 @@ export function MessageTimeline(props: {
       const utterance = new SpeechSynthesisUtterance(text)
       const voiceLang = settings.general.voiceLanguage?.() || "en-US"
       utterance.lang = voiceLang === "auto" ? "en-US" : voiceLang
+      // The platform voices are not gender-tagged, so the gender is matched from
+      // the voice's own name ("… Male", "… Female") for the chosen language. When
+      // nothing matches, the platform default is left in place rather than
+      // silenced, because a wrong-gender voice still speaks the reply.
+      const want = speechGender(settings.general.voiceGender?.())
+      if (want) {
+        const prefix = utterance.lang.split("-")[0].toLowerCase()
+        const match = synth
+          .getVoices()
+          .find((v) => v.lang.toLowerCase().startsWith(prefix) && v.name.toLowerCase().includes(want))
+        if (match) utterance.voice = match
+      }
       utterance.onstart = () => setRenderTTSActive(true)
       utterance.onend = () => setRenderTTSActive(false)
       utterance.onerror = () => setRenderTTSActive(false)
@@ -1100,9 +1112,15 @@ export function MessageTimeline(props: {
 
   function startTTSPrefetch(chunk: string) {
     // The provider engine has its own endpoint and picks the voice from the
-    // text's language, so the local server's gender/lang query does not apply.
+    // text's language, but the gender has to be asked for: the endpoint answers
+    // with a female voice when the field is missing, so a "male" setting that is
+    // not sent is silently ignored.
     if (settings.general.voiceEngine?.() === "provider") {
-      return providerSpeechRequest(chunk, resolveSpeechLocale(chunk, settings.general.voiceLanguage?.()))
+      return providerSpeechRequest(
+        chunk,
+        resolveSpeechLocale(chunk, settings.general.voiceLanguage?.()),
+        settings.general.voiceGender?.(),
+      )
     }
     const gender = settings.general.voiceGender?.() === "male" ? "m" : "f"
     const voiceLang = settings.general.voiceLanguage?.() || "en-US"
