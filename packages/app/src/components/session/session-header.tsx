@@ -579,26 +579,6 @@ function SessionHeaderV2Actions(props: { state: SessionHeaderV2ActionsState }) {
           icon={<IconV2 name="message-square" />}
         />
       </TooltipV2>
-      <Show when={props.state.previewVisible}>
-        <TooltipV2
-          class="shrink-0"
-          placement="bottom"
-          value={props.state.previewLabel}
-        >
-          <IconButtonV2
-            type="button"
-            variant="ghost-muted"
-            size="large"
-            class="!w-9 shrink-0"
-            state={props.state.previewOpened ? "pressed" : undefined}
-            onClick={props.state.onPreviewToggle}
-            aria-label={props.state.previewLabel}
-            aria-expanded={props.state.previewOpened}
-            aria-controls="preview-panel"
-            icon={<IconV2 name="preview" />}
-          />
-        </TooltipV2>
-      </Show>
       <TooltipV2
         class="shrink-0"
         placement="bottom"

@@ -916,7 +916,10 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
               setPreviewActiveState(false)
             },
             toggle() {
-              setPreviewActiveState(!getPreviewActive())
+              // `getPreviewActive()` returns the accessor, not its value, so it is
+              // always truthy; reading it twice (`getPreviewActive()()`) is what
+              // actually flips the flag instead of pinning it to false.
+              setPreviewActiveState(!getPreviewActive()())
               setReviewPanelOpened(true, "other")
             },
           },
@@ -931,7 +934,7 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
               setBrowserActiveState(false)
             },
             toggle() {
-              setBrowserActiveState(!getBrowserActive())
+              setBrowserActiveState(!getBrowserActive()())
               setPreviewActiveState(false)
               setReviewPanelOpened(true, "other")
             },

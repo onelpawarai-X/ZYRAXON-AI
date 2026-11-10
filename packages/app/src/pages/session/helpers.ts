@@ -65,6 +65,7 @@ export const createSessionTabs = (input: TabsInput) => {
     const active = input.tabs().active()
     if (active === "context") return active
     if (active === "preview") return active
+    if (active === "browser") return active
     if (active === "allfiles") return active
     if (active === "ecosystem") return active
     if (active === "daily-tasks") return active

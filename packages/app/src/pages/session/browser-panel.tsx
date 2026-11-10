@@ -87,11 +87,10 @@ export function BrowserPanel() {
       viewportRef?.focus()
       return
     }
-    // Web fallback: there is no embedded browser outside the desktop app, so open
-    // the address in a real browser window instead.
+    // Web fallback: there is no embedded Chromium outside the desktop app, so the
+    // address drives an iframe preview instead of opening a second window.
     const url = /^https?:\/\//i.test(value) ? value : `https://${value}`
     setAddress(url)
-    window.open(url, "_blank", "noopener")
   }
 
   const toggleReview = () => {
@@ -296,18 +295,26 @@ export function BrowserPanel() {
         <Show
           when={!!window.api?.browser}
           fallback={
-            <div class="flex h-full w-full flex-col items-center justify-center gap-4 bg-v2-background-bg-base px-8 text-center">
-              <IconV2 name="globe" class="text-3xl text-v2-text-text-faint" />
-              <div class="text-[13px] text-v2-text-text-muted">
-                The embedded real browser runs inside the ZYRAXON desktop app.
+            <div class="flex h-full w-full flex-col bg-v2-background-bg-base">
+              <iframe
+                title="ZYRAXON web preview"
+                src={address()}
+                class="min-h-0 flex-1 w-full border-0 bg-white"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+                referrerpolicy="no-referrer"
+              />
+              <div class="shrink-0 flex items-center justify-center gap-3 border-t border-v2-border-border-weaker-base px-3 py-2 text-center">
+                <div class="text-[11px] text-v2-text-text-faint">
+                  Some sites refuse to be embedded. The full browser runs inside the ZYRAXON desktop app.
+                </div>
+                <ButtonV2
+                  variant="contrast"
+                  size="small"
+                  onClick={() => window.open(address() || "https://www.google.com/", "_blank", "noopener")}
+                >
+                  Open in real browser
+                </ButtonV2>
               </div>
-              <ButtonV2
-                variant="contrast"
-                size="normal"
-                onClick={() => window.open(address() || "https://www.google.com/", "_blank", "noopener")}
-              >
-                Open in real browser
-              </ButtonV2>
             </div>
           }
         >

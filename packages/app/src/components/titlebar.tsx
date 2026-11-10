@@ -160,6 +160,17 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
     navigate(next.to)
   }
 
+  // The streaming button is a toggle: from the stream page it steps back out,
+  // from anywhere else it opens the stream page.
+  const toggleStream = () => {
+    if (location.pathname === "/stream") {
+      if (window.history.length > 1) navigate(-1)
+      else navigate("/")
+      return
+    }
+    navigate("/stream")
+  }
+
   command.register(() => [
     {
       id: "common.goBack",
@@ -574,7 +585,7 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
                         </Show>
                       </div>
                     }
-                    onClick={() => navigate("/stream")}
+                    onClick={toggleStream}
                     aria-label="YouTube Live Stream"
                   />
                 </TooltipV2>
@@ -725,7 +736,7 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
                 <Button
                   variant="ghost"
                   class="titlebar-icon w-8 h-6 p-0 box-border"
-                  onClick={() => navigate("/stream")}
+                  onClick={toggleStream}
                   aria-label="YouTube Live Stream"
                 >
                   <div class="flex items-center gap-1">

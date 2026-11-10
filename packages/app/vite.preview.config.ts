@@ -27,6 +27,7 @@ const API_PREFIXES = [
   "formatter",
   "global",
   "instance",
+  "local",
   "log",
   "lsp",
   "mcp",

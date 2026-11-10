@@ -10,3 +10,9 @@ const [pinned, setPinned] = createSignal(false)
 
 export const sidebarPinned = pinned
 export const setSidebarPinned = setPinned
+
+// Locked is the inverse of pinned: locked keeps the sidebar shut even when the
+// pointer reaches the left edge, while pinned keeps it open after the pointer
+// leaves. Both are stored as the same signal so they can never drift apart.
+export const sidebarLocked = () => !pinned()
+export const setSidebarLocked = (value: boolean) => setPinned(!value)

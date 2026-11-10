@@ -37,6 +37,7 @@ import { ButtonV2 } from "@zyraxon-ai/ui/v2/button-v2"
 import { createAutoScroll } from "@zyraxon-ai/ui/hooks"
 import { previewSelectedLines } from "@zyraxon-ai/session-ui/pierre/selection-bridge"
 import { getPreviewActive, getPreviewWidth, setPreviewActiveState } from "@/pages/session/preview-state"
+import { getBrowserActive, setBrowserActiveState } from "@/pages/session/browser-state"
 import { Button } from "@zyraxon-ai/ui/button"
 import { showToast } from "@/utils/toast"
 import { base64Encode, checksum } from "@zyraxon-ai/core/util/encode"
@@ -550,6 +551,7 @@ export default function Page() {
   )
   const previewActive = getPreviewActive()
   const previewWidth = getPreviewWidth()
+  const browserActive = getBrowserActive()
   const sessionPanelWidth = createMemo(() => {
     const sideOpen = settings.general.newLayoutDesigns()
       ? desktopSessionResizeOpen()
@@ -665,6 +667,7 @@ export default function Page() {
       (_id, prev) => {
         if (prev !== undefined && _id !== prev) {
           setPreviewActiveState(false)
+          setBrowserActiveState(false)
         }
       },
       { defer: true },
@@ -673,11 +676,33 @@ export default function Page() {
 
   // The header Preview button flips this flag; showing the preview panel then means
   // also selecting the preview tab, so the panel never opens onto the diff view.
+  // Toggling it back off returns to the diff view instead of leaving the tab pinned.
   createEffect(
     on(
       previewActive,
       (active) => {
-        if (active && tabs().active() !== "preview") tabs().setActive("preview")
+        if (active) {
+          if (tabs().active() !== "preview") tabs().setActive("preview")
+          return
+        }
+        if (tabs().active() === "preview") tabs().setActive("review")
+      },
+      { defer: true },
+    ),
+  )
+
+  // The header Browser button flips the same kind of flag for the embedded browser.
+  // Without this the panel opens while the diff view is still the selected tab, so
+  // the browser never becomes visible.
+  createEffect(
+    on(
+      browserActive,
+      (active) => {
+        if (active) {
+          if (tabs().active() !== "browser") tabs().setActive("browser")
+          return
+        }
+        if (tabs().active() === "browser") tabs().setActive("review")
       },
       { defer: true },
     ),
@@ -2454,7 +2479,7 @@ const queueEnabled = createMemo(() => {
           </Show>
         </div>
 
-        <Show when={!newSessionDesign() && (desktopSidePanelOpen() || activeTab() === "preview" || getPreviewActive())}>
+        <Show when={!newSessionDesign() && (desktopSidePanelOpen() || activeTab() === "preview" || activeTab() === "browser" || getPreviewActive() || getBrowserActive())}>
           <SessionSidePanel
             canReview={canReview}
             canPreview={canPreview}
@@ -2472,9 +2497,9 @@ const queueEnabled = createMemo(() => {
           />
         </Show>
         <Show when={newSessionDesign()}>
-          <Show when={isDesktop() ? (desktopSessionResizeOpen() || activeTab() === "preview" || getPreviewActive()) : terminalOpen()}>
+          <Show when={isDesktop() ? (desktopSessionResizeOpen() || activeTab() === "preview" || activeTab() === "browser" || getPreviewActive() || getBrowserActive()) : terminalOpen()}>
             <div class="min-w-0 h-full flex flex-1 flex-col">
-              <Show when={isDesktop() && (desktopV2ReviewOpen() || desktopFileTreeOpen() || activeTab() === "preview" || getPreviewActive())}>
+              <Show when={isDesktop() && (desktopV2ReviewOpen() || desktopFileTreeOpen() || activeTab() === "preview" || activeTab() === "browser" || getPreviewActive() || getBrowserActive())}>
                 <div class="min-h-0 flex-1">
                   <SessionSidePanel
                     canReview={canReview}
