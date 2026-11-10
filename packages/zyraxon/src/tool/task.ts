@@ -266,6 +266,17 @@ export const TaskTool = Tool.define(
           Effect.flatMap((result) => {
             if (result.info?.status === "completed") return inject("completed", result.info.output ?? "")
             if (result.info?.status === "error") return inject("error", result.info.error ?? "")
+            // A stopped task still has to hand its work back. The session is
+            // resumed with whatever the task produced so far plus a note that the
+            // stop was deliberate, so the agent can decide the next step instead
+            // of silently losing the run.
+            if (result.info?.status === "cancelled")
+              return inject(
+                "completed",
+                [result.info.output ?? "", "The user stopped this background task before it finished. Continue from here."]
+                  .filter(Boolean)
+                  .join("\n\n"),
+              )
             return Effect.void
           }),
           Effect.forkIn(scope, { startImmediately: true }),

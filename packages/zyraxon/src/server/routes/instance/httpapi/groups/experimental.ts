@@ -31,6 +31,20 @@ const CapabilitiesResponse = Schema.Struct({
   backgroundSubagents: Schema.Boolean,
 }).annotate({ identifier: "ExperimentalCapabilities" })
 
+const BackgroundJobInfo = Schema.Struct({
+  id: Schema.String,
+  type: Schema.String,
+  title: Schema.optionalKey(Schema.String),
+  status: Schema.Literals(["running", "completed", "error", "cancelled"]),
+  started_at: Schema.Number,
+  completed_at: Schema.optionalKey(Schema.Number),
+  output: Schema.optionalKey(Schema.String),
+  error: Schema.optionalKey(Schema.String),
+  metadata: Schema.optionalKey(Schema.Record(Schema.String, Schema.Unknown)),
+}).annotate({ identifier: "BackgroundJobInfo" })
+
+const BackgroundJobList = Schema.Array(BackgroundJobInfo).annotate({ identifier: "BackgroundJobList" })
+
 const ConsoleOrgOption = Schema.Struct({
   accountID: Schema.String,
   accountEmail: Schema.String,
@@ -100,6 +114,8 @@ export const ExperimentalPaths = {
   worktreeReset: "/experimental/worktree/reset",
   session: "/experimental/session",
   sessionBackground: "/experimental/session/:sessionID/background",
+  backgroundJobs: "/experimental/background/jobs",
+  backgroundJobStop: "/experimental/background/jobs/:jobID/stop",
   resource: "/experimental/resource",
 } as const
 
@@ -245,6 +261,28 @@ export const ExperimentalApi = HttpApi.make("experimental")
             summary: "Background subagents",
             description:
               "Detach any synchronous subagents currently blocking the session and continue them in the background.",
+          }),
+        ),
+        HttpApiEndpoint.get("backgroundJobs", ExperimentalPaths.backgroundJobs, {
+          query: WorkspaceRoutingQuery,
+          success: described(BackgroundJobList, "Background jobs"),
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "experimental.background.jobs.list",
+            summary: "List background jobs",
+            description: "Get every background job known to this server, newest last.",
+          }),
+        ),
+        HttpApiEndpoint.post("backgroundJobStop", ExperimentalPaths.backgroundJobStop, {
+          params: { jobID: Schema.String },
+          query: WorkspaceRoutingQuery,
+          success: described(Schema.Boolean, "Whether the job was stopped"),
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "experimental.background.jobs.stop",
+            summary: "Stop a background job",
+            description:
+              "Stop one running background job. The work is interrupted at its next safe point and its partial output is kept.",
           }),
         ),
         HttpApiEndpoint.get("resource", ExperimentalPaths.resource, {

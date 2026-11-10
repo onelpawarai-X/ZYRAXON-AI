@@ -168,6 +168,7 @@ export function MonacoEditor(props: MonacoEditorProps) {
       <style>
         @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes micPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(0,255,136,0.45); } 50% { box-shadow: 0 0 0 6px rgba(0,255,136,0); } }
+        @keyframes micSpin { to { transform: rotate(360deg); } }
         .aic-card { width: 520px; max-width: min(92vw, 520px); padding: 12px 14px; background: ${bg};
           border: 1px solid ${border}; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.45);
           display: flex; flex-direction: column; gap: 10px; }
@@ -201,6 +202,8 @@ export function MonacoEditor(props: MonacoEditorProps) {
         .aic-btn:hover { border-color: ${accent}; color: ${accent}; background: rgba(0,255,136,0.06); }
         .aic-btn svg { width: 16px; height: 16px; fill: currentColor; }
         .aic-btn.rec { color: ${accent}; border-color: ${accent}; animation: micPulse 1.2s infinite; }
+        .aic-btn.busy { color: ${accent}; border-color: ${accent}; opacity: .75; cursor: progress; }
+        .aic-btn.busy svg { animation: micSpin 1s linear infinite; }
         .aic-send { height: 34px; padding: 0 16px; border-radius: 10px; border: none; display: inline-flex; align-items: center; gap: 6px;
           background: linear-gradient(135deg,${accent},${accent2}); color: #04140c; font-size: 11.5px;
           font-weight: 700; cursor: pointer; transition: transform .18s, box-shadow .18s; white-space: nowrap; }
@@ -272,37 +275,44 @@ export function MonacoEditor(props: MonacoEditorProps) {
     // the same path the chat box uses. The old Chrome voice bridge and its
     // separate window are gone.
     let micRecordingActive = false
+    let micProcessing = false
     let micRecordingTimer: ReturnType<typeof setInterval> | null = null
     let micRecordingSeconds = 0
-    let voiceBuffer = ""
     let inlineStt: RealtimeStt | null = null
 
     const cleanupVoice = () => {
       if (micRecordingTimer) { clearInterval(micRecordingTimer); micRecordingTimer = null }
       micRecordingActive = false
+      micProcessing = false
       micRecordingSeconds = 0
     }
-    const stopAllMic = () => {
-      const finalText = voiceBuffer.trim()
-      voiceBuffer = ""
+    // One click records, the next sends. The finished transcript is the only text
+    // that reaches the box, so it is written once here rather than painted per tick.
+    const applyTranscript = (text: string) => {
+      const finalText = text.trim()
       if (finalText) input.value = finalText
       cleanupVoice()
-      micBtn.classList.remove("rec")
+      micBtn.classList.remove("rec", "busy")
       micBtn.title = "Voice input"
     }
     micBtn.addEventListener("click", (e) => {
       e.stopPropagation()
+      if (micProcessing) return
       if (micRecordingActive) {
+        micProcessing = true
+        micBtn.classList.remove("rec")
+        micBtn.classList.add("busy")
+        micBtn.title = "Transcribing…"
         void inlineStt?.stop()
         return
       }
-      voiceBuffer = ""
+      input.value = ""
       const client = createRealtimeStt({
-        onLive: (text) => { voiceBuffer = text; input.value = text },
-        onFinal: (text) => { voiceBuffer = text; input.value = text; stopAllMic() },
+        onFinal: (text) => applyTranscript(text),
         onError: (message) => {
           cleanupVoice()
-          micBtn.classList.remove("rec")
+          micBtn.classList.remove("rec", "busy")
+          micBtn.title = "Voice input"
           const warn = document.createElement("div")
           warn.className = "aic-err"
           warn.textContent = message
@@ -313,15 +323,21 @@ export function MonacoEditor(props: MonacoEditorProps) {
           if (state === "recording") {
             micRecordingActive = true
             micBtn.classList.add("rec")
-            micBtn.title = "Click to stop recording"
+            micBtn.title = "Click to send"
             micRecordingSeconds = 0
             micRecordingTimer = setInterval(() => {
               micRecordingSeconds++
-              micBtn.title = `Recording ${micRecordingSeconds}s — Click to stop`
+              micBtn.title = `Recording ${micRecordingSeconds}s — Click to send`
             }, 1000)
             return
           }
-          if (state === "idle") stopAllMic()
+          // Settles the button when the stop produced no speech, and is harmless
+          // after a successful transcript that already ran applyTranscript.
+          if (state === "idle") {
+            cleanupVoice()
+            micBtn.classList.remove("rec", "busy")
+            micBtn.title = "Voice input"
+          }
         },
       })
       inlineStt = client
@@ -335,11 +351,11 @@ export function MonacoEditor(props: MonacoEditorProps) {
     input.addEventListener("keydown", (e) => {
       e.stopPropagation()
       if (e.key === "Enter" && !e.shiftKey && input.value.trim()) {
-        stopAllMic()
+        applyTranscript("")
         executeInlineChat(lineNumber, input.value.trim(), modelSelect.value)
       }
       if (e.key === "Escape") {
-        stopAllMic()
+        applyTranscript("")
         removeInlineChat()
         editor!.focus()
       }
@@ -348,12 +364,12 @@ export function MonacoEditor(props: MonacoEditorProps) {
     input.addEventListener("focus", (e) => e.stopPropagation())
     closeBtn.addEventListener("click", (e) => {
       e.stopPropagation()
-      stopAllMic()
+      applyTranscript("")
       removeInlineChat(); editor!.focus()
     })
     sendBtn.addEventListener("click", (e) => {
       e.stopPropagation()
-      stopAllMic()
+      applyTranscript("")
       if (input.value.trim()) executeInlineChat(lineNumber, input.value.trim(), modelSelect.value)
     })
 

@@ -42,6 +42,8 @@ export type PromptInputV2Props = {
   readOnly?: boolean
   class?: string
   modelControl?: JSX.Element
+  language?: string
+  onLanguageChange?: (lang: string) => void
 }
 
 export function PromptInputV2(props: PromptInputV2Props) {
@@ -51,14 +53,13 @@ export function PromptInputV2(props: PromptInputV2Props) {
   let localInput = false
   // setText replaces the whole draft, so a naive voice insert destroyed whatever the
   // user had typed before pressing the mic. Capture the pre-recording draft once and
-  // append every transcript segment to it instead.
+  // append the finished transcript to it instead.
   //
   // `voicePaint` is the exact string the mic last wrote. Comparing it to the box on
   // every update is what tells an untouched box apart from one the user edited: if
   // they match, the speech portion is replaced and the original base is kept; if they
-  // differ, the user typed, cut, or cleared the box, so their current text becomes the
-  // new base. Without that, deleting everything mid-recording and then stopping made
-  // the mic resurrect the whole transcript it still held.
+  // differ, the user typed, cut, or cleared the box, so their current text becomes
+  // the new base.
   let voiceBase: string | undefined
   let voicePaint: string | undefined
   const paintVoice = (text: string) => {
@@ -275,25 +276,16 @@ export function PromptInputV2(props: PromptInputV2Props) {
             style={buttons()}
           >
             <PromptInputV2MicButton
-              onTranscript={(text, _lang) => {
-                // The final pass refines wording only. The live ticks already painted
-                // the transcript, so re-appending it here is what printed every
-                // sentence twice; paint over the same base instead.
+              onTranscript={(text) => {
+                // One finished transcript arrives when the recording is sent, so it
+                // is painted over the pre-recording draft in a single pass.
                 if (text) paintVoice(text)
                 requestAnimationFrame(() => editor?.focus())
               }}
-              onLiveText={(text) => {
-                // Interim speech streams straight into the chat box as the user speaks
-                if (!text) {
-                  // The mic clears its own previous paint before each new recording.
-                  voiceBase = undefined
-                  voicePaint = undefined
-                  return
-                }
-                paintVoice(text)
-              }}
               onError={(err) => console.error("[Mic]", err)}
               disabled={state.mode === "shell"}
+              language={props.language}
+              onLanguageChange={props.onLanguageChange}
             />
           </div>
           <PromptInputV2SubmitButton

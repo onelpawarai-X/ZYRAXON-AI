@@ -353,6 +353,10 @@ export const make = Effect.gen(function* () {
           ...job.info,
           status: "cancelled" as const,
           completed_at,
+          // Keep whatever the job produced before it was stopped. Without this a
+          // cancelled job came back empty and the work it had already done was
+          // lost, so the session could not continue from it.
+          ...(job.output ? { output: job.output.text } : {}),
         },
       }
       return [{ info: snapshot(next), done: job.done, scope: job.scope }, new Map(jobs).set(id, next)]

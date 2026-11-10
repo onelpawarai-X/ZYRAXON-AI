@@ -2,8 +2,7 @@
 
 // A locale code means nothing to a language model. "bn-BD" has to become "Bengali"
 // before it goes into a prompt, otherwise the model either ignores it or guesses.
-// This is the Settings voice-language choice, resolved for the model; the composer
-// mic no longer carries a picker of its own.
+// Kept next to the composer's picker so the two can never drift apart.
 export const VOICE_LANGUAGES: ReadonlyArray<{ code: string; label: string }> = [
   { code: "auto", label: "Auto-Detect" },
   { code: "bn-BD", label: "Bengali" },
