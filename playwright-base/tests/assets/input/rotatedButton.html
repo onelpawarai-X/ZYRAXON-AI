@@ -1,0 +1,24 @@
+<!-- SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+     Copyright (c) 2026 onelpawarai. All rights reserved. -->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Rotated button test</title>
+  </head>
+  <body>
+    <script src="mouse-helper.js"></script>
+    <button onclick="clicked();">Click target</button>
+    <style>
+      button {
+        transform: rotateY(180deg);
+      }
+    </style>
+    <script>
+      window.result = 'Was not clicked';
+      function clicked() {
+        result = 'Clicked';
+      }
+    </script>
+  </body>
+</html>

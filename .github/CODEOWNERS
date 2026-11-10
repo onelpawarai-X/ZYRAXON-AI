@@ -1,0 +1,20 @@
+# web + desktop packages
+packages/app/      @Hona @Brendonovich
+packages/desktop/  @Hona @Brendonovich
+
+# ZYRAXON-specific ownership
+packages/zyraxon/ @onelpawarai
+packages/zyraxon/src/mcp/ @onelpawarai
+packages/zyraxon/src/agent/ @onelpawarai
+packages/zyraxon/src/tool/ @onelpawarai
+packages/zyraxon/src/session/ @onelpawarai
+
+# Documentation
+README.md @onelpawarai
+CONTRIBUTING.md @onelpawarai
+SECURITY.md @onelpawarai
+AGENTS.md @onelpawarai
+
+# Configuration
+.zyraxon/ @onelpawarai
+.github/ @onelpawarai

@@ -1,0 +1,10 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
+import { makeDefaultApi } from "@zyraxon-ai/protocol/api"
+import { LocationMiddleware } from "./location"
+import { SessionLocationMiddleware } from "./middleware/session-location"
+
+export const Api = makeDefaultApi({
+  locationMiddleware: LocationMiddleware,
+  sessionLocationMiddleware: SessionLocationMiddleware,
+})

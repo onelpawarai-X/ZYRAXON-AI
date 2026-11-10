@@ -1,0 +1,12 @@
+{
+  "name": "jarvis-browser",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Browser automation MCP server for ZYRAXON",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@playwright/mcp": "^0.0.82",
+    "playwright": "^1.63.0-alpha-2026-08-05",
+    "playwright-core": "^1.63.0-alpha-2026-08-05"
+  }
+}

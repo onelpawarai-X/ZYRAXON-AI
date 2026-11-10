@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@tsconfig/bun/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@zyraxon/*": ["packages/*/src"],
+      "@zyraxon/zyraxon/*": ["packages/zyraxon/src/*"],
+      "@zyraxon/desktop/*": ["packages/desktop/src/*"],
+      "@zyraxon/mcp/*": ["packages/zyraxon/src/mcp/*"],
+      "@zyraxon/tools/*": ["packages/zyraxon/src/tool/*"],
+      "@zyraxon/agents/*": ["packages/zyraxon/src/agent/*"],
+      "@zyraxon/sessions/*": ["packages/zyraxon/src/session/*"]
+    },
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true
+  },
+  "include": [
+    "packages/*/src/**/*.ts",
+    "packages/*/src/**/*.tsx",
+    "packages/*/src/**/*.js",
+    "packages/*/src/**/*.jsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "*.d.ts"
+  ]
+}

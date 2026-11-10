@@ -1,0 +1,20 @@
+<!-- SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+     Copyright (c) 2026 onelpawarai. All rights reserved. -->
+
+<!DOCTYPE html> <script>
+console.error('Not a JS error');
+a();
+
+function a() {
+    b();
+}
+
+function b() {
+    c();
+}
+
+function c() {
+    throw new Error('Fancy error!');
+}
+//# sourceURL=myscript.js
+</script>

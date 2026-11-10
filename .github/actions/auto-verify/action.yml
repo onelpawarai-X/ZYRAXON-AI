@@ -1,0 +1,126 @@
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
+# Hand the agent's work to an external system and read the score back, with no
+# person in the loop.
+#
+# `verify-gate` runs this repository's own checks. This action is the other half:
+# it runs *another* system — a test suite, a hosted grader, the SWE-bench harness
+# — against the work, and fails unless every evaluator scored a pass. That is the
+# step that normally needs a human to run the suite and read the result, and it is
+# the step this action removes.
+#
+# The evaluators come from a config file in the verified checkout, so connecting a
+# new system is a data change, not a workflow change. When the config is absent the
+# action reports that plainly instead of pretending the work was scored.
+name: "Auto Verify"
+description: "Run configured external evaluators against the work and report one scored verdict"
+
+inputs:
+  config:
+    description: "Path to the evaluator config, relative to `root`."
+    required: false
+    default: "zyraxon-verify.json"
+  root:
+    description: "Directory holding the work and the config. Empty verifies the workspace."
+    required: false
+    default: ""
+  out:
+    description: "Where to write the scored verdict, relative to `root`."
+    required: false
+    default: "verify-evaluation.json"
+  upload-verdict:
+    description: "Upload the scored verdict as a workflow artifact."
+    required: false
+    default: "true"
+  node-version:
+    description: "Node version used to run the auto-verify CLI."
+    required: false
+    default: "24"
+
+outputs:
+  ok:
+    description: "\"true\" when every evaluator produced a passing score."
+    value: ${{ steps.evaluate.outputs.ok }}
+  scored:
+    description: "\"true\" when a config was found and evaluators ran."
+    value: ${{ steps.evaluate.outputs.scored }}
+  verdict:
+    description: "Path to the written verdict, so a caller can upload or read it."
+    value: ${{ steps.evaluate.outputs.verdict }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    # A project being evaluated by a command evaluator runs its own tooling, so
+    # its dependencies have to be present in its own checkout.
+    - name: Install the evaluated project's dependencies
+      if: inputs.root != '' && inputs.root != github.workspace
+      shell: bash
+      run: |
+        set -euo pipefail
+        root="${{ inputs.root }}"
+        [ -f "${root}/package.json" ] || { echo "no package.json in ${root}; skipping install"; exit 0; }
+        cd "${root}"
+        if [ -f bun.lock ] || [ -f bun.lockb ]; then
+          bun install --frozen-lockfile
+        elif [ -f pnpm-lock.yaml ]; then
+          corepack enable && pnpm install --frozen-lockfile
+        elif [ -f yarn.lock ]; then
+          yarn install --frozen-lockfile
+        elif [ -f package-lock.json ]; then
+          npm ci
+        else
+          npm install
+        fi
+
+    - name: Run the external evaluators
+      id: evaluate
+      shell: bash
+      # The exit code is captured and re-raised after the outputs are written, so
+      # a failing evaluation still produces the artifact that explains it.
+      run: |
+        set +e
+        root="${{ inputs.root || github.workspace }}"
+        if [ ! -f "${root}/${{ inputs.config }}" ]; then
+          echo "::warning::No evaluator config at ${root}/${{ inputs.config }}; nothing was scored."
+          echo "scored=false" >> "$GITHUB_OUTPUT"
+          echo "ok=false" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Auto verification was not run"
+            echo ""
+            echo "No evaluator config was found at \`${{ inputs.config }}\`. An unscored run is not a pass."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+        fi
+        echo "scored=true" >> "$GITHUB_OUTPUT"
+
+        node --import ./scripts/node-test/loader.mjs --experimental-transform-types \
+          packages/agent-reliability-kernel/src/auto-verify-cli.ts \
+          --config "${{ inputs.config }}" \
+          --root "${root}" \
+          --out "${{ inputs.out }}"
+        code=$?
+        set -e
+
+        verdict="${root}/${{ inputs.out }}"
+        ok=$(node -e "const v=require('${verdict}');console.log(v.ok?'true':'false')")
+        echo "ok=${ok}" >> "$GITHUB_OUTPUT"
+        echo "verdict=${verdict}" >> "$GITHUB_OUTPUT"
+        echo "- config: \`${{ inputs.config }}\`" >> "$GITHUB_STEP_SUMMARY"
+        echo "- ok: **${ok}**" >> "$GITHUB_STEP_SUMMARY"
+
+        exit "$code"
+
+    - name: Upload the scored verdict
+      if: always() && inputs.upload-verdict == 'true'
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: verify-evaluation
+        path: ${{ steps.evaluate.outputs.verdict || format('{0}/{1}', github.workspace, inputs.out) }}
+        if-no-files-found: warn
+        retention-days: 14

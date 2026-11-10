@@ -1,0 +1,34 @@
+packages/core/migration/**/snapshot.json linguist-generated
+packages/core/src/database/migration.gen.ts linguist-generated
+
+# ZYRAXON-specific attributes
+packages/desktop/dist/** binary
+packages/zyraxon/dist/** binary
+*.exe binary
+*.msi binary
+*.dmg binary
+*.deb binary
+*.rpm binary
+
+# ZYRAXON text files
+*.txt text
+*.md text
+*.json text
+*.jsonc text
+*.ts text
+*.tsx text
+*.js text
+*.jsx text
+*.py text
+*.sh text
+*.yml text
+*.yaml text
+
+# ZYRAXON streaming files
+*.flv binary
+*.m2ts binary
+*.mp4 binary
+*.mkv binary
+
+# ZYRAXON memory files
+*.db binary

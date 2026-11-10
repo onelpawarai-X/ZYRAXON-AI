@@ -1,0 +1,2 @@
+[console_scripts]
+touchpoint-mcp = touchpoint.mcp.server:main

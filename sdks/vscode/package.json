@@ -1,0 +1,137 @@
+{
+  "name": "zyraxon",
+  "displayName": "ZYRAXON AI",
+  "description": "ZYRAXON AI \u2014 Ultimate AI assistant for VS Code. Chat, coding, terminal and 888+ tools across 67 categories in one extension.",
+  "version": "20.0.1",
+  "publisher": "zyraxon",
+  "author": {
+    "name": "onelpawarai"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/onelpawarai-X/ZYRAXON-AI"
+  },
+  "homepage": "https://zyraxonai.lovable.app",
+  "bugs": {
+    "url": "https://github.com/onelpawarai-X/ZYRAXON-AI/issues"
+  },
+  "license": "SEE LICENSE IN LICENSE",
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#000000",
+    "theme": "dark"
+  },
+  "engines": {
+    "vscode": "^1.94.0"
+  },
+  "extensionKind": [
+    "workspace"
+  ],
+  "categories": [
+    "AI",
+    "Programming Languages",
+    "Machine Learning",
+    "Snippets",
+    "Linters",
+    "Other"
+  ],
+  "keywords": [
+    "ai",
+    "ai-assistant",
+    "copilot",
+    "chat",
+    "agent",
+    "code-completion",
+    "refactor",
+    "zyraxon"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "zyraxon.openTerminal",
+        "title": "Open ZYRAXON",
+        "icon": {
+          "light": "images/button-dark.svg",
+          "dark": "images/button-light.svg"
+        }
+      },
+      {
+        "command": "zyraxon.openNewTerminal",
+        "title": "Open ZYRAXON in New Tab",
+        "icon": {
+          "light": "images/button-dark.svg",
+          "dark": "images/button-light.svg"
+        }
+      },
+      {
+        "command": "zyraxon.openCliTerminal",
+        "title": "Open ZYRAXON Terminal"
+      },
+      {
+        "command": "zyraxon.addFilepathToTerminal",
+        "title": "Add Filepath to Terminal"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "zyraxon.openNewTerminal",
+          "group": "navigation"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "zyraxon.openTerminal",
+        "title": "Run zyraxon",
+        "key": "cmd+escape",
+        "mac": "cmd+escape",
+        "win": "ctrl+escape",
+        "linux": "ctrl+escape"
+      },
+      {
+        "command": "zyraxon.openNewTerminal",
+        "title": "Run zyraxon",
+        "key": "cmd+shift+escape",
+        "mac": "cmd+shift+escape",
+        "win": "ctrl+shift+escape",
+        "linux": "ctrl+shift+escape"
+      },
+      {
+        "command": "zyraxon.addFilepathToTerminal",
+        "title": "zyraxon: Insert At-Mentioned",
+        "key": "cmd+alt+k",
+        "mac": "cmd+alt+k",
+        "win": "ctrl+alt+K",
+        "linux": "ctrl+alt+K"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "bun run package",
+    "compile": "bun run check-types && bun run lint && node esbuild.js",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "bun run check-types && bun run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "bun run compile-tests && bun run compile && bun run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.94.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
+    "eslint": "^9.25.1",
+    "esbuild": "^0.25.3",
+    "typescript": "^5.8.3",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}

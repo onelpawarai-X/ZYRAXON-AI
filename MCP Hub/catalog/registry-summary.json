@@ -1,0 +1,7 @@
+{
+  "fetched": "2026-10-02T04:22:28.543Z",
+  "count": 9580,
+  "remote": 8517,
+  "local": 1063,
+  "note": "Written by scripts/build-registry-cache.mjs. The panel reads only this small file; the full 2.6 MB cache sits beside it and is never bundled into the app."
+}

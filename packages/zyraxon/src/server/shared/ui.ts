@@ -1,0 +1,124 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
+import { FSUtil } from "@zyraxon-ai/core/fs-util"
+import { Effect, Stream } from "effect"
+import { HttpBody, HttpClient, HttpClientRequest, HttpServerRequest, HttpServerResponse } from "effect/unstable/http"
+import { createHash } from "node:crypto"
+import { ProxyUtil } from "../proxy-util"
+
+let embeddedUIPromise: Promise<Record<string, string> | null> | undefined
+
+export const UI_UPSTREAM = new URL("https://zyraxonai.lovable.app")
+
+// The app loads its display fonts from Google Fonts and embeds the Marketplace
+// hub in an iframe. Both are cross-origin, so a policy that only allowed `self`
+// silently dropped the fonts (every heading fell back to a system face) and
+// rendered the Marketplace panel as an empty frame. The two origins are named
+// explicitly rather than widening to `*`, so the policy still constrains
+// everything else to the app itself.
+const FONT_STYLE_ORIGINS = "https://fonts.googleapis.com"
+const FONT_FILE_ORIGINS = "https://fonts.gstatic.com"
+const FRAME_ORIGINS = "https://agent-ecosystem-hub.lovable.app"
+
+export const csp = (hash = "") =>
+  `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'${hash ? ` 'sha256-${hash}'` : ""}; style-src 'self' 'unsafe-inline' ${FONT_STYLE_ORIGINS}; img-src 'self' data: https:; font-src 'self' data: ${FONT_FILE_ORIGINS}; media-src 'self' data:; frame-src 'self' ${FRAME_ORIGINS}; connect-src * data:`
+export const DEFAULT_CSP = csp()
+
+export function themePreloadHash(body: string) {
+  return body.match(/<script\b(?![^>]*\bsrc\s*=)[^>]*\bid=(['"])oc-theme-preload-script\1[^>]*>([\s\S]*?)<\/script>/i)
+}
+
+export function cspForHtml(body: string) {
+  const match = themePreloadHash(body)
+  return csp(match ? createHash("sha256").update(match[2]).digest("base64") : "")
+}
+
+function requestBody(request: HttpServerRequest.HttpServerRequest) {
+  if (request.method === "GET" || request.method === "HEAD") return HttpBody.empty
+  const len = request.headers["content-length"]
+  return HttpBody.stream(request.stream, request.headers["content-type"], len === undefined ? undefined : Number(len))
+}
+
+function proxyResponseHeaders(headers: Record<string, string>) {
+  const result = new Headers(headers)
+  // FetchHttpClient exposes decoded response bodies, so forwarding upstream
+  // transfer metadata makes browsers decode already-decoded assets again.
+  result.delete("content-encoding")
+  result.delete("content-length")
+  result.delete("transfer-encoding")
+  return result
+}
+
+export function upstreamURL(path: string) {
+  return new URL(path, UI_UPSTREAM).toString()
+}
+
+export function embeddedUI(disableEmbeddedWebUi: boolean) {
+  if (disableEmbeddedWebUi) return Promise.resolve(null)
+  return (embeddedUIPromise ??=
+    // The generated file lives at the package root, so a relative specifier is
+    // what resolves both from source (`bun run src/index.ts`) and from the
+    // compiled binary. A bare `zyraxon-web-ui.gen.ts` specifier only resolves in
+    // the bunfs-compiled binary and fails in dev, which silently fell through to
+    // the remote upstream proxy.
+    import("../../../zyraxon-web-ui.gen.ts").then((module) => module.default as unknown as Record<string, string>).catch(() => null))
+}
+
+function notFound() {
+  return HttpServerResponse.jsonUnsafe({ error: "Not Found" }, { status: 404 })
+}
+
+function embeddedUIResponse(file: string, body: Uint8Array) {
+  const mime = FSUtil.mimeType(file)
+  const headers = new Headers({ "content-type": mime })
+  if (mime.startsWith("text/html")) {
+    headers.set("content-security-policy", cspForHtml(new TextDecoder().decode(body)))
+  }
+  return HttpServerResponse.raw(body, { headers })
+}
+
+export function serveEmbeddedUIEffect(
+  requestPath: string,
+  fs: FSUtil.Interface,
+  embeddedWebUI: Record<string, string>,
+) {
+  const file = embeddedWebUI[requestPath.replace(/^\//, "")] ?? embeddedWebUI["index.html"] ?? null
+  if (!file) return Effect.succeed(notFound())
+
+  return fs.readFile(file).pipe(
+    Effect.map((body) => embeddedUIResponse(file, body)),
+    Effect.catchReason("PlatformError", "NotFound", () => Effect.succeed(notFound())),
+  )
+}
+
+export function serveUIEffect(
+  request: HttpServerRequest.HttpServerRequest,
+  services: { fs: FSUtil.Interface; client: HttpClient.HttpClient; disableEmbeddedWebUi: boolean },
+) {
+  return Effect.gen(function* () {
+    const embeddedWebUI = yield* Effect.promise(() => embeddedUI(services.disableEmbeddedWebUi))
+    const path = new URL(request.url, "http://localhost").pathname
+
+    if (embeddedWebUI) return yield* serveEmbeddedUIEffect(path, services.fs, embeddedWebUI)
+
+    const response = yield* services.client.execute(
+      HttpClientRequest.make(request.method)(upstreamURL(path), {
+        headers: ProxyUtil.headers(request.headers, { host: UI_UPSTREAM.host }),
+        body: requestBody(request),
+      }),
+    )
+    const headers = proxyResponseHeaders(response.headers)
+
+    if (response.headers["content-type"]?.includes("text/html")) {
+      const body = yield* response.text
+      headers.set("Content-Security-Policy", cspForHtml(body))
+      return HttpServerResponse.text(body, { status: response.status, headers })
+    }
+
+    headers.set("Content-Security-Policy", csp())
+    return HttpServerResponse.stream(response.stream.pipe(Stream.catchCause(() => Stream.empty)), {
+      status: response.status,
+      headers,
+    })
+  })
+}

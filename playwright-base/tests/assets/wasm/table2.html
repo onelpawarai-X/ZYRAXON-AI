@@ -1,0 +1,12 @@
+<!-- SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+     Copyright (c) 2026 onelpawarai. All rights reserved. -->
+
+<script>
+async function loadTable() {
+  const tbl = new WebAssembly.Table({ initial: 2, element: 'anyfunc' });
+  const response = await fetch('table2.wasm');
+  const body = await response.arrayBuffer();
+  await WebAssembly.instantiate(body, { js: { tbl: tbl } });
+  return `${tbl.get(0)()}, ${tbl.get(1)()}`;
+}
+</script>

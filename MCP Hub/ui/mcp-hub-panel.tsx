@@ -1,0 +1,2155 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
+// MCP Hub - the connect panel.
+// Rendered by the Hub's plugin entry. Uses ZYRAXON's own UI primitives so it
+// looks native, and keeps every piece of state inside this folder.
+
+import { For, Show, createEffect, createMemo, createSignal, onCleanup, onMount } from "solid-js"
+import type { AppEntry } from "../catalog/seed"
+import { allSeedApps, appIcon, browserApps, categories, docsByApp } from "../catalog/seed"
+import { LANGUAGES, REDIRECT, catalogText, detectLanguage, guideFor, line } from "../catalog/guide"
+import { connectApp, describe, toServerConfig, type ConnectionState, type McpRuntime } from "../lib/connect"
+import type { Resolution } from "../lib/resolve"
+import { needsFullUrl } from "../lib/endpoint"
+import { searchRegistry, supportsZeroSetup, type RegistryServer } from "../lib/registry"
+import { connectDetailFor, connectStepFor, searchVerified, verifiedCount, verifiedHitToApp, VERIFICATION_LABELS, type VerifiedHit } from "../lib/verified-catalog"
+
+export interface McpHubPanelProps {
+  runtime: McpRuntime
+  /** resolve an app to a real server when the catalog has no endpoint for it */
+  resolve: (app: AppEntry) => Promise<Resolution>
+  /** close the panel */
+  onClose?: () => void
+}
+
+const authLabel: Record<string, string> = {
+  none: "No sign-in needed",
+  oauth: "Sign in with the browser",
+  token: "Needs an access token",
+  local: "Runs on this machine",
+}
+
+/**
+ * Turn every bare URL in a guide line into a real link.
+ *
+ * The guide names the exact console page a client has to be created on, and the exact
+ * redirect URL that page must carry. Reading a URL and retyping it is where the
+ * redirect value gets mistyped, so both are clickable here instead: the console opens
+ * in a new tab, and the redirect can be copied straight from the same screen.
+ */
+const linkify = (text: string) =>
+  text.split(/(https?:\/\/[^\s,)]+)/g).map((part) =>
+    /^https?:\/\//.test(part) ? (
+      <a class="underline" href={part} target="_blank" rel="noopener">
+        {part}
+      </a>
+    ) : (
+      part
+    ),
+  )
+
+/**
+ * Which language the guide is read in, remembered between openings.
+ *
+ * The guide is the document that takes the place of the vendor's own
+ * documentation, so it is offered in the reader's language rather than only in
+ * the panel's. The first choice comes from the browser; after that the saved
+ * one wins, so a Bengali reader does not have to pick বাংলা again every time
+ * a card is opened.
+ */
+const GUIDE_LANG_KEY = "zyraxon.mcp.guide.lang"
+
+/**
+ * Client credentials the user typed once, kept so they are never asked again.
+ *
+ * A console-issued client ID belongs to the person who owns the vendor account, and
+ * re-typing it on every visit made a one-time setup feel like a repeated chore. The
+ * server keeps its own registration after the first handshake; this copy exists so
+ * the card can go straight to Connect on the next open.
+ */
+const CLIENT_IDS_KEY = "zyraxon.mcp.clientIds"
+
+/**
+ * Environment credentials the user typed once for a fetched local server, keyed by app
+ * and then by variable name.
+ *
+ * A token that a locally run server reads from its environment is the same kind of
+ * one-time value as a client ID, so it is kept the same way: remembered here and handed
+ * to the server on every connect. Without this a YouTube or Reddit credential would be
+ * re-typed on every visit.
+ */
+const ENV_VALUES_KEY = "zyraxon.mcp.envValues"
+
+function readEnvValues(): Record<string, Record<string, string>> {
+  try {
+    const raw = localStorage.getItem(ENV_VALUES_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === "object" ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+function readClientIds(): Record<string, { id: string; secret?: string }> {
+  try {
+    const raw = localStorage.getItem(CLIENT_IDS_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === "object" ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+function readGuideLang(): string {
+  try {
+    const saved = localStorage.getItem(GUIDE_LANG_KEY)
+    if (saved && LANGUAGES.some((lang) => lang.code === saved)) return saved
+  } catch {
+    // no storage in this context — fall through to the browser's own answer
+  }
+  return detectLanguage()
+}
+
+/**
+ * Registry copy is only true while it stays true.
+ *
+ * These numbers used to be typed in by hand and drifted every time the registry moved:
+ * the header said 9,580 while the box below it promised "18,000+", on the same screen.
+ * Now the summary written by the build script decides, and if it is missing the caption
+ * says so plainly instead of quoting a figure nobody checked.
+ */
+const REGISTRY_FALLBACK = "thousands more in the official registry"
+
+function registryCaption(count: number | undefined): string {
+  if (count === undefined) return REGISTRY_FALLBACK
+  if (count === 0) return "registry cache empty — run scripts/build-registry-cache.mjs"
+  return `${count.toLocaleString("en-US")} servers in the official registry`
+}
+
+/**
+ * Track the app's colour scheme.
+ *
+ * The panel used to hardcode a near-black backdrop, so switching the app to light
+ * mode left this screen dark — it looked like a different application entirely.
+ * The theme lives on the document root as a data attribute, so reading it and
+ * watching it for changes is enough to stay in step with the rest of the app.
+ */
+function useColorScheme() {
+  const root = document.documentElement
+  const [scheme, setScheme] = createSignal(root.dataset.colorScheme === "light" ? "light" : "dark")
+
+  onMount(() => {
+    const observer = new MutationObserver(() => {
+      setScheme(root.dataset.colorScheme === "light" ? "light" : "dark")
+    })
+    observer.observe(root, { attributes: true, attributeFilter: ["data-color-scheme", "data-theme"] })
+    onCleanup(() => observer.disconnect())
+  })
+
+  return scheme
+}
+
+/**
+ * Second chance for a card icon.
+ *
+ * The catalog asks Simple Icons for a brand mark by slug, but that slug does not
+ * exist for every app (Canva, Prisma) so the request 404s and the card shows an
+ * empty box with no way to tell which app it was. Every entry also carries the
+ * app's own domain, so the favicon is a reliable second try.
+ */
+function faviconUrl(app: AppEntry) {
+  if (!app.iconDomain) return ""
+  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(app.iconDomain)}&sz=128`
+}
+
+/**
+ * Connection state shared by every mount of the panel. The MCP servers themselves live
+ * in the server process, so closing this panel or navigating to another route must not
+ * make a still-connected app look disconnected the moment it comes back.
+ */
+const persistedStates: Record<string, ConnectionState> = {}
+
+/** fast enough that a card updates the moment the server settles */
+const LIVE_POLL_MS = 1500
+/** nothing connected yet, so there is nothing worth watching */
+const IDLE_POLL_MS = 10_000
+
+/**
+ * The three ways an app can be connected, in the order the user meets them.
+ *
+ * Mixing them in one list was the mistake: a card that needs a browser, a card
+ * that needs a pasted token and a card that needs nothing at all look identical,
+ * so nothing explained why one worked and the next did not.
+ */
+const FLOW_BROWSER = "oauth"
+const FLOW_TOKEN = "token"
+const FLOW_SETUP = "setup"
+const FLOW_INSTANCE = "instance"
+const FLOW_DIRECT = "direct"
+
+function flowOf(app: AppEntry): string {
+  // A fetched local server has no browser sign-in and no single pasted token: it reads
+  // several credentials from its environment. It gets its own section so the card can
+  // say what it will ask for before the dialog opens.
+  if (app.kind === "instance") return FLOW_INSTANCE
+  if (app.kind === "local") return app.env && app.env.length > 0 ? FLOW_SETUP : FLOW_DIRECT
+  if (app.kind === "oauth") return FLOW_BROWSER
+  if (app.kind === "token") return FLOW_TOKEN
+  return FLOW_DIRECT
+}
+
+const FLOW_TITLE: Record<string, string> = {
+  [FLOW_BROWSER]: "Sign in with your browser",
+  [FLOW_TOKEN]: "Needs an access token",
+  [FLOW_SETUP]: "Runs on your machine",
+  [FLOW_INSTANCE]: "Runs at your own address",
+  [FLOW_DIRECT]: "Connect instantly",
+}
+const FLOW_HINT: Record<string, string> = {
+  [FLOW_BROWSER]: "Opens Chrome, you press Allow, and it connects itself.",
+  [FLOW_TOKEN]: "Paste a token once and it connects itself.",
+  [FLOW_SETUP]: "Runs here from npm. Paste your own credentials once, nothing is brokered.",
+  [FLOW_INSTANCE]: "Enter the address of your own server, and it connects.",
+  [FLOW_DIRECT]: "No sign-in at all. One click and it is live.",
+}
+const FLOW_ORDER = [FLOW_BROWSER, FLOW_TOKEN, FLOW_SETUP, FLOW_INSTANCE, FLOW_DIRECT]
+
+export function McpHubPanel(props: McpHubPanelProps) {
+  const apps = allSeedApps()
+  const cats = categories(apps)
+  const scheme = useColorScheme()
+  const dark = () => scheme() === "dark"
+
+  /**
+   * Surfaces that have to be opaque cannot be expressed with Tailwind's white/xx
+   * overlays, because those vanish against a light background. They follow the
+   * scheme explicitly instead.
+   */
+  const surface = createMemo(() => (dark() ? "rgba(10,10,11,0.92)" : "rgba(250,250,250,0.94)"))
+  const raised = createMemo(() => (dark() ? "#18181b" : "#ffffff"))
+  const overlayTint = createMemo(() => (dark() ? "rgba(0,0,0,0.72)" : "rgba(24,24,27,0.42)"))
+  // Neutral fills, not white/black, so the same class reads correctly in both themes.
+  const fill = createMemo(() => (dark() ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.06)"))
+  const fillHover = createMemo(() => (dark() ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.10)"))
+  const cardFill = createMemo(() => (dark() ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.015)"))
+  // Zinc-scale borders. The previous values were navy (#1e2740 / #2a3550), which is what
+  // made the whole panel read as blue in light mode even though every surface was neutral.
+  const border = createMemo(() => (dark() ? "#2a2a2e" : "#e4e4e7"))
+  const borderStrong = createMemo(() => (dark() ? "#3f3f46" : "#d4d4d8"))
+  const textWeak = createMemo(() => (dark() ? "#a1a1aa" : "#71717a"))
+  const accent = createMemo(() => (dark() ? "#e4e4e7" : "#18181b"))
+
+  const [query, setQuery] = createSignal("")
+  const [category, setCategory] = createSignal<string>("All")
+
+  /**
+   * Connection state outlives this panel. The servers themselves live in the server
+   * process, so navigating to another route and coming back used to wipe the local
+   * signal and show every app as disconnected while they were in fact still connected.
+   * A module-level cache is shared by every mount, and the poll fills it again anyway.
+   */
+  const [states, setStates] = createSignal<Record<string, ConnectionState>>(persistedStates)
+  createEffect(() => setStates((prev) => Object.assign(persistedStates, prev)))
+  const [busy, setBusy] = createSignal<string | null>(null)
+  const [busySince, setBusySince] = createSignal<number>(0)
+  const [tick, setTick] = createSignal(0)
+  const [tokenFor, setTokenFor] = createSignal<AppEntry | null>(null)
+  const [detailsFor, setDetailsFor] = createSignal<AppEntry | null>(null)
+  const [tokenValue, setTokenValue] = createSignal("")
+  /**
+   * The app whose client credentials are being collected, and the values typed so far.
+   *
+   * Connect opens this instead of putting the fields on the card: the card is a list of
+   * apps, not a form, and an always-visible credential box pushed the whole grid down.
+   */
+  const [clientFormFor, setClientFormFor] = createSignal<AppEntry | null>(null)
+  const [clientFormId, setClientFormId] = createSignal("")
+  const [clientFormSecret, setClientFormSecret] = createSignal("")
+  /**
+   * What the client dialog continues into once it is submitted.
+   *
+   * `connect` is the Connect button's path: save the client and run the handshake.
+   * `generate` is the Details panel's: save the client and build the consent link
+   * without opening a browser, so the link can be carried to the browser that holds
+   * the account. Both need the same client, so they share the same dialog and only
+   * differ in what happens after Continue.
+   */
+  const [clientFormMode, setClientFormMode] = createSignal<"connect" | "generate">("connect")
+  /**
+   * The client credentials a console-issued app needs, keyed by app.
+   *
+   * These live here rather than in the catalog because they belong to the person who owns
+   * the vendor account, not to the app list: one user's Slack client ID is nobody else's.
+   * Holding them for the session is enough — the server keeps the registration once a
+   * handshake completes.
+   */
+  const [clientIds, setClientIds] = createSignal<Record<string, { id: string; secret?: string }>>(readClientIds())
+
+  /**
+   * The app whose own address is being collected, and the value typed.
+   *
+   * A `url_input` row is an endpoint template — `https://{your-host}/mcp` — so the address
+   * only the user has is the one thing that turns it into a URL. This dialog is that one
+   * field, and Continue connects to the substituted result.
+   */
+  const [instanceFor, setInstanceFor] = createSignal<AppEntry | null>(null)
+  const [instanceValue, setInstanceValue] = createSignal("")
+  /** addresses already supplied, so a reconnect is one press */
+  const [instanceUrls, setInstanceUrls] = createSignal<Record<string, string>>({})
+
+  /**
+   * The app whose environment credentials are being collected, and the values typed.
+   *
+   * A server fetched from npm has no browser sign-in to offer, so Connect asks for the
+   * variables the catalog declares for it — one box each, in the server's own order. The
+   * app is held here so the dialog knows which list of boxes to render.
+   */
+  const [envFormFor, setEnvFormFor] = createSignal<AppEntry | null>(null)
+  const [envValues, setEnvValues] = createSignal<Record<string, Record<string, string>>>(readEnvValues())
+  const [envDraft, setEnvDraft] = createSignal<Record<string, string>>({})
+
+  // Same persistence as the client credentials: typed once, reused on every later connect.
+  createEffect(() => {
+    try {
+      localStorage.setItem(ENV_VALUES_KEY, JSON.stringify(envValues()))
+    } catch {
+      // no storage in this context — the in-memory copy still covers this session
+    }
+  })
+
+  // Persist whatever was typed so a console-issued client is a one-time entry, not a
+  // prompt on every visit.
+  createEffect(() => {
+    try {
+      localStorage.setItem(CLIENT_IDS_KEY, JSON.stringify(clientIds()))
+    } catch {
+      // no storage in this context — the in-memory copy still covers this session
+    }
+  })
+
+  /**
+   * Whether this app's OAuth client has to be issued by hand before it will connect.
+   *
+   * The live probe is the authority. `oneClick` is filled from the server's own
+   * discovery chain: `true` means a registration_endpoint answered and ZYRAXON can
+   * register its own client, so the user only has to press Connect and approve in the
+   * browser. `false` means the vendor refuses registration and its own console has to
+   * issue the client, so the card shows the fields.
+   *
+   * The catalog's `zeroSetup`/`consoleUrl` flags are only a fallback for the moment
+   * before the probe answers. They were hand-set and drifted: a dozen vendors the
+   * catalog documents — Stripe, Atlassian, Airtable, Framer, Replicate — were marked
+   * as needing a client even though they publish registration, and the Google apps
+   * were marked the other way. Asking the server is what makes the badge, the fields
+   * and the connect flow agree with reality.
+   */
+  const needsClientId = (entry: AppEntry) =>
+    entry.kind === "oauth" && oneClick()[entry.id] !== undefined
+      ? oneClick()[entry.id] === false
+      : entry.needsClientId === true || (Boolean(entry.consoleUrl) && entry.zeroSetup !== true)
+
+  /** the app whose sign-in link is being built, so the button can say so */
+  const [generating, setGenerating] = createSignal<string | null>(null)
+  /**
+   * The sign-in link produced by Generate, tagged with the app it belongs to.
+   *
+   * Keying by app id is what stops a link built for one app from showing on
+   * another: the Details panel swaps apps in place, so a bare URL signal kept
+   * the previous app's link on screen until the next Generate overwrote it.
+   */
+  const [consentUrl, setConsentUrl] = createSignal<{ id: string; url: string } | null>(null)
+  const [registryHits, setRegistryHits] = createSignal<RegistryServer[]>([])
+  const [registryTerm, setRegistryTerm] = createSignal("")
+  /** which registry server each app resolved to */
+  const [resolved, setResolved] = createSignal<Record<string, string>>({})
+
+  /**
+   * Whether one-click sign-in is actually possible for an app, checked against the live
+   * server instead of the catalog.
+   *
+   * The catalog used to carry a hand-set `zeroSetup` flag, and a live pass over every
+   * OAuth app showed 29 of them redirect the sign-in to a different host than the
+   * endpoint, with 9 offering no dynamic client registration at all. A badge that says
+   * "No setup" for those apps is a promise the connector cannot keep, so the badge is
+   * now only shown once the discovery chain has actually answered for that endpoint.
+   */
+  const [oneClick, setOneClick] = createSignal<Record<string, boolean>>({})
+
+  /**
+   * How many servers the registry actually holds, read from the summary written next to
+   * the cache.
+   *
+   * Loaded lazily because the panel must paint before it touches the filesystem, and the
+   * count is only ever decoration. It used to be typed into this markup twice — once as
+   * 9,580 and once as "18,000+", on the same screen.
+   */
+  const [registryCount, setRegistryCount] = createSignal<number | undefined>(undefined)
+
+  /**
+   * The verified catalog: servers that answered a real handshake, not ones that claimed to.
+   *
+   * Separate from the registry search above it, which queries the publisher's own index and
+   * can return an endpoint that no longer exists. This one only ever holds rows the verifier
+   * reached, so a card here can be pressed and connected.
+   */
+  const [verifiedTerm, setVerifiedTerm] = createSignal("")
+  const [verifiedHits, setVerifiedHits] = createSignal<VerifiedHit[]>([])
+  const [verifiedTotal, setVerifiedTotal] = createSignal<number | undefined>(undefined)
+  const [verifiedBusy, setVerifiedBusy] = createSignal(false)
+
+  /**
+   * The language a Details card reads its guide in.
+   *
+   * Chosen once and remembered, so the guide a person starts in is the guide
+   * they keep. The translations are already in the bundle, so changing it is
+   * instant — there is no request to wait for and nothing to get wrong offline.
+   */
+  const [guideLang, setGuideLang] = createSignal(readGuideLang())
+
+  const changeGuideLang = (code: string) => {
+    setGuideLang(code)
+    try {
+      localStorage.setItem(GUIDE_LANG_KEY, code)
+    } catch {
+      // no storage here — the choice still applies to this opening
+    }
+  }
+
+  onMount(() => {
+    let stopped = false
+
+    void (async () => {
+      const { registryCount: count } = await import("../catalog/registry-cache")
+      if (!stopped) setRegistryCount(count())
+    })()
+
+    void (async () => {
+      const total = await verifiedCount()
+      if (!stopped) setVerifiedTotal(total)
+    })()
+
+    onCleanup(() => {
+      stopped = true
+    })
+  })
+
+  onMount(() => {
+    let stopped = false
+    const controller = new AbortController()
+
+    void (async () => {
+      const checked: Record<string, boolean> = {}
+      // Sequential on purpose: firing 53 discovery chains at once looks like an attack
+      // and gets the whole panel rate-limited by the servers it is asking.
+      for (const app of browserApps) {
+        if (stopped || !app.url) continue
+        checked[app.id] = await supportsZeroSetup(app.url).catch(() => false)
+        if (stopped) return
+        setOneClick((prev) => ({ ...prev, ...checked }))
+      }
+    })()
+
+    onCleanup(() => {
+      stopped = true
+      controller.abort()
+    })
+  })
+
+  const filtered = createMemo(() =>
+    apps.filter((a) => {
+      if (category() !== "All" && a.category !== category()) return false
+      const q = query().trim().toLowerCase()
+      if (!q) return true
+      return (a.name + " " + a.description + " " + a.category).toLowerCase().includes(q)
+    }),
+  )
+
+  /** the filtered apps grouped into the three connect flows, in a fixed order */
+  const sections = createMemo(() =>
+    FLOW_ORDER.map((flow) => ({
+      flow,
+      apps: filtered()
+        .filter((app) => flowOf(app) === flow)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    })).filter((section) => section.apps.length > 0),
+  )
+
+  const setState = (id: string, s: ConnectionState) => setStates((prev) => ({ ...prev, [id]: s }))
+
+  /** the catalog app being connected right now, if any */
+  const busyApp = createMemo(() => {
+    const id = busy()
+    // "registry" is the registry search box, not an app, so it never takes over the body.
+    if (!id || id === "registry") return undefined
+    return apps.find((a) => a.id === id)
+  })
+
+  /**
+   * Progress the user can trust.
+   *
+   * There is no honest total here, so nothing is faked. The first stretch is real
+   * work with a known end — resolving the server, finding its OAuth endpoints and
+   * opening the consent page — and it is worth 70%. After that the wait belongs to
+   * the person reading the consent page, so it creeps toward 95% and stops rather
+   * than continuing to promise progress that only the user can make.
+   */
+  const EXPECTED_WORK_MS = 4_000
+  const WAIT_CEILING_MS = 30_000
+
+  const progress = createMemo(() => {
+    void tick()
+    const elapsed = Math.max(0, Date.now() - busySince())
+    if (elapsed <= 0) return { percent: 0, label: "Starting…", elapsed: 0 }
+
+    const workDone = Math.min(1, elapsed / EXPECTED_WORK_MS)
+    const state = busyApp() ? states()[busyApp()!.id] : undefined
+    const waitingOnUser = state?.status === "needs_auth"
+
+    if (!waitingOnUser && workDone < 1) {
+      return { percent: Math.round(workDone * 70), label: "Reaching the server", elapsed: Math.floor(elapsed / 1000) }
+    }
+
+    const wait = elapsed - EXPECTED_WORK_MS
+    const creep = Math.min(1, wait / WAIT_CEILING_MS)
+    return {
+      percent: Math.round(70 + creep * 25),
+      label: waitingOnUser ? "Waiting for you to approve" : "Finishing up",
+      elapsed: Math.floor(elapsed / 1000),
+    }
+  })
+
+  // Repaint the elapsed counter. A one-second interval is enough for a number that
+  // only shows whole seconds, and it stops the moment nothing is connecting.
+  createEffect(() => {
+    if (!busy()) return
+    const id = setInterval(() => setTick((n) => n + 1), 250)
+    onCleanup(() => clearInterval(id))
+  })
+
+  const cancel = (id: string) => {
+    busyIds.delete(id)
+    setBusy(null)
+    setBusySince(0)
+    setState(id, { status: "disconnected" })
+  }
+
+  /** app ids with a connect in flight, so the status poll leaves those cards alone */
+  let busyIds = new Set<string>()
+
+  /**
+   * Keep every card honest while the panel is open.
+   *
+   * A card used to freeze whatever it was last told, so a server that finished
+   * connecting a second later kept saying "Connecting…", and the only way to see
+   * the truth was to close the panel and open it again. The server owns the
+   * transport, so the server's status is the only thing worth showing.
+   *
+   * Cards the user is actively working on are left alone, so this poll cannot
+   * fight an in-flight connect with its own intermediate state.
+   */
+
+  onMount(() => {
+    let stopped = false
+    let timer: ReturnType<typeof setTimeout> | undefined
+
+    const tick = async () => {
+      if (stopped) return
+      let connected = 0
+      try {
+        const live = await props.runtime.statuses()
+        if (stopped) return
+        connected = Object.values(live).filter((entry) => entry.status === "connected").length
+        if (!busyIds.size)
+          setStates((prev) => {
+            const next = { ...prev }
+            let changed = false
+            for (const app of apps) {
+              const entry = live[app.id]
+              const current = next[app.id]
+              const write = (state: ConnectionState) => {
+                if (current?.status === state.status && JSON.stringify(current) === JSON.stringify(state)) return
+                next[app.id] = state
+                changed = true
+              }
+
+              // The server is the only source of truth, in BOTH directions. This
+              // poll used to only ever upgrade a card to connected and ignored
+              // failed/disabled entirely, so a server that dropped kept claiming to
+              // be connected until the panel was closed and reopened.
+              if (!entry || entry.status === "disabled") {
+                if (current?.status === "connected") write({ status: "disconnected" })
+                continue
+              }
+              if (entry.status === "connected") {
+                // Keep an existing tool count rather than flashing 0 every tick.
+                write(
+                  current?.status === "connected"
+                    ? { status: "connected", toolCount: current.toolCount }
+                    : { status: "connected", toolCount: 0 },
+                )
+                continue
+              }
+              if (entry.status === "failed") {
+                write({ status: "failed", error: entry.error ?? "the server refused the connection" })
+                continue
+              }
+              // needs_auth / needs_client_registration: the server is up but not
+              // authorized. Only downgrade a card that wrongly claimed success.
+              if (current?.status === "connected") write({ status: "disconnected" })
+            }
+            return changed ? next : prev
+          })
+      } catch {
+        /* the server may be restarting; try again on the next tick */
+      }
+      if (stopped) return
+      // Nothing is connected yet, so there is nothing to watch for. Ease off
+      // rather than polling a local server sixty times a minute for no reason.
+      timer = setTimeout(tick, connected ? LIVE_POLL_MS : IDLE_POLL_MS)
+    }
+
+    void tick()
+    onCleanup(() => {
+      stopped = true
+      if (timer) clearTimeout(timer)
+    })
+  })
+
+  /**
+   * Connect an app.
+   *
+   * Apps with a first-party endpoint go straight to OAuth. Apps without one are
+   * resolved against the registry first, so an app like Facebook or Gmail still
+   * connects instead of showing a card that cannot work.
+   *
+   * No browser is opened from here. The server opens it, in the real profile
+   * that already carries the app's session, so the sign-in that follows lands
+   * straight in ZYRAXON's own data.
+   */
+  const onConnect = async (app: AppEntry) => {
+    if (busy()) return
+    busyIds.add(app.id)
+    setBusy(app.id)
+    setBusySince(Date.now())
+    setState(app.id, { status: "connecting" })
+
+    try {
+      // 1. find the real endpoint when the catalog does not know one
+      let resolved = app
+      if (!app.url && app.kind !== "local") {
+        const hit = await props.resolve(app)
+        if (!hit.url) {
+          setState(app.id, {
+            status: "failed",
+            error: hit.reason ?? "no connectable server found",
+          })
+          return
+        }
+        resolved = { ...app, url: hit.url, zeroSetup: hit.server ? undefined : app.zeroSetup }
+        setResolved((prev) => ({ ...prev, [app.id]: hit.server?.name ?? hit.url! }))
+      }
+
+      // 2. a token app needs the token before anything else
+      if (app.kind === "token") {
+        setTokenFor(resolved)
+        return
+      }
+
+      // 3. OAuth apps. This awaits the whole handshake, including the Allow click.
+      const outcome = await connectApp(props.runtime, resolved, {
+        onProgress: (s) => setState(app.id, s),
+      })
+      setState(app.id, outcome)
+
+      /**
+       * The server answered that it will not register a client, so the sign-in cannot be
+       * built without an ID from the vendor's console.
+       *
+       * This is the branch that was missing. The runtime has always reported the condition,
+       * but nothing acted on it: the connect returned it, the card rendered it as a plain
+       * failure, and the client dialog was only ever opened for curated apps that happened to
+       * carry a `consoleUrl` — so every registry app that needs a client ID was permanently
+       * unconnectable. Asking for the ID here turns the dead end into the one step it is.
+       */
+      if (outcome.status === "needs_client_id") {
+        setClientFormId(clientIds()[app.id]?.id ?? "")
+        setClientFormSecret(clientIds()[app.id]?.secret ?? "")
+        setClientFormMode("connect")
+        setClientFormFor(resolved)
+      }
+
+      // The card stays as it is: a refusal that really was about the client is
+      // already covered by needsClientId, and surfacing the raw reason here is what
+      // used to replace the whole card with an error.
+    } finally {
+      busyIds.delete(app.id)
+      setBusy(null)
+      setBusySince(0)
+    }
+  }
+
+/**
+       * Detach an app.
+       *
+       * The runtime owns the transport, so the panel asks it to drop the server and then
+       * clears the card. Leaving the local signal alone was what made a disconnected
+       * server look connected until the panel was reopened.
+       *
+       * `forgetCredentials` is what the button means. Without it the stored tokens and
+       * the client registration stay on disk and the next start quietly signs the app
+       * back in, so a user who pressed Disconnect finds the account reattached with no
+       * explanation.
+       */
+      const onDisconnect = async (app: AppEntry) => {
+        if (busy()) return
+        setBusy(app.id)
+        setBusySince(Date.now())
+        setState(app.id, { status: "disconnected" })
+        try {
+          await props.runtime.disconnect(app.id, { forgetCredentials: true })
+        } catch {
+          // The card is already marked disconnected and the server is gone from the
+          // runtime's view either way; a failure here has nothing left to report.
+        } finally {
+          busyIds.delete(app.id)
+          setBusy(null)
+          setBusySince(0)
+        }
+      }
+
+  const submitToken = async () => {
+    const app = tokenFor()
+    const token = tokenValue().trim()
+    if (!app || !token) return
+    busyIds.add(app.id)
+    setBusy(app.id)
+    setBusySince(Date.now())
+    setState(app.id, { status: "connecting" })
+    try {
+      setState(app.id, await connectApp(props.runtime, app, { token, onProgress: (s) => setState(app.id, s) }))
+    } finally {
+      busyIds.delete(app.id)
+      setBusy(null)
+      setTokenFor(null)
+      setTokenValue("")
+    }
+  }
+
+  /**
+   * What the Connect button does.
+   *
+   * Apps whose vendor refuses self-registration need a client the user creates in the
+   * vendor's console. That is asked for once, in a dialog opened from Connect — not on
+   * the card, where the fields sat permanently and pushed the grid down. Once a client
+   * is saved, Connect reuses it and goes straight to the handshake.
+   */
+  const beginConnect = (app: AppEntry) => {
+    // A server that lives at the user's own address cannot be reached until that address is
+    // known, so the one field is asked for before anything is written.
+    if (app.kind === "instance") {
+      const saved = instanceUrls()[app.id]
+      if (saved?.trim()) {
+        void connectWithInstance(app, saved)
+        return
+      }
+      setInstanceValue("")
+      setInstanceFor(app)
+      return
+    }
+    if (app.env && app.env.length > 0) {
+      const saved = envValues()[app.id]
+      // A saved credential set is reused without asking again; the app only prompts when
+      // it has never been given one, which is what makes the second connect one press.
+      if (saved && app.env.every((entry) => saved[entry.key]?.trim())) {
+        void connectWithEnv(app, saved)
+        return
+      }
+      setEnvDraft(Object.fromEntries(app.env.map((entry) => [entry.key, saved?.[entry.key] ?? ""])))
+      setEnvFormFor(app)
+      return
+    }
+    if (needsClientId(app)) {
+      const saved = clientIds()[app.id]
+      if (saved?.id?.trim()) {
+        void connectWithClientId(app, saved)
+        return
+      }
+      setClientFormId("")
+      setClientFormSecret("")
+      setClientFormMode("connect")
+      setClientFormFor(app)
+      return
+    }
+    void onConnect(app)
+  }
+
+  /**
+   * Generate a sign-in link.
+   *
+   * For an app whose vendor issues its own clients, the client has to exist before the
+   * link can be built, so this asks for it first through the same dialog Connect uses —
+   * but continues into link generation rather than a handshake, and never opens a
+   * browser. Everything else goes straight to the link.
+   */
+  const beginGenerate = (app: AppEntry) => {
+    if (needsClientId(app) && !clientIds()[app.id]?.id?.trim()) {
+      setClientFormId("")
+      setClientFormSecret("")
+      setClientFormMode("generate")
+      setClientFormFor(app)
+      return
+    }
+    void generateConsentUrl(app)
+  }
+
+  /** Continue in the client dialog: remember the credentials, then start connecting. */
+  const submitClientForm = () => {
+    const app = clientFormFor()
+    const id = clientFormId().trim()
+    if (!app || !id) return
+    const credentials = { id, secret: clientFormSecret().trim() || undefined }
+    setClientIds((prev) => ({ ...prev, [app.id]: credentials }))
+    setClientFormFor(null)
+    if (clientFormMode() === "generate") {
+      void generateConsentUrl(app)
+      return
+    }
+    void connectWithClientId(app, credentials)
+  }
+
+  /**
+   * Run the OAuth handshake with a client the user supplied.
+   *
+   * The credentials go into the server's config as part of the connect, which is what
+   * gives the handshake a client to request consent with.
+   */
+  /**
+   * Remember the environment credentials and connect with them.
+   *
+   * The values are stored per app so the boxes appear once. They are handed to the
+   * connect, which writes them into the server's config as its environment — the server
+   * then reads them the way it expects, with nothing passed on the command line where
+   * another process could read it.
+   */
+  const submitEnvForm = () => {
+    const app = envFormFor()
+    if (!app) return
+    const values = envDraft()
+    if (!app.env?.every((entry) => values[entry.key]?.trim())) return
+    setEnvValues((prev) => ({ ...prev, [app.id]: values }))
+    setEnvFormFor(null)
+    void connectWithEnv(app, values)
+  }
+
+  /** Connect a server that lives at an address the user supplied. */
+  const connectWithInstance = async (app: AppEntry, address: string) => {
+    if (busy()) return
+    setInstanceUrls((prev) => ({ ...prev, [app.id]: address.trim() }))
+    busyIds.add(app.id)
+    setBusy(app.id)
+    setBusySince(Date.now())
+    setState(app.id, { status: "connecting" })
+    try {
+      setState(
+        app.id,
+        await connectApp(props.runtime, app, {
+          instanceUrl: address.trim(),
+          onProgress: (s) => setState(app.id, s),
+        }),
+      )
+    } finally {
+      busyIds.delete(app.id)
+      setBusy(null)
+      setBusySince(0)
+    }
+  }
+
+  /** Continue in the address dialog: remember the address and connect to it. */
+  const submitInstance = () => {
+    const app = instanceFor()
+    const address = instanceValue().trim()
+    if (!app || !address) return
+    setInstanceFor(null)
+    setInstanceValue("")
+    void connectWithInstance(app, address)
+  }
+
+  /** Connect a fetched local server with the credentials its environment expects. */
+  const connectWithEnv = async (app: AppEntry, env: Record<string, string>) => {
+    if (busy()) return
+    busyIds.add(app.id)
+    setBusy(app.id)
+    setBusySince(Date.now())
+    setState(app.id, { status: "connecting" })
+    try {
+      setState(
+        app.id,
+        await connectApp(props.runtime, app, {
+          env,
+          onProgress: (s) => setState(app.id, s),
+        }),
+      )
+    } finally {
+      busyIds.delete(app.id)
+      setBusy(null)
+      setBusySince(0)
+    }
+  }
+
+  const connectWithClientId = async (app: AppEntry, credentials: { id: string; secret?: string }) => {
+    if (busy()) return
+    busyIds.add(app.id)
+    setBusy(app.id)
+    setBusySince(Date.now())
+    setState(app.id, { status: "connecting" })
+    try {
+      let target = app
+      if (!app.url && app.kind !== "local") {
+        const hit = await props.resolve(app)
+        if (!hit.url) {
+          setState(app.id, { status: "failed", error: hit.reason ?? "no connectable server found" })
+          return
+        }
+        target = { ...app, url: hit.url, zeroSetup: hit.server ? undefined : app.zeroSetup }
+      }
+      setState(
+        app.id,
+        await connectApp(props.runtime, target, {
+          clientId: credentials.id.trim(),
+          clientSecret: credentials.secret?.trim(),
+          onProgress: (s) => setState(app.id, s),
+        }),
+      )
+    } finally {
+      busyIds.delete(app.id)
+      setBusy(null)
+      setBusySince(0)
+    }
+  }
+
+  /**
+   * Build the sign-in link without opening it.
+   *
+   * Discovery, client registration and PKCE all happen on the server, so what comes back
+   * is a complete consent URL. Handing it over instead of opening it is the point: the
+   * account is often already signed in somewhere other than the default browser, and
+   * approving there still delivers the reply to ZYRAXON's loopback. Opening it is offered
+   * right beside the link for the other case.
+   *
+   * The server has to know about the entry before it can sign in. `auth.start` reads the
+   * server from config, so an app that was never connected answered `MCP server not
+   * found` and the button produced no link at all. Resolving and writing the entry first
+   * is what makes Generate work for every app, not only the ones already connected.
+   */
+  const generateConsentUrl = async (app: AppEntry) => {
+    if (busy()) return
+    setGenerating(app.id)
+    setConsentUrl(null)
+    busyIds.add(app.id)
+    setBusy(app.id)
+    setBusySince(Date.now())
+    try {
+      let target = app
+      if (!app.url && app.kind !== "local") {
+        const hit = await props.resolve(app)
+        if (!hit.url) return
+        target = { ...app, url: hit.url, zeroSetup: hit.server ? undefined : app.zeroSetup }
+        setResolved((prev) => ({ ...prev, [app.id]: hit.server?.name ?? hit.url! }))
+      }
+
+      const credentials = clientIds()[app.id]
+      const config = toServerConfig(target, undefined, credentials?.id?.trim(), credentials?.secret?.trim())
+      if (config.type === "local" || config.type === "remote") {
+        await props.runtime.addServer(app.id, config).catch(() => undefined)
+        // The entry is written and then probed, so the handshake reads it a moment
+        // later. Without this pause it asks for a server that is still being written.
+        await new Promise((resolve) => setTimeout(resolve, 400))
+      }
+
+      const url = await props.runtime.startAuth(app.id, { open: true })
+      setConsentUrl(url ? { id: app.id, url } : null)
+    } catch {
+      setConsentUrl(null)
+    } finally {
+      busyIds.delete(app.id)
+      setBusy(null)
+      setBusySince(0)
+      setGenerating(null)
+    }
+  }
+
+  const runRegistrySearch = async () => {
+    const term = registryTerm().trim()
+    if (!term) return
+    setBusy("registry")
+    try {
+      const hits = await searchRegistry(term, 30)
+      setRegistryHits(hits)
+    } catch {
+      setRegistryHits([])
+    }
+    setBusy(null)
+  }
+
+  /**
+   * Browse or search the verified catalog.
+   *
+   * An empty box is a valid search here and lists the servers with the most tools, which
+   * is a useful front page: they are the ones with the most to offer and the ones the
+   * verifier got furthest into.
+   */
+  const runVerifiedSearch = async () => {
+    setVerifiedBusy(true)
+    try {
+      setVerifiedHits(await searchVerified(verifiedTerm(), 60))
+    } catch {
+      setVerifiedHits([])
+    }
+    setVerifiedBusy(false)
+  }
+
+  /**
+   * Connect one server from the verified catalog.
+   *
+   * The hit already carries the endpoint or the launch command, so the row is expressed as
+   * an AppEntry and handed to the same connect flow the curated cards use — a registry
+   * server is resolved, written and handshaken by exactly the code that already works,
+   * rather than by a second path that would need its own testing.
+   */
+  const connectVerified = async (hit: VerifiedHit) => {
+    if (busy()) return
+    setBusy(hit.id)
+    setBusySince(Date.now())
+    let app: AppEntry
+    try {
+      // The row says what kind of connect it is; the detail map says what it needs typed —
+      // the environment variables a local package reads, whether a browser app registers its
+      // own client, or the template a remote endpoint is missing. Both are read here so the
+      // AppEntry that reaches the connect flow carries everything the flow may ask for.
+      const detail = await connectDetailFor(hit.id)
+      app = verifiedHitToApp(hit, detail)
+    } catch {
+      setBusy(null)
+      setBusySince(0)
+      return
+    }
+    // Hand the busy flag over rather than holding it. Every path out of `beginConnect` sets
+    // its own flag and refuses to run while one is already set, so a flag left standing here
+    // makes the press a no-op — which is what it was: no config written, no handshake, no
+    // error, for every one of the verified rows.
+    setBusy(null)
+    setBusySince(0)
+    await beginConnect(app)
+  }
+
+  const stateFor = (id: string): ConnectionState => states()[id] ?? { status: "disconnected" }
+
+  const connectedCount = createMemo(() => {
+    const all: ConnectionState[] = Object.values(states())
+    return all.filter((s) => s.status === "connected").length
+  })
+
+  return (
+    // The critical layout and the backdrop are inline rather than utilities. This
+    // folder sits outside packages/, so its arbitrary-value Tailwind classes are
+    // easy to drop silently, and a panel that renders with no background and no
+    // full-screen sizing lets the home page show straight through it. Inline
+    // styles cannot fail that way.
+    //
+    // pointer-events has to be opted into because the dialog layer sets
+    // pointer-events:none so clicks fall through to the overlay that closes it.
+    <div
+      style={{
+        position: "fixed",
+        inset: "0",
+        "z-index": "2147483000",
+        display: "flex",
+        "align-items": "center",
+        "justify-content": "center",
+        padding: "clamp(12px, 3vh, 40px) clamp(12px, 4vw, 56px)",
+        background: overlayTint(),
+        "pointer-events": "auto",
+        "font-family": "var(--v2-font-family-sans, system-ui, sans-serif)",
+        "--mcp-border": border(),
+        "--mcp-border-strong": borderStrong(),
+        "--mcp-text-weak": textWeak(),
+      }}
+    >
+     <div
+      style={{
+        position: "relative",
+        display: "flex",
+        "flex-direction": "column",
+        width: "100%",
+        "max-width": "1080px",
+        height: "100%",
+        "max-height": "760px",
+        overflow: "hidden",
+        "border-radius": "16px",
+        border: `1px solid ${border()}`,
+        background: surface(),
+        color: dark() ? "#fafafa" : "#18181b",
+        "box-shadow": dark() ? "0 32px 80px rgba(0,0,0,0.6)" : "0 24px 64px rgba(0,0,0,0.18)",
+      }}
+    >
+      {/* header */}
+      <div class="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--mcp-border)] px-6 py-4">
+        <div class="flex flex-col">
+          <span class="text-[17px] font-[600] tracking-[-0.2px]">MCP Connect</span>
+          <span class="text-[12px] text-[var(--text-weak,#8b95ad)]">
+            {connectedCount()} connected · {apps.length} curated apps · {verifiedTotal()?.toLocaleString("en-US") ?? "…"} verified servers
+          </span>
+        </div>
+        <Show when={props.onClose}>
+          {/* The panel is its own centred box with a margin all round, so this no
+              longer shares space with the window's own titlebar close button and
+              needs no compensating margin. */}
+          <button
+            type="button"
+            aria-label="Close MCP Connect"
+            class="shrink-0 rounded-md border border-[var(--mcp-border-strong)] px-4 py-1.5 text-[13px] font-[600] transition-colors"
+            style={{ background: fill() }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = fillHover())}
+            onMouseLeave={(e) => (e.currentTarget.style.background = fill())}
+            onClick={() => props.onClose?.()}
+          >
+            Cancel
+          </button>
+        </Show>
+      </div>
+
+      {/* search + filters */}
+      <div class="flex flex-wrap items-center gap-2 px-6 py-3">
+        <input
+          value={query()}
+          onInput={(e) => setQuery(e.currentTarget.value)}
+          placeholder="Search apps"
+          class="h-8 min-w-[220px] flex-1 rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none placeholder:text-[var(--mcp-text-weak)]"
+        />
+        <div class="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            class={`rounded-full px-3 py-1 text-[12px] ${category() === "All" ? "font-[600]" : ""}`}
+            style={{ background: category() === "All" ? fill() : "transparent" }}
+            onClick={() => setCategory("All")}
+          >
+            All
+          </button>
+          <For each={cats}>
+            {(c) => (
+              <button
+                type="button"
+                class={`rounded-full px-3 py-1 text-[12px] ${category() === c ? "font-[600]" : ""}`}
+                style={{ background: category() === c ? fill() : "transparent" }}
+                onClick={() => setCategory(c)}
+              >
+                {c}
+              </button>
+            )}
+          </For>
+        </div>
+      </div>
+
+      {/* Connecting takes over the body. Sitting on the grid meant a slow or hung
+          handshake looked like a dead button, and the user had no way to tell
+          whether anything was happening at all. */}
+      <Show when={busyApp()}>
+        {(app) => (
+          <div
+            class="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-6 text-center"
+            style={{ background: dark() ? "#09090b" : "#fafafa" }}
+          >
+            {/* A real spinner rather than a pulsing icon: the icon stops moving the
+                moment it fails to load, which read as a frozen screen. */}
+            <div class="relative flex size-20 items-center justify-center">
+              <div
+                class="absolute inset-0 rounded-full border-2 opacity-20"
+                style={{ "border-color": accent() }}
+              />
+              <div
+                class="absolute inset-0 animate-spin rounded-full border-2 border-transparent"
+                style={{
+                  "border-top-color": accent(),
+                  animation: "spin 0.9s linear infinite",
+                }}
+              />
+              <div class="flex size-11 items-center justify-center overflow-hidden rounded-xl" style={{ background: fill() }}>
+                <img
+                  src={appIcon(app()) || faviconUrl(app())}
+                  width={40}
+                  height={40}
+                  alt=""
+                  class="size-9 object-contain"
+                  onError={(e) => {
+                    const img = e.currentTarget
+                    const fallback = faviconUrl(app())
+                    if (!fallback || img.dataset.fellBack === "1") {
+                      img.style.visibility = "hidden"
+                      return
+                    }
+                    img.dataset.fellBack = "1"
+                    img.src = fallback
+                  }}
+                />
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <span class="text-[16px] font-[600]">Connecting {app().name}</span>
+              <span class="text-[13px] text-[var(--mcp-text-weak)]">{describe(stateFor(app().id))}</span>
+            </div>
+
+            {/* One honest line per auth kind, because the user is looking at a
+                screen and needs to know where to act. */}
+            <Show when={app().kind === "oauth"}>
+              <span class="max-w-[420px] text-[12px] text-[var(--mcp-text-weak)]">
+                A sign-in page is opening in Chrome. Approve it there and this screen updates by itself.
+              </span>
+            </Show>
+            <Show when={app().kind === "token"}>
+              <span class="max-w-[420px] text-[12px] text-[var(--mcp-text-weak)]">
+                Checking your access token against the server.
+              </span>
+            </Show>
+
+            <div
+              class="h-1 w-56 overflow-hidden rounded-full"
+              style={{ background: fill() }}
+              role="progressbar"
+              aria-label={`Connecting ${app().name}`}
+              aria-valuenow={progress().percent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              {/* The bar used to sit at a third forever, which looked like progress
+                  and never was. The width now tracks the actual phase: reaching the
+                  consent page is real work that completes, while the wait for the
+                  user to press Allow is genuinely unbounded and creeps toward the
+                  limit instead of pretending to be a percentage of a known total. */}
+              <div
+                class="h-full rounded-full transition-[width] duration-500 ease-out"
+                style={{ width: `${progress().percent}%`, background: accent() }}
+              />
+            </div>
+
+            <div class="flex items-center gap-2 text-[12px] text-[var(--mcp-text-weak)]">
+              <span class="font-[600] tabular-nums" style={{ color: accent() }}>
+                {progress().percent}%
+              </span>
+              <span>·</span>
+              <span>{progress().label}</span>
+              <span>·</span>
+              <span class="tabular-nums">{progress().elapsed}s</span>
+            </div>
+
+            {/* A wait the user is in control of needs a way out. Without this the
+                only escape was closing the whole panel and losing every card. */}
+            <button
+              type="button"
+              class="rounded-md border border-[var(--mcp-border-strong)] px-3 py-1.5 text-[12px] font-[600]"
+              style={{ background: fill() }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = fillHover())}
+              onMouseLeave={(e) => (e.currentTarget.style.background = fill())}
+              onClick={() => cancel(app().id)}
+            >
+              Cancel this connection
+            </button>
+          </div>
+        )}
+      </Show>
+
+      {/* app grid, split by how each app connects */}
+      <Show when={!busyApp()}>
+        <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4" style={{ "max-height": "calc(100vh - 6rem)" }}>
+        <div class="flex flex-col gap-8">
+          <For each={sections()}>
+            {(section) => (
+              <div class="flex flex-col gap-3">
+                <div class="flex flex-col gap-0.5">
+                  <span class="text-[14px] font-[600]">{FLOW_TITLE[section.flow]}</span>
+                  <span class="text-[12px] text-[var(--mcp-text-weak)]">{FLOW_HINT[section.flow]}</span>
+                </div>
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <For each={section.apps}>
+            {(app) => {
+              const st = () => stateFor(app.id)
+              return (
+                <div class="flex flex-col gap-3 rounded-xl border border-[var(--mcp-border)] p-4" style={{ background: cardFill() }}>
+                  <div class="flex items-start gap-3">
+                    {/* Several brand marks (Vercel, Notion, X) are solid black, so
+                        they need a light plate in dark mode to be visible at all. */}
+                    <div
+                      class="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg"
+                      style={{ background: fill() }}
+                    >
+                      {/* Show when no icon source exists at all (the bundled local
+                          servers) or when every source failed, so a card is never
+                          an empty box. */}
+                      <Show
+                        when={appIcon(app) !== "" || faviconUrl(app) !== ""}
+                        fallback={
+                          <span class="text-[15px] font-[700]" style={{ color: app.color }}>
+                            {app.name.slice(0, 1).toUpperCase()}
+                          </span>
+                        }
+                      >
+                        <img
+                          src={appIcon(app)}
+                          width={40}
+                          height={40}
+                          alt=""
+                          class="size-10 object-contain"
+                          loading="lazy"
+                          onError={(e) => {
+                            const img = e.currentTarget
+                            const fallback = faviconUrl(app)
+                            if (!fallback || img.dataset.fellBack === "1") {
+                              img.style.display = "none"
+                              return
+                            }
+                            img.dataset.fellBack = "1"
+                            img.src = fallback
+                          }}
+                        />
+                      </Show>
+                    </div>
+                    <div class="flex min-w-0 flex-col">
+                      <span class="truncate text-[14px] font-[600]">{app.name}</span>
+                      {/* Not every catalog entry carries a description. Rendering the
+                          missing one literally printed the word "undefined" under the
+                          app name, which read as a broken card rather than a blank. */}
+                      <Show when={app.description}>
+                        <span class="truncate text-[12px] text-[var(--mcp-text-weak)]">
+                          {app.description}
+                        </span>
+                      </Show>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2 text-[11px] text-[var(--mcp-text-weak)]">
+                    <span class="rounded-full px-2 py-0.5" style={{ background: fill() }}>
+                      {app.category ?? "MCP"}
+                    </span>
+                    <Show when={oneClick()[app.id] === true}>
+                      <span class="rounded-full bg-emerald-500/15 px-2 py-0.5 text-emerald-600 dark:text-emerald-300">
+                        One click
+                      </span>
+                    </Show>
+                    <Show when={app.kind === "oauth" && oneClick()[app.id] === false}>
+                      {/* Saying this up front is the whole point. These apps hand the
+                          sign-in to another host and expect their own client id, so the
+                          card would otherwise look broken rather than explained. */}
+                      <span
+                        class="rounded-full px-2 py-0.5"
+                        style={{ background: fill() }}
+                        title="Sign-in happens on another host, so it may ask you to paste an app id"
+                      >
+                        Extra step
+                      </span>
+                    </Show>
+                    {/* Say who actually runs the endpoint. More than half the catalog
+                        is hosted by a third party, and a card that hides that reads as
+                        a first-party integration when it is not. */}
+                    <Show when={app.via}>
+                      <span
+                        class="truncate rounded-full px-2 py-0.5"
+                        style={{ background: fill() }}
+                        title={`Hosted by ${app.via}`}
+                      >
+                        via {app.via}
+                      </span>
+                    </Show>
+                  </div>
+
+                  <Show when={resolved()[app.id]}>
+                    <span class="truncate text-[11px] text-[var(--mcp-text-weak)]">
+                      via {resolved()[app.id]}
+                    </span>
+                  </Show>
+
+                  <div class="mt-auto flex items-center justify-between gap-2">
+                    <span class="truncate text-[12px] text-[var(--mcp-text-weak)]">{describe(st())}</span>
+                    <Show
+                      when={st().status !== "connected"}
+                      fallback={
+                        <div class="flex shrink-0 items-center gap-1.5">
+                          {/* Being able to detach an account matters as much as being
+                              able to attach one: a server left connected keeps its
+                              tools callable by the agent forever. */}
+                          <button
+                            type="button"
+                            aria-label={`Disconnect ${app.name}`}
+                            class="rounded-md border border-[var(--mcp-border-strong)] px-2.5 py-1.5 text-[12px] font-[600]"
+                            style={{ background: fill() }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = fillHover())}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = fill())}
+                            onClick={() => onDisconnect(app)}
+                          >
+                            Disconnect
+                          </button>
+                        </div>
+                      }
+                    >
+                      <div class="flex shrink-0 items-center gap-1.5">
+                        <button
+                          type="button"
+                          aria-label={`Details for ${app.name}`}
+                          title={`What ${app.name} can do, and what it needs`}
+                          class="rounded-md border border-[var(--mcp-border)] px-2.5 py-1.5 text-[12px] font-[600]"
+                          style={{ background: fill() }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = fillHover())}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = fill())}
+                          onClick={() => setDetailsFor(app)}
+                        >
+                          Details
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy() === app.id}
+                          class="rounded-md px-3 py-1.5 text-[12px] font-[600] disabled:opacity-50"
+                          style={{ background: fill() }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = fillHover())}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = fill())}
+                          onClick={() => beginConnect(app)}
+                        >
+                          {busy() === app.id ? "Working…" : "Connect"}
+                        </button>
+                      </div>
+                    </Show>
+                  </div>
+                </div>
+              )
+            }}
+          </For>
+                </div>
+              </div>
+            )}
+          </For>
+
+          {/* registry search */}
+          <div class="flex flex-col gap-3 rounded-xl border border-[var(--mcp-border)] p-4">
+          <span class="text-[13px] font-[600]">Search the full MCP registry</span>
+          <span class="text-[12px] text-[var(--mcp-text-weak)]">
+            {registryCaption(registryCount())}. Search, then add any of them.
+          </span>
+          <div class="flex gap-2">
+            <input
+              value={registryTerm()}
+              onInput={(e) => setRegistryTerm(e.currentTarget.value)}
+              onKeyDown={(e) => e.key === "Enter" && runRegistrySearch()}
+              placeholder="e.g. youtube, postgres, slack"
+              class="h-8 flex-1 rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
+            />
+            <button
+              type="button"
+              class="rounded-md px-3 py-1.5 text-[13px]"
+              style={{ background: fill() }}
+              onClick={runRegistrySearch}
+            >
+              Search
+            </button>
+          </div>
+          <For each={registryHits()}>
+            {(hit) => (
+              <div class="flex items-center justify-between gap-3 border-t border-[var(--mcp-border)] pt-2">
+                <div class="flex min-w-0 flex-col">
+                  <span class="truncate text-[13px]">{hit.title ?? hit.name}</span>
+                  <span class="truncate text-[11px] text-[var(--mcp-text-weak)]">{hit.description ?? hit.name}</span>
+                </div>
+                <Show when={hit.remote}>
+                  <span class="shrink-0 rounded-full bg-sky-500/15 px-2 py-0.5 text-[11px] text-sky-300">Hosted</span>
+                </Show>
+              </div>
+            )}
+          </For>
+        </div>
+
+          {/* verified catalog — servers that answered a real handshake */}
+          <div class="flex flex-col gap-3 rounded-xl border border-[var(--mcp-border)] p-4">
+            <div class="flex items-baseline justify-between gap-3">
+              <span class="text-[13px] font-[600]">Verified servers</span>
+              <Show when={verifiedTotal() !== undefined}>
+                <span class="shrink-0 text-[11px] text-[var(--mcp-text-weak)]">
+                  {verifiedTotal()!.toLocaleString("en-US")} tested and answering
+                </span>
+              </Show>
+            </div>
+            {/* The distinction is the point of this list, so it is said before the box
+                rather than left for the user to infer from the word "verified". */}
+            <span class="text-[12px] text-[var(--mcp-text-weak)]">
+              Each one answered a real MCP handshake. Press Connect and it is added and
+              tested here — the card tells you what it will ask for first.
+            </span>
+            <div class="flex gap-2">
+              <input
+                value={verifiedTerm()}
+                onInput={(e) => setVerifiedTerm(e.currentTarget.value)}
+                onKeyDown={(e) => e.key === "Enter" && runVerifiedSearch()}
+                placeholder="e.g. postgres, notion, github — or leave empty to browse"
+                class="h-8 flex-1 rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
+              />
+              <button
+                type="button"
+                disabled={verifiedBusy()}
+                class="rounded-md px-3 py-1.5 text-[13px] disabled:opacity-50"
+                style={{ background: fill() }}
+                onClick={runVerifiedSearch}
+              >
+                {verifiedBusy() ? "Searching…" : "Browse"}
+              </button>
+            </div>
+            <For each={verifiedHits()}>
+              {(hit) => {
+                const step = connectStepFor(hit.connect_kind)
+                return (
+                  <div class="flex items-start justify-between gap-3 border-t border-[var(--mcp-border)] pt-2">
+                    <div class="flex min-w-0 flex-col gap-0.5">
+                      <span class="truncate text-[13px]">{hit.name}</span>
+                      <span class="truncate text-[11px] text-[var(--mcp-text-weak)]">
+                        {hit.tool_count} tools · {hit.category}
+                      </span>
+                      {/* What this server will ask for, before anything is pressed. */}
+                      <span class="text-[11px] text-[var(--mcp-text-weak)]">{step.what}</span>
+                      <Show when={step.needs}>
+                        <span class="text-[11px] text-amber-600 dark:text-amber-300">
+                          Have ready: {step.needs}
+                        </span>
+                      </Show>
+                    </div>
+                    <div class="flex shrink-0 flex-col items-end gap-1">
+                      <span class="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] text-emerald-600 dark:text-emerald-300">
+                        {VERIFICATION_LABELS[hit.verification] ?? hit.verification}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={busy() === hit.id}
+                        class="rounded-md px-3 py-1 text-[12px] font-[600] disabled:opacity-50"
+                        style={{ background: fill() }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = fillHover())}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = fill())}
+                        onClick={() => connectVerified(hit)}
+                      >
+                        {busy() === hit.id ? "Working…" : "Connect"}
+                      </button>
+                    </div>
+                  </div>
+                )
+              }}
+            </For>
+          </div>
+        </div>
+        </div>
+      </Show>
+
+
+      {/* token dialog */}
+      <Show when={tokenFor()}>
+        {(app) => (
+          <div
+          style={{
+            position: "fixed",
+            inset: "0",
+            "z-index": "2147483100",
+            display: "flex",
+            "align-items": "center",
+            "justify-content": "center",
+            // Nearly opaque, but not quite: the grid has to stay faintly visible
+            // behind it, otherwise the dialog reads as a stray dropdown floating
+            // on a black screen rather than a modal on top of this panel.
+            background: overlayTint(),
+            padding: "1.5rem",
+            "pointer-events": "auto",
+          }}
+        >
+            <div
+              class="w-full max-w-[460px] rounded-xl border border-[var(--mcp-border-strong)] p-5"
+              style={{ background: raised(), "box-shadow": "0 24px 64px rgba(0,0,0,0.35)" }}
+            >
+              <div class="mb-1 text-[15px] font-[600]">Connect {app().name}</div>
+              <div class="mb-4 text-[12px] text-[var(--mcp-text-weak)]">
+                Paste an access token. Create one at{" "}
+                <a class="underline" href={app().tokenUrl} target="_blank" rel="noopener">
+                  {app().tokenUrl}
+                </a>
+                . It is stored locally and sent straight to the agent.
+              </div>
+              <input
+                value={tokenValue()}
+                onInput={(e) => setTokenValue(e.currentTarget.value)}
+                onKeyDown={(e) => e.key === "Enter" && submitToken()}
+                placeholder="Paste token"
+                class="mb-4 h-9 w-full rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
+              />
+              <div class="flex justify-end gap-2">
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5"
+                  onClick={() => {
+                    setTokenFor(null)
+                    setTokenValue("")
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] font-[600] disabled:opacity-50"
+                  disabled={!tokenValue().trim()}
+                  style={{ background: fill() }}
+                  onClick={submitToken}
+                >
+                  Connect
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Show>
+
+      {/* instance dialog — for servers that live at the user's own address. The catalog
+          records these as an endpoint template, so the one value only the user has turns
+          it into a URL. Continue connects to the substituted result. */}
+      <Show when={instanceFor()}>
+        {(app) => (
+          <div
+            style={{
+              position: "fixed",
+              inset: "0",
+              "z-index": "2147483100",
+              display: "flex",
+              "align-items": "center",
+              "justify-content": "center",
+              background: overlayTint(),
+              padding: "1.5rem",
+              "pointer-events": "auto",
+            }}
+          >
+            <div
+              class="w-full max-w-[460px] rounded-xl border border-[var(--mcp-border-strong)] p-5"
+              style={{ background: raised(), "box-shadow": "0 24px 64px rgba(0,0,0,0.35)" }}
+            >
+              <div class="mb-1 text-[15px] font-[600]">Connect {app().name}</div>
+              <div class="mb-3 text-[12px] text-[var(--mcp-text-weak)]">
+                {instanceNeedsFullUrl(app()) ? (
+                  <>
+                    This endpoint holds more than one variable —{" "}
+                    <span class="select-all font-mono text-[11px]">{app().urlTemplate}</span> — so paste the complete
+                    URL your instance answers on, with every variable already filled in.
+                  </>
+                ) : (
+                  <>
+                    This server runs at your own address, so it needs the host only you have. ZYRAXON fills it into{" "}
+                    <span class="select-all font-mono text-[11px]">{app().urlTemplate}</span> and connects to the result.
+                  </>
+                )}
+              </div>
+              <input
+                value={instanceValue()}
+                onInput={(e) => setInstanceValue(e.currentTarget.value)}
+                onKeyDown={(e) => e.key === "Enter" && submitInstance()}
+                placeholder={instanceNeedsFullUrl(app()) ? "https://region.api.vendor.com/mcp/account-id" : "acme.example.com"}
+                class="mb-4 h-9 w-full rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
+              />
+              <div class="flex justify-end gap-2">
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5"
+                  onClick={() => {
+                    setInstanceFor(null)
+                    setInstanceValue("")
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] font-[600] disabled:opacity-50"
+                  disabled={!instanceValue().trim()}
+                  style={{ background: fill() }}
+                  onClick={submitInstance}
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Show>
+
+      {/* client dialog — opened from Connect for vendors that issue the client by hand.
+          Asking here, once, keeps the credential fields off the card and means the
+          second visit goes straight to the browser. */}
+      <Show when={clientFormFor()}>
+        {(app) => (
+          <div
+            style={{
+              position: "fixed",
+              inset: "0",
+              "z-index": "2147483100",
+              display: "flex",
+              "align-items": "center",
+              "justify-content": "center",
+              background: overlayTint(),
+              padding: "1.5rem",
+              "pointer-events": "auto",
+            }}
+          >
+            <div
+              class="w-full max-w-[460px] rounded-xl border border-[var(--mcp-border-strong)] p-5"
+              style={{ background: raised(), "box-shadow": "0 24px 64px rgba(0,0,0,0.35)" }}
+            >
+              <div class="mb-1 text-[15px] font-[600]">
+                {clientFormMode() === "generate" ? `Sign-in link for ${app().name}` : `Connect ${app().name}`}
+              </div>
+              <div class="mb-4 text-[12px] text-[var(--mcp-text-weak)]">
+                {app().name} does not let ZYRAXON register its own client, so it needs the client ID from your{" "}
+                <Show when={app().consoleUrl} fallback={<span>own developer console</span>}>
+                  <a class="underline" href={app().consoleUrl} target="_blank" rel="noopener">
+                    developer console
+                  </a>
+                </Show>
+                . You only have to enter it once.
+              </div>
+              <input
+                value={clientFormId()}
+                onInput={(e) => setClientFormId(e.currentTarget.value)}
+                onKeyDown={(e) => e.key === "Enter" && submitClientForm()}
+                placeholder={line(guideLang(), "pasteClientId")}
+                class="mb-2 h-9 w-full rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
+              />
+              <input
+                value={clientFormSecret()}
+                onInput={(e) => setClientFormSecret(e.currentTarget.value)}
+                onKeyDown={(e) => e.key === "Enter" && submitClientForm()}
+                placeholder={line(guideLang(), "pasteSecret")}
+                class="mb-4 h-9 w-full rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
+              />
+              <div class="flex justify-end gap-2">
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5"
+                  onClick={() => setClientFormFor(null)}
+                >
+                  {line(guideLang(), "cancel")}
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] font-[600] disabled:opacity-50"
+                  disabled={!clientFormId().trim()}
+                  style={{ background: fill() }}
+                  onClick={submitClientForm}
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Show>
+
+      {/* credential dialog — for apps whose server is fetched from npm and reads its
+          credentials from the environment. One box per variable the catalog declares,
+          so the form is exactly as long as the server's own requirements. */}
+      <Show when={envFormFor()}>
+        {(app) => (
+          <div
+            style={{
+              position: "fixed",
+              inset: "0",
+              "z-index": "2147483100",
+              display: "flex",
+              "align-items": "center",
+              "justify-content": "center",
+              background: overlayTint(),
+              padding: "1.5rem",
+              "pointer-events": "auto",
+            }}
+          >
+            <div
+              class="w-full max-w-[460px] rounded-xl border border-[var(--mcp-border-strong)] p-5"
+              style={{ background: raised(), "box-shadow": "0 24px 64px rgba(0,0,0,0.35)" }}
+            >
+              <div class="mb-1 text-[15px] font-[600]">Connect {app().name}</div>
+              <div class="mb-4 text-[12px] text-[var(--mcp-text-weak)]">
+                This server runs on your machine and reads its credentials from its environment. Create them at{" "}
+                <Show when={app().consoleUrl} fallback={<span>the developer console</span>}>
+                  <a class="underline" href={app().consoleUrl} target="_blank" rel="noopener">
+                    {app().consoleUrl}
+                  </a>
+                </Show>
+                . You only have to enter them once.
+              </div>
+              <For each={app().env ?? []}>
+                {(entry) => (
+                  <input
+                    type={entry.secret ? "password" : "text"}
+                    value={envDraft()[entry.key] ?? ""}
+                    onInput={(e) => setEnvDraft((prev) => ({ ...prev, [entry.key]: e.currentTarget.value }))}
+                    onKeyDown={(e) => e.key === "Enter" && submitEnvForm()}
+                    placeholder={entry.label}
+                    class="mb-2 h-9 w-full rounded-md border border-[var(--mcp-border)] bg-transparent px-3 text-[13px] outline-none"
+                  />
+                )}
+              </For>
+              <div class="mt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5"
+                  onClick={() => {
+                    setEnvFormFor(null)
+                    setEnvDraft({})
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] font-[600] disabled:opacity-50"
+                  disabled={!app().env?.every((entry) => envDraft()[entry.key]?.trim())}
+                  style={{ background: fill() }}
+                  onClick={submitEnvForm}
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Show>
+
+      <Show when={detailsFor()}>
+        {(app) => (
+          <div
+            style={{
+              position: "fixed",
+              inset: "0",
+              "z-index": "2147483100",
+              display: "flex",
+              "align-items": "center",
+              "justify-content": "center",
+              background: overlayTint(),
+              padding: "1.5rem",
+              "pointer-events": "auto",
+              "max-height": "calc(100vh - 3rem)",
+              "overflow": "hidden",
+            }}
+          >
+            <div
+              class="max-h-[calc(100vh-3rem)] w-full max-w-[520px] overflow-y-auto rounded-xl border border-[var(--mcp-border-strong)] p-4"
+              style={{ background: raised(), "box-shadow": "0 24px 64px rgba(0,0,0,0.35)" }}
+            >
+              <div class="mb-1 flex items-center gap-2 text-[15px] font-[600]">
+                <img src={appIcon(app(), 18)} alt="" class="h-[18px] w-[18px] rounded" />
+                {app().name}
+                <span class="text-[12px] font-[400] text-[var(--mcp-text-weak)]">{app().category}</span>
+              </div>
+              <div class="mb-4 text-[12px] text-[var(--mcp-text-weak)]">{app().description}</div>
+
+              <div class="mb-1 flex items-center justify-between gap-2">
+                <div class="text-[12px] font-[600] text-[var(--mcp-text-weak)]">{line(guideLang(), "title")}</div>
+                <label class="flex items-center gap-1.5 text-[11px] text-[var(--mcp-text-weak)]">
+                  {line(guideLang(), "language")}
+                  <select
+                    class="rounded-md border border-[var(--mcp-border)] bg-transparent px-1.5 py-0.5 text-[11px] outline-none"
+                    value={guideLang()}
+                    onChange={(event) => changeGuideLang(event.currentTarget.value)}
+                  >
+                    <For each={LANGUAGES}>
+                      {(lang) => (
+                        <option value={lang.code}>
+                          {lang.native} ({lang.english})
+                        </option>
+                      )}
+                    </For>
+                  </select>
+                </label>
+              </div>
+              <ul class="mb-4 ml-4 list-disc space-y-1 text-[12px]">
+                <For each={guideFor(app(), guideLang())}>{(guideLine) => <li>{linkify(guideLine)}</li>}</For>
+              </ul>
+
+              <Show when={docsByApp[app().id]}>
+                <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">{line(guideLang(), "docs")}</div>
+                <a
+                  class="mb-4 block break-all text-[12px] underline"
+                  href={docsByApp[app().id]}
+                  target="_blank"
+                  rel="noopener"
+                >
+                  {docsByApp[app().id]}
+                </a>
+              </Show>
+
+              <Show when={app().note}>
+                <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">
+                  {line(guideLang(), "goodToKnow")}
+                </div>
+                <div class="mb-4 rounded-md border border-[var(--mcp-border)] p-3 text-[12px]">
+                  {catalogText(app().note ?? "", guideLang())}
+                </div>
+              </Show>
+
+              <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">{line(guideLang(), "endpoint")}</div>
+              <div class="mb-4 select-all break-all rounded-md border border-[var(--mcp-border)] p-2 font-mono text-[11px]">
+                {app().urlTemplate ?? app().url ?? app().command?.command ?? line(guideLang(), "endpointLocal")}
+              </div>
+
+              {/* Where the server lives. Every verified row that published a site or a
+                  repository gets both links, because "what is this and who runs it" is a
+                  question the Details panel exists to answer, not a bonus. */}
+              <Show when={app().website || app().repository}>
+                <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">
+                  {line(guideLang(), "serverLinks")}
+                </div>
+                <div class="mb-4 space-y-1 text-[12px]">
+                  <Show when={app().website}>
+                    <a class="block break-all underline" href={app().website} target="_blank" rel="noopener">
+                      {app().website}
+                    </a>
+                  </Show>
+                  <Show when={app().repository}>
+                    <a class="block break-all underline" href={app().repository} target="_blank" rel="noopener">
+                      {app().repository}
+                    </a>
+                  </Show>
+                </div>
+              </Show>
+
+              {/* What this server needs before it will run, and where to get it. One line per
+                  requirement, each with the page that issues it, so the user can go and fetch
+                  the value rather than guess. A server that needs nothing says so. */}
+              <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">
+                {line(guideLang(), "requirements")}
+              </div>
+              <ul class="mb-4 ml-4 list-disc space-y-1 text-[12px]">
+                <Show
+                  when={requirementsFor(app()).length > 0}
+                  fallback={<li>{line(guideLang(), "needsNothing")}</li>}
+                >
+                  <For each={requirementsFor(app())}>
+                    {(req) => (
+                      <li>
+                        <span class="font-[600]">{req.label}</span>
+                        {req.detail ? <span> — {req.detail}</span> : null}
+                        {req.href ? (
+                          <>
+                            {" "}
+                            <a class="underline" href={req.href} target="_blank" rel="noopener">
+                              {req.href}
+                            </a>
+                          </>
+                        ) : null}
+                      </li>
+                    )}
+                  </For>
+                </Show>
+              </ul>
+
+              <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">{line(guideLang(), "howto")}</div>
+              <ol class="mb-4 ml-4 list-decimal space-y-1 text-[12px]">
+                <Show
+                  when={app().steps?.length}
+                  fallback={
+                    <li>
+                      {app().kind === "none"
+                        ? line(guideLang(), "howNone")
+                        : app().kind === "local"
+                          ? line(guideLang(), "howLocal")
+                          : app().kind === "token"
+                            ? line(guideLang(), "howToken")
+                            : line(guideLang(), "howOAuth")}
+                    </li>
+                  }
+                >
+                  {app().steps!.map((step) => (
+                    <li>{linkify(catalogText(step, guideLang()))}</li>
+                  ))}
+                </Show>
+              </ol>
+
+              <Show when={app().scope}>
+                <div class="mb-1 text-[12px] font-[600] text-[var(--mcp-text-weak)]">{line(guideLang(), "scopes")}</div>
+                <div class="mb-4 select-all break-all rounded-md border border-[var(--mcp-border)] p-2 font-mono text-[11px]">
+                  {app().scope}
+                </div>
+              </Show>
+
+              <Show when={needsClientId(app())}>
+                <div class="mb-3 text-[11px] text-[var(--mcp-text-weak)]">
+                  {linkify(
+                    line(guideLang(), "oauthHelp", {
+                      console: app().consoleUrl ?? "",
+                      redirect: REDIRECT,
+                    }),
+                  )}
+                </div>
+              </Show>
+
+              <div class="flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5"
+                  onClick={() => setDetailsFor(null)}
+                >
+                  {line(guideLang(), "close")}
+                </button>
+                <Show when={app().consoleUrl}>
+                  <button
+                    type="button"
+                    class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5"
+                    onClick={() => window.open(app().consoleUrl, "_blank", "noopener")}
+                  >
+                    {line(guideLang(), "openConsole")}
+                  </button>
+                </Show>
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] hover:bg-white/5 disabled:opacity-50"
+                  disabled={busy() !== null}
+                  title="Build the sign-in link so it can be opened in whichever browser holds your account"
+                  style={{ display: app().env?.length ? "none" : undefined }}
+                  onClick={() => beginGenerate(app())}
+                >
+                  {generating() === app().id ? line(guideLang(), "generating") : line(guideLang(), "generateLink")}
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-[13px] font-[600] disabled:opacity-50"
+                  disabled={busy() !== null}
+                  style={{ background: fill() }}
+                  onClick={() => {
+                    setDetailsFor(null)
+                    beginConnect(app())
+                  }}
+                >
+                  Connect
+                </button>
+              </div>
+
+              <Show when={consentUrl()} keyed>
+                {(link) => (
+                  <Show when={link.id === app().id}>
+                    <div class="mt-4 rounded-md border border-[var(--mcp-border)] p-3">
+                      <div class="mb-1 text-[12px] font-[600]">Sign-in link</div>
+                      <div class="mb-2 text-[11px] text-[var(--mcp-text-weak)]">
+                        Open it in the browser where you are signed in, approve the app, then come back here. ZYRAXON
+                        receives the reply automatically.
+                      </div>
+                      <div class="select-all break-all font-mono text-[11px]">{link.url}</div>
+                      <div class="mt-2 flex gap-2">
+                        <button
+                          type="button"
+                          class="rounded-md border border-[var(--mcp-border)] px-2 py-1 text-[12px] hover:bg-white/5"
+                          onClick={() => navigator.clipboard?.writeText(link.url)}
+                        >
+                          Copy link
+                        </button>
+                        <button
+                          type="button"
+                          class="rounded-md border border-[var(--mcp-border)] px-2 py-1 text-[12px] hover:bg-white/5"
+                          onClick={() => void props.runtime.openUrl(link.url)}
+                        >
+                          Open link
+                        </button>
+                      </div>
+                    </div>
+                  </Show>
+                )}
+              </Show>
+            </div>
+          </div>
+        )}
+      </Show>
+     </div>
+    </div>
+  )
+}
+
+export { authLabel, supportsZeroSetup }
+
+/**
+ * True when one answer cannot complete the endpoint.
+ *
+ * Delegates to the shared helper so the dialog's copy and the config writer agree on what a
+ * multi-variable template means. Two different variables need two unrelated values, and the
+ * dialog collects one, so the address the user gives is the finished URL and the copy asks for
+ * that instead of a bare host.
+ */
+export function instanceNeedsFullUrl(app: AppEntry): boolean {
+  return needsFullUrl(app.urlTemplate ?? app.url ?? "")
+}
+
+/**
+ * What a server needs before it will run, and where the user goes to get it.
+ *
+ * The Details panel is where a person decides whether they can connect an app at all, so it
+ * has to name every value the connect will ask for and point at the page that issues it. A
+ * server that needs nothing says so outright rather than showing an empty list, because
+ * "nothing" is a fact worth stating: it is the difference between a press and a setup.
+ *
+ * The links are the vendor's own, and they are the ones the catalog records: a token page
+ * where the app has one, the developer console otherwise. Nothing is guessed — an app with
+ * neither shows the requirement without a link rather than a plausible-looking URL.
+ */
+export function requirementsFor(app: AppEntry): { label: string; detail?: string; href?: string }[] {
+  const out: { label: string; detail?: string; href?: string }[] = []
+
+  if (app.kind === "instance") {
+    out.push({
+      label: instanceNeedsFullUrl(app) ? "Your server's full URL" : "Your server's address",
+      detail: instanceNeedsFullUrl(app)
+        ? `paste the complete URL, filling every variable in ${app.urlTemplate ?? "the endpoint"}`
+        : "the host your own instance answers on, which ZYRAXON fills into the endpoint above",
+    })
+    return out
+  }
+
+  if (app.kind === "local" && app.env && app.env.length > 0) {
+    for (const entry of app.env) {
+      out.push({
+        label: entry.label,
+        ...(entry.placeholder ? { detail: entry.placeholder } : {}),
+        // The page this variable is issued on. Read from the variable's own description where
+        // the vendor wrote one, and from the server's site otherwise, so each box has its own
+        // link rather than the whole form sharing one.
+        ...(entry.url ?? app.consoleUrl ? { href: (entry.url ?? app.consoleUrl)! } : {}),
+      })
+    }
+    return out
+  }
+
+  if (app.kind === "token") {
+    out.push({
+      label: "An access key",
+      detail: "created in your own account and pasted once",
+      ...(app.tokenUrl ?? app.consoleUrl ? { href: (app.tokenUrl ?? app.consoleUrl)! } : {}),
+    })
+    return out
+  }
+
+  if (needsClientIdFor(app)) {
+    out.push({
+      label: "A client ID from the vendor's console",
+      detail: "created as an application, with the redirect URL the panel shows",
+      ...(app.consoleUrl ? { href: app.consoleUrl } : {}),
+    })
+    out.push({ label: "The client secret", detail: "only if the console shows one beside the ID" })
+    return out
+  }
+
+  return out
+}
+
+/**
+ * Whether an app needs a hand-made client ID.
+ *
+ * The catalog's verdict is the source here — it was measured by attempting the registration
+ * against the real server — with the hand-set `consoleUrl` flag as the fallback for a curated
+ * app whose registration was never probed.
+ */
+function needsClientIdFor(app: AppEntry): boolean {
+  if (app.kind !== "oauth") return false
+  return app.needsClientId === true || (Boolean(app.consoleUrl) && app.zeroSetup !== true)
+}

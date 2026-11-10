@@ -1,0 +1,2188 @@
+   /*    Copyright (c) 2026 onelpawarai. All rights reserved. */
+
+@import "@zyraxon-ai/ui/v2/text-input-v2.css";
+@import "@zyraxon-ai/ui/v2/button-v2.css";
+
+[data-component="tabs-v2"][data-variant="settings"] {
+  height: 100%;
+}
+
+[data-component="dialog-v2"][data-variant="settings"] [data-slot="dialog-container"] {
+  background: var(--v2-background-bg-base);
+}
+
+[data-component="dialog-v2"][data-variant="settings"] [data-slot="dialog-body"] {
+  padding: 0;
+  overflow: hidden;
+}
+
+.settings-v2-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: none;
+  user-select: none;
+}
+
+.settings-v2-panel :is(input, textarea, [contenteditable="true"]) {
+  user-select: text;
+}
+
+.settings-v2-panel::-webkit-scrollbar {
+  display: none;
+}
+
+.settings-v2-tab-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 40px 40px 32px;
+  background: linear-gradient(to bottom, var(--v2-background-bg-base) calc(100% - 24px), transparent);
+}
+
+.settings-v2-tab-title {
+  font-size: 15px;
+  font-weight: 640;
+  line-height: 1;
+  color: var(--v2-text-text-base);
+}
+
+.settings-v2-tab-body {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  width: 100%;
+  padding: 0 40px 40px;
+}
+
+[data-slot="settings-v2-row-description"] a.settings-v2-link {
+  color: var(--v2-text-text-accent);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+[data-slot="settings-v2-row-description"] a.settings-v2-link:hover {
+  color: var(--v2-text-text-accent-hover);
+}
+
+.settings-v2-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-v2-section-title {
+  padding-bottom: 8px;
+  font-size: 15px;
+  font-weight: 640;
+  line-height: 1;
+  color: var(--v2-text-text-base);
+}
+
+.settings-v2-section-title + [data-component="settings-v2-list"] {
+  margin-top: -4px;
+  margin-bottom: 0;
+}
+
+[data-component="settings-v2-list"] {
+  border-radius: 8px;
+  background-color: var(--v2-background-bg-layer-01);
+  padding-inline: 20px;
+  box-shadow: inset 0 0 0 0.5px var(--v2-border-border-muted);
+}
+
+.settings-v2-interface-feature [data-component="settings-v2-list"] {
+  background-color: var(--v2-background-bg-base);
+  box-shadow: var(--v2-elevation-raised);
+}
+
+[data-component="settings-v2-row"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding-block: 20px;
+  border-bottom: 0.5px solid var(--v2-border-border-base);
+}
+
+[data-component="settings-v2-row"]:last-child {
+  border-bottom: none;
+}
+
+@media (min-width: 640px) {
+  [data-component="settings-v2-row"] {
+    flex-wrap: nowrap;
+  }
+}
+
+[data-slot="settings-v2-row-copy"] {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+}
+
+[data-slot="settings-v2-row-title"] {
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 530;
+  line-height: 1;
+  letter-spacing: -0.04px;
+  color: var(--v2-text-text-base);
+  font-variation-settings: "slnt" 0;
+}
+
+[data-slot="settings-v2-row-description"] {
+  font-size: 13px;
+  font-weight: 440;
+  line-height: 1;
+  color: var(--v2-text-text-muted);
+}
+
+[data-slot="settings-v2-row-control"] {
+  display: flex;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+[data-slot="settings-v2-row-control"] > div:has([data-component="switch"]),
+[data-slot="settings-v2-row-control"] > [data-component="switch"] {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px;
+}
+
+@media (min-width: 640px) {
+  [data-slot="settings-v2-row-control"] {
+    width: auto;
+    flex-shrink: 0;
+  }
+}
+
+[data-slot="settings-v2-row-control"] [data-component="text-input-v2"] {
+  width: 100%;
+}
+
+[data-component="dialog-v2"][data-variant="settings"] [data-component="select-v2-root"] {
+  width: fit-content;
+  max-width: 100%;
+}
+
+[data-component="dialog-v2"][data-variant="settings"] [data-component="button-v2"] {
+  width: fit-content;
+  max-width: 100%;
+}
+
+[data-component="tabs-v2"][data-variant="settings"][data-orientation="vertical"] [data-slot="tabs-v2-list"] {
+  background-color: var(--v2-background-bg-layer-01);
+}
+
+@media (max-width: 639px) {
+  .settings-v2[data-component="tabs-v2"][data-variant="settings"][data-orientation="vertical"]
+    [data-slot="tabs-v2-list"] {
+    width: 144px;
+    min-width: 144px;
+    padding-inline: 8px;
+  }
+}
+
+.settings-v2-nav-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-top: auto;
+  border-top: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.06));
+  padding: 12px 8px 4px;
+  user-select: none;
+}
+
+.settings-v2-nav-footer > span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 440;
+  line-height: 1.2;
+  color: var(--v2-text-text-faint);
+}
+
+.settings-v2-legacy-panel {
+  height: 100%;
+  overflow: hidden;
+}
+
+.settings-v2-legacy-panel [data-component="dialog"] {
+  display: contents;
+}
+
+.settings-v2-provider-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-block: 20px;
+  border-bottom: 0.5px solid var(--v2-border-border-base);
+}
+
+.settings-v2-provider-row:last-child {
+  border-bottom: none;
+}
+
+@media (min-width: 640px) {
+  .settings-v2-provider-row {
+    flex-wrap: nowrap;
+  }
+}
+
+.settings-v2-providers [data-component="provider-icon"] {
+  color: var(--v2-icon-icon-base);
+}
+
+.settings-v2-provider-lead {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.settings-v2-provider-lead:not(:has(.settings-v2-provider-copy)) {
+  align-items: center;
+}
+
+.settings-v2-provider-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-v2-provider-main {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-v2-provider-name {
+  font-size: 13px;
+  font-weight: 530;
+  line-height: 16px;
+  color: var(--v2-text-text-base);
+}
+
+.settings-v2-provider-description {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 440;
+  line-height: 1;
+  color: var(--v2-text-text-muted);
+}
+
+.settings-v2-provider-empty {
+  padding-block: 20px;
+  font-size: 13px;
+  font-weight: 440;
+  line-height: 1;
+  color: var(--v2-text-text-muted);
+}
+
+.settings-v2-provider-env-hint {
+  padding-right: 12px;
+  font-size: 13px;
+  font-weight: 440;
+  line-height: 1;
+  color: var(--v2-text-text-muted);
+  opacity: 0;
+  transition: opacity 200ms ease;
+  cursor: default;
+}
+
+.group:hover .settings-v2-provider-env-hint {
+  opacity: 1;
+}
+
+.settings-v2-providers-view-all {
+  margin-top: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 530;
+  line-height: 1;
+  color: var(--v2-text-text-accent);
+  cursor: pointer;
+  text-align: left;
+}
+
+.settings-v2-providers-view-all:hover {
+  color: var(--v2-text-text-accent-hover);
+}
+
+.settings-v2-tab-body.settings-v2-providers {
+  gap: 32px;
+}
+
+.settings-v2-tab-header:has(+ .settings-v2-tab-body.settings-v2-providers) {
+  padding-bottom: 32px;
+}
+
+.settings-v2-providers .settings-v2-section-title {
+  padding-bottom: 0;
+  font-size: 13px;
+  font-weight: 530;
+  line-height: 1;
+}
+
+.settings-v2-providers .settings-v2-section-title + [data-component="settings-v2-list"] {
+  margin-top: 16px;
+}
+
+.settings-v2-tab-header.settings-v2-tab-header--stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding-bottom: 32px;
+}
+
+.settings-v2-tab-header--stacked > .settings-v2-tab-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-v2-tab-search {
+  position: relative;
+  width: 100%;
+}
+
+.settings-v2-tab-search [data-component="text-input-v2"] {
+  width: 100%;
+}
+
+.settings-v2-tab-search [data-slot="text-input-v2-input"] {
+  padding-right: 28px;
+}
+
+.settings-v2-tab-search-clear {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  z-index: 1;
+  transform: translateY(-50%);
+}
+
+.settings-v2-models {
+  gap: 24px;
+}
+
+.settings-v2-models-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+
+.settings-v2-models .settings-v2-section-title {
+  padding-bottom: 0;
+  font-size: 13px;
+  font-weight: 530;
+  line-height: 16px;
+}
+
+.settings-v2-models [data-component="provider-icon"] {
+  color: var(--v2-icon-icon-base);
+}
+
+.settings-v2-models .settings-v2-section-title + [data-component="settings-v2-list"] {
+  margin-top: 0;
+}
+
+.settings-v2-models [data-slot="settings-v2-row-description"]:empty {
+  display: none;
+}
+
+.settings-v2-models [data-slot="settings-v2-row-copy"] {
+  gap: 0;
+}
+
+.settings-v2-models [data-slot="settings-v2-row-title"] {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 440;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-v2-models-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding-block: 48px;
+  font-size: 13px;
+  font-weight: 440;
+  line-height: 1;
+  color: var(--v2-text-text-muted);
+  text-align: center;
+}
+
+.settings-v2-models-status-filter {
+  color: var(--v2-text-text-base);
+}
+
+.settings-v2-shortcuts .settings-v2-section {
+  gap: 16px;
+}
+
+.settings-v2-shortcuts .settings-v2-section-title {
+  padding-bottom: 0;
+  font-size: 13px;
+  font-weight: 530;
+  line-height: 1;
+}
+
+.settings-v2-shortcuts [data-component="settings-v2-list"] {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 20px;
+  border-radius: 6px;
+}
+
+.settings-v2-shortcuts [data-component="settings-v2-list"] > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.settings-v2-shortcuts [data-component="settings-v2-list"] > div:not(:last-child) {
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 0.5px solid var(--v2-border-border-base);
+}
+
+.settings-v2-shortcuts [data-component="settings-v2-list"] > div > span {
+  font-weight: 440;
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: -0.04px;
+  color: var(--v2-text-text-base);
+  font-variation-settings: "slnt" 0;
+}
+
+.settings-v2-keybind-button {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  padding: 6px 8px;
+  margin: -6px -8px;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  cursor: pointer;
+  font-style: normal;
+  font-weight: 530;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.05px;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings:
+    "tnum" on,
+    "lnum" on;
+  font-variation-settings: "slnt" 0;
+  color: var(--v2-text-text-faint);
+}
+
+.settings-v2-keybind-button:hover {
+  background-color: var(--v2-background-bg-layer-02);
+}
+
+.settings-v2-keybind-button:focus-visible {
+  outline: 2px solid var(--v2-border-border-focus);
+  outline-offset: 2px;
+}
+
+.settings-v2-keybind-button--active {
+  color: var(--v2-text-text-faint);
+  border-radius: 2px;
+  background-color: var(--v2-background-bg-layer-02);
+}
+
+.settings-v2-shortcuts-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding-block: 48px;
+  font-size: 13px;
+  font-weight: 440;
+  line-height: 1;
+  color: var(--v2-text-text-muted);
+  text-align: center;
+}
+
+.settings-v2-shortcuts-status-filter {
+  color: var(--v2-text-text-base);
+}
+
+.settings-v2-tab-body.settings-v2-servers {
+  gap: 0;
+}
+
+.settings-v2-tab-header.settings-v2-servers-header {
+  padding-bottom: 24px;
+}
+
+.settings-v2-servers-header .settings-v2-tab-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-v2-tab-header.settings-v2-servers-header.settings-v2-tab-header--stacked {
+  gap: 24px;
+  padding-bottom: 24px;
+}
+
+.settings-v2-servers [data-component="settings-v2-list"] {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 20px;
+  border-radius: 6px;
+}
+
+.settings-v2-servers-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-v2-servers-row:not(:last-child) {
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 0.5px solid var(--v2-border-border-base);
+}
+
+.settings-v2-servers-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.settings-v2-servers-lead {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.settings-v2-servers-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-v2-servers-name {
+  font-size: 13px;
+  font-weight: 530;
+  line-height: 1;
+  color: var(--v2-text-text-base);
+}
+
+.settings-v2-servers-meta {
+  font-size: 11px;
+  font-weight: 440;
+  line-height: 1;
+  color: var(--v2-text-text-muted);
+}
+
+.settings-v2-servers-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding-block: 48px;
+  font-size: 13px;
+  font-weight: 440;
+  line-height: 1;
+  color: var(--v2-text-text-muted);
+  text-align: center;
+}
+
+.settings-v2-servers-status-filter {
+  color: var(--v2-text-text-base);
+}
+
+[data-component="dialog-v2"].settings-v2-server-dialog [data-slot="dialog-container"] {
+  width: 480px;
+  max-width: calc(100vw - 32px);
+  height: auto;
+  border-radius: 8px;
+  align-items: stretch;
+}
+
+[data-component="dialog-v2"].settings-v2-server-dialog [data-slot="dialog-content"] {
+  align-items: stretch;
+  width: 100%;
+}
+
+[data-component="dialog-v2"].settings-v2-server-dialog [data-slot="dialog-header"] {
+  align-items: center;
+  padding: 24px 24px 16px;
+}
+
+[data-component="dialog-v2"].settings-v2-server-dialog [data-slot="dialog-body"] {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+[data-component="dialog-v2"].settings-v2-server-dialog [data-slot="dialog-footer"] {
+  padding: 24px;
+}
+
+.settings-v2-server-dialog-label {
+  font-size: 13px;
+  font-weight: 530;
+  line-height: 1;
+  color: var(--v2-text-text-base);
+}
+
+.settings-v2-server-dialog-error {
+  font-size: 11px;
+  font-weight: 440;
+  line-height: 1;
+  color: var(--v2-state-fg-danger);
+}
+
+/* The language picker is a two-pane surface that fills the panel. The wrapper
+   gives it the same header the other panels have, and the grid below carries the
+   same 40px inline gutter, so the country column and its flags start to the right
+   of the left rail instead of underneath it. */
+.language-v2-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.language-v2 {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 0;
+  box-sizing: border-box;
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0 40px 32px;
+  overflow: hidden;
+}
+
+.language-v2-pane {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.language-v2-countries {
+  border-right: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.06));
+}
+
+.language-v2-languages {
+  background: var(--surface-raised-base, rgb(255 255 255 / 0.015));
+}
+
+.language-v2-search {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 14px 10px;
+  border: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.08));
+  border-radius: 10px;
+  padding: 0 10px;
+  background: var(--surface-raised-base, rgb(255 255 255 / 0.04));
+  color: var(--text-weak, rgb(255 255 255 / 0.45));
+}
+
+.language-v2-search:focus-within {
+  border-color: var(--border-focus-base, currentColor);
+}
+
+.language-v2-search input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  padding: 9px 0;
+  font-size: 13px;
+  color: inherit;
+}
+
+.language-v2-count {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.6;
+}
+
+.language-v2-scroll {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 10px 20px;
+}
+
+.language-v2-country,
+.language-v2-option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  border-radius: 9px;
+  padding: 8px 10px;
+  text-align: left;
+  transition: background-color 110ms ease;
+}
+
+.language-v2-country:hover,
+.language-v2-option:hover {
+  background: var(--surface-raised-hover, rgb(255 255 255 / 0.05));
+}
+
+.language-v2-country[data-active="true"] {
+  background: var(--surface-raised-hover, rgb(255 255 255 / 0.08));
+}
+
+.language-v2-option[data-active="true"] {
+  box-shadow: inset 0 0 0 1px var(--border-focus-base, currentColor);
+}
+
+/* flag-icons draws the flag as a background image, so the element needs an
+   explicit box. The library's default `width: 1.333em` fights the row height, so
+   both sizes are pinned here: a 4:3 box for the list, a wider one for the header. */
+.language-v2-flag {
+  flex-shrink: 0;
+  border-radius: 3px;
+  background-size: cover;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+
+.language-v2-country .language-v2-flag,
+.language-v2-flag {
+  width: 22px;
+  height: 16px;
+  line-height: 16px;
+}
+
+.language-v2-flag-large {
+  width: 40px;
+  height: 30px;
+  line-height: 30px;
+}
+
+.language-v2-flag::before {
+  content: none;
+}
+
+.language-v2-country-text,
+.language-v2-option-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.language-v2-country-name,
+.language-v2-option-native {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.language-v2-country-native,
+.language-v2-option-english {
+  font-size: 11.5px;
+  color: var(--text-weak, rgb(255 255 255 / 0.45));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.language-v2-badge {
+  margin-left: auto;
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  background: var(--surface-raised-hover, rgb(255 255 255 / 0.07));
+  color: var(--text-weak, rgb(255 255 255 / 0.5));
+}
+
+.language-v2-tag {
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.45;
+}
+
+.language-v2-complete {
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 10.5px;
+  background: rgb(34 197 94 / 0.16);
+  color: rgb(74 222 128);
+}
+
+.language-v2-complete-partial {
+  background: rgb(250 204 21 / 0.14);
+  color: rgb(250 204 21);
+}
+
+.language-v2-header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.06));
+  padding: 18px 22px 14px;
+}
+
+.language-v2-header-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.language-v2-header-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-strong, inherit);
+}
+
+.language-v2-header-native {
+  font-size: 12px;
+  color: var(--text-weak, rgb(255 255 255 / 0.45));
+}
+
+.language-v2-header-count {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--text-weak, rgb(255 255 255 / 0.45));
+}
+
+.language-v2-empty {
+  padding: 24px 16px;
+  font-size: 12.5px;
+  color: var(--text-weak, rgb(255 255 255 / 0.45));
+}
+
+.language-v2-empty-wide {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  opacity: 0.55;
+}
+
+@media (max-width: 900px) {
+  .language-v2 {
+    grid-template-columns: 1fr;
+  }
+
+  .language-v2-countries {
+    border-right: none;
+    border-bottom: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.06));
+  }
+
+  .settings-v2-rail {
+    width: 200px;
+  }
+}
+/* --- Extensions: MCP | Plugins | LSP | Marketplace in one surface ---
+   The pane is a two-column surface inside the settings panel. It used to pull
+   itself over the panel padding with negative margins, which slid the secondary
+   nav under the settings rail and lifted the first tab above the panel top. The
+   wrapper now gives it the same header as every other panel, and the grid carries
+   the same 40px inline gutter, so the nav starts right of the rail and below the
+   header. */
+.zy-extensions-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.zy-extensions {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 0;
+  box-sizing: border-box;
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0 40px 32px;
+  overflow: hidden;
+}
+
+.zy-extensions-nav {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 3px;
+  border-right: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.06));
+  padding: 0 12px 20px 0;
+}
+
+.zy-extensions-tab {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+  padding: 9px 11px;
+  text-align: left;
+  font-size: 13px;
+  color: var(--text-base, inherit);
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.zy-extensions-tab:hover {
+  background: var(--surface-raised-base, rgb(255 255 255 / 0.04));
+}
+
+.zy-extensions-tab[data-active="true"] {
+  background: var(--surface-raised-hover, rgb(255 255 255 / 0.07));
+  color: var(--text-strong, inherit);
+  font-weight: 550;
+}
+
+.zy-extensions-tab-count {
+  margin-left: auto;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.55;
+}
+
+.zy-extensions-body {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 0 24px 20px;
+}
+
+/* --- Small helpers used by the newer settings panels --- */
+.settings-v2-notice {
+  margin-bottom: 14px;
+  border: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.08));
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 12.5px;
+  background: var(--surface-raised-base, rgb(255 255 255 / 0.04));
+}
+
+.settings-v2-mono {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-v2-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-v2-select {
+  border: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.1));
+  border-radius: 8px;
+  padding: 6px 9px;
+  font-size: 12.5px;
+  background: var(--surface-raised-base, rgb(255 255 255 / 0.04));
+  color: inherit;
+  outline: none;
+}
+
+/* --- Form fields used by the agent creator and future panels --- */
+.settings-v2-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.08));
+  border-radius: 12px;
+  padding: 14px;
+  background: var(--surface-raised-base, rgb(255 255 255 / 0.02));
+}
+
+.settings-v2-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-weak, rgb(255 255 255 / 0.5));
+}
+
+.settings-v2-field input,
+.settings-v2-field select {
+  border: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.1));
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--text-strong, inherit);
+  background: var(--background-base, transparent);
+  outline: none;
+}
+
+.settings-v2-field input:focus,
+.settings-v2-field select:focus {
+  border-color: var(--border-focus-base, currentColor);
+}
+
+.settings-v2-hint {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--text-weak, rgb(255 255 255 / 0.45));
+}
+
+/* --- Settings lives inside the app: project rail, then the settings shell ---
+   The route renders outside the app layout, so it owns the full window height
+   itself. Without an explicit height the flex children have nothing to fill and
+   the whole page collapses downward. */
+.settings-v2-attached {
+  display: flex;
+  height: 100dvh;
+  max-height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  background: var(--v2-background-bg-base, transparent);
+}
+
+.settings-v2-rail-projects {
+  display: flex;
+  width: 56px;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border-right: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.06));
+  padding: 12px 0;
+  overflow-y: auto;
+}
+
+.settings-v2-rail-projects [data-slot="tooltip-trigger"] {
+  position: relative;
+  display: block;
+}
+
+.settings-v2-project-dot {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  width: 3px;
+  height: 16px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0;
+  transform: translateY(-50%);
+  transition: opacity 140ms ease;
+}
+
+.settings-v2-project-dot[data-active="true"] {
+  opacity: 0.9;
+}
+
+/* Settings as a sheet over the app: it covers the session behind it, dims it,
+   and leaves it exactly where it was when the sheet is dismissed. */
+.settings-v2-overlay {
+  display: flex;
+  max-height: min(88vh, 900px);
+  width: min(1180px, 92vw);
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.settings-v2-overlay-body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.settings-v2-overlay-body > [data-component="tabs"] {
+  width: 100%;
+}
+
+/* --- Section body: every settings page reads as the same stack of cards --- */
+.settings-v2-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 940px;
+}
+
+.settings-v2-card {
+  border: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.06));
+  border-radius: 14px;
+  background: var(--surface-raised-base, rgb(255 255 255 / 0.02));
+  overflow: hidden;
+}
+
+.settings-v2-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  border-bottom: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.05));
+  padding: 15px 18px 13px;
+}
+
+.settings-v2-card-head-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: rgb(255 107 44 / 0.1);
+  color: rgb(255 138 76);
+}
+
+.settings-v2-card-head-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-v2-card-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-strong, inherit);
+}
+
+.settings-v2-card-description {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-weak, rgb(255 255 255 / 0.45));
+}
+
+.settings-v2-card-body {
+  padding: 4px 18px;
+}
+
+.settings-v2-card-body-padded {
+  padding: 16px 18px 18px;
+}
+
+.settings-v2-card:last-child {
+  margin-bottom: 0;
+}
+
+/* Rows inside a card: a label on the left, the control on the right. */
+.settings-v2-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.04));
+  padding: 13px 0;
+}
+
+.settings-v2-row:last-child {
+  border-bottom: none;
+}
+
+.settings-v2-row-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-v2-row-title {
+  font-size: 13px;
+  color: var(--text-strong, inherit);
+}
+
+.settings-v2-row-description {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-weak, rgb(255 255 255 / 0.42));
+}
+
+.settings-v2-row-control {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-v2-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+/* Selection lists: providers, models, servers, agents. */
+.settings-v2-option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 11px;
+  border-radius: 10px;
+  padding: 9px 11px;
+  text-align: left;
+  transition: background-color 120ms ease;
+}
+
+.settings-v2-option:hover {
+  background: var(--surface-raised-hover, rgb(255 255 255 / 0.05));
+}
+
+.settings-v2-option[data-active="true"] {
+  background: rgb(255 107 44 / 0.1);
+}
+
+.settings-v2-option-icon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgb(255 255 255 / 0.05);
+}
+
+.settings-v2-option-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.settings-v2-option-name {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-strong, inherit);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-v2-option-note {
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--text-weak, rgb(255 255 255 / 0.42));
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-v2-scroll {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 1px;
+  overflow-y: auto;
+  max-height: 420px;
+}
+
+.settings-v2-empty {
+  padding: 28px 18px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--text-weak, rgb(255 255 255 / 0.42));
+}
+
+/* --- Extensions pane: one card per kind, one row per server --- */
+.zy-ext-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+}
+
+.zy-ext-pane-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-weaker) 72%, transparent);
+}
+
+.zy-ext-pane-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.zy-ext-pane-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--text-strong, inherit);
+}
+
+.zy-ext-pane-sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-weak, rgb(255 255 255 / 0.5));
+}
+
+.zy-ext-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.zy-ext-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid color-mix(in srgb, var(--border-weak-base, transparent) 86%, #22d3ee 14%);
+  border-radius: 14px;
+  padding: 11px 14px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--surface-raised-base, transparent) 84%, #050b13 16%), color-mix(in srgb, var(--v2-background-bg-base, #05070a) 82%, #00d4ff 18%));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 2.5%, transparent), 0 10px 30px rgba(0, 0, 0, 0.18);
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.zy-ext-row:hover {
+  border-color: color-mix(in srgb, var(--border-strong-base, transparent) 78%, #00d4ff 22%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--surface-raised-base, transparent) 78%, #060d16 22%), color-mix(in srgb, var(--v2-background-bg-base, #05070a) 78%, #00d4ff 22%));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 3.5%, transparent), 0 16px 40px rgba(0, 0, 0, 0.24), 0 0 30px rgba(0, 212, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.zy-ext-row:focus-within {
+  outline: 2px solid color-mix(in srgb, #00d4ff 35%, transparent);
+  outline-offset: 2px;
+}
+
+.zy-ext-row[data-busy="true"] {
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.zy-ext-row[data-tone="positive"]::before,
+.zy-ext-row[data-tone="warning"]::before,
+.zy-ext-row[data-tone="danger"]::before {
+  content: "";
+  width: 2px;
+  height: 100%;
+  min-height: 28px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.45;
+  margin-right: -3px;
+}
+
+.zy-ext-row[data-tone="positive"]::before { color: rgb(74 222 128); }
+.zy-ext-row[data-tone="warning"]::before { color: rgb(250 204 21); }
+.zy-ext-row[data-tone="danger"]::before { color: rgb(248 113 113); }
+
+.zy-ext-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.25);
+}
+
+.zy-ext-dot[data-tone="positive"] {
+  background: #73f2ac;
+  box-shadow: 0 0 0 4px rgb(74 222 128 / 0.16), 0 0 16px rgb(74 222 128 / 0.36);
+}
+
+.zy-ext-dot[data-tone="warning"] {
+  background: #fde047;
+  box-shadow: 0 0 0 4px rgb(250 204 21 / 0.16), 0 0 16px rgb(250 204 21 / 0.34);
+}
+
+.zy-ext-dot[data-tone="danger"] {
+  background: #ff9aa5;
+  box-shadow: 0 0 0 4px rgb(248 113 113 / 0.16), 0 0 16px rgb(248 113 113 / 0.34);
+}
+
+.zy-ext-dot[data-tone="muted"] {
+  background: rgb(255 255 255 / 0.28);
+}
+
+.zy-ext-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.zy-ext-row-name {
+  font-size: 12.5px;
+  font-weight: 520;
+  color: var(--text-strong, inherit);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zy-ext-row-status {
+  font-size: 11px;
+  color: var(--text-weak, rgb(255 255 255 / 0.5));
+}
+
+.zy-ext-row[data-tone="positive"] .zy-ext-row-status {
+  color: rgb(74 222 128);
+}
+
+.zy-ext-row[data-tone="warning"] .zy-ext-row-status {
+  color: rgb(250 204 21);
+}
+
+.zy-ext-row[data-tone="danger"] .zy-ext-row-status {
+  color: rgb(248 113 113);
+}
+
+.zy-ext-switch {
+  flex-shrink: 0;
+}
+
+/* Reveal the file an MCP server is configured in. Kept quiet next to the switch
+   so the row still reads as a status line with one primary control. */
+.zy-ext-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  color: var(--text-weak, rgb(255 255 255 / 0.55));
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.zy-ext-open:hover {
+  background: color-mix(in srgb, var(--overlay-hover, transparent) 78%, #00d4ff 22%);
+  color: var(--text-strong, rgb(255 255 255 / 0.9));
+  box-shadow: 0 0 0 1px color-mix(in srgb, #00d4ff 18%, transparent);
+}
+
+.zy-ext-open:focus-visible {
+  outline: 2px solid color-mix(in srgb, #00d4ff 35%, transparent);
+  outline-offset: 2px;
+}
+
+.zy-ext-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 34px 18px;
+  text-align: center;
+  color: var(--text-weak, rgb(255 255 255 / 0.45));
+  font-size: 12.5px;
+  border: 1px dashed color-mix(in srgb, #00d4ff 16%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--v2-background-bg-base, #05070a) 84%, #00d4ff 16%);
+}
+
+.zy-ext-empty p {
+  margin: 0;
+}
+
+.zy-ext-foot {
+  border-top: 1px solid color-mix(in srgb, #00d4ff 10%, var(--border-weak-base, rgb(255 255 255 / 0.06)));
+  padding-top: 12px;
+  font-size: 11.5px;
+  color: var(--text-weak, rgb(255 255 255 / 0.45));
+}
+
+.zy-ext-foot code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  border-radius: 5px;
+  padding: 1.5px 7px;
+  background: color-mix(in srgb, #00d4ff 8%, rgb(255 255 255 / 0.04));
+  color: color-mix(in srgb, #9be8ff 45%, var(--text-strong, white));
+}
+/* --- Left rail: every destination, one column, ZY icons ---
+   height is pinned rather than left to flex so the rail scrolls inside the
+   window instead of growing past it and pushing every button below the fold. */
+.settings-v2-rail {
+  display: flex;
+  width: 208px;
+  height: 100%;
+  min-height: 0;
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  border-right: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.06));
+  padding: 14px 10px 12px;
+}
+
+.settings-v2-rail-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.settings-v2-rail-title {
+  padding: 0 8px 5px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-weak, rgb(255 255 255 / 0.38));
+}
+
+.settings-v2-rail-item {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 9px;
+  border-radius: 7px;
+  padding: 6px 8px;
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 450;
+  color: var(--text-base, inherit);
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.settings-v2-rail-item::before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  height: 16px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent, currentColor);
+  opacity: 0;
+  transform: translateY(-50%) scaleY(0.4);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+.settings-v2-rail-item:hover {
+  background: var(--surface-raised-base, rgb(255 255 255 / 0.04));
+}
+
+.settings-v2-rail-item[data-active="true"] {
+  background: var(--surface-raised-hover, rgb(255 255 255 / 0.07));
+  color: var(--text-strong, inherit);
+  font-weight: 550;
+}
+
+.settings-v2-rail-item[data-active="true"]::before {
+  opacity: 1;
+  transform: translateY(-50%) scaleY(1);
+}
+
+.settings-v2-rail-icon {
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.settings-v2-rail-item[data-active="true"] .settings-v2-rail-icon {
+  opacity: 1;
+}
+
+.settings-v2-rail-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-v2-rail-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--border-weak-base, rgb(255 255 255 / 0.06));
+  padding: 14px 10px 0;
+  font-size: 11px;
+  color: var(--text-weak, rgb(255 255 255 / 0.38));
+}
+
+
+/* The settings shell is a two-column surface: a fixed rail of destinations and
+   a scrolling panel. The rail groups and the list inside each group carry no
+   rule of their own beyond stacking, and leaving them out is what let the rail
+   stretch to the window instead of scrolling inside it. */
+.settings-v2-shell {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.settings-v2-rail-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.settings-v2-rail-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* The agents pane carries its own heading row: the title and hint on the left,
+   and the create and open-config actions on the right. Keeping it separate from
+   the list lets the list stay a plain stack of rows. */
+.zy-agents-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 2px 14px;
+}
+
+.zy-agents-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.zy-agents-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-strong, rgb(255 255 255 / 0.9));
+}
+
+.zy-agents-sub,
+.zy-agents-hint {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-weak, rgb(255 255 255 / 0.5));
+}
+
+.zy-agents-hint {
+  margin: 0;
+}
+
+/* Per-row actions. Export and Delete sit on the right of each agent row, so they
+   read as small, quiet text actions that only gain weight on hover, instead of
+   competing with the row title. */
+.zy-agents-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.zy-agents-row-action {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  padding: 5px 8px;
+  border-radius: 6px;
+  color: var(--text-weak, rgb(255 255 255 / 0.5));
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.zy-agents-row-action:hover {
+  background: rgb(255 255 255 / 0.06);
+  color: var(--text-strong, rgb(255 255 255 / 0.9));
+}
+
+.zy-agents-row-action:focus-visible {
+  outline: 2px solid var(--border-focus, rgb(255 255 255 / 0.4));
+  outline-offset: 1px;
+}
+
+.zy-agents-row-action[data-action="settings-agents-delete"]:hover {
+  color: rgb(255 140 140);
+}
+
+/* The panel doubles as the import target: dropping an exported file anywhere in
+   the section registers it. The dashed outline is always faintly present so the
+   affordance is discoverable, and it brightens while a file is over the panel. */
+.zy-agents-dropzone {
+  border: 1px dashed transparent;
+  border-radius: 10px;
+  transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.zy-agents-dropzone--active {
+  border-color: var(--border-focus, rgb(255 255 255 / 0.35));
+  background: rgb(255 255 255 / 0.04);
+}
+
+.zy-agents-drop-hint {
+  margin: 12px 2px 0;
+}
+
+/* ─── Docked settings ────────────────────────────────────────────────────────
+   Settings is docked to the app edge instead of floating over it. The host layer
+   is a flex row that pushes the panel flush to the trailing edge with no scrim,
+   so the app behind stays visible and fully usable. The panel mirrors the app's
+   own zoom and keeps a real close button, so it reads as part of the app. */
+[data-dialog-docked] {
+  padding: 0;
+}
+
+[data-dialog-docked] [data-component="dialog-v2"] {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  pointer-events: none;
+}
+
+[data-dialog-docked] [data-slot="dialog-container"] {
+  width: min(calc(100vw - 24px), 980px);
+  height: 100%;
+  max-height: 100%;
+  border-radius: 12px 0 0 12px;
+  border-right: 0;
+  border-left: 1px solid var(--v2-border-border-weaker, rgb(255 255 255 / 0.06));
+  box-shadow: -18px 0 48px rgb(0 0 0 / 0.35);
+  pointer-events: auto;
+  animation: zy-settings-dock-in 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes zy-settings-dock-in {
+  from {
+    transform: translateX(28px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-dialog-docked] [data-slot="dialog-container"] {
+    animation: none;
+  }
+}
+
+[data-dialog-docked] [data-slot="dialog-close-button"] {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  color: var(--v2-icon-icon-muted, rgb(255 255 255 / 0.6));
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+[data-dialog-docked] [data-slot="dialog-close-button"]:hover {
+  background: var(--v2-overlay-simple-overlay-hover, rgb(255 255 255 / 0.08));
+  color: var(--v2-text-text-base, rgb(255 255 255 / 0.92));
+  transform: rotate(90deg);
+}
+
+/* ─── Docked settings ────────────────────────────────────────────────────────
+   Settings is docked to the app edge instead of floating over it. The host layer
+   is a flex row that pushes the panel flush to the trailing edge with no scrim,
+   so the app behind stays visible and fully usable. The panel mirrors the app's
+   own zoom and keeps a real close button, so it reads as part of the app. */
+[data-dialog-docked][data-dialog-layer] {
+  padding: 0;
+}
+
+[data-dialog-docked][data-dialog-layer] [data-component="dialog-v2"] {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  pointer-events: none;
+}
+
+[data-dialog-docked][data-dialog-layer] [data-component="dialog-v2"] [data-slot="dialog-container"] {
+  width: min(calc(100vw - 24px), 980px);
+  height: 100%;
+  max-height: 100%;
+  border-radius: 12px 0 0 12px;
+  border-right: 0;
+  border-left: 1px solid var(--v2-border-border-weaker, rgb(255 255 255 / 0.06));
+  box-shadow: -18px 0 48px rgb(0 0 0 / 0.35);
+  pointer-events: auto;
+  animation: zy-settings-dock-in 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes zy-settings-dock-in {
+  from {
+    transform: translateX(28px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-dialog-docked][data-dialog-layer] [data-component="dialog-v2"] [data-slot="dialog-container"] {
+    animation: none;
+  }
+}
+
+[data-dialog-docked][data-dialog-layer] [data-component="dialog-v2"] [data-slot="dialog-close-button"] {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  color: var(--v2-icon-icon-muted, rgb(255 255 255 / 0.6));
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+[data-dialog-docked][data-dialog-layer] [data-component="dialog-v2"] [data-slot="dialog-close-button"]:hover {
+  background: var(--v2-overlay-simple-overlay-hover, rgb(255 255 255 / 0.08));
+  color: var(--v2-text-text-base, rgb(255 255 255 / 0.92));
+  transform: rotate(90deg);
+}
+
+/* Message manager: a compact, scrollable checklist of a conversation's messages. */
+.zy-message-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--v2-border-border-muted, rgb(255 255 255 / 0.08));
+  border-radius: 10px;
+  margin: 8px 0;
+}
+
+.zy-message-row {
+  display: grid;
+  grid-template-columns: 20px 68px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--v2-border-border-muted, rgb(255 255 255 / 0.06));
+}
+
+.zy-message-row:last-child {
+  border-bottom: none;
+}
+
+.zy-message-row:hover {
+  background: var(--v2-overlay-simple-overlay-hover, rgb(255 255 255 / 0.04));
+}
+
+.zy-message-role {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--v2-text-text-muted, rgb(255 255 255 / 0.55));
+}
+
+.zy-message-preview {
+  font-size: 13px;
+  color: var(--v2-text-text-base, rgb(255 255 255 / 0.92));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zy-message-time {
+  font-size: 11px;
+  color: var(--v2-text-text-muted, rgb(255 255 255 / 0.45));
+  white-space: nowrap;
+}
+
+/* ─── Full-screen settings close ──────────────────────────────────────────────
+   Settings now fills the whole viewport, so the close control floats in the
+   top-right corner of the panel as a round, high-contrast button instead of the
+   small inline header glyph. It sits above the rail and panels and turns red on
+   hover so leaving is unmistakable. */
+[data-slot="dialog-content"].settings-v2-dialog {
+  position: relative;
+}
+
+.settings-v2-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 30;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--v2-border-border-muted, rgb(255 255 255 / 0.1));
+  background: var(--v2-background-bg-layer-01, rgb(20 20 28 / 0.9));
+  color: var(--v2-icon-icon-muted, rgb(255 255 255 / 0.65));
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+
+.settings-v2-close:hover {
+  color: #ff6b6b;
+  border-color: rgb(255 107 107 / 0.5);
+  background: rgb(255 107 107 / 0.12);
+  transform: rotate(90deg);
+}
+
+.settings-v2-close:active {
+  transform: rotate(90deg) scale(0.94);
+}
+
+/* Full-screen layout: let the panel scroll inside the viewport. */
+[data-slot="dialog-content"].settings-v2-dialog .settings-v2 {
+  height: 100vh;
+}
+
+[data-slot="dialog-content"].settings-v2-dialog .settings-v2-panel {
+  max-height: 100vh;
+  overflow-y: auto;
+  padding-top: 12px;
+  padding-bottom: 40px;
+}
+
+/* The docked layout normally pins settings to the trailing edge at ~980px. A
+   full-size settings sheet overrides that so the panel covers the whole window;
+   the more specific docked selector is matched here on purpose. */
+[data-dialog-docked][data-dialog-layer] [data-component="dialog-v2"][data-size="full"] [data-slot="dialog-container"] {
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+}
+
+/* ─── Clickable storage locations ─────────────────────────────────────────────
+   Discovered live from the backend, so a database or MCP file appears the moment
+   it exists. Each row is a button that reveals the path in the file manager. */
+.settings-v2-locations {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.settings-v2-locations-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-v2-locations-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--v2-text-text-base, rgb(255 255 255 / 0.92));
+}
+
+.settings-v2-locations-sub {
+  font-size: 11px;
+  color: var(--v2-text-text-muted, rgb(255 255 255 / 0.5));
+}
+
+.settings-v2-locations-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-v2-location-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--v2-border-border-weaker, rgb(255 255 255 / 0.06));
+  background: var(--v2-background-bg-layer-02, rgb(255 255 255 / 0.02));
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
+}
+
+.settings-v2-location-row:hover {
+  border-color: var(--v2-border-border-base, rgb(0 255 136 / 0.4));
+  background: rgb(0 255 136 / 0.06);
+  transform: translateX(2px);
+}
+
+.settings-v2-location-row[data-missing] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.settings-v2-location-row[data-missing]:hover {
+  border-color: var(--v2-border-border-weaker, rgb(255 255 255 / 0.06));
+  background: var(--v2-background-bg-layer-02, rgb(255 255 255 / 0.02));
+  transform: none;
+}
+
+.settings-v2-location-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.settings-v2-location-label {
+  font-size: 12px;
+  color: var(--v2-text-text-base, rgb(255 255 255 / 0.92));
+}
+
+.settings-v2-location-path {
+  font-family: var(--v2-font-mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  color: var(--v2-text-text-muted, rgb(255 255 255 / 0.45));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-v2-location-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--v2-text-text-muted, rgb(255 255 255 / 0.5));
+  flex-shrink: 0;
+}
+
+.settings-v2-location-missing {
+  color: #ff9f43;
+  font-size: 10.5px;
+}
+
+.settings-v2-location-open {
+  display: flex;
+  align-items: center;
+  color: var(--v2-text-text-muted, rgb(255 255 255 / 0.4));
+}
+
+.settings-v2-location-row:hover .settings-v2-location-open {
+  color: #00ff88;
+}
+
+.settings-v2-locations-empty {
+  font-size: 11.5px;
+  color: var(--v2-text-text-muted, rgb(255 255 255 / 0.45));
+  padding: 10px;
+  border: 1px dashed var(--v2-border-border-weaker, rgb(255 255 255 / 0.08));
+  border-radius: 9px;
+}
+
+
+/* ─── Full-screen settings close ──────────────────────────────────────────────
+   Settings now fills the whole viewport, so the close control floats in the
+   top-right corner of the panel as a round, high-contrast button instead of the
+   small inline header glyph. It sits above the rail and panels and turns red on
+   hover so leaving is unmistakable. */
+[data-slot="dialog-content"].settings-v2-dialog {
+  position: relative;
+}
+
+.settings-v2-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 30;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--v2-border-border-muted, rgb(255 255 255 / 0.1));
+  background: var(--v2-background-bg-layer-01, rgb(20 20 28 / 0.9));
+  color: var(--v2-icon-icon-muted, rgb(255 255 255 / 0.65));
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+
+.settings-v2-close:hover {
+  color: #ff6b6b;
+  border-color: rgb(255 107 107 / 0.5);
+  background: rgb(255 107 107 / 0.12);
+  transform: rotate(90deg);
+}
+
+.settings-v2-close:active {
+  transform: rotate(90deg) scale(0.94);
+}
+
+/* Full-screen layout: give the rail a stable width and let the panel scroll. */
+[data-slot="dialog-content"].settings-v2-dialog .settings-v2 {
+  height: 100vh;
+}
+
+[data-slot="dialog-content"].settings-v2-dialog .settings-v2-panel {
+  max-height: 100vh;
+  overflow-y: auto;
+  padding-top: 12px;
+  padding-bottom: 40px;
+}

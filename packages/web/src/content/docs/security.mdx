@@ -1,0 +1,104 @@
+---
+title: Security
+description: How to report a vulnerability in ZYRAXON, and what the threat model covers.
+---
+
+Please **do not open a public issue** for a security problem. A public issue tells
+everyone about the flaw before anyone can fix it.
+
+---
+
+## Reporting a vulnerability
+
+Report it privately through GitHub's security advisory form:
+
+**[Report a vulnerability](https://github.com/onelpawarai-X/ZYRAXON-AI/security/advisories/new)**
+
+Choose "Report a vulnerability" from the **Security** tab on the repository.
+
+You will get an acknowledgement within a few days. You can also reach the
+maintainer directly at [sayidilxs@gmail.com](mailto:sayidilxs@gmail.com).
+
+### What to include
+
+- What the flaw allows
+- Exact steps to reproduce, or a proof of concept
+- Which version or commit you tested
+- Your platform and architecture
+
+Please do not include third-party credentials or customer data. If you are unsure
+whether something is in scope, ask first.
+
+### Response times
+
+| Stage | Target |
+|:--|:--|
+| Acknowledgement | 3 days |
+| Assessment and severity | 7 days |
+| Fix or mitigation plan | 14 days |
+
+Critical issues are released as soon as a fix exists. You will be kept informed
+throughout, and credited unless you prefer otherwise.
+
+---
+
+## Supported versions
+
+| Version | Supported |
+|:--|:--|
+| 19.0.x | Yes |
+| < 19.0 | No |
+
+---
+
+## What counts as in scope
+
+Anything that lets an attacker affect a machine running ZYRAXON, or the data on
+it:
+
+- Code execution through a crafted input, prompt, repository or MCP payload
+- Path traversal or file read/write outside the intended workspace
+- Command injection through a shell tool, task scheduler or hook
+- Credential or token exposure in logs, configuration or generated files
+- Deserialisation of untrusted input
+- Sandbox or permission bypass — reaching a path or capability not granted
+- Remote code execution in the desktop shell or its preload bridge
+- OAuth token mishandling for connected MCP accounts
+- The task daemon firing something other than what was scheduled
+
+## What does not
+
+- Findings requiring an attacker who already holds local administrative rights
+- Denial of service through deliberate resource exhaustion
+- Missing hardening headers with no demonstrated impact
+- Reports against upstream projects, unless ZYRAXON's own code introduces or
+  exposes the flaw
+- Social engineering, and physical access to an unlocked machine
+
+---
+
+## Threat model in brief
+
+ZYRAXON is designed for a **single trusted operator on their own machine**. It
+executes commands and edits files with the permissions of whoever started it.
+
+Trust boundaries that matter:
+
+- **Workspace scope.** File tools are meant to stay inside the project the user
+  opened. Escaping it is a finding.
+- **Permission prompts.** A tool the user did not approve must not run.
+- **Connected accounts.** MCP servers run code the user chose to connect. Their
+  responses are treated as untrusted input.
+- **The model is untrusted.** Content a model produces — including instructions
+  arriving inside a file or tool result — must never escalate privileges on its
+  own.
+
+---
+
+## Hardening notes for operators
+
+- Run it as a normal user, not as root or an administrator, unless you fully
+  understand what the tools can reach.
+- Review the permissions you grant when connecting an MCP server.
+- Treat a repository you did not write as untrusted input.
+- Keep the version current; fixes land on the supported line only.

@@ -1,0 +1,16 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
+import path from "path"
+import { fileURLToPath } from "url"
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const dir = path.resolve(__dirname, "..")
+
+process.chdir(dir)
+
+const modelsUrl = process.env.ZYRAXON_MODELS_URL || "https://zyraxonal-provider.lovable.app"
+export const modelsData = process.env.MODELS_DEV_API_JSON
+  ? await Bun.file(process.env.MODELS_DEV_API_JSON).text()
+  : await fetch(`${modelsUrl}/api.json`).then((x) => x.text())
+console.log(`Loaded provider catalogue snapshot from ${modelsUrl}`)

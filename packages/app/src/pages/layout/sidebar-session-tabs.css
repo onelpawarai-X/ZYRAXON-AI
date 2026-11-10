@@ -1,0 +1,536 @@
+/* Copyright (c) 2026 onelpawarai. All rights reserved. */
+/* ZYRAXON session dock — a living, animated tab well for the left sidebar.
+   Colours come from the theme tokens so the dock reads correctly in both the
+   light and dark schemes. The orbiting border and scanline stay subtle: the
+   hover state used to flood the row with saturated blue, which made the whole
+   panel look darker than the rest of the UI. */
+
+:root {
+  --dock-accent: #22d3ee;
+  --dock-accent-soft: rgba(34, 211, 238, 0.05);
+  --dock-accent-border: rgba(34, 211, 238, 0.2);
+  --dock-surface-1: var(--v2-background-bg-layer-01, #101a26);
+  --dock-surface-2: var(--v2-background-bg-layer-02, #16222f);
+  --dock-text: var(--v2-text-text-base, #e2e8f0);
+  --dock-text-muted: var(--v2-text-text-muted, #94a3b8);
+  --dock-text-faint: var(--v2-text-text-faint, #64748b);
+  --dock-hover: color-mix(in oklab, var(--v2-text-text-base, #e2e8f0) 6%, transparent);
+  --dock-hover-border: color-mix(in oklab, var(--v2-text-text-base, #e2e8f0) 12%, transparent);
+  --dock-fade: var(--v2-background-bg-layer-01, #101a26);
+}
+
+[data-color-scheme="light"] {
+  --dock-accent: #0891b2;
+  --dock-accent-soft: rgba(8, 145, 178, 0.05);
+  --dock-accent-border: rgba(8, 145, 178, 0.22);
+  --dock-surface-1: var(--v2-background-bg-layer-01, #ffffff);
+  --dock-surface-2: var(--v2-background-bg-layer-02, #f6f7f9);
+  --dock-text: var(--v2-text-text-base, #1f2937);
+  --dock-text-muted: var(--v2-text-text-muted, #6b7280);
+  --dock-text-faint: var(--v2-text-text-faint, #9ca3af);
+  --dock-hover: color-mix(in oklab, var(--v2-text-text-base, #1f2937) 5%, transparent);
+  --dock-hover-border: color-mix(in oklab, var(--v2-text-text-base, #1f2937) 10%, transparent);
+  --dock-fade: var(--v2-background-bg-layer-01, #ffffff);
+}
+
+.session-dock {
+  position: relative;
+  border-radius: 16px;
+  padding: 1px;
+  overflow: hidden;
+  background: var(--dock-accent-soft);
+  isolation: isolate;
+}
+
+.session-dock::before {
+  content: "";
+  position: absolute;
+  width: 220%;
+  aspect-ratio: 1;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    color-mix(in oklab, var(--dock-accent) 55%, transparent) 34deg,
+    color-mix(in oklab, var(--dock-accent) 20%, transparent) 58deg,
+    transparent 96deg,
+    transparent 158deg,
+    color-mix(in oklab, var(--dock-accent) 45%, transparent) 196deg,
+    color-mix(in oklab, var(--dock-accent) 18%, transparent) 224deg,
+    transparent 262deg,
+    transparent 318deg,
+    color-mix(in oklab, var(--dock-accent) 40%, transparent) 344deg,
+    transparent 360deg
+  );
+  opacity: 0.7;
+  animation: session-dock-orbit 8s linear infinite;
+  z-index: -1;
+}
+
+.session-dock::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 15px;
+  box-shadow: 0 0 18px var(--dock-accent-soft);
+  pointer-events: none;
+  animation: session-dock-breathe 3.2s ease-in-out infinite;
+}
+
+.session-dock-inner {
+  position: relative;
+  border-radius: 15px;
+  background:
+    radial-gradient(130% 90% at 12% 0%, var(--dock-accent-soft), transparent 55%),
+    linear-gradient(165deg, var(--dock-surface-1) 0%, var(--dock-surface-2) 100%);
+  overflow: hidden;
+}
+
+.session-dock-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -72px;
+  height: 64px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in oklab, var(--dock-accent) 8%, transparent) 35%,
+    color-mix(in oklab, var(--dock-accent) 6%, transparent) 65%,
+    transparent
+  );
+  animation: session-dock-scan 5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.session-dock-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px 7px;
+  border-bottom: 1px solid var(--dock-hover-border);
+}
+
+.session-dock-header-icon {
+  color: var(--dock-accent);
+  opacity: 0.9;
+  animation: session-dock-icon-flicker 5.2s steps(1, end) infinite;
+}
+
+.session-dock-title {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dock-text-muted);
+  white-space: nowrap;
+}
+
+.session-dock-count {
+  min-width: 20px;
+  height: 17px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--dock-surface-1);
+  background: color-mix(in oklab, var(--dock-accent) 30%, transparent);
+  border: 1px solid var(--dock-accent-border);
+}
+
+.session-scroll-wrap {
+  position: relative;
+  z-index: 2;
+}
+
+.session-scroll {
+  position: relative;
+  max-height: 196px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 7px 8px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--dock-accent-border) transparent;
+}
+
+.session-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.session-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.session-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--dock-accent-border);
+}
+
+.session-scroll::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--dock-accent) 45%, transparent);
+}
+
+.session-scroll-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 16px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.session-scroll-fade-top {
+  top: 0;
+  background: linear-gradient(to bottom, var(--dock-fade) 8%, transparent);
+}
+
+.session-scroll-fade-bottom {
+  bottom: 0;
+  background: linear-gradient(to top, var(--dock-fade) 8%, transparent);
+}
+
+.session-item {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  height: 34px;
+  border-radius: 10px;
+}
+
+.session-item-main {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 30px 0 9px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.session-item-main:hover {
+  background: var(--dock-hover);
+  border-color: var(--dock-hover-border);
+  transform: translateX(2px);
+}
+
+.session-item-main:focus-visible {
+  border-color: var(--dock-accent-border);
+  box-shadow: 0 0 0 1px var(--dock-accent-border);
+}
+
+.session-item-rail {
+  position: absolute;
+  left: 0;
+  top: 16%;
+  bottom: 16%;
+  width: 3px;
+  border-radius: 3px;
+  background: transparent;
+  transition: background 200ms ease;
+}
+
+.session-item[data-active="true"] .session-item-main {
+  background: var(--dock-accent-soft);
+  border-color: var(--dock-accent-border);
+}
+
+.session-item[data-active="true"] .session-item-rail {
+  background: var(--dock-accent);
+}
+
+.session-item-icon {
+  flex-shrink: 0;
+  color: var(--dock-text-faint);
+  transition: color 180ms ease;
+}
+
+.session-item[data-active="true"] .session-item-icon {
+  color: var(--dock-accent);
+}
+
+.session-item:hover .session-item-icon {
+  color: var(--dock-accent);
+}
+
+.session-item-text {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  font-weight: 550;
+  letter-spacing: 0.01em;
+  color: var(--dock-text-muted);
+}
+
+.session-item[data-active="true"] .session-item-text {
+  color: var(--dock-text);
+}
+
+.session-item-kbd {
+  flex-shrink: 0;
+  opacity: 0;
+  transform: translateX(4px);
+  transition: opacity 160ms ease, transform 160ms ease;
+  font-size: 8.5px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--dock-hover-border);
+  color: var(--dock-text-muted);
+  background: var(--dock-hover);
+  font-family: ui-monospace, monospace;
+}
+
+.session-item:hover .session-item-kbd {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.session-item-close {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 2;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--dock-text-faint);
+  opacity: 0;
+  transition: opacity 140ms ease, color 140ms ease, background 140ms ease;
+}
+
+.session-item:hover .session-item-close,
+.session-item-close:focus-visible {
+  opacity: 1;
+}
+
+.session-item-close:hover {
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.12);
+}
+
+.session-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 10px 14px;
+  text-align: center;
+}
+
+.session-empty-icon {
+  color: var(--dock-text-faint);
+  opacity: 0.7;
+  animation: session-dock-breathe 3s ease-in-out infinite;
+}
+
+.session-empty p {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--dock-text-muted);
+}
+
+.session-empty span {
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dock-text-faint);
+}
+
+/* Rail Home button — lit accent while on the home route */
+.sidebar-home-active {
+  color: var(--dock-accent) !important;
+  border-radius: 12px;
+  background: var(--dock-accent-soft);
+}
+
+/* Home row inside the expanded sidebar. The rail carries no Home button: the
+   rail is the hover target that opens the sidebar, and Home lives here with
+   every other navigation entry. */
+.sidebar-home-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 10px;
+  color: var(--dock-text-muted);
+  transition:
+    color 140ms ease,
+    background 140ms ease;
+}
+
+.sidebar-home-row:hover {
+  color: var(--dock-text);
+  background: var(--dock-hover);
+}
+
+.sidebar-home-row[data-active="true"] {
+  color: var(--dock-accent);
+  background: var(--dock-accent-soft);
+}
+
+.sidebar-home-row-icon {
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+.sidebar-home-row-label {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-home-row-kbd {
+  flex-shrink: 0;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dock-text-faint);
+}
+
+/* New session — the sidebar's primary action. Solid accent so it reads as the
+   one filled control in the panel. */
+.sidebar-new-session {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 9px;
+  color: var(--dock-surface-1);
+  background: color-mix(in oklab, var(--dock-accent) 78%, transparent);
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.sidebar-new-session:hover {
+  background: var(--dock-accent);
+}
+
+.sidebar-new-session:active {
+  transform: scale(0.98);
+}
+
+.sidebar-new-session-label {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Lock button — outlined, quiet until locked. */
+.sidebar-lock-button {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  border: 1px solid var(--dock-hover-border);
+  color: var(--dock-text-muted);
+  transition: color 140ms ease, background 140ms ease, border-color 140ms ease;
+}
+
+.sidebar-lock-button:hover {
+  color: var(--dock-text);
+  background: var(--dock-hover);
+}
+
+.sidebar-lock-button[data-locked] {
+  color: var(--dock-accent);
+  border-color: var(--dock-accent-border);
+  background: var(--dock-accent-soft);
+}
+
+.sidebar-rail {
+  flex-shrink: 0;
+}
+
+@keyframes session-dock-orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes session-dock-scan {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  52%,
+  100% {
+    transform: translateY(420px);
+    opacity: 0;
+  }
+}
+
+@keyframes session-dock-breathe {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes session-dock-icon-flicker {
+  0%,
+  91%,
+  94.5%,
+  100% {
+    opacity: 1;
+  }
+  92.5% {
+    opacity: 0.55;
+  }
+  93.5% {
+    opacity: 0.8;
+  }
+}

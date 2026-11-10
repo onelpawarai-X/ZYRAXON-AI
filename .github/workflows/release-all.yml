@@ -1,0 +1,488 @@
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
+# One YML that releases the whole product for every platform at once.
+#
+# Publishing a release (or dispatching by tag) fans out to six jobs: a desktop
+# installer and a CLI archive set for Linux, Windows and macOS. Each job runs on
+# the runner that can actually build that platform, then attaches its own assets
+# to the same GitHub release.
+#
+# This file is the only release entry point: run it once and every platform
+# lands on the release together. To retry a single platform, re-run just that
+# job from the Actions UI instead of keeping a separate workflow.
+name: Release (All platforms)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to build and attach to
+        required: true
+        default: v20.0.1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-all-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  ZYRAXON_CHANNEL: dev
+  # husky would install and try to wire git hooks, which CI does not need.
+  HUSKY: "0"
+  # The chained build runs tsc and vite over the whole monorepo. The macOS runner
+  # ran out of heap without this, so every job says so explicitly.
+  NODE_OPTIONS: --max-old-space-size=8192
+
+jobs:
+  # ---------------------------------------------------------------- desktop ---
+  desktop-linux:
+    name: Desktop · Linux x64
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Cache Bun modules and Electron downloads
+        uses: actions/cache@v4
+        with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
+          path: |
+            ~/.bun/install/cache
+            ~/.cache/electron
+            ~/.cache/electron-builder
+          key: release-all-linux-x64-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-linux-x64-v2-
+
+      - name: Install dependencies
+        shell: bash
+        # bun on Windows intermittently fails to apply patches/@ai-sdk/*.patch
+        # with "renaming changes to cache dir: ENOTEMPTY", leaving a half-written
+        # patched-package cache entry behind. Clear that entry and retry; a later
+        # attempt succeeds. Seen on the windows-2025 arm64 runner.
+        run: |
+          for attempt in 1 2 3; do
+            if bun install --frozen-lockfile; then exit 0; fi
+            echo "::warning::bun install failed on attempt $attempt; clearing patched-package cache and retrying"
+            rm -rf node_modules
+            rm -rf "$HOME/.bun/install/cache"/*openai-compatible* "$HOME/.bun/install/cache"/*ai-sdk*
+            sleep 10
+          done
+          echo "::error::bun install failed after 3 attempts"
+          exit 1
+
+      - name: Install Linux packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            rpm libfuse2 libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 \
+            xvfb xdg-utils
+
+      - name: Build the engine, node bundle, app and desktop
+        run: bun run zyraxon:build
+
+      - name: Package the Linux installer
+        working-directory: packages/desktop
+        # --publish never: the build config names a GitHub publisher, so
+        # electron-builder would try to upload the release itself and fail on a
+        # missing token. This workflow owns the upload, below.
+        run: bunx electron-builder --linux --x64 --config electron-builder.config.ts --publish never
+
+      - name: Attach Linux desktop assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd packages/desktop/dist
+          files=(*.AppImage *.deb *.rpm *.blockmap latest-linux.yml)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No Linux artifacts were produced."; ls -la; exit 1
+          fi
+          printf '  %s\n' "${files[@]}"
+          gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+
+  desktop-windows:
+    name: Desktop · Windows ${{ matrix.arch }}
+    # x64 builds on windows-latest. arm64 needs the ARM64 MSVC cross-compilation
+    # toolchain, which is only present on the larger windows-2025 image, so the
+    # two targets run on separate runners rather than one --x64 --arm64 pass.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-latest
+            arch: x64
+            platform_flag: --win --x64
+          - runner: windows-2025
+            arch: arm64
+            platform_flag: --win --arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      # Bun 1.3.14 cannot rename across volumes on Windows. `bun build --compile`
+      # extracts the target runtime beside the working tree and then moves it into
+      # the install cache; with the cache on C: and the workspace on D: that move
+      # fails with "Failed to extract executable for 'bun-<os>-<arch>-<version>'".
+      # Keeping the cache on the workspace volume makes the move intra-volume.
+      # See oven-sh/bun#43446 (fixed upstream in 1.4.2; this repo pins 1.3.14).
+      BUN_INSTALL_CACHE_DIR: ${{ github.workspace }}/.bun-cache
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Cache Bun modules and Electron downloads
+        uses: actions/cache@v4
+        with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
+          path: |
+            ${{ github.workspace }}/.bun-cache
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: release-all-windows-${{ matrix.arch }}-v3-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-windows-${{ matrix.arch }}-v3-
+
+      - name: Install dependencies
+        shell: bash
+        # bun on Windows intermittently fails to apply patches/@ai-sdk/*.patch
+        # with "renaming changes to cache dir: ENOTEMPTY", leaving a half-written
+        # patched-package cache entry behind. The hoisted linker writes patched
+        # packages straight into node_modules instead of renaming them into the
+        # shared cache, which is how the setup-bun action avoids this on Windows.
+        # Keep the retry as a belt-and-braces fallback.
+        run: |
+          for attempt in 1 2 3; do
+            if bun install --linker hoisted --frozen-lockfile; then exit 0; fi
+            echo "::warning::bun install failed on attempt $attempt; clearing patched-package cache and retrying"
+            rm -rf node_modules
+            rm -rf "$BUN_INSTALL_CACHE_DIR"/*openai-compatible* "$BUN_INSTALL_CACHE_DIR"/*ai-sdk*
+            sleep 10
+          done
+          echo "::error::bun install failed after 3 attempts"
+          exit 1
+
+      - name: Build the engine, node bundle, app and desktop
+        run: bun run zyraxon:build
+
+      - name: Package the Windows installer
+        working-directory: packages/desktop
+        # signtoolOptions points at script/sign-windows.ps1. That script exits 0
+        # without signing unless GITHUB_ACTIONS is true and the Azure Trusted
+        # Signing variables are present, so an unsigned build still succeeds.
+        run: bunx electron-builder ${{ matrix.platform_flag }} --config electron-builder.config.ts --publish never
+
+      - name: Attach Windows desktop assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd packages/desktop/dist
+          # electron-builder names the blockmap and latest.yml after the installer,
+          # so ${arch} in artifactName keeps the two targets apart.
+          files=(*.exe *.blockmap latest.yml)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No Windows artifacts were produced."; ls -la; exit 1
+          fi
+          printf '  %s\n' "${files[@]}"
+          gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+
+  desktop-macos:
+    name: Desktop · macOS (arm64 + x64)
+    runs-on: macos-latest
+    timeout-minutes: 60
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Cache Bun modules and Electron downloads
+        uses: actions/cache@v4
+        with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
+          path: |
+            ~/.bun/install/cache
+            ~/Library/Caches/electron
+            ~/Library/Caches/electron-builder
+          key: release-all-macos-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-macos-v2-
+
+      - name: Install dependencies
+        shell: bash
+        # bun on Windows intermittently fails to apply patches/@ai-sdk/*.patch
+        # with "renaming changes to cache dir: ENOTEMPTY", leaving a half-written
+        # patched-package cache entry behind. Clear that entry and retry; a later
+        # attempt succeeds. Seen on the windows-2025 arm64 runner.
+        run: |
+          for attempt in 1 2 3; do
+            if bun install --frozen-lockfile; then exit 0; fi
+            echo "::warning::bun install failed on attempt $attempt; clearing patched-package cache and retrying"
+            rm -rf node_modules
+            rm -rf "$HOME/.bun/install/cache"/*openai-compatible* "$HOME/.bun/install/cache"/*ai-sdk*
+            sleep 10
+          done
+          echo "::error::bun install failed after 3 attempts"
+          exit 1
+
+      - name: Build the engine, node bundle, app and desktop
+        run: bun run zyraxon:build
+
+      - name: Package the macOS installer
+        working-directory: packages/desktop
+        # Both architectures from one runner. electron-builder downloads the
+        # matching Electron build for each target, so an arm64 runner can produce
+        # an Intel app too.
+        run: bunx electron-builder --mac --x64 --arm64 --config electron-builder.config.ts --publish never
+
+      - name: Attach macOS desktop assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd packages/desktop/dist
+          files=(*.dmg *.zip *.blockmap latest-mac.yml)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No macOS artifacts were produced."; ls -la; exit 1
+          fi
+          printf '  %s\n' "${files[@]}"
+          gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+
+  # -------------------------------------------------------------------- cli ---
+  cli-linux:
+    name: CLI · Linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - uses: actions/cache@v4
+        with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
+          path: |
+            ~/.bun/install/cache
+          key: release-all-cli-linux-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-cli-linux-v2-
+      - name: Install dependencies
+        shell: bash
+        # bun on Windows intermittently fails to apply patches/@ai-sdk/*.patch
+        # with "renaming changes to cache dir: ENOTEMPTY", leaving a half-written
+        # patched-package cache entry behind. Clear that entry and retry; a later
+        # attempt succeeds. Seen on the windows-2025 arm64 runner.
+        run: |
+          for attempt in 1 2 3; do
+            if bun install --frozen-lockfile; then exit 0; fi
+            echo "::warning::bun install failed on attempt $attempt; clearing patched-package cache and retrying"
+            rm -rf node_modules
+            rm -rf "$HOME/.bun/install/cache"/*openai-compatible* "$HOME/.bun/install/cache"/*ai-sdk*
+            sleep 10
+          done
+          echo "::error::bun install failed after 3 attempts"
+          exit 1
+      - name: Build the SDK the CLI imports
+        # The CLI resolves @zyraxon-ai/sdk/v2/* out of the SDK's dist, and dist is
+        # gitignored, so nothing else in the job creates it. Without this the
+        # bundler fails with "Could not resolve @zyraxon-ai/sdk/v2/client".
+        run: bun run --cwd packages/sdk/js build
+      - run: bun run --cwd packages/cli script/build.ts --os=linux
+      - run: bun run --cwd packages/cli script/package-release.ts
+      - name: Attach Linux CLI archives
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd packages/cli/release
+          files=(*.tar.gz)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No Linux CLI archives were produced."; exit 1
+          fi
+          printf '  %s\n' "${files[@]}"
+          gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+
+  cli-darwin:
+    name: CLI · macOS
+    runs-on: macos-latest
+    timeout-minutes: 90
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - uses: actions/cache@v4
+        with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
+          path: |
+            ~/.bun/install/cache
+          key: release-all-cli-darwin-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-cli-darwin-v2-
+      - name: Install dependencies
+        shell: bash
+        # bun on Windows intermittently fails to apply patches/@ai-sdk/*.patch
+        # with "renaming changes to cache dir: ENOTEMPTY", leaving a half-written
+        # patched-package cache entry behind. Clear that entry and retry; a later
+        # attempt succeeds. Seen on the windows-2025 arm64 runner.
+        run: |
+          for attempt in 1 2 3; do
+            if bun install --frozen-lockfile; then exit 0; fi
+            echo "::warning::bun install failed on attempt $attempt; clearing patched-package cache and retrying"
+            rm -rf node_modules
+            rm -rf "$HOME/.bun/install/cache"/*openai-compatible* "$HOME/.bun/install/cache"/*ai-sdk*
+            sleep 10
+          done
+          echo "::error::bun install failed after 3 attempts"
+          exit 1
+      - name: Build the SDK the CLI imports
+        # The CLI resolves @zyraxon-ai/sdk/v2/* out of the SDK's dist, and dist is
+        # gitignored, so nothing else in the job creates it. Without this the
+        # bundler fails with "Could not resolve @zyraxon-ai/sdk/v2/client".
+        run: bun run --cwd packages/sdk/js build
+      - run: bun run --cwd packages/cli script/build.ts --os=darwin
+      - run: bun run --cwd packages/cli script/package-release.ts
+      - name: Each archive holds one flat binary
+        run: |
+          set -euo pipefail
+          cd packages/cli/release
+          for archive in *.zip; do
+            contents=$(unzip -Z1 "$archive")
+            if [ "$contents" != "zyraxon" ]; then
+              echo "::error::$archive should hold a single entry named zyraxon, holds: $contents"; exit 1
+            fi
+            echo "  $archive -> $contents"
+          done
+      - name: Attach macOS CLI archives
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd packages/cli/release
+          files=(*.zip)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No macOS CLI archives were produced."; exit 1
+          fi
+          printf '  %s\n' "${files[@]}"
+          gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+
+  cli-windows:
+    name: CLI · Windows targets
+    # Bun cross-compiles win32 binaries from Linux and the archive step needs the
+    # system zip binary, so this runs on ubuntu-latest rather than Windows.
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - uses: actions/cache@v4
+        with:
+          # Only the Bun download cache is cached. Restoring node_modules left
+          # Bun patching a partially-written package directory, which fails on
+          # Windows with ENOTEMPTY when it applies patches/@ai-sdk/*.patch.
+          path: |
+            ~/.bun/install/cache
+          key: release-all-cli-windows-v2-${{ hashFiles('bun.lock') }}
+          restore-keys: release-all-cli-windows-v2-
+      - name: Install dependencies
+        shell: bash
+        # bun on Windows intermittently fails to apply patches/@ai-sdk/*.patch
+        # with "renaming changes to cache dir: ENOTEMPTY", leaving a half-written
+        # patched-package cache entry behind. Clear that entry and retry; a later
+        # attempt succeeds. Seen on the windows-2025 arm64 runner.
+        run: |
+          for attempt in 1 2 3; do
+            if bun install --frozen-lockfile; then exit 0; fi
+            echo "::warning::bun install failed on attempt $attempt; clearing patched-package cache and retrying"
+            rm -rf node_modules
+            rm -rf "$HOME/.bun/install/cache"/*openai-compatible* "$HOME/.bun/install/cache"/*ai-sdk*
+            sleep 10
+          done
+          echo "::error::bun install failed after 3 attempts"
+          exit 1
+      - name: Build the SDK the CLI imports
+        # The CLI resolves @zyraxon-ai/sdk/v2/* out of the SDK's dist, and dist is
+        # gitignored, so nothing else in the job creates it. Without this the
+        # bundler fails with "Could not resolve @zyraxon-ai/sdk/v2/client".
+        run: bun run --cwd packages/sdk/js build
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends zip
+      - run: bun run --cwd packages/cli script/build.ts --os=win32
+      - run: bun run --cwd packages/cli script/package-release.ts
+      - name: Each archive holds one flat binary
+        run: |
+          set -euo pipefail
+          cd packages/cli/release
+          for archive in *.zip; do
+            contents=$(unzip -Z1 "$archive")
+            if [ "$contents" != "zyraxon" ]; then
+              echo "::error::$archive should hold a single entry named zyraxon, holds: $contents"; exit 1
+            fi
+            echo "  $archive -> $contents"
+          done
+      - name: Attach Windows CLI archives
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd packages/cli/release
+          files=(*.zip)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No Windows CLI archives were produced."; exit 1
+          fi
+          printf '  %s\n' "${files[@]}"
+          gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber

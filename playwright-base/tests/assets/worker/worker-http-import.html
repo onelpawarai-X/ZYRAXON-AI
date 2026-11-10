@@ -1,0 +1,17 @@
+<!-- SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+     Copyright (c) 2026 onelpawarai. All rights reserved. -->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Remote importScripts Test</title>
+  </head>
+  <html>
+    <div id="status">-</div>
+    <script>
+      new Worker('worker-http-import.js').addEventListener("message", ({ data }) => {
+        document.getElementById("status").innerText = data;
+      });
+    </script>
+  </html>
+</html>

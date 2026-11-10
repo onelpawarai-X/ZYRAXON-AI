@@ -1,0 +1,13 @@
+<!-- SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+     Copyright (c) 2026 onelpawarai. All rights reserved. -->
+
+<div>beforeunload demo.</div>
+<script>
+window.addEventListener('beforeunload', event => {
+  // Chromium & WebKit way.
+  event.returnValue = 'Leave?';
+  // Firefox way.
+  event.preventDefault();
+});
+</script>
+

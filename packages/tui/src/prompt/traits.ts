@@ -1,0 +1,31 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
+import type { EditorTraits } from "@opentui/core"
+
+export type PromptMode = "normal" | "shell"
+
+export interface PromptTraitsInput {
+  mode: PromptMode
+  autocompleteVisible: boolean
+}
+
+export type PromptTraits = EditorTraits & {
+  owner: "zyraxon"
+  role: "prompt"
+}
+
+/** The managed textarea keymap owns `suspend`; these traits only describe capture and status. */
+export function computePromptTraits(input: PromptTraitsInput): PromptTraits {
+  const capture =
+    input.mode === "normal"
+      ? input.autocompleteVisible
+        ? (["escape", "navigate", "submit", "tab"] as const)
+        : (["tab"] as const)
+      : undefined
+  return {
+    capture,
+    status: input.mode === "shell" ? "SHELL" : undefined,
+    owner: "zyraxon",
+    role: "prompt",
+  }
+}

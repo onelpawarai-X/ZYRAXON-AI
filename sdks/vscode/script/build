@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Build platform-targeted VSIX packages for ZYRAXON.
+#
+# The whole application is one native binary per platform: the server, the
+# embedded web UI, the HTTP API, and the agent runtime. Each VSIX therefore
+# bundles exactly one binary for the platform named in its target, which keeps
+# every package well inside the Marketplace size limit.
+#
+# Packaging is esbuild-only on purpose. The repo's `vscode:prepublish` chains a
+# typecheck, and packaging must not depend on one, so the hook is swapped for
+# the esbuild-only form for the duration of the run and restored on exit.
+#
+# Usage:
+#   script/build                 # every platform with a built binary
+#   script/build linux-x64       # one or more targets, space separated
+#   script/build --host          # only the platform running this script
+#
+# Targets map to `packages/zyraxon/dist/<target>/bin/zyraxon[.exe]`.
+
+cd "$(dirname "$0")/.."
+
+EXT_DIR="$(pwd)"
+REPO_ROOT="$(cd "$EXT_DIR/../.." && pwd)"
+DIST_ROOT="$REPO_ROOT/packages/zyraxon/dist"
+OUT_DIR="$EXT_DIR/dist"
+
+# vsce target -> binary directory under DIST_ROOT
+ALL_TARGETS=(
+  linux-x64
+  linux-arm64
+  alpine-x64
+  alpine-arm64
+  darwin-x64
+  darwin-arm64
+  win32-x64
+  win32-arm64
+)
+
+binary_dir() {
+  case "$1" in
+    linux-x64) echo "zyraxon-linux-x64" ;;
+    linux-arm64) echo "zyraxon-linux-arm64" ;;
+    alpine-x64) echo "zyraxon-linux-x64-musl" ;;
+    alpine-arm64) echo "zyraxon-linux-arm64-musl" ;;
+    darwin-x64) echo "zyraxon-darwin-x64" ;;
+    darwin-arm64) echo "zyraxon-darwin-arm64" ;;
+    win32-x64) echo "zyraxon-windows-x64" ;;
+    win32-arm64) echo "zyraxon-windows-arm64" ;;
+    *) echo "" ;;
+  esac
+}
+
+binary_name() {
+  case "$1" in
+    win32-*) echo "zyraxon.exe" ;;
+    *) echo "zyraxon" ;;
+  esac
+}
+
+host_target() {
+  case "$(uname -s)-$(uname -m)" in
+    Linux-x86_64) echo "linux-x64" ;;
+    Linux-aarch64 | Linux-arm64) echo "linux-arm64" ;;
+    Darwin-x86_64) echo "darwin-x64" ;;
+    Darwin-arm64) echo "darwin-arm64" ;;
+    MINGW* | MSYS* | CYGWIN*) echo "win32-x64" ;;
+    *) echo "" ;;
+  esac
+}
+
+install_deps() {
+  if [ -d node_modules ]; then
+    return 0
+  fi
+  if command -v bun >/dev/null 2>&1; then
+    bun install
+  else
+    npm install --no-audit --no-fund
+  fi
+}
+
+TARGETS=()
+for arg in "$@"; do
+  if [ "$arg" = "--host" ]; then
+    target="$(host_target)"
+    [ -z "$target" ] && { echo "unsupported host platform"; exit 1; }
+    TARGETS+=("$target")
+  else
+    TARGETS+=("$arg")
+  fi
+done
+[ ${#TARGETS[@]} -eq 0 ] && TARGETS=("${ALL_TARGETS[@]}")
+
+install_deps
+mkdir -p "$OUT_DIR"
+
+# Swap the prepublish hook so vsce never runs a typecheck.
+PKG="package.json"
+BACKUP="$(mktemp)"
+cp "$PKG" "$BACKUP"
+restore() { cp -f "$BACKUP" "$PKG"; rm -f "$BACKUP"; }
+trap restore EXIT
+node -e '
+const fs = require("fs")
+const p = JSON.parse(fs.readFileSync("package.json", "utf8"))
+p.scripts = p.scripts || {}
+p.scripts["vscode:prepublish"] = "node esbuild.js --production"
+fs.writeFileSync("package.json", JSON.stringify(p, null, 2) + "\n")
+'
+
+NAME="$(node -p "require('./package.json').name")"
+VERSION="$(node -p "require('./package.json').version")"
+BUILT=()
+
+for target in "${TARGETS[@]}"; do
+  dir="$(binary_dir "$target")"
+  if [ -z "$dir" ]; then
+    echo "skip $target: unknown target"
+    continue
+  fi
+
+  name="$(binary_name "$target")"
+  src="$DIST_ROOT/$dir/bin/$name"
+  if [ ! -f "$src" ]; then
+    echo "skip $target: no binary at $src"
+    continue
+  fi
+
+  echo "== $NAME@$VERSION $target =="
+  rm -rf bin
+  mkdir -p bin
+  cp "$src" "bin/$name"
+  chmod +x "bin/$name"
+
+  out="$OUT_DIR/$NAME-$VERSION-$target.vsix"
+  npx --yes @vscode/vsce package \
+    --target "$target" \
+    --no-git-tag-version --no-update-package-json --no-dependencies --skip-license \
+    -o "$out"
+  BUILT+=("$out")
+done
+
+rm -rf bin
+
+echo
+echo "built ${#BUILT[@]} package(s):"
+for out in "${BUILT[@]}"; do
+  printf '  %s  (%s)\n' "$out" "$(du -h "$out" | cut -f1)"
+done

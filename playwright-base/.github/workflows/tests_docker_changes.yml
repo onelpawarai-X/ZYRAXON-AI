@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
+name: tests docker (changes)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'utils/docker/**'
+      - '.github/workflows/tests_docker*.yml'
+  pull_request:
+    branches:
+      - main
+      - release-*
+    paths:
+      - 'utils/docker/**'
+      - '.github/workflows/tests_docker*.yml'
+
+jobs:
+  test_linux_docker:
+    uses: ./.github/workflows/tests_docker.yml
+    permissions:
+      id-token: write
+      contents: read
+    secrets: inherit
