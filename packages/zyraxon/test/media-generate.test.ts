@@ -80,6 +80,34 @@ describe("media_generate endpoint resolution", () => {
     )
   })
 
+  test("an ordinary catalogue entry with no api.url falls back to the SDK default", () => {
+    // The real Google catalogue leaves api.url empty — the SDK supplies the address —
+    // and reading only api.url made every such model fail before a request was sent.
+    const bare = model({ api: { id: "google", url: "", npm: "@ai-sdk/google" } })
+    expect(providerUrl(provider(), bare)).toBe(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+    )
+  })
+
+  test("an empty api.url for OpenAI falls back to the OpenAI default", () => {
+    const bare = model({ api: { id: "openai", url: "", npm: "@ai-sdk/openai" } })
+    expect(providerUrl(provider(), bare)).toBe("https://api.openai.com/v1/models/gemini-2.0-flash:generate")
+  })
+
+  test("google-vertex is not mistaken for google when both start with @ai-sdk/google", () => {
+    const bare = model({ api: { id: "google-vertex", url: "", npm: "@ai-sdk/google-vertex" } })
+    expect(providerUrl(provider(), bare)).toBe(
+      "https://aiplatform.googleapis.com/v1/models/gemini-2.0-flash:generateContent",
+    )
+  })
+
+  test("video also falls back to the SDK default when api.url is empty", () => {
+    const bare = model({ api: { id: "google", url: "", npm: "@ai-sdk/google" } })
+    expect(predictUrl(provider(), bare)).toBe(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:predictLongRunning",
+    )
+  })
+
   test("a configured base URL wins over the catalogue entry", () => {
     const proxied = provider({ options: { baseURL: "https://gateway.example.com/v1" } })
     expect(providerUrl(proxied, model())).toBe(

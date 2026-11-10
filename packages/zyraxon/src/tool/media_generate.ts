@@ -371,6 +371,50 @@ function baseOf(url: string) {
 }
 
 /**
+ * The base URL an SDK uses when the provider catalogue does not name one.
+ *
+ * Most catalogue entries leave `api.url` empty and let the SDK's own default
+ * apply — `@ai-sdk/google` falls back to `generativelanguage.googleapis.com/v1beta`
+ * — but a plain HTTP call has no such fallback. Reading only the catalogue
+ * therefore made every ordinary Google, OpenAI or xAI model look like it
+ * "does not publish a base URL", and generation failed before a request was ever
+ * sent. These are the SDKs' own defaults, matched by the npm package the
+ * catalogue declares. Order-independent because the keys are sorted by length
+ * below, so `@ai-sdk/google-vertex` is never mistaken for `@ai-sdk/google`.
+ */
+const SDK_BASE_URLS: Record<string, string> = {
+  "@ai-sdk/google": "https://generativelanguage.googleapis.com/v1beta",
+  "@ai-sdk/google-vertex": "https://aiplatform.googleapis.com/v1",
+  "@ai-sdk/openai": "https://api.openai.com/v1",
+  "@ai-sdk/anthropic": "https://api.anthropic.com/v1",
+  "@ai-sdk/xai": "https://api.x.ai/v1",
+  "@ai-sdk/mistral": "https://api.mistral.ai/v1",
+  "@ai-sdk/groq": "https://api.groq.com/openai/v1",
+  "@ai-sdk/deepseek": "https://api.deepseek.com/v1",
+  "@ai-sdk/cerebras": "https://api.cerebras.ai/v1",
+}
+
+/** The SDK's own default base URL for this model, or "" when none is known. */
+export function defaultBaseUrl(model: Provider.Model): string {
+  const npm = model.api.npm ?? ""
+  for (const pkg of Object.keys(SDK_BASE_URLS).sort((a, b) => b.length - a.length)) {
+    if (npm.startsWith(pkg)) return SDK_BASE_URLS[pkg]
+  }
+  return ""
+}
+
+/**
+ * The base URL to call, in priority order: a configured base URL (a proxy or
+ * gateway the user set), then the catalogue's own `api.url`, then the SDK's
+ * default. Only the first two used to be read, which is why an ordinary signed-in
+ * provider — whose `api.url` is empty by design — could not generate anything.
+ */
+export function resolveBaseUrl(provider: Provider.Info, model: Provider.Model): string {
+  const configured = (provider.options?.baseURL as string | undefined) ?? ""
+  return (configured || model.api.url || defaultBaseUrl(model) || "").replace(/\/$/, "")
+}
+
+/**
  * The endpoint to POST to, preferring the configured base URL and falling back to the
  * catalogue's own `api.url`.
  *
@@ -380,8 +424,7 @@ function baseOf(url: string) {
  * "does not publish a base URL" and generation failed before a request was ever sent.
  */
 export function providerUrl(provider: Provider.Info, model: Provider.Model) {
-  const configured = (provider.options?.baseURL as string | undefined) ?? ""
-  const base = (configured || model.api.url || "").replace(/\/$/, "")
+  const base = resolveBaseUrl(provider, model)
   if (!base) throw new Error(`${provider.name} does not publish a base URL`)
   return isGoogle(model) ? `${base}/models/${encodeURIComponent(model.id)}:generateContent` : `${base}/models/${encodeURIComponent(model.id)}:generate`
 }
@@ -405,8 +448,7 @@ export function isGoogle(model: Provider.Model) {
  * the predict body is answered with a 400 rather than a render.
  */
 export function predictUrl(provider: Provider.Info, model: Provider.Model) {
-  const configured = (provider.options?.baseURL as string | undefined) ?? ""
-  const base = (configured || model.api.url || "").replace(/\/$/, "")
+  const base = resolveBaseUrl(provider, model)
   if (!base) throw new Error(`${provider.name} does not publish a base URL`)
   return `${base}/models/${encodeURIComponent(model.id)}:predictLongRunning`
 }
