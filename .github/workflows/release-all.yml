@@ -38,9 +38,38 @@ env:
   NODE_OPTIONS: --max-old-space-size=8192
 
 jobs:
+  # --------------------------------------------------------------- reset -----
+  # Every build job uploads with --clobber, which only replaces a file that has
+  # the same name. A renamed artifact (a new product name, a dropped target)
+  # would therefore linger on the release forever alongside the fresh set. This
+  # job clears the release first, so the assets that land are exactly the ones
+  # this run produced and nothing older is left behind.
+  reset-assets:
+    name: Reset release assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - name: Delete every existing asset on the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "Clearing all assets from $TAG so this run replaces them."
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' \
+            | while read -r name; do
+                [ -z "$name" ] && continue
+                echo "  deleting $name"
+                gh release delete-asset "$TAG" "$name" --repo "$GITHUB_REPOSITORY" --yes
+              done
+          echo "Assets left after reset:"
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name'
+
   # ---------------------------------------------------------------- desktop ---
   desktop-linux:
     name: Desktop · Linux x64
+    needs: reset-assets
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -119,6 +148,7 @@ jobs:
 
   desktop-windows:
     name: Desktop · Windows ${{ matrix.arch }}
+    needs: reset-assets
     # x64 builds on windows-latest. arm64 needs the ARM64 MSVC cross-compilation
     # toolchain, which is only present on the larger windows-2025 image, so the
     # two targets run on separate runners rather than one --x64 --arm64 pass.
@@ -215,6 +245,7 @@ jobs:
 
   desktop-macos:
     name: Desktop · macOS (arm64 + x64)
+    needs: reset-assets
     runs-on: macos-latest
     timeout-minutes: 60
     env:
@@ -287,6 +318,7 @@ jobs:
   # -------------------------------------------------------------------- cli ---
   cli-linux:
     name: CLI · Linux
+    needs: reset-assets
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -346,6 +378,7 @@ jobs:
 
   cli-darwin:
     name: CLI · macOS
+    needs: reset-assets
     runs-on: macos-latest
     timeout-minutes: 90
     env:
@@ -416,6 +449,7 @@ jobs:
 
   cli-windows:
     name: CLI · Windows targets
+    needs: reset-assets
     # Bun cross-compiles win32 binaries from Linux and the archive step needs the
     # system zip binary, so this runs on ubuntu-latest rather than Windows.
     runs-on: ubuntu-latest
