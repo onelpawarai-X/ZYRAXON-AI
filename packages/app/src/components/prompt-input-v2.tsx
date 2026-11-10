@@ -27,7 +27,6 @@ import { useSubscription } from "@/context/subscription"
 import { type MediaAttachmentPart, isMediaAttachmentPart, usePrompt } from "@/context/prompt"
 import { usePlatform } from "@/context/platform"
 import { useSDK } from "@/context/sdk"
-import { useSettings } from "@/context/settings"
 import { useSync } from "@/context/sync"
 import { createSessionTabs } from "@/pages/session/helpers"
 import { showToast } from "@/utils/toast"
@@ -54,7 +53,6 @@ export function PromptInputV2Composer(props: PromptInputV2ComposerProps) {
   const dialog = useDialog()
   const command = useCommand()
   const language = useLanguage()
-  const settings = useSettings()
 
   useCommands(props)
   useEditHandler(props)
@@ -64,8 +62,6 @@ export function PromptInputV2Composer(props: PromptInputV2ComposerProps) {
       <PromptInputV2
         controller={props.controller}
         class={props.class}
-        language={settings.general.voiceLanguage()}
-        onLanguageChange={(lang) => settings.general.setVoiceLanguage(lang)}
         modelControl={
           <PromptInputV2ModelControl
             loading={props.controller.model.loading}

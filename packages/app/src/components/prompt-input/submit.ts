@@ -168,9 +168,9 @@ export async function sendFollowupDraft(input: FollowupSendInput) {
       messageID,
       parts: requestParts,
       variant: input.draft.variant,
-      // The composer's language picker, resolved to a name the model can act on.
-      // Without it the choice only reached speech recognition and every answer came
-      // back in English regardless of what was selected.
+      // The Settings voice-language choice, resolved to a name the model can act
+      // on. Without it the choice only reached speech recognition and every answer
+      // came back in English regardless of what was selected.
       replyLanguage: replyLanguageName(input.replyLanguage),
     })
     return true

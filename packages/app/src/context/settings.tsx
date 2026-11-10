@@ -234,8 +234,14 @@ const defaultSettings: Settings = {
     voiceAutoSpeak: true,
     voiceRealtime: false,
     voiceRealtimeModel: "",
-    voiceEngine: "builtin",
-    voiceLanguage: "en-US",
+    // The website's own speech endpoint is the default engine: it speaks every
+    // language (Bengali included) from a browser with no local server and no key.
+    // The local Edge server only exists inside the desktop process and cannot
+    // pronounce a script it has no voice for.
+    voiceEngine: "provider",
+    // "auto" lets both speech recognition and TTS detect the language per
+    // utterance, so Bengali is understood and read back in Bengali with no picker.
+    voiceLanguage: "auto",
   },
   appearance: {
     fontSize: 14,
@@ -351,6 +357,26 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         setStore("general", "newLayoutDesigns", true)
       }
       setLaunchState("migrationApplied", true)
+    })
+
+    // One-time speech migration. Earlier builds defaulted the engine to the local
+    // Edge server and the language to English, which is why a browser said nothing
+    // and the mic never auto-detected. Move that defaulted pair onto the website
+    // endpoint and Auto exactly once; a choice the user makes afterwards is kept.
+    createEffect(() => {
+      if (!ready()) return
+      try {
+        if (localStorage.getItem("zyraxon.voice.defaults.v2")) return
+        localStorage.setItem("zyraxon.voice.defaults.v2", "1")
+      } catch {
+        return
+      }
+      if (store.general?.voiceEngine === undefined || store.general?.voiceEngine === "builtin") {
+        setStore("general", "voiceEngine", "provider")
+      }
+      if (store.general?.voiceLanguage === undefined || store.general?.voiceLanguage === "en-US") {
+        setStore("general", "voiceLanguage", "auto")
+      }
     })
 
     createEffect(() => {
@@ -529,11 +555,11 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         setVoiceRealtimeModel(value: string) {
           setStore("general", "voiceRealtimeModel", value)
         },
-        voiceEngine: withFallback(() => store.general?.voiceEngine, "builtin" as const),
+        voiceEngine: withFallback(() => store.general?.voiceEngine, "provider" as const),
         setVoiceEngine(value: "builtin" | "provider") {
           setStore("general", "voiceEngine", value)
         },
-        voiceLanguage: withFallback(() => store.general?.voiceLanguage, "en-US"),
+        voiceLanguage: withFallback(() => store.general?.voiceLanguage, "auto"),
         setVoiceLanguage(value: string) {
           setStore("general", "voiceLanguage", value)
         },

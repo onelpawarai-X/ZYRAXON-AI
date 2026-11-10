@@ -42,8 +42,6 @@ export type PromptInputV2Props = {
   readOnly?: boolean
   class?: string
   modelControl?: JSX.Element
-  language?: string
-  onLanguageChange?: (lang: string) => void
 }
 
 export function PromptInputV2(props: PromptInputV2Props) {
@@ -296,8 +294,6 @@ export function PromptInputV2(props: PromptInputV2Props) {
               }}
               onError={(err) => console.error("[Mic]", err)}
               disabled={state.mode === "shell"}
-              language={props.language}
-              onLanguageChange={props.onLanguageChange}
             />
           </div>
           <PromptInputV2SubmitButton

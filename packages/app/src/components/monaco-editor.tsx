@@ -161,7 +161,6 @@ export function MonacoEditor(props: MonacoEditorProps) {
     const inputBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)"
     const accent = "#00ff88"
     const accent2 = "#00ccff"
-    const currentVoiceLang = settings.general.voiceLanguage() || "en-US"
 
     const domNode = document.createElement("div")
     domNode.style.cssText = `z-index: 20; animation: slideDown 0.2s ease-out;`
@@ -230,52 +229,7 @@ export function MonacoEditor(props: MonacoEditorProps) {
           <svg class="lead" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>
           <select class="aic-select" id="aic-model" title="Model"><option value="auto">Loading models…</option></select>
         </div>
-        <div class="aic-field">
-          <svg class="lead" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/></svg>
-          <select class="aic-select" id="aic-lang" title="Voice language">
-            <option value="auto" ${currentVoiceLang === "auto" ? "selected" : ""}>Auto Detect</option>
-            <option value="en-US" ${currentVoiceLang === "en-US" ? "selected" : ""}>English</option>
-            <option value="bn-BD" ${currentVoiceLang === "bn-BD" ? "selected" : ""}>Bengali</option>
-            <option value="hi-IN" ${currentVoiceLang === "hi-IN" ? "selected" : ""}>Hindi</option>
-            <option value="ar-SA" ${currentVoiceLang === "ar-SA" ? "selected" : ""}>Arabic</option>
-            <option value="fr-FR" ${currentVoiceLang === "fr-FR" ? "selected" : ""}>French</option>
-            <option value="de-DE" ${currentVoiceLang === "de-DE" ? "selected" : ""}>German</option>
-            <option value="es-ES" ${currentVoiceLang === "es-ES" ? "selected" : ""}>Spanish</option>
-            <option value="ru-RU" ${currentVoiceLang === "ru-RU" ? "selected" : ""}>Russian</option>
-            <option value="ja-JP" ${currentVoiceLang === "ja-JP" ? "selected" : ""}>Japanese</option>
-            <option value="ko-KR" ${currentVoiceLang === "ko-KR" ? "selected" : ""}>Korean</option>
-            <option value="zh-CN" ${currentVoiceLang === "zh-CN" ? "selected" : ""}>Chinese</option>
-            <option value="pt-BR" ${currentVoiceLang === "pt-BR" ? "selected" : ""}>Portuguese</option>
-            <option value="it-IT" ${currentVoiceLang === "it-IT" ? "selected" : ""}>Italian</option>
-            <option value="tr-TR" ${currentVoiceLang === "tr-TR" ? "selected" : ""}>Turkish</option>
-            <option value="th-TH" ${currentVoiceLang === "th-TH" ? "selected" : ""}>Thai</option>
-            <option value="pl-PL" ${currentVoiceLang === "pl-PL" ? "selected" : ""}>Polish</option>
-            <option value="nl-NL" ${currentVoiceLang === "nl-NL" ? "selected" : ""}>Dutch</option>
-            <option value="vi-VN" ${currentVoiceLang === "vi-VN" ? "selected" : ""}>Vietnamese</option>
-            <option value="uk-UA" ${currentVoiceLang === "uk-UA" ? "selected" : ""}>Ukrainian</option>
-            <option value="sv-SE" ${currentVoiceLang === "sv-SE" ? "selected" : ""}>Swedish</option>
-            <option value="da-DK" ${currentVoiceLang === "da-DK" ? "selected" : ""}>Danish</option>
-            <option value="fi-FI" ${currentVoiceLang === "fi-FI" ? "selected" : ""}>Finnish</option>
-            <option value="nb-NO" ${currentVoiceLang === "nb-NO" ? "selected" : ""}>Norwegian</option>
-            <option value="cs-CZ" ${currentVoiceLang === "cs-CZ" ? "selected" : ""}>Czech</option>
-            <option value="ro-RO" ${currentVoiceLang === "ro-RO" ? "selected" : ""}>Romanian</option>
-            <option value="el-GR" ${currentVoiceLang === "el-GR" ? "selected" : ""}>Greek</option>
-            <option value="he-IL" ${currentVoiceLang === "he-IL" ? "selected" : ""}>Hebrew</option>
-            <option value="hu-HU" ${currentVoiceLang === "hu-HU" ? "selected" : ""}>Hungarian</option>
-            <option value="id-ID" ${currentVoiceLang === "id-ID" ? "selected" : ""}>Indonesian</option>
-            <option value="ms-MY" ${currentVoiceLang === "ms-MY" ? "selected" : ""}>Malay</option>
-            <option value="ta-IN" ${currentVoiceLang === "ta-IN" ? "selected" : ""}>Tamil</option>
-            <option value="te-IN" ${currentVoiceLang === "te-IN" ? "selected" : ""}>Telugu</option>
-            <option value="mr-IN" ${currentVoiceLang === "mr-IN" ? "selected" : ""}>Marathi</option>
-            <option value="gu-IN" ${currentVoiceLang === "gu-IN" ? "selected" : ""}>Gujarati</option>
-            <option value="kn-IN" ${currentVoiceLang === "kn-IN" ? "selected" : ""}>Kannada</option>
-            <option value="ml-IN" ${currentVoiceLang === "ml-IN" ? "selected" : ""}>Malayalam</option>
-            <option value="ur-PK" ${currentVoiceLang === "ur-PK" ? "selected" : ""}>Urdu</option>
-            <option value="fa-IR" ${currentVoiceLang === "fa-IR" ? "selected" : ""}>Persian</option>
-            <option value="sw-KE" ${currentVoiceLang === "sw-KE" ? "selected" : ""}>Swahili</option>
-            <option value="af-ZA" ${currentVoiceLang === "af-ZA" ? "selected" : ""}>Afrikaans</option>
-          </select>
-        </div>
+        
       </div>
       <div class="aic-controls">
         <input type="text" class="aic-input" id="aic-input" placeholder="Describe what the AI should generate or fix…" autofocus />
@@ -296,7 +250,6 @@ export function MonacoEditor(props: MonacoEditorProps) {
     const sendBtn = domNode.querySelector("#aic-send") as HTMLButtonElement
     const micBtn = domNode.querySelector("#aic-mic") as HTMLButtonElement
     const modelSelect = domNode.querySelector("#aic-model") as HTMLSelectElement
-    const langSelect = domNode.querySelector("#aic-lang") as HTMLSelectElement
 
     // ── Model list: the SAME catalog the main session composer uses ──
     // The chat box must never invent its own list. `useModels()` returns every
@@ -376,7 +329,7 @@ export function MonacoEditor(props: MonacoEditorProps) {
         client.dispose()
         if (inlineStt === client) inlineStt = null
       }
-      void client.start(langSelect.value || "auto")
+      void client.start("auto")
     })
 
     input.addEventListener("keydown", (e) => {
