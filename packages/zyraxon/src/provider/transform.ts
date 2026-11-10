@@ -1699,9 +1699,17 @@ export function schema(model: Provider.Model, schema: JSONSchema7): JSONSchema7 
         }
       }
 
-      // Filter required array to only include fields that exist in properties
+      // Filter required array to only include fields that exist in properties.
+      // Gemini rejects `required` on anything that is not an OBJECT ("only allowed
+      // for OBJECT type") and rejects names that are not properties of that same
+      // node ("property is not defined"). A union variant carrying `required` with
+      // no `type` — the shape every `any_of` entry in the failing request had —
+      // must therefore lose it, not keep it.
       if (result.type === "object" && result.properties && Array.isArray(result.required)) {
         result.required = result.required.filter((field: any) => field in result.properties)
+        if (result.required.length === 0) delete result.required
+      } else if (Array.isArray(result.required) && !hasCombiner(result)) {
+        delete result.required
       }
 
       if (result.type === "array" && !hasCombiner(result)) {

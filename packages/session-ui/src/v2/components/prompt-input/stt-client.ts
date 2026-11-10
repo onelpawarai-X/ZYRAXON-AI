@@ -202,7 +202,37 @@ function sameWord(left: string, right: string) {
   if (a === b) return true
   // The recogniser spells a re-read tail differently on the second pass ("knot" then
   // "not"); one edit is treated as the same word so the repeat is joined, not printed.
-  return a.length >= 3 && b.length >= 3 && withinOneEdit(a, b)
+  // Only longer words get that tolerance — on a short word one edit is a different
+  // word, not a misspelling.
+  return a.length >= 5 && b.length >= 5 && withinOneEdit(a, b)
+}
+
+/**
+ * The shortest word that may carry a single-word overlap on its own.
+ *
+ * One shared word is weak evidence: two separate utterances routinely end and
+ * begin on the same short function word ("how can I help you" then "you don't
+ * know"), and collapsing that pair silently deleted the word the person said —
+ * the vanished "you". A longer word is far more likely to be the recogniser
+ * re-reading the tail of the window ("hello world" then "world how are you"), so
+ * only a run of two or more words, or a single word this long, is treated as a
+ * re-read.
+ */
+const MIN_SINGLE_OVERLAP_LENGTH = 4
+
+/**
+ * The length at which one shared word is strong enough to be a re-read rather
+ * than a coincidence.
+ *
+ * Counting characters is only fair to scripts where a word is a few ASCII
+ * letters. A Bengali word carries the same meaning in far fewer characters —
+ * "আছি" is a whole word in three — so a fixed character floor never matched and
+ * the repeat was printed twice. Every non-ASCII word is therefore already long
+ * enough; the four-character floor still applies to ASCII, where it separates a
+ * real re-read ("world") from a shared function word ("you").
+ */
+function overlapFloor(word: string) {
+  return /[^\x00-\x7F]/.test(word) ? 1 : MIN_SINGLE_OVERLAP_LENGTH
 }
 
 /**
@@ -212,8 +242,9 @@ function sameWord(left: string, right: string) {
  * overlap: one tick says "hello world", the next says "world how are you". The old
  * code replaced the transcript with each answer, which is why a second sentence
  * wiped the first. This keeps the longer of two answers when one contains the
- * other, and otherwise joins them on their shared words — matching words fuzzily so
- * a re-read tail spelled differently is not appended a second time.
+ * other, and otherwise joins them on their shared words — a run of two or more,
+ * or one word long enough to be a re-read — so two sentences that merely touch on
+ * the same short word both survive.
  */
 export function mergeGrowing(previous: string, incoming: string): string {
   const before = previous.trim()
@@ -225,9 +256,12 @@ export function mergeGrowing(previous: string, incoming: string): string {
   if (before.startsWith(after)) return before
   // A rolling window often re-emits the tail it already reported, either on its own
   // ("world") or wrapped in the new sentence ("world how are you"). Treating those as
-  // a suffix or a contained run is what stops the last words being printed twice.
-  if (before.endsWith(after)) return before
+  // a suffix or a contained run is what stops the last words being printed twice. A
+  // one-word tail only counts when the word is long enough not to be a coincidence.
+  const afterIsTail = after.split(/\s+/).length >= 2 || after.length >= MIN_SINGLE_OVERLAP_LENGTH
+  if (afterIsTail && before.endsWith(after)) return before
   if (after.includes(before)) return after
+  if (afterIsTail && before.includes(after)) return before
 
   const a = before.split(/\s+/)
   const b = after.split(/\s+/)
@@ -235,7 +269,10 @@ export function mergeGrowing(previous: string, incoming: string): string {
   for (let overlap = most; overlap > 0; overlap--) {
     let matched = true
     for (let i = 0; i < overlap; i++) {
-      if (!sameWord(a[a.length - overlap + i], b[i])) {
+      const left = a[a.length - overlap + i]
+      const right = b[i]
+      const ok = overlap === 1 ? wordKey(left) === wordKey(right) && wordKey(left).length >= overlapFloor(wordKey(left)) : sameWord(left, right)
+      if (!ok) {
         matched = false
         break
       }

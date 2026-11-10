@@ -20,7 +20,6 @@ import { Tabs } from "@zyraxon-ai/ui/tabs"
 import { IconButton } from "@zyraxon-ai/ui/icon-button"
 import { Icon } from "@zyraxon-ai/ui/icon"
 import { TooltipKeybind } from "@zyraxon-ai/ui/tooltip"
-import { ResizeHandle } from "@zyraxon-ai/ui/resize-handle"
 import { Mark } from "@zyraxon-ai/ui/logo"
 import { IconButtonV2 } from "@zyraxon-ai/ui/v2/icon-button-v2"
 import { Icon as IconV2 } from "@zyraxon-ai/ui/v2/icon"
@@ -66,8 +65,8 @@ import { setSessionHandoff } from "@/pages/session/handoff"
 import { useSessionLayout } from "@/pages/session/session-layout"
 import { SessionFileBrowserTab, type SessionFileBrowserState } from "@/pages/session/v2/session-file-browser-tab"
 import { EcosystemPanel } from "@/pages/session/ecosystem-panel"
-import { getPreviewActive, setPreviewActiveState, getPreviewWidth, setPreviewWidthState } from "@/pages/session/preview-state"
-import { getBrowserActive, setBrowserActiveState, getBrowserWidth, setBrowserWidthState } from "@/pages/session/browser-state"
+import { getPreviewActive, setPreviewActiveState } from "@/pages/session/preview-state"
+import { getBrowserActive, setBrowserActiveState } from "@/pages/session/browser-state"
 
 
 type RenderDiff = (SnapshotFileDiff & { file: string }) | VcsFileDiff
@@ -93,6 +92,8 @@ export function SessionSidePanel(props: {
   reviewSnap: boolean
   size: Sizing
   stacked?: boolean
+  /** Upper bound for the preview/browser pane width, so it can never slide under
+      the terminal column when that column is open. */
 }) {
   const layout = useLayout()
   const settings = useSettings()
@@ -109,10 +110,8 @@ export function SessionSidePanel(props: {
   const shown = settings.visibility.fileTree
   const previewActive = getPreviewActive()
   const setPreviewActive = setPreviewActiveState
-  const previewWidth = getPreviewWidth()
   const browserActive = getBrowserActive()
   const setBrowserActive = setBrowserActiveState
-  const browserWidth = getBrowserWidth()
 
   const reviewOpen = createMemo(() => isDesktop() && view().reviewPanel.opened())
   const reviewTab = createMemo(() => isDesktop())
@@ -197,13 +196,11 @@ export function SessionSidePanel(props: {
   const showingPreview = createMemo(() => previewActive() || activeTab() === "preview")
   const showingBrowser = createMemo(() => browserActive() || activeTab() === "browser")
   const open = createMemo(() => reviewOpen() || showingPreview() || showingBrowser() || activeTab() === "allfiles")
-  const panelWidth = createMemo(() => {
-    if (!open()) return "0px"
-    if (showingPreview() || showingBrowser())
-      return `${showingBrowser() && !showingPreview() ? browserWidth() : previewWidth()}px`
-    return "auto"
-  })
-  const treeWidth = createMemo(() => "0px")
+  // Every tab — Review, Preview, Browser, All files — shares the one pane box
+  // and its one width. The chat panel's stored width is what sizes this pane, so
+  // the pane simply fills whatever the row leaves behind. A per-tab width made
+  // the pane jump and change size on every tab switch.
+  const panelWidth = createMemo(() => "auto")
 
   const fileTreeTab = () => layout.fileTree.tab()
 
@@ -338,7 +335,7 @@ export function SessionSidePanel(props: {
           "transition-[width] duration-[240ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[width] motion-reduce:transition-none":
             !props.size.active() && !props.reviewSnap,
           "rounded-[10px] shadow-[var(--v2-elevation-raised)] overflow-hidden": settings.general.newLayoutDesigns(),
-          "flex-1": reviewOpen(),
+          "flex-1": open(),
           "hidden": !open(),
         }}
         style={{ width: open() ? panelWidth() : "0px" }}
@@ -361,23 +358,8 @@ export function SessionSidePanel(props: {
                   "bg-background-base": !settings.general.newLayoutDesigns(),
                 }}
               >
-                {/* Preview resize handle — drag to make preview bigger/smaller */}
-                <Show when={showingPreview() || showingBrowser()}>
-                  <div onPointerDown={() => props.size.start()}>
-                    <ResizeHandle
-                      direction="horizontal"
-                      edge="start"
-                      size={showingBrowser() && !showingPreview() ? browserWidth() : previewWidth()}
-                      min={360}
-                      max={1200}
-                      onResize={(width) => {
-                        props.size.touch()
-                        if (showingBrowser() && !showingPreview()) setBrowserWidthState(width)
-                        else setPreviewWidthState(width)
-                      }}
-                    />
-                  </div>
-                </Show>
+                {/* The pane is sized by the chat panel's own resize handle in
+                    session.tsx, so every tab shares one box and one handle. */}
                 <div
                   class="size-full min-w-0 h-full"
                   classList={{

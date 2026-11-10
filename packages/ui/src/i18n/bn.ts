@@ -189,6 +189,8 @@ export const dict = {
   "ui.message.revertMessage": "বার্তা ফিরিয়ে আনুন",
   "ui.message.copyResponse": "উত্তর কপি করুন",
   "ui.message.copied": "কপি হয়েছে",
+  "ui.message.speakResponse": "উত্তর শোনান",
+  "ui.message.stopSpeaking": "শোনানো বন্ধ করুন",
   "ui.message.duration.seconds": "{{count}} সে",
   "ui.message.duration.minutesSeconds": "{{minutes}} মি {{seconds}} সে",
   "ui.message.interrupted": "বাধাভাবে সমাপ্ত",

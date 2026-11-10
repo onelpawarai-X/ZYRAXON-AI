@@ -36,7 +36,7 @@ import { Tabs } from "@zyraxon-ai/ui/tabs"
 import { ButtonV2 } from "@zyraxon-ai/ui/v2/button-v2"
 import { createAutoScroll } from "@zyraxon-ai/ui/hooks"
 import { previewSelectedLines } from "@zyraxon-ai/session-ui/pierre/selection-bridge"
-import { getPreviewActive, getPreviewWidth, setPreviewActiveState } from "@/pages/session/preview-state"
+import { getPreviewActive, setPreviewActiveState } from "@/pages/session/preview-state"
 import { getBrowserActive, setBrowserActiveState } from "@/pages/session/browser-state"
 import { Button } from "@zyraxon-ai/ui/button"
 import { showToast } from "@/utils/toast"
@@ -550,15 +550,18 @@ export default function Page() {
     }),
   )
   const previewActive = getPreviewActive()
-  const previewWidth = getPreviewWidth()
   const browserActive = getBrowserActive()
+  // The preview and browser tabs share the Review pane's box. Giving them a
+  // width of their own made the pane jump left and grow the moment one of those
+  // tabs was selected, which reads as a broken layout. The pane now always
+  // takes the row's leftover space and is sized by the chat panel's stored
+  // width, so every tab lands in exactly the same place.
   const sessionPanelWidth = createMemo(() => {
     const sideOpen = settings.general.newLayoutDesigns()
       ? desktopSessionResizeOpen()
       : desktopSidePanelOpen()
-    if (!sideOpen && !previewActive()) return "100%"
+    if (!sideOpen) return "100%"
     if (desktopSessionResizeOpen()) return `${sessionPanelResizedWidth()}px`
-    if (previewActive()) return `calc(100% - ${previewWidth()}px)`
     return `calc(100% - ${layout.fileTree.width()}px)`
   })
   const centered = createMemo(() => isDesktop() && (newSessionDesign() || !desktopReviewOpen()))

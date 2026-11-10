@@ -461,6 +461,9 @@ export function MessageTimeline(props: {
   // its own voice into the chat box or re-speaks itself while playing
   function setRenderTTSActive(active: boolean) {
     ;(window as any).__zyraxonTTSActiveRender = active
+    // The per-message speak button is rendered far from this speaker, so the
+    // playing/stopped state is broadcast rather than passed down.
+    window.dispatchEvent(new CustomEvent("zyraxon-tts-state", { detail: { active } }))
     const api = (window as any).api
     if (api?.setVoiceTTSActive) api.setVoiceTTSActive(active)
   }
@@ -601,6 +604,15 @@ export function MessageTimeline(props: {
 
   // Expose stopAllTTS globally
   ;(window as any).__stopTTS = stopAllTTS
+  // Per-message "speak" action. The message renderer owns the button, but the
+  // speaker itself is session-scoped state that lives here, so the renderer calls
+  // back into this hook rather than starting a second, overlapping speaker.
+  ;(window as any).__speakText = (text: string) => {
+    const trimmed = (text ?? "").trim()
+    if (!trimmed) return
+    stopAllTTS()
+    sendTTSText(trimmed)
+  }
 
   // ---------------------------------------------------------------------------
   // Streaming TTS playback — one MediaSource for the whole session
@@ -1352,6 +1364,7 @@ export function MessageTimeline(props: {
     window.removeEventListener("tts-stop", handleTTSStop)
     if (removeVoiceTTSAudio) removeVoiceTTSAudio()
     delete (window as any).__stopTTS
+    delete (window as any).__speakText
     stopAllTTS()
     // The context is created eagerly for latency, so it must be released here or
     // every session this view mounts would strand an audio thread.

@@ -14,7 +14,7 @@ import { KeybindV2 } from "@zyraxon-ai/ui/v2/keybind-v2"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
 
 import { LayoutRoute, useLayout } from "@/context/layout"
-import { setSidebarLocked, setSidebarPinned, sidebarLocked } from "@/pages/layout/sidebar-pin"
+import { setSidebarPinned, sidebarLocked, toggleSidebarLock } from "@/pages/layout/sidebar-pin"
 import { usePlatform } from "@/context/platform"
 import { useCommand } from "@/context/command"
 import { useLanguage } from "@/context/language"
@@ -495,29 +495,20 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
                       icon={<IconV2 name={layout.sidebar.opened() ? "sidebar-active" : "sidebar"} />}
                       onClick={(event) => {
                         if (event.detail > 1) return
-                        if (sidebarLocked()) {
-                          setSidebarLocked(false)
-                          setSidebarPinned(true)
-                          layout.sidebar.open()
-                          return
-                        }
+                        if (sidebarLocked()) return
                         const next = !layout.sidebar.opened()
                         setSidebarPinned(next)
                         if (next) layout.sidebar.open()
                         else layout.sidebar.close()
                       }}
                       onDblClick={() => {
-                        setSidebarLocked(true)
-                        setSidebarPinned(false)
-                        layout.sidebar.close()
+                        // Double-click locks the hover reveal off, or unlocks it.
+                        if (toggleSidebarLock()) layout.sidebar.close()
                       }}
                       onContextMenu={(event) => {
+                        // Right-click is the second way to lock/unlock.
                         event.preventDefault()
-                        const lock = !sidebarLocked()
-                        setSidebarLocked(lock)
-                        setSidebarPinned(!lock)
-                        if (lock) layout.sidebar.close()
-                        else layout.sidebar.open()
+                        if (toggleSidebarLock()) layout.sidebar.close()
                       }}
                       aria-label={language.t("command.sidebar.toggle")}
                       aria-expanded={layout.sidebar.opened()}

@@ -63,23 +63,46 @@ const emptyObjectSchema = (schema: Record<string, unknown>) =>
   (!isRecord(schema.properties) || Object.keys(schema.properties).length === 0) &&
   !schema.additionalProperties
 
+const isObjectNode = (schema: Record<string, unknown>) =>
+  schema.type === "object" || (schema.type === undefined && isRecord(schema.properties))
+
 const projectNode = (schema: unknown): Record<string, unknown> | undefined => {
   if (!isRecord(schema)) return undefined
   if (emptyObjectSchema(schema)) return undefined
+  const properties = isRecord(schema.properties)
+    ? Object.fromEntries(Object.entries(schema.properties).map(([key, value]) => [key, projectNode(value)]))
+    : undefined
+  // Gemini validates `required` strictly: it may only appear on an OBJECT node and
+  // every name must resolve to a property of that same node. A union variant that
+  // carries `required` but no `type`, or that names a sibling variant's property, is
+  // rejected outright ("only allowed for OBJECT type" / "property is not defined").
+  // Projecting `required` unconditionally — as the old code did — put it on those
+  // variants and every request that carried such a tool failed. Keep it only where
+  // Gemini accepts it, and drop an empty list rather than send `required: []`.
+  const requiredFields =
+    isObjectNode(schema) && Array.isArray(schema.required)
+      ? schema.required.filter((field) => typeof field === "string" && field in (properties ?? {}))
+      : []
+  const required = requiredFields.length > 0 ? requiredFields : undefined
+  const union = (value: unknown) =>
+    Array.isArray(value) ? value.map(projectNode).filter((node) => node !== undefined) : undefined
+  // A node that keeps `required` must declare itself an OBJECT: Gemini rejects
+  // `required` on any node without `type: "object"`, so an inferred object (one
+  // that only had `properties`) is promoted rather than sent bare.
+  const type = required
+    ? "object"
+    : Array.isArray(schema.type)
+      ? schema.type.filter((entry) => entry !== "null")[0]
+      : schema.type
   return Object.fromEntries(
     [
       ["description", schema.description],
-      ["required", schema.required],
+      ["required", required],
       ["format", schema.format],
-      ["type", Array.isArray(schema.type) ? schema.type.filter((type) => type !== "null")[0] : schema.type],
+      ["type", type],
       ["nullable", Array.isArray(schema.type) && schema.type.includes("null") ? true : undefined],
       ["enum", schema.const !== undefined ? [schema.const] : schema.enum],
-      [
-        "properties",
-        isRecord(schema.properties)
-          ? Object.fromEntries(Object.entries(schema.properties).map(([key, value]) => [key, projectNode(value)]))
-          : undefined,
-      ],
+      ["properties", properties],
       [
         "items",
         Array.isArray(schema.items)
@@ -88,9 +111,9 @@ const projectNode = (schema: unknown): Record<string, unknown> | undefined => {
             ? undefined
             : projectNode(schema.items),
       ],
-      ["allOf", Array.isArray(schema.allOf) ? schema.allOf.map(projectNode) : undefined],
-      ["anyOf", Array.isArray(schema.anyOf) ? schema.anyOf.map(projectNode) : undefined],
-      ["oneOf", Array.isArray(schema.oneOf) ? schema.oneOf.map(projectNode) : undefined],
+      ["allOf", union(schema.allOf)],
+      ["anyOf", union(schema.anyOf)],
+      ["oneOf", union(schema.oneOf)],
       ["minLength", schema.minLength],
     ].filter((entry) => entry[1] !== undefined),
   )

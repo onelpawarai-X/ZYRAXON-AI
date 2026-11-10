@@ -213,9 +213,49 @@ export interface MessagePartProps {
   autoplayAudio?: boolean
 }
 
+function MessageSpeakButton(props: { text: string; useV2?: boolean }) {
+  const i18n = useI18n()
+  const [speaking, setSpeaking] = createSignal(false)
+  const click = () => {
+    if (speaking()) {
+      ;(window as any).__stopTTS?.()
+      setSpeaking(false)
+      return
+    }
+    const speak = (window as any).__speakText as ((text: string) => void) | undefined
+    if (!speak) return
+    // Starting playback stops whatever was speaking first, which broadcasts a
+    // "stopped" state; claim the speaking state after that so the click is not
+    // immediately undone by its own stop.
+    speak(props.text)
+    setSpeaking(true)
+  }
+  onMount(() => {
+    const handler = (event: Event) => {
+      if (!(event as CustomEvent<{ active?: boolean }>).detail?.active) setSpeaking(false)
+    }
+    window.addEventListener("zyraxon-tts-state", handler)
+    onCleanup(() => window.removeEventListener("zyraxon-tts-state", handler))
+  })
+  const label = () => (speaking() ? i18n.t("ui.message.stopSpeaking") : i18n.t("ui.message.speakResponse"))
+  return (
+    <MessageActionButton
+      icon={speaking() ? "speaker-off" : "speaker"}
+      label={label()}
+      useV2={props.useV2}
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={(event) => {
+        event.stopPropagation()
+        click()
+      }}
+      aria-label={label()}
+    />
+  )
+}
+
 function MessageActionButton(
   props: Pick<ComponentProps<"button">, "disabled" | "onMouseDown" | "onClick" | "aria-label"> & {
-    icon: "check" | "copy" | "reset"
+    icon: "check" | "copy" | "reset" | "speaker" | "speaker-off"
     label: JSX.Element
     useV2?: boolean
   },
@@ -2054,6 +2094,7 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
         </div>
         <Show when={showCopy()}>
           <div data-slot="text-part-copy-wrapper" data-interrupted={interrupted() ? "" : undefined}>
+            <MessageSpeakButton text={text()} useV2={props.useV2Actions} />
             <MessageActionButton
               icon={copied() ? "check" : "copy"}
               label={copied() ? i18n.t("ui.message.copied") : i18n.t("ui.message.copyResponse")}
@@ -2087,6 +2128,11 @@ PART_MAPPING["reasoning"] = function ReasoningPartDisplay(props) {
       <div data-component="reasoning-part" data-timeline-part-id={part().id}>
         <Show when={streaming()} fallback={<Markdown text={text()} cacheKey={part().id} streaming={false} />}>
           <PacedMarkdown text={text()} cacheKey={part().id} streaming={streaming()} />
+        </Show>
+        <Show when={!streaming()}>
+          <div data-slot="text-part-copy-wrapper">
+            <MessageSpeakButton text={text()} useV2={props.useV2Actions} />
+          </div>
         </Show>
       </div>
     </Show>

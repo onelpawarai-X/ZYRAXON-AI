@@ -1,14 +1,44 @@
 /* Copyright (c) 2026 onelpawarai. All rights reserved. */
 /* ZYRAXON session dock — a living, animated tab well for the left sidebar.
-   The border is a slowly orbiting conic gradient; the body is swept by a
-   scanline; active rows breathe; the count badge pulses. */
+   Colours come from the theme tokens so the dock reads correctly in both the
+   light and dark schemes. The orbiting border and scanline stay subtle: the
+   hover state used to flood the row with saturated blue, which made the whole
+   panel look darker than the rest of the UI. */
+
+:root {
+  --dock-accent: #22d3ee;
+  --dock-accent-soft: rgba(34, 211, 238, 0.05);
+  --dock-accent-border: rgba(34, 211, 238, 0.2);
+  --dock-surface-1: var(--v2-background-bg-layer-01, #101a26);
+  --dock-surface-2: var(--v2-background-bg-layer-02, #16222f);
+  --dock-text: var(--v2-text-text-base, #e2e8f0);
+  --dock-text-muted: var(--v2-text-text-muted, #94a3b8);
+  --dock-text-faint: var(--v2-text-text-faint, #64748b);
+  --dock-hover: color-mix(in oklab, var(--v2-text-text-base, #e2e8f0) 6%, transparent);
+  --dock-hover-border: color-mix(in oklab, var(--v2-text-text-base, #e2e8f0) 12%, transparent);
+  --dock-fade: var(--v2-background-bg-layer-01, #101a26);
+}
+
+[data-color-scheme="light"] {
+  --dock-accent: #0891b2;
+  --dock-accent-soft: rgba(8, 145, 178, 0.05);
+  --dock-accent-border: rgba(8, 145, 178, 0.22);
+  --dock-surface-1: var(--v2-background-bg-layer-01, #ffffff);
+  --dock-surface-2: var(--v2-background-bg-layer-02, #f6f7f9);
+  --dock-text: var(--v2-text-text-base, #1f2937);
+  --dock-text-muted: var(--v2-text-text-muted, #6b7280);
+  --dock-text-faint: var(--v2-text-text-faint, #9ca3af);
+  --dock-hover: color-mix(in oklab, var(--v2-text-text-base, #1f2937) 5%, transparent);
+  --dock-hover-border: color-mix(in oklab, var(--v2-text-text-base, #1f2937) 10%, transparent);
+  --dock-fade: var(--v2-background-bg-layer-01, #ffffff);
+}
 
 .session-dock {
   position: relative;
-  border-radius: 18px;
-  padding: 1.5px;
+  border-radius: 16px;
+  padding: 1px;
   overflow: hidden;
-  background: rgba(34, 211, 238, 0.08);
+  background: var(--dock-accent-soft);
   isolation: isolate;
 }
 
@@ -23,18 +53,19 @@
   background: conic-gradient(
     from 0deg,
     transparent 0deg,
-    rgba(34, 211, 238, 0.95) 34deg,
-    rgba(103, 232, 249, 0.35) 58deg,
+    color-mix(in oklab, var(--dock-accent) 55%, transparent) 34deg,
+    color-mix(in oklab, var(--dock-accent) 20%, transparent) 58deg,
     transparent 96deg,
     transparent 158deg,
-    rgba(192, 38, 211, 0.9) 196deg,
-    rgba(217, 70, 239, 0.3) 224deg,
+    color-mix(in oklab, var(--dock-accent) 45%, transparent) 196deg,
+    color-mix(in oklab, var(--dock-accent) 18%, transparent) 224deg,
     transparent 262deg,
     transparent 318deg,
-    rgba(52, 211, 153, 0.85) 344deg,
+    color-mix(in oklab, var(--dock-accent) 40%, transparent) 344deg,
     transparent 360deg
   );
-  animation: session-dock-orbit 6s linear infinite;
+  opacity: 0.7;
+  animation: session-dock-orbit 8s linear infinite;
   z-index: -1;
 }
 
@@ -42,22 +73,18 @@
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: 17px;
-  box-shadow:
-    0 0 26px rgba(34, 211, 238, 0.12),
-    0 0 54px rgba(192, 38, 211, 0.08),
-    inset 0 0 20px rgba(34, 211, 238, 0.05);
+  border-radius: 15px;
+  box-shadow: 0 0 18px var(--dock-accent-soft);
   pointer-events: none;
   animation: session-dock-breathe 3.2s ease-in-out infinite;
 }
 
 .session-dock-inner {
   position: relative;
-  border-radius: 16.5px;
+  border-radius: 15px;
   background:
-    radial-gradient(130% 90% at 12% 0%, rgba(34, 211, 238, 0.1), transparent 55%),
-    radial-gradient(120% 100% at 100% 100%, rgba(192, 38, 211, 0.1), transparent 55%),
-    linear-gradient(165deg, #0a1420 0%, #0d1b2c 48%, #0a101c 100%);
+    radial-gradient(130% 90% at 12% 0%, var(--dock-accent-soft), transparent 55%),
+    linear-gradient(165deg, var(--dock-surface-1) 0%, var(--dock-surface-2) 100%);
   overflow: hidden;
 }
 
@@ -70,11 +97,11 @@
   background: linear-gradient(
     to bottom,
     transparent,
-    rgba(103, 232, 249, 0.14) 35%,
-    rgba(216, 180, 254, 0.12) 65%,
+    color-mix(in oklab, var(--dock-accent) 8%, transparent) 35%,
+    color-mix(in oklab, var(--dock-accent) 6%, transparent) 65%,
     transparent
   );
-  animation: session-dock-scan 3.8s ease-in-out infinite;
+  animation: session-dock-scan 5s ease-in-out infinite;
   pointer-events: none;
   z-index: 1;
 }
@@ -86,26 +113,21 @@
   align-items: center;
   gap: 8px;
   padding: 9px 11px 7px;
-  border-bottom: 1px solid rgba(103, 232, 249, 0.1);
+  border-bottom: 1px solid var(--dock-hover-border);
 }
 
 .session-dock-header-icon {
-  color: #67e8f9;
-  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.65));
-  animation: session-dock-icon-flicker 4.6s steps(1, end) infinite;
+  color: var(--dock-accent);
+  opacity: 0.9;
+  animation: session-dock-icon-flicker 5.2s steps(1, end) infinite;
 }
 
 .session-dock-title {
   font-size: 9.5px;
-  font-weight: 800;
-  letter-spacing: 0.22em;
+  font-weight: 700;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  background: linear-gradient(90deg, #67e8f9 0%, #e879f9 22%, #a5f3fc 40%, #67e8f9 60%);
-  background-size: 240% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: session-dock-shimmer 2.6s linear infinite;
+  color: var(--dock-text-muted);
   white-space: nowrap;
 }
 
@@ -118,12 +140,11 @@
   justify-content: center;
   border-radius: 999px;
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: #040d14;
-  background: linear-gradient(120deg, #22d3ee, #34d399);
-  box-shadow: 0 0 12px rgba(34, 211, 238, 0.45);
-  animation: session-dock-count-pulse 2.2s ease-in-out infinite;
+  color: var(--dock-surface-1);
+  background: color-mix(in oklab, var(--dock-accent) 30%, transparent);
+  border: 1px solid var(--dock-accent-border);
 }
 
 .session-scroll-wrap {
@@ -141,7 +162,7 @@
   flex-direction: column;
   gap: 5px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(34, 211, 238, 0.45) transparent;
+  scrollbar-color: var(--dock-accent-border) transparent;
 }
 
 .session-scroll::-webkit-scrollbar {
@@ -154,12 +175,11 @@
 
 .session-scroll::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: linear-gradient(rgba(34, 211, 238, 0.75), rgba(192, 38, 211, 0.6));
-  box-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
+  background: var(--dock-accent-border);
 }
 
 .session-scroll::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(rgba(103, 232, 249, 0.95), rgba(217, 70, 239, 0.8));
+  background: color-mix(in oklab, var(--dock-accent) 45%, transparent);
 }
 
 .session-scroll-fade {
@@ -173,12 +193,12 @@
 
 .session-scroll-fade-top {
   top: 0;
-  background: linear-gradient(to bottom, #0b1524 8%, transparent);
+  background: linear-gradient(to bottom, var(--dock-fade) 8%, transparent);
 }
 
 .session-scroll-fade-bottom {
   bottom: 0;
-  background: linear-gradient(to top, #0a101c 8%, transparent);
+  background: linear-gradient(to top, var(--dock-fade) 8%, transparent);
 }
 
 .session-item {
@@ -205,19 +225,18 @@
   transition:
     background 160ms ease,
     border-color 160ms ease,
-    box-shadow 260ms ease,
     transform 160ms ease;
 }
 
 .session-item-main:hover {
-  background: rgba(34, 211, 238, 0.07);
-  border-color: rgba(103, 232, 249, 0.18);
+  background: var(--dock-hover);
+  border-color: var(--dock-hover-border);
   transform: translateX(2px);
 }
 
 .session-item-main:focus-visible {
-  border-color: rgba(103, 232, 249, 0.55);
-  box-shadow: 0 0 0 1px rgba(103, 232, 249, 0.55), 0 0 18px rgba(34, 211, 238, 0.25);
+  border-color: var(--dock-accent-border);
+  box-shadow: 0 0 0 1px var(--dock-accent-border);
 }
 
 .session-item-rail {
@@ -228,37 +247,30 @@
   width: 3px;
   border-radius: 3px;
   background: transparent;
-  transition: background 200ms ease, box-shadow 200ms ease;
+  transition: background 200ms ease;
 }
 
 .session-item[data-active="true"] .session-item-main {
-  background:
-    linear-gradient(90deg, rgba(34, 211, 238, 0.16), rgba(34, 211, 238, 0.05) 46%, rgba(192, 38, 211, 0.12));
-  border-color: rgba(103, 232, 249, 0.4);
-  box-shadow:
-    0 0 22px rgba(34, 211, 238, 0.24),
-    inset 0 0 16px rgba(34, 211, 238, 0.08);
+  background: var(--dock-accent-soft);
+  border-color: var(--dock-accent-border);
 }
 
 .session-item[data-active="true"] .session-item-rail {
-  background: linear-gradient(to bottom, #22d3ee, #a78bfa);
-  box-shadow: 0 0 12px rgba(34, 211, 238, 0.8);
-  animation: session-rail-breathe 1.7s ease-in-out infinite;
+  background: var(--dock-accent);
 }
 
 .session-item-icon {
   flex-shrink: 0;
-  color: #64748b;
-  transition: color 180ms ease, filter 180ms ease;
+  color: var(--dock-text-faint);
+  transition: color 180ms ease;
 }
 
 .session-item[data-active="true"] .session-item-icon {
-  color: #22d3ee;
-  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.7));
+  color: var(--dock-accent);
 }
 
 .session-item:hover .session-item-icon {
-  color: #a5f3fc;
+  color: var(--dock-accent);
 }
 
 .session-item-text {
@@ -267,15 +279,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 550;
   letter-spacing: 0.01em;
-  color: #cbd5e1;
+  color: var(--dock-text-muted);
 }
 
 .session-item[data-active="true"] .session-item-text {
-  color: #f0fdff;
-  text-shadow: 0 0 14px rgba(34, 211, 238, 0.45);
+  color: var(--dock-text);
 }
 
 .session-item-kbd {
@@ -287,9 +298,9 @@
   font-weight: 700;
   padding: 1px 5px;
   border-radius: 4px;
-  border: 1px solid rgba(103, 232, 249, 0.3);
-  color: #67e8f9;
-  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid var(--dock-hover-border);
+  color: var(--dock-text-muted);
+  background: var(--dock-hover);
   font-family: ui-monospace, monospace;
 }
 
@@ -310,7 +321,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  color: #64748b;
+  color: var(--dock-text-faint);
   opacity: 0;
   transition: opacity 140ms ease, color 140ms ease, background 140ms ease;
 }
@@ -321,8 +332,8 @@
 }
 
 .session-item-close:hover {
-  color: #fda4af;
-  background: rgba(244, 63, 94, 0.14);
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.12);
 }
 
 .session-empty {
@@ -331,38 +342,33 @@
   align-items: center;
   gap: 6px;
   padding: 18px 10px 14px;
-  color: #475569;
   text-align: center;
 }
 
 .session-empty-icon {
-  color: #164e63;
-  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.35));
-  animation: session-dock-breathe 2.6s ease-in-out infinite;
+  color: var(--dock-text-faint);
+  opacity: 0.7;
+  animation: session-dock-breathe 3s ease-in-out infinite;
 }
 
 .session-empty p {
   font-size: 10.5px;
   font-weight: 600;
-  color: #7c8ea6;
+  color: var(--dock-text-muted);
 }
 
 .session-empty span {
   font-size: 8.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #33475e;
+  color: var(--dock-text-faint);
 }
 
-/* Rail Home button — lit cyan while on the home route */
+/* Rail Home button — lit accent while on the home route */
 .sidebar-home-active {
-  color: #22d3ee !important;
+  color: var(--dock-accent) !important;
   border-radius: 12px;
-  background: rgba(34, 211, 238, 0.09);
-  box-shadow:
-    0 0 20px rgba(34, 211, 238, 0.38),
-    inset 0 0 12px rgba(34, 211, 238, 0.16);
-  animation: session-dock-breathe 2.4s ease-in-out infinite;
+  background: var(--dock-accent-soft);
 }
 
 /* Home row inside the expanded sidebar. The rail carries no Home button: the
@@ -375,21 +381,20 @@
   width: 100%;
   padding: 6px 8px;
   border-radius: 10px;
-  color: #9fb3c8;
+  color: var(--dock-text-muted);
   transition:
     color 140ms ease,
     background 140ms ease;
 }
 
 .sidebar-home-row:hover {
-  color: #dbeafe;
-  background: rgba(255, 255, 255, 0.04);
+  color: var(--dock-text);
+  background: var(--dock-hover);
 }
 
 .sidebar-home-row[data-active="true"] {
-  color: #22d3ee;
-  background: rgba(34, 211, 238, 0.1);
-  box-shadow: inset 0 0 12px rgba(34, 211, 238, 0.14);
+  color: var(--dock-accent);
+  background: var(--dock-accent-soft);
 }
 
 .sidebar-home-row-icon {
@@ -415,7 +420,70 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #4b5f76;
+  color: var(--dock-text-faint);
+}
+
+/* New session — the sidebar's primary action. Solid accent so it reads as the
+   one filled control in the panel. */
+.sidebar-new-session {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 9px;
+  color: var(--dock-surface-1);
+  background: color-mix(in oklab, var(--dock-accent) 78%, transparent);
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.sidebar-new-session:hover {
+  background: var(--dock-accent);
+}
+
+.sidebar-new-session:active {
+  transform: scale(0.98);
+}
+
+.sidebar-new-session-label {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Lock button — outlined, quiet until locked. */
+.sidebar-lock-button {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  border: 1px solid var(--dock-hover-border);
+  color: var(--dock-text-muted);
+  transition: color 140ms ease, background 140ms ease, border-color 140ms ease;
+}
+
+.sidebar-lock-button:hover {
+  color: var(--dock-text);
+  background: var(--dock-hover);
+}
+
+.sidebar-lock-button[data-locked] {
+  color: var(--dock-accent);
+  border-color: var(--dock-accent-border);
+  background: var(--dock-accent-soft);
+}
+
+.sidebar-rail {
+  flex-shrink: 0;
 }
 
 @keyframes session-dock-orbit {
@@ -442,45 +510,13 @@
   }
 }
 
-@keyframes session-dock-shimmer {
-  0% {
-    background-position: 0% 50%;
-  }
-  100% {
-    background-position: 240% 50%;
-  }
-}
-
 @keyframes session-dock-breathe {
   0%,
   100% {
-    opacity: 0.65;
+    opacity: 0.6;
   }
   50% {
     opacity: 1;
-  }
-}
-
-@keyframes session-dock-count-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 10px rgba(34, 211, 238, 0.4);
-    transform: scale(1);
-  }
-  50% {
-    box-shadow: 0 0 18px rgba(52, 211, 153, 0.55);
-    transform: scale(1.08);
-  }
-}
-
-@keyframes session-rail-breathe {
-  0%,
-  100% {
-    opacity: 0.75;
-  }
-  50% {
-    opacity: 1;
-    box-shadow: 0 0 16px rgba(167, 139, 250, 0.85);
   }
 }
 

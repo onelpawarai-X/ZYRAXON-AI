@@ -12,6 +12,7 @@ import { KeybindV2 } from "@zyraxon-ai/ui/v2/keybind-v2"
 import { MenuV2 } from "@zyraxon-ai/ui/v2/menu-v2"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
 import { PromptInputV2MicButton } from "./mic-button"
+import { PromptDragOverlayV2 } from "@zyraxon-ai/ui/v2/prompt-drag-overlay-v2"
 import { AttachmentCardV2 } from "../attachment-card-v2"
 import { CommentCardV2 } from "../comment-card-v2"
 import { typeLabel } from "../../../components/message-file"
@@ -139,9 +140,7 @@ export function PromptInputV2(props: PromptInputV2Props) {
         onDrop={props.controller.onDrop}
       >
         <Show when={state.drag === "active"}>
-          <div class="pointer-events-none absolute inset-0 z-20 grid place-items-center rounded-xl bg-v2-background-bg-base/90 text-v2-text-text-base">
-            Drop files to attach
-          </div>
+          <PromptDragOverlayV2 kind="image" label="Drop files to attach" />
         </Show>
 
         <Show when={state.mode === "normal"}>

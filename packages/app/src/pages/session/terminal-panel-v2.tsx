@@ -189,6 +189,7 @@ export function TerminalPanelV2() {
           <ResizeHandle
             class="!relative !inset-auto !h-full"
             direction="horizontal"
+            edge="start"
             size={layout.terminal.width()}
             min={260}
             max={typeof window === "undefined" ? 900 : window.innerWidth * 0.7}

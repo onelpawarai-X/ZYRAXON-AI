@@ -219,6 +219,14 @@ const icons = {
     viewBox: "0 0 24 24",
     body: `<rect x="8" y="2" width="8" height="12" rx="4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5 11a7 7 0 0 0 14 0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="12" y1="18" x2="12" y2="22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="9" y1="22" x2="15" y2="22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
   },
+  speaker: {
+    viewBox: "0 0 20 20",
+    body: `<path d="M3.2 7.6h2.7l3.4-2.8v10.4L5.9 12.4H3.2V7.6Z" fill="currentColor"/><path d="M12.1 7.2a4.4 4.4 0 0 1 0 5.6M14.6 4.9a7.6 7.6 0 0 1 0 10.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
+  },
+  "speaker-off": {
+    viewBox: "0 0 20 20",
+    body: `<path d="M3.2 7.6h2.7l3.4-2.8v10.4L5.9 12.4H3.2V7.6Z" fill="currentColor"/><path d="M12.4 8.2l4.4 3.6M16.8 8.2l-4.4 3.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
+  },
   loader: {
     viewBox: "0 0 20 20",
     body: `<path d="M10 2.5V5.5M14.5 5.5L12.5 7.5M17.5 10H14.5M14.5 14.5L12.5 12.5M10 17.5V14.5M5.5 14.5L7.5 12.5M2.5 10H5.5M5.5 5.5L7.5 7.5" stroke="currentColor" stroke-linecap="square"/>`,
