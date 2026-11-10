@@ -8,8 +8,7 @@ import { VOICE_LANGUAGES } from "./reply-language"
 import { createRealtimeStt, type RealtimeStt, type SttState } from "./stt-client"
 
 export type MicButtonProps = {
-  onTranscript: (text: string, lang: string) => void
-  onLiveText?: (text: string) => void
+  onTranscript: (text: string) => void
   onError?: (error: string) => void
   disabled?: boolean
   language?: string
@@ -17,10 +16,12 @@ export type MicButtonProps = {
 }
 
 /**
- * The composer mic with a language picker beside it. The picked language is both
- * the one the recogniser listens for and the one the reply comes back in, so what
- * is spoken lands in the chat box in the language that was chosen. "Auto-Detect"
- * keeps the endpoint's own detection for anyone who does not want to pick.
+ * The composer mic with a language picker beside it. One click records, the next
+ * click sends the recording: the button turns into a spinner while the server
+ * transcribes, and the finished text appears in the box in one piece. The picked
+ * language is both the one the recogniser listens for and the one the reply comes
+ * back in, so what is spoken lands in the chat box in the language that was
+ * chosen. "Auto-Detect" lets the recogniser pick the language from the recording.
  */
 export function PromptInputV2MicButton(props: MicButtonProps) {
   const [state, setState] = createSignal<SttState>("idle")
@@ -47,11 +48,8 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
 
   const startListening = async () => {
     disposeStt()
-    // Re-opening the mic must never replay what was said in a previous session.
-    props.onLiveText?.("")
     const client = createRealtimeStt({
-      onLive: (text) => props.onLiveText?.(text),
-      onFinal: (text) => props.onTranscript(text, selectedLang()),
+      onFinal: (text) => props.onTranscript(text),
       onError: (message) => props.onError?.(message),
       onState: (next) => setState(next),
     })
@@ -73,6 +71,8 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
   const toggleMic = (e: MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    // While the recording is being transcribed the second click has already been
+    // spent, so the button ignores input until the text arrives.
     if (state() === "recording") void stopListening()
     else if (state() === "idle") void startListening()
   }
@@ -81,12 +81,15 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
     userChosen = true
     setSelectedLang(code)
     props.onLanguageChange?.(code)
-    // A change mid-sentence must reach the utterance being recorded now, so the
-    // client is told while it is live rather than only on the next start.
+    // The client reads the language when the recording is sent, so telling it now
+    // is enough for a change made while recording to apply to this utterance.
     stt?.setLanguage(code)
   }
 
   onCleanup(() => disposeStt())
+
+  const recording = () => state() === "recording"
+  const processing = () => state() === "processing"
 
   const langLabel = () =>
     VOICE_LANGUAGES.find((l) => l.code === selectedLang())?.label || "Auto-Detect"
@@ -128,23 +131,27 @@ export function PromptInputV2MicButton(props: MicButtonProps) {
       <TooltipV2
         placement="top"
         value={
-          state() === "recording"
-            ? "Recording... Click to stop"
-            : `Mic (${langLabel()}) — Click to record`
+          recording()
+            ? "Recording… click to send"
+            : processing()
+              ? "Transcribing…"
+              : `Mic (${langLabel()}) — Click to record`
         }
       >
         <IconButton
           data-action="prompt-mic"
           type="button"
-          disabled={props.disabled}
-          icon={state() === "recording" ? "mic-off" : "mic"}
-          variant={state() === "recording" ? "danger" : "ghost-muted"}
+          disabled={props.disabled || processing()}
+          icon={recording() ? "mic-off" : processing() ? "loader" : "mic"}
+          variant={recording() ? "danger" : "ghost-muted"}
           class={`size-7 rounded-md p-[6px] ${
-            state() === "recording"
+            recording()
               ? "animate-pulse text-red-500"
-              : "text-v2-icon-icon-muted"
+              : processing()
+                ? "animate-spin text-v2-icon-icon-accent"
+                : "text-v2-icon-icon-muted"
           }`}
-          aria-label={state() === "recording" ? "Stop recording" : "Start recording"}
+          aria-label={recording() ? "Send recording" : processing() ? "Transcribing" : "Start recording"}
           onClick={toggleMic}
         />
       </TooltipV2>

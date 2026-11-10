@@ -1,52 +1,38 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 /**
- * Real-time speech-to-text for the composer mic.
+ * Speech-to-text for the composer mic.
  *
- * The microphone is captured in this window and the audio is streamed to the
- * ZYRAXON public STT endpoint, which answers with text as the person speaks.
- * Nothing opens a second window and nothing runs on a local port.
+ * The mic records while it is on and transcribes the whole recording once, when
+ * it is switched off. One click starts the recording, the second click sends it
+ * and the box shows "processing" until the finished text arrives in one piece.
  *
- * The endpoint offers three ways in:
+ * The endpoint also offers a "rolling" mode that re-sends the last few seconds
+ * every tick and returns an `added` slice to append. It was tried and removed:
+ * the recogniser re-reads the window from scratch each tick, so its answers
+ * rewrite themselves mid-sentence, and every attempt to stitch them together —
+ * appending `added`, or folding the raw text on its shared words — either
+ * printed a sentence twice or dropped one. A single pass over the finished
+ * recording has none of that: the recogniser sees the whole utterance once, so
+ * what lands in the box is exactly what was said, in every language.
  *
- *   live    one long stream of PCM. It is the obvious fit, but the host buffers
- *           the request body, so `ready` only arrives once the speaker stops —
- *           measured at ~9s of dead air before the first word. Unusable.
- *   batch   one whole recording per call. Accurate, but nothing appears until
- *           the speaker is finished.
- *   rolling one small, complete window per tick. Each tick is a request the host
- *           passes straight through, so a tick measured ~0.5–1s. This is the
- *           only mode that is actually real-time here.
- *
- * So the mic keeps the last few seconds of PCM in a ring, re-sends that window
- * every tick, and paints the growing transcript.
- *
- * The endpoint re-reads the whole window on every tick, so the answers overlap:
- * one tick ends "…পূর্ণিমা" and the next begins "পূর্ণিমা ভালোবাসি…". The text a
- * tick returns is therefore the window's transcript, NOT a delta — `added` is
- * only the part the host thinks is new, and it re-emits whole re-reads after a
- * pause. Folding the raw `text` on its shared words is what keeps the transcript
- * correct; trusting `added` is what printed the tail twice.
- *
- * The endpoint does not detect language on its own. "Auto" is resolved here: the
- * first window is offered to a few likely languages and the one that answers most
- * confidently is locked in for the rest of the session. A language chosen from the
- * picker is locked immediately and never guessed.
+ * The endpoint does not detect language on its own. "Auto" is resolved here by
+ * offering the finished recording to a few likely languages at once and keeping
+ * the answer that came back most confidently. A language chosen from the picker
+ * is used directly and never guessed.
  */
 
 export const STT_ENDPOINT = "https://zyraxonai.lovable.app/api/public/stt"
 
 const SAMPLE_RATE = 16000
-const WINDOW_SECONDS = 10
-const TICK_MS = 3000
-const MIN_TICK_SAMPLES = SAMPLE_RATE * 0.4
+// A forgotten recording must not grow without bound; two minutes is far more
+// than any single dictation and caps the buffer at roughly 23 MB.
+const MAX_RECORD_SECONDS = 120
 
 export type SttState = "idle" | "recording" | "processing"
 
 export type SttHandlers = {
-  /** The transcript so far, repainted on every tick as it grows. */
-  onLive?: (text: string) => void
-  /** The settled transcript when the mic stops. */
+  /** The finished transcript, delivered once when the recording is sent. */
   onFinal?: (text: string) => void
   onError?: (message: string) => void
   onState?: (state: SttState) => void
@@ -57,8 +43,6 @@ export type SttHandlers = {
 type SttResponse = {
   success?: boolean
   text?: string
-  added?: string
-  committed?: string
   confidence?: number
   error?: string
 }
@@ -69,7 +53,7 @@ function clamp16(value: number) {
 }
 
 /** Float samples from the graph, resampled to the rate the endpoint wants. */
-function toInt16(input: Float32Array, fromRate: number, toRate = SAMPLE_RATE): Int16Array {
+export function toInt16(input: Float32Array, fromRate: number, toRate = SAMPLE_RATE): Int16Array {
   if (fromRate === toRate) {
     const out = new Int16Array(input.length)
     for (let i = 0; i < input.length; i++) out[i] = clamp16(input[i])
@@ -93,7 +77,7 @@ function toInt16(input: Float32Array, fromRate: number, toRate = SAMPLE_RATE): I
  * of parts because the DOM types require an ArrayBuffer-backed view, and an
  * Int16Array alone is not accepted as a BlobPart.
  */
-function encodeWav(pcm: Int16Array, rate = SAMPLE_RATE): ArrayBuffer {
+export function encodeWav(pcm: Int16Array, rate = SAMPLE_RATE): ArrayBuffer {
   const buffer = new ArrayBuffer(44 + pcm.length * 2)
   const view = new DataView(buffer)
   const ascii = (offset: number, text: string) => {
@@ -116,42 +100,16 @@ function encodeWav(pcm: Int16Array, rate = SAMPLE_RATE): ArrayBuffer {
   return buffer
 }
 
-/**
- * A window of recent audio. The mic produces frames faster than a tick consumes
- * them, so the buffer is bounded and the oldest audio is dropped rather than
- * growing without limit during a long dictation.
- */
-class PcmRing {
-  private data = new Int16Array(SAMPLE_RATE * 40)
-  private length = 0
-
-  push(chunk: Int16Array) {
-    if (chunk.length >= this.data.length) {
-      this.data.set(chunk.subarray(chunk.length - this.data.length))
-      this.length = this.data.length
-      return
-    }
-    if (this.length + chunk.length > this.data.length) {
-      const drop = this.length + chunk.length - this.data.length
-      this.data.copyWithin(0, drop, this.length)
-      this.length -= drop
-    }
-    this.data.set(chunk, this.length)
-    this.length += chunk.length
+/** Concatenate the recorded frames into the one buffer that gets sent. */
+export function concatFrames(chunks: Float32Array[]): Float32Array {
+  const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
+  const merged = new Float32Array(total)
+  let offset = 0
+  for (const chunk of chunks) {
+    merged.set(chunk, offset)
+    offset += chunk.length
   }
-
-  last(count: number): Int16Array {
-    const take = Math.min(count, this.length)
-    return this.data.slice(this.length - take, this.length)
-  }
-
-  get size() {
-    return this.length
-  }
-
-  clear() {
-    this.length = 0
-  }
+  return merged
 }
 
 /**
@@ -172,70 +130,6 @@ function autoCandidates(): string[] {
   return out.slice(0, 3)
 }
 
-/** Collapse runs of whitespace so word comparison is not defeated by spacing. */
-function normalizeText(text: string) {
-  return text.replace(/\s+/g, " ").trim()
-}
-
-/** How many trailing words two transcripts share, counting from the end. */
-function sharedTail(left: string[], right: string[]): number {
-  let count = 0
-  while (
-    count < left.length &&
-    count < right.length &&
-    left[left.length - 1 - count] === right[right.length - 1 - count]
-  ) {
-    count++
-  }
-  return count
-}
-
-/**
- * Fold a fresh rolling answer into the transcript already on screen.
- *
- * The rolling endpoint re-reads the last window every tick, so consecutive
- * answers overlap: one tick says "hello world", the next says "world how are
- * you". Replacing the transcript with each answer is what made a second sentence
- * wipe the first; joining them on the shared run keeps both.
- *
- * After a pause the same window is re-read and its answer can start mid-word
- * ("…ভালোবাসি তোমাকে আমি" then "বাসী তোমাকে আমি"), which shares no prefix with the
- * transcript but repeats its tail. Appending that printed the tail twice, so a
- * window whose tail is already the transcript's tail is treated as a re-read and
- * ignored instead.
- */
-export function mergeTranscript(previous: string, incoming: string): string {
-  const before = normalizeText(previous)
-  const after = normalizeText(incoming)
-  if (!before) return after
-  if (!after) return before
-  if (after === before) return before
-  if (after.startsWith(before)) return after
-  if (before.startsWith(after)) return before
-
-  const a = before.split(" ")
-  const b = after.split(" ")
-
-  const most = Math.min(a.length, b.length)
-  for (let overlap = most; overlap > 0; overlap--) {
-    let matched = true
-    for (let i = 0; i < overlap; i++) {
-      if (a[a.length - overlap + i] !== b[i]) {
-        matched = false
-        break
-      }
-    }
-    if (matched) return [...a, ...b.slice(overlap)].join(" ")
-  }
-
-  // A re-read after a pause: the window's tail is already the transcript's tail
-  // and only a word or two precedes it, so it carries no new speech.
-  const tail = sharedTail(a, b)
-  if (tail >= 2 && b.length - tail <= 2) return before
-
-  return `${before} ${after}`
-}
-
 export class RealtimeStt {
   private handlers: SttHandlers
   private ctx: AudioContext | null = null
@@ -243,15 +137,13 @@ export class RealtimeStt {
   private source: MediaStreamAudioSourceNode | null = null
   private processor: ScriptProcessorNode | null = null
   private sink: GainNode | null = null
-  private ring = new PcmRing()
-  private timer: ReturnType<typeof setInterval> | null = null
+  private chunks: Float32Array[] = []
+  private frames = 0
+  private nativeRate = SAMPLE_RATE
   private running = false
-  private disposed = false
-  private ticking = false
-  private transcript = ""
-  private language = "auto"
-  private locked: string | null = null
   private state: SttState = "idle"
+  private language = "auto"
+  private transcript = ""
 
   constructor(handlers: SttHandlers) {
     this.handlers = handlers
@@ -271,30 +163,6 @@ export class RealtimeStt {
     this.handlers.onState?.(state)
   }
 
-  /** The assistant's own voice is playing back; transcribing it would be echo. */
-  private assistantSpeaking() {
-    try {
-      return !!(window as any).__zyraxonTTSActiveRender
-    } catch {
-      return false
-    }
-  }
-
-  private async postRolling(pcm: Int16Array, language: string): Promise<SttResponse> {
-    const url =
-      `${STT_ENDPOINT}?mode=rolling` +
-      `&language=${encodeURIComponent(language)}` +
-      `&committed=${encodeURIComponent(this.transcript)}` +
-      `&window=${WINDOW_SECONDS}`
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": `audio/l16; rate=${SAMPLE_RATE}` },
-      body: pcm.buffer as ArrayBuffer,
-    })
-    if (!response.ok) throw new Error(`STT ${response.status}`)
-    return (await response.json()) as SttResponse
-  }
-
   private async postBatch(pcm: Int16Array, language: string): Promise<SttResponse> {
     const form = new FormData()
     form.append("file", new Blob([encodeWav(pcm)], { type: "audio/wav" }), "audio.wav")
@@ -304,10 +172,17 @@ export class RealtimeStt {
     return (await response.json()) as SttResponse
   }
 
-  /** Offer one window to the likely languages and keep the most confident. */
-  private async detectLanguage(pcm: Int16Array): Promise<string> {
+  /** One pass over the finished recording, in the chosen language or detected. */
+  private async transcribe(pcm: Int16Array): Promise<string> {
+    if (this.language !== "auto") {
+      const result = await this.postBatch(pcm, this.language)
+      return (result.text || "").trim()
+    }
     const candidates = autoCandidates()
-    if (candidates.length === 1) return candidates[0]
+    if (candidates.length === 1) {
+      const result = await this.postBatch(pcm, candidates[0])
+      return (result.text || "").trim()
+    }
     const attempts = await Promise.all(
       candidates.map(async (code) => {
         try {
@@ -318,67 +193,60 @@ export class RealtimeStt {
         }
       }),
     )
-    let best = candidates[0]
+    let best = ""
     let bestScore = -1
     for (const attempt of attempts) {
       if (!attempt.text) continue
       if (attempt.confidence > bestScore) {
         bestScore = attempt.confidence
-        best = attempt.code
+        best = attempt.text
       }
     }
     return best
   }
 
-  private apply(result: SttResponse) {
-    const incoming = (result.text || "").trim()
-    if (!incoming) return
-    const merged = mergeTranscript(this.transcript, incoming)
-    if (merged === this.transcript) return
-    this.transcript = merged
-    this.handlers.onLive?.(merged)
-  }
-
-  private async tick() {
-    if (!this.running || this.ticking) return
-    if (this.ring.size < MIN_TICK_SAMPLES) return
-    if (this.assistantSpeaking()) return
-    this.ticking = true
-    try {
-      const window = this.ring.last(SAMPLE_RATE * WINDOW_SECONDS)
-      if (!this.locked) this.locked = await this.detectLanguage(window)
-      const result = await this.postRolling(window, this.locked)
-      this.apply(result)
-    } catch {
-      // A dropped tick is not fatal — the next one re-sends the whole window.
-    } finally {
-      this.ticking = false
-    }
-  }
-
   private teardown() {
     if (this.processor) {
       this.processor.onaudioprocess = null
-      try { this.processor.disconnect() } catch {}
+      try {
+        this.processor.disconnect()
+      } catch {}
       this.processor = null
     }
-    if (this.source) { try { this.source.disconnect() } catch {}; this.source = null }
-    if (this.sink) { try { this.sink.disconnect() } catch {}; this.sink = null }
+    if (this.source) {
+      try {
+        this.source.disconnect()
+      } catch {}
+      this.source = null
+    }
+    if (this.sink) {
+      try {
+        this.sink.disconnect()
+      } catch {}
+      this.sink = null
+    }
     if (this.stream) {
-      for (const track of this.stream.getTracks()) { try { track.stop() } catch {} }
+      for (const track of this.stream.getTracks()) {
+        try {
+          track.stop()
+        } catch {}
+      }
       this.stream = null
     }
-    if (this.ctx) { try { void this.ctx.close() } catch {}; this.ctx = null }
-    this.ring.clear()
+    if (this.ctx) {
+      try {
+        void this.ctx.close()
+      } catch {}
+      this.ctx = null
+    }
   }
 
   async start(language: string): Promise<boolean> {
     if (this.running) return true
-    this.disposed = false
     this.language = language || "auto"
-    this.locked = this.language === "auto" ? null : this.language
     this.transcript = ""
-    this.ring.clear()
+    this.chunks = []
+    this.frames = 0
 
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
       this.handlers.onError?.("Microphone access is not available here.")
@@ -399,7 +267,11 @@ export class RealtimeStt {
 
     const Ctor: typeof AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext
     if (!Ctor) {
-      for (const track of stream.getTracks()) { try { track.stop() } catch {} }
+      for (const track of stream.getTracks()) {
+        try {
+          track.stop()
+        } catch {}
+      }
       this.handlers.onError?.("Audio capture is not available here.")
       this.setState("idle")
       return false
@@ -415,7 +287,10 @@ export class RealtimeStt {
     }
     this.ctx = ctx
     this.stream = stream
-    try { await ctx.resume() } catch {}
+    this.nativeRate = ctx.sampleRate
+    try {
+      await ctx.resume()
+    } catch {}
 
     const source = ctx.createMediaStreamSource(stream)
     const processor = ctx.createScriptProcessor(4096, 1, 1)
@@ -425,8 +300,11 @@ export class RealtimeStt {
     sink.gain.value = 0
 
     processor.onaudioprocess = (event) => {
+      if (this.frames >= this.nativeRate * MAX_RECORD_SECONDS) return
       const channel = event.inputBuffer.getChannelData(0)
-      this.ring.push(toInt16(channel, ctx.sampleRate))
+      // The graph reuses its buffer between callbacks, so the frame is copied.
+      this.chunks.push(new Float32Array(channel))
+      this.frames += channel.length
       let sum = 0
       for (let i = 0; i < channel.length; i++) sum += channel[i] * channel[i]
       this.handlers.onLevel?.(Math.min(1, Math.sqrt(sum / channel.length) * 4))
@@ -440,42 +318,53 @@ export class RealtimeStt {
     this.processor = processor
     this.sink = sink
     this.running = true
-    this.timer = setInterval(() => void this.tick(), TICK_MS)
     return true
   }
 
+  /**
+   * Send the finished recording and wait for the transcript. The state becomes
+   * "processing" for the whole round trip so the button can say so, and only
+   * then does the finished text arrive.
+   */
   async stop(): Promise<void> {
     if (!this.running) return
     this.running = false
-    if (this.timer) { clearInterval(this.timer); this.timer = null }
-
-    // Stop the capture and the indicator at once, and settle with the text the
-    // ticks already painted. Re-transcribing the whole recording here re-read the
-    // audio the ticks had already turned into text, and appending that answer is
-    // what duplicated the tail; there is nothing a final batch call can add.
+    const chunks = this.chunks
+    const rate = this.nativeRate
     this.teardown()
-    this.setState("idle")
-    if (this.transcript) this.handlers.onFinal?.(this.transcript)
+
+    if (!chunks.length) {
+      this.setState("idle")
+      return
+    }
+
+    this.setState("processing")
+    try {
+      const pcm = toInt16(concatFrames(chunks), rate)
+      const text = await this.transcribe(pcm)
+      this.transcript = text
+      if (text) this.handlers.onFinal?.(text)
+    } catch {
+      this.handlers.onError?.("Could not transcribe the recording.")
+    } finally {
+      this.chunks = []
+      this.frames = 0
+      this.setState("idle")
+    }
   }
 
   /**
-   * Switching language mid-sentence has to take effect on the utterance being
-   * recorded now, not the next one. Re-locking is enough: the next tick re-sends
-   * the whole window, so the new recogniser re-reads it immediately.
+   * The language is only read when the recording is sent, so a change made while
+   * recording simply applies to that utterance — no re-locking or re-read needed.
    */
   setLanguage(language: string) {
     this.language = language || "auto"
-    if (this.language !== "auto") {
-      this.locked = this.language
-      return
-    }
-    if (this.running) this.locked = null
   }
 
   dispose() {
-    if (this.timer) { clearInterval(this.timer); this.timer = null }
     this.running = false
-    this.disposed = true
+    this.chunks = []
+    this.frames = 0
     this.teardown()
   }
 }

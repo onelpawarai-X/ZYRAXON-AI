@@ -14,6 +14,19 @@ const enabledByExperimental = (name: string) =>
   Config.all({ experimental, enabled: Config.boolean(name).pipe(Config.option) }).pipe(
     Config.map((flags) => Option.getOrElse(flags.enabled, () => flags.experimental)),
   )
+/**
+ * A shipped feature that is on unless its variable switches it off.
+ *
+ * `enabledByExperimental` defaults these to the experimental master switch, which
+ * left background work dark for every install that had not set the master
+ * variable. Background work is expected to simply run, so its variable now opts
+ * out rather than opting in.
+ */
+const enabledByDefault = (name: string) =>
+  Config.boolean(name).pipe(
+    Config.option,
+    Config.map((value) => Option.getOrElse(value, () => true)),
+  )
 
 export class Service extends ConfigService.Service<Service>()("@zyraxon/RuntimeFlags", {
   autoShare: bool("ZYRAXON_AUTO_SHARE"),
@@ -42,7 +55,7 @@ export class Service extends ConfigService.Service<Service>()("@zyraxon/RuntimeF
   enableExperimentalModels: bool("ZYRAXON_ENABLE_EXPERIMENTAL_MODELS"),
   enableQuestionTool: bool("ZYRAXON_ENABLE_QUESTION_TOOL"),
   experimentalReferences: enabledByExperimental("ZYRAXON_EXPERIMENTAL_REFERENCES"),
-  experimentalBackgroundSubagents: enabledByExperimental("ZYRAXON_EXPERIMENTAL_BACKGROUND_SUBAGENTS"),
+  experimentalBackgroundSubagents: enabledByDefault("ZYRAXON_EXPERIMENTAL_BACKGROUND_SUBAGENTS"),
   experimentalLspTy: bool("ZYRAXON_EXPERIMENTAL_LSP_TY"),
   experimentalLspTool: enabledByExperimental("ZYRAXON_EXPERIMENTAL_LSP_TOOL"),
   experimentalOxfmt: enabledByExperimental("ZYRAXON_EXPERIMENTAL_OXFMT"),
