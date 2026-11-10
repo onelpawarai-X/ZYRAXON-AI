@@ -1,39 +1,62 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 // The rolling recogniser re-reads the last window every tick, so consecutive
-// answers overlap. Folding them must join the shared words instead of replacing
-// the transcript, or the second sentence erases the first.
+// answers overlap: one tick ends "…পূর্ণিমা" and the next begins "পূর্ণিমা
+// ভালোবাসি…". Folding them must join the shared words instead of replacing the
+// transcript, and a re-read after a pause (which starts mid-word) must not be
+// appended again.
 
 import { describe, expect, test } from "bun:test"
-import { mergeGrowing } from "./stt-client"
+import { mergeTranscript } from "./stt-client"
 
-describe("mergeGrowing", () => {
-  test("joins two sentences on a shared ASCII word", () => {
-    expect(mergeGrowing("hello world", "world how are you")).toBe("hello world how are you")
+describe("mergeTranscript", () => {
+  test("grows when the new answer extends the old one", () => {
+    expect(mergeTranscript("তোমার", "তোমার চোখে")).toBe("তোমার চোখে")
+    expect(mergeTranscript("hello world", "hello world how are you")).toBe("hello world how are you")
   })
 
-  test("joins two sentences on a shared Bengali word", () => {
-    // A Bengali word is a whole word in three characters; a fixed four-character
-    // floor never matched it and the repeat was printed twice.
-    expect(mergeGrowing("আমি ভালো আছি", "আছি তুমি কেমন")).toBe("আমি ভালো আছি তুমি কেমন")
-  })
-
-  test("does not collapse a short shared function word into a deletion", () => {
-    expect(mergeGrowing("how can I help you", "you don't know")).toBe("how can I help you you don't know")
+  test("joins two ticks on their shared run", () => {
+    expect(mergeTranscript("তোমার চোখে আকাশ আমার", "আমার চাঁদ যেন পূর্ণিমা")).toBe(
+      "তোমার চোখে আকাশ আমার চাঁদ যেন পূর্ণিমা",
+    )
+    expect(mergeTranscript("hello world", "world how are you")).toBe("hello world how are you")
   })
 
   test("keeps the longer answer when one contains the other", () => {
-    expect(mergeGrowing("hello world", "world")).toBe("hello world")
+    expect(mergeTranscript("hello world", "world")).toBe("hello world")
+  })
+
+  test("ignores a re-read whose tail is already on screen", () => {
+    const settled = "তোমার চোখে আকাশ আমার চাঁদ যেন পূর্ণিমা ভালোবাসি তোমাকে আমি"
+    expect(mergeTranscript(settled, "বাসী তোমাকে আমি")).toBe(settled)
+    expect(mergeTranscript(settled, "ভালোবাসি তোমাকে আমি")).toBe(settled)
+  })
+
+  test("still joins genuinely new speech after the re-read guard", () => {
+    expect(mergeTranscript("তোমার চোখে আকাশ", "নতুন একটা বাক্য")).toBe("তোমার চোখে আকাশ নতুন একটা বাক্য")
   })
 
   test("keeps a sentence that shares no words with the previous one", () => {
-    expect(mergeGrowing("first sentence here", "completely different words now")).toBe(
+    expect(mergeTranscript("first sentence here", "completely different words now")).toBe(
       "first sentence here completely different words now",
     )
   })
 
   test("handles an empty side", () => {
-    expect(mergeGrowing("", "প্রথম বাক্য")).toBe("প্রথম বাক্য")
-    expect(mergeGrowing("প্রথম বাক্য", "")).toBe("প্রথম বাক্য")
+    expect(mergeTranscript("", "প্রথম বাক্য")).toBe("প্রথম বাক্য")
+    expect(mergeTranscript("প্রথম বাক্য", "")).toBe("প্রথম বাক্য")
+  })
+
+  test("does not duplicate a whole spoken sentence across ticks and a re-read", () => {
+    const ticks = [
+      "তোমার চোখে",
+      "তোমার চোখে আকাশ আমার",
+      "তোমার চোখে আকাশ আমার চাঁদ যেন পূর্ণিমা",
+      "আমার চাঁদ যেন পূর্ণিমা ভালোবাসি তোমাকে",
+      "পূর্ণিমা ভালোবাসি তোমাকে আমি",
+      "বাসী তোমাকে আমি",
+    ]
+    const final = ticks.reduce((acc, tick) => mergeTranscript(acc, tick), "")
+    expect(final).toBe("তোমার চোখে আকাশ আমার চাঁদ যেন পূর্ণিমা ভালোবাসি তোমাকে আমি")
   })
 })

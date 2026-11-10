@@ -23,6 +23,7 @@ import { ZYRAXON_AGENTS, type ZyraxonAgentDef } from "@/context/collab"
 import { useLanguage } from "@/context/language"
 import { useLayout } from "@/context/layout"
 import { usePermission } from "@/context/permission"
+import { useSettings } from "@/context/settings"
 import { useSubscription } from "@/context/subscription"
 import { type MediaAttachmentPart, isMediaAttachmentPart, usePrompt } from "@/context/prompt"
 import { usePlatform } from "@/context/platform"
@@ -53,6 +54,7 @@ export function PromptInputV2Composer(props: PromptInputV2ComposerProps) {
   const dialog = useDialog()
   const command = useCommand()
   const language = useLanguage()
+  const settings = useSettings()
 
   useCommands(props)
   useEditHandler(props)
@@ -62,6 +64,8 @@ export function PromptInputV2Composer(props: PromptInputV2ComposerProps) {
       <PromptInputV2
         controller={props.controller}
         class={props.class}
+        language={settings.general.voiceLanguage()}
+        onLanguageChange={(lang) => settings.general.setVoiceLanguage(lang)}
         modelControl={
           <PromptInputV2ModelControl
             loading={props.controller.model.loading}

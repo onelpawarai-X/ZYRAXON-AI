@@ -5,10 +5,9 @@
  *
  * The microphone is captured in this window and the audio is streamed to the
  * ZYRAXON public STT endpoint, which answers with text as the person speaks.
- * Nothing opens a second window and nothing runs on a local port — the old
- * Chrome voice-bridge page is gone.
+ * Nothing opens a second window and nothing runs on a local port.
  *
- * The endpoint offers three ways in, and the choice here is deliberate:
+ * The endpoint offers three ways in:
  *
  *   live    one long stream of PCM. It is the obvious fit, but the host buffers
  *           the request body, so `ready` only arrives once the speaker stops —
@@ -20,22 +19,27 @@
  *           only mode that is actually real-time here.
  *
  * So the mic keeps the last few seconds of PCM in a ring, re-sends that window
- * every tick with the text already committed, and paints the growing transcript.
- * Re-sending the overlap (rather than only the new part) is what lets the
- * recogniser resolve a word a shorter slice would clip.
+ * every tick, and paints the growing transcript.
  *
- * The endpoint does not detect language and will not guess. "Auto" is therefore
- * resolved here: the first window is offered to a few likely languages and the
- * one that answers most confidently is locked in for the rest of the session.
+ * The endpoint re-reads the whole window on every tick, so the answers overlap:
+ * one tick ends "…পূর্ণিমা" and the next begins "পূর্ণিমা ভালোবাসি…". The text a
+ * tick returns is therefore the window's transcript, NOT a delta — `added` is
+ * only the part the host thinks is new, and it re-emits whole re-reads after a
+ * pause. Folding the raw `text` on its shared words is what keeps the transcript
+ * correct; trusting `added` is what printed the tail twice.
+ *
+ * The endpoint does not detect language on its own. "Auto" is resolved here: the
+ * first window is offered to a few likely languages and the one that answers most
+ * confidently is locked in for the rest of the session. A language chosen from the
+ * picker is locked immediately and never guessed.
  */
 
 export const STT_ENDPOINT = "https://zyraxonai.lovable.app/api/public/stt"
 
 const SAMPLE_RATE = 16000
-const WINDOW_SECONDS = 4
-const TICK_MS = 1400
+const WINDOW_SECONDS = 10
+const TICK_MS = 3000
 const MIN_TICK_SAMPLES = SAMPLE_RATE * 0.4
-const MAX_TICK_SAMPLES = SAMPLE_RATE * 30
 
 export type SttState = "idle" | "recording" | "processing"
 
@@ -168,117 +172,67 @@ function autoCandidates(): string[] {
   return out.slice(0, 3)
 }
 
-const WORD_KEYS = /[^\p{L}\p{N}]+/gu
-
-function wordKey(word: string) {
-  return word.toLowerCase().replace(WORD_KEYS, "")
+/** Collapse runs of whitespace so word comparison is not defeated by spacing. */
+function normalizeText(text: string) {
+  return text.replace(/\s+/g, " ").trim()
 }
 
-/** Edit distance capped at 2 — enough to treat "knot"/"not" as the same word. */
-function withinOneEdit(left: string, right: string) {
-  if (left === right) return true
-  if (Math.abs(left.length - right.length) > 1) return false
-  const [shorter, longer] = left.length <= right.length ? [left, right] : [right, left]
-  let i = 0
-  let j = 0
-  let edits = 0
-  while (i < shorter.length && j < longer.length) {
-    if (shorter[i] === longer[j]) {
-      i++
-      j++
-      continue
-    }
-    if (++edits > 1) return false
-    if (shorter.length === longer.length) i++
-    j++
+/** How many trailing words two transcripts share, counting from the end. */
+function sharedTail(left: string[], right: string[]): number {
+  let count = 0
+  while (
+    count < left.length &&
+    count < right.length &&
+    left[left.length - 1 - count] === right[right.length - 1 - count]
+  ) {
+    count++
   }
-  return edits + (longer.length - j) <= 1
-}
-
-function sameWord(left: string, right: string) {
-  const a = wordKey(left)
-  const b = wordKey(right)
-  if (!a || !b) return a === b
-  if (a === b) return true
-  // The recogniser spells a re-read tail differently on the second pass ("knot" then
-  // "not"); one edit is treated as the same word so the repeat is joined, not printed.
-  // Only longer words get that tolerance — on a short word one edit is a different
-  // word, not a misspelling.
-  return a.length >= 5 && b.length >= 5 && withinOneEdit(a, b)
+  return count
 }
 
 /**
- * The shortest word that may carry a single-word overlap on its own.
+ * Fold a fresh rolling answer into the transcript already on screen.
  *
- * One shared word is weak evidence: two separate utterances routinely end and
- * begin on the same short function word ("how can I help you" then "you don't
- * know"), and collapsing that pair silently deleted the word the person said —
- * the vanished "you". A longer word is far more likely to be the recogniser
- * re-reading the tail of the window ("hello world" then "world how are you"), so
- * only a run of two or more words, or a single word this long, is treated as a
- * re-read.
- */
-const MIN_SINGLE_OVERLAP_LENGTH = 4
-
-/**
- * The length at which one shared word is strong enough to be a re-read rather
- * than a coincidence.
+ * The rolling endpoint re-reads the last window every tick, so consecutive
+ * answers overlap: one tick says "hello world", the next says "world how are
+ * you". Replacing the transcript with each answer is what made a second sentence
+ * wipe the first; joining them on the shared run keeps both.
  *
- * Counting characters is only fair to scripts where a word is a few ASCII
- * letters. A Bengali word carries the same meaning in far fewer characters —
- * "আছি" is a whole word in three — so a fixed character floor never matched and
- * the repeat was printed twice. Every non-ASCII word is therefore already long
- * enough; the four-character floor still applies to ASCII, where it separates a
- * real re-read ("world") from a shared function word ("you").
+ * After a pause the same window is re-read and its answer can start mid-word
+ * ("…ভালোবাসি তোমাকে আমি" then "বাসী তোমাকে আমি"), which shares no prefix with the
+ * transcript but repeats its tail. Appending that printed the tail twice, so a
+ * window whose tail is already the transcript's tail is treated as a re-read and
+ * ignored instead.
  */
-function overlapFloor(word: string) {
-  return /[^\x00-\x7F]/.test(word) ? 1 : MIN_SINGLE_OVERLAP_LENGTH
-}
-
-/**
- * Fold a fresh rolling result into the transcript already on screen.
- *
- * The rolling endpoint re-reads the last window every tick, so consecutive answers
- * overlap: one tick says "hello world", the next says "world how are you". The old
- * code replaced the transcript with each answer, which is why a second sentence
- * wiped the first. This keeps the longer of two answers when one contains the
- * other, and otherwise joins them on their shared words — a run of two or more,
- * or one word long enough to be a re-read — so two sentences that merely touch on
- * the same short word both survive.
- */
-export function mergeGrowing(previous: string, incoming: string): string {
-  const before = previous.trim()
-  const after = incoming.trim()
+export function mergeTranscript(previous: string, incoming: string): string {
+  const before = normalizeText(previous)
+  const after = normalizeText(incoming)
   if (!before) return after
   if (!after) return before
   if (after === before) return before
   if (after.startsWith(before)) return after
   if (before.startsWith(after)) return before
-  // A rolling window often re-emits the tail it already reported, either on its own
-  // ("world") or wrapped in the new sentence ("world how are you"). Treating those as
-  // a suffix or a contained run is what stops the last words being printed twice. A
-  // one-word tail only counts when the word is long enough not to be a coincidence.
-  const afterIsTail = after.split(/\s+/).length >= 2 || after.length >= MIN_SINGLE_OVERLAP_LENGTH
-  if (afterIsTail && before.endsWith(after)) return before
-  if (after.includes(before)) return after
-  if (afterIsTail && before.includes(after)) return before
 
-  const a = before.split(/\s+/)
-  const b = after.split(/\s+/)
+  const a = before.split(" ")
+  const b = after.split(" ")
+
   const most = Math.min(a.length, b.length)
   for (let overlap = most; overlap > 0; overlap--) {
     let matched = true
     for (let i = 0; i < overlap; i++) {
-      const left = a[a.length - overlap + i]
-      const right = b[i]
-      const ok = overlap === 1 ? wordKey(left) === wordKey(right) && wordKey(left).length >= overlapFloor(wordKey(left)) : sameWord(left, right)
-      if (!ok) {
+      if (a[a.length - overlap + i] !== b[i]) {
         matched = false
         break
       }
     }
     if (matched) return [...a, ...b.slice(overlap)].join(" ")
   }
+
+  // A re-read after a pause: the window's tail is already the transcript's tail
+  // and only a word or two precedes it, so it carries no new speech.
+  const tail = sharedTail(a, b)
+  if (tail >= 2 && b.length - tail <= 2) return before
+
   return `${before} ${after}`
 }
 
@@ -294,7 +248,6 @@ export class RealtimeStt {
   private running = false
   private disposed = false
   private ticking = false
-  private committed = ""
   private transcript = ""
   private language = "auto"
   private locked: string | null = null
@@ -331,7 +284,7 @@ export class RealtimeStt {
     const url =
       `${STT_ENDPOINT}?mode=rolling` +
       `&language=${encodeURIComponent(language)}` +
-      `&committed=${encodeURIComponent(this.committed)}` +
+      `&committed=${encodeURIComponent(this.transcript)}` +
       `&window=${WINDOW_SECONDS}`
     const response = await fetch(url, {
       method: "POST",
@@ -379,13 +332,8 @@ export class RealtimeStt {
 
   private apply(result: SttResponse) {
     const incoming = (result.text || "").trim()
-    // The host clears `committed` on ticks that produced no new text. Adopting that
-    // empty string as the new anchor dropped the anchor entirely, so the next tick
-    // re-reported text that was already on screen and it was printed a second time.
-    // Only a non-empty `committed` is a new anchor.
-    if (result.committed) this.committed = result.committed
     if (!incoming) return
-    const merged = mergeGrowing(this.transcript, incoming)
+    const merged = mergeTranscript(this.transcript, incoming)
     if (merged === this.transcript) return
     this.transcript = merged
     this.handlers.onLive?.(merged)
@@ -429,7 +377,6 @@ export class RealtimeStt {
     this.disposed = false
     this.language = language || "auto"
     this.locked = this.language === "auto" ? null : this.language
-    this.committed = ""
     this.transcript = ""
     this.ring.clear()
 
@@ -502,36 +449,13 @@ export class RealtimeStt {
     this.running = false
     if (this.timer) { clearInterval(this.timer); this.timer = null }
 
-    // Stop the capture and the indicator at once. The old code sat in a
-    // "processing" state until a whole-recording request came back, so the mic
-    // stayed lit and disabled for seconds after the person stopped talking.
+    // Stop the capture and the indicator at once, and settle with the text the
+    // ticks already painted. Re-transcribing the whole recording here re-read the
+    // audio the ticks had already turned into text, and appending that answer is
+    // what duplicated the tail; there is nothing a final batch call can add.
     this.teardown()
     this.setState("idle")
-
-    // The final pass only refines wording. It must not delay the button, and a
-    // failure must not cost the text the ticks already produced.
-    const settle = this.transcript
-    if (this.ring.size >= MIN_TICK_SAMPLES) {
-      const window = this.ring.last(Math.min(this.ring.size, MAX_TICK_SAMPLES))
-      void (async () => {
-        try {
-          if (!this.locked) this.locked = await this.detectLanguage(this.ring.last(SAMPLE_RATE * WINDOW_SECONDS))
-          const result = await this.postBatch(window, this.locked)
-          if (this.disposed) return
-          const text = (result.text || "").trim()
-          if (!text) return
-          const merged = mergeGrowing(settle, text)
-          if (merged === settle) return
-          this.transcript = merged
-          this.handlers.onFinal?.(merged)
-        } catch {
-          // Keep whatever the ticks already painted.
-        }
-      })()
-      return
-    }
-
-    if (settle) this.handlers.onFinal?.(settle)
+    if (this.transcript) this.handlers.onFinal?.(this.transcript)
   }
 
   /**
