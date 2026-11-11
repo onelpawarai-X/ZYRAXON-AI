@@ -19,10 +19,11 @@ export function AIEyesOverlay() {
     return status.type !== "idle"
   })
 
-  const isDark = createMemo(() => {
-    const scheme = theme.colorScheme()
-    return scheme === "dark" || scheme === "system"
-  })
+  // `colorScheme()` is the user setting and can be "system", which is not a
+  // resolvable mode; `mode()` is the resolved light/dark value, so an OS in
+  // light mode with the setting left on "system" no longer gets the dark
+  // treatment (which turned the overlay invisible in light mode).
+  const isDark = createMemo(() => theme.mode() === "dark")
 
   return (
     <Show when={isActive()}>
@@ -36,7 +37,11 @@ export function AIEyesOverlay() {
           "align-items": "center",
           "justify-content": "center",
           "overflow": "hidden",
-          "opacity": isDark() ? "0.08" : "0.05",
+          // Dark mode lifts the electric-blue streams off a near-black canvas
+          // with a screen blend; light mode multiplies the same footage into the
+          // white canvas (no invert, which cancelled the video out entirely) so
+          // both themes show a matching blue light-stream wash.
+          "opacity": isDark() ? "0.16" : "0.20",
           "mix-blend-mode": isDark() ? "screen" : "multiply",
           "transition": "opacity 0.8s ease-in-out",
         }}
@@ -52,8 +57,8 @@ export function AIEyesOverlay() {
             "height": "100%",
             "object-fit": "cover",
             "filter": isDark()
-              ? "brightness(1.2) contrast(1.3)"
-              : "brightness(0.8) contrast(1.1) invert(1)",
+              ? "brightness(1.4) contrast(1.25) saturate(1.3)"
+              : "brightness(1.7) contrast(1.2) saturate(1.4)",
           }}
         />
       </div>
