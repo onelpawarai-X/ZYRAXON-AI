@@ -1,6 +1,6 @@
 {
   "name": "@zyraxon/ecosystem",
-  "version": "20.0.1",
+  "version": "20.2.0",
   "type": "module",
   "main": "./src/index.tsx",
   "exports": {
