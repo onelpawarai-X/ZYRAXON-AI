@@ -1,6 +1,6 @@
 {
   "name": "@zyraxon-ai/console-mail",
-  "version": "20.0.1",
+  "version": "20.2.0",
   "dependencies": {
     "@jsx-email/all": "2.2.3",
     "@jsx-email/cli": "1.4.3",
