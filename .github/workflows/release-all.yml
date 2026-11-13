@@ -33,9 +33,11 @@ env:
   ZYRAXON_CHANNEL: dev
   # husky would install and try to wire git hooks, which CI does not need.
   HUSKY: "0"
-  # The chained build runs tsc and vite over the whole monorepo. The macOS runner
-  # ran out of heap without this, so every job says so explicitly.
-  NODE_OPTIONS: --max-old-space-size=8192
+  # The chained build runs tsc and vite over the whole monorepo, and the
+  # desktop build obfuscates a ~28 MB server bundle plus the renderer. That
+  # needs more heap than the default; the macOS runner ran out without this and
+  # cannot afford a cap above its own RAM, so keep it under 14 GB.
+  NODE_OPTIONS: --max-old-space-size=12288
 
 jobs:
   # --------------------------------------------------------------- reset -----
