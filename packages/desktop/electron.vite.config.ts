@@ -2,13 +2,16 @@
 
 import { sentryVitePlugin } from "@sentry/vite-plugin"
 import { defineConfig } from "electron-vite"
+import JavaScriptObfuscator from "javascript-obfuscator"
 import appPlugin from "@zyraxon-ai/app/vite"
 import * as fs from "node:fs/promises"
 import * as path from "node:path"
 
 if (!process.env.NODE_OPTIONS?.includes("max-old-space-size")) {
   const current = process.env.NODE_OPTIONS ?? ""
-  process.env.NODE_OPTIONS = `${current} --max-old-space-size=4096`.trim()
+  // Obfuscating the ~28 MB server bundle needs roughly 9 GB of heap, so the
+  // default has to be large enough on its own.
+  process.env.NODE_OPTIONS = `${current} --max-old-space-size=12288`.trim()
 }
 
 const ZYRAXON_SERVER_DIST = "../zyraxon/dist/node"
@@ -21,6 +24,37 @@ const channel = (() => {
 })()
 
 const nodePtyPkg = `@lydell/node-pty-${process.platform}-${process.arch}`
+
+// Obfuscates the finished main and preload bundles in place. Both are
+// self-contained (only node built-ins and electron stay external), so nothing
+// imports a name out of them and mangling every identifier is safe. Filenames
+// are resolved by the time generateBundle runs, so the entry stays at its
+// expected path.
+const obfuscateBundle = () => ({
+  name: "zyraxon:obfuscate",
+  apply: "build" as const,
+  enforce: "post" as const,
+  generateBundle(_options: unknown, bundle: Record<string, any>) {
+    if (process.env.ZYRAXON_OBFUSCATE === "0") return
+    for (const item of Object.values(bundle)) {
+      if (item.type !== "chunk") continue
+      if (!item.fileName.endsWith(".js")) continue
+      if (item.code.length < 2048) continue
+      item.code = JavaScriptObfuscator.obfuscate(item.code, {
+        compact: true,
+        controlFlowFlattening: true,
+        controlFlowFlatteningThreshold: 0.5,
+        deadCodeInjection: true,
+        deadCodeInjectionThreshold: 0.3,
+        stringArray: true,
+        stringArrayEncoding: ["base64"],
+        stringArrayThreshold: 0.75,
+        identifierNamesGenerator: "hexadecimal",
+        selfDefending: false,
+      }).getObfuscatedCode()
+    }
+  },
+})
 
 const sentry =
   process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT
@@ -163,15 +197,18 @@ export const FFIType = { void:0, i8:1, u8:2, i16:3, u16:4, i32:5, u32:6, i64:7, 
 
           // Patch bun:sqlite and bun:ffi imports → local shim files
           let serverCode = await fs.readFile(serverDest, "utf-8")
-          serverCode = serverCode.replace(/from "bun:sqlite"/g, 'from "./bun-sqlite-shim.mjs"')
-          serverCode = serverCode.replace(/from "bun:ffi"/g, 'from "./bun-ffi-shim.mjs"')
-          serverCode = serverCode.replace(/import\("bun:sqlite"\)/g, 'import("./bun-sqlite-shim.mjs")')
+          // The server bundle ships minified, so the space after `from` is gone
+          // (`from"bun:sqlite"`). Match any spacing so the shim rewrite still
+          // lands, otherwise Node's ESM loader rejects the raw `bun:` scheme.
+          serverCode = serverCode.replace(/(from\s*)"bun:sqlite"/g, '$1"./bun-sqlite-shim.mjs"')
+          serverCode = serverCode.replace(/(from\s*)"bun:ffi"/g, '$1"./bun-ffi-shim.mjs"')
+          serverCode = serverCode.replace(/import\(\s*"bun:sqlite"\s*\)/g, 'import("./bun-sqlite-shim.mjs")')
 
           // Strip "with { type: "jsx" }" import attributes that Bun's SolidJS transform adds.
           // Node.js (Electron utility process) does not support type: "jsx" import attributes.
-          const jsxAttrCount = (serverCode.match(/ with \{ type: "jsx" \}/g) ?? []).length
+          const jsxAttrCount = (serverCode.match(/\s*with\s*\{\s*type:\s*"jsx"\s*\}/g) ?? []).length
           if (jsxAttrCount > 0) {
-            serverCode = serverCode.replace(/ with \{ type: "jsx" \}/g, "")
+            serverCode = serverCode.replace(/\s*with\s*\{\s*type:\s*"jsx"\s*\}/g, "")
             console.log(`[zyraxon] Stripped ${jsxAttrCount} "type: jsx" import attributes from server bundle`)
           }
 
@@ -181,8 +218,8 @@ export const FFIType = { void:0, i8:1, u8:2, i16:3, u16:4, i32:5, u32:6, i64:7, 
           const requireCount = (serverCode.match(/import\.meta\.require/g) ?? []).length
           if (requireCount > 0) {
             serverCode = serverCode.replace(
-              /var __require = import\.meta\.require;/g,
-              'var __require = (globalThis.__createRequire ??= (await import("node:module")).createRequire(import.meta.url));',
+              /var\s+([\w$]+)\s*=\s*import\.meta\.require;/g,
+              'var $1 = (globalThis.__createRequire ??= (await import("node:module")).createRequire(import.meta.url));',
             )
             console.log(`[zyraxon] Patched ${requireCount} import.meta.require → createRequire in server bundle`)
           }
@@ -306,6 +343,28 @@ export const FFIType = { void:0, i8:1, u8:2, i16:3, u16:4, i32:5, u32:6, i64:7, 
             }
           }
 
+          // The server bundle is copied outside Rollup's graph, so the
+          // zyraxon:obfuscate plugin never sees it. Obfuscate it here, after every
+          // patch has landed, with a lighter profile: the bundle is ~28 MB, where
+          // control-flow flattening would exhaust the heap. String-array + hex
+          // identifiers still leave the shipped server unreadable.
+          if (process.env.ZYRAXON_OBFUSCATE !== "0") {
+            const before = serverCode.length
+            serverCode = JavaScriptObfuscator.obfuscate(serverCode, {
+              compact: true,
+              identifierNamesGenerator: "hexadecimal",
+              stringArray: true,
+              stringArrayEncoding: ["base64"],
+              stringArrayThreshold: 0.75,
+              rotateStringArray: true,
+              simplify: true,
+              selfDefending: false,
+            }).getObfuscatedCode()
+            console.log(
+              `[zyraxon] Obfuscated server bundle: ${(before / 1024 / 1024).toFixed(1)}MB → ${(serverCode.length / 1024 / 1024).toFixed(1)}MB`,
+            )
+          }
+
           await fs.writeFile(serverDest, serverCode)
           console.log(`[zyraxon] Patched server bundle: replaced bun:sqlite/bun:ffi with local shims`)
 
@@ -322,14 +381,21 @@ export const FFIType = { void:0, i8:1, u8:2, i16:3, u16:4, i32:5, u32:6, i64:7, 
           }
 
           // Copy sql-wasm.wasm for sql.js (bun:sqlite shim dependency)
-          const wasmSource = path.resolve(__dirname, "node_modules/sql.js/dist/sql-wasm.wasm")
-          try {
-            await fs.access(wasmSource)
-            await fs.copyFile(wasmSource, path.join(chunksDir, "sql-wasm.wasm"))
-            console.log(`[zyraxon] Copied sql-wasm.wasm to ${chunksDir}`)
-          } catch {
-            console.warn(`[zyraxon] Warning: sql-wasm.wasm not found at ${wasmSource}`)
+          const wasmCandidates = [
+            path.resolve(__dirname, "node_modules/sql.js/dist/sql-wasm.wasm"),
+            path.resolve(__dirname, "../../node_modules/sql.js/dist/sql-wasm.wasm"),
+          ]
+          let wasmCopied = false
+          for (const wasmSource of wasmCandidates) {
+            try {
+              await fs.access(wasmSource)
+              await fs.copyFile(wasmSource, path.join(chunksDir, "sql-wasm.wasm"))
+              console.log(`[zyraxon] Copied sql-wasm.wasm to ${chunksDir}`)
+              wasmCopied = true
+              break
+            } catch {}
           }
+          if (!wasmCopied) console.warn(`[zyraxon] Warning: sql-wasm.wasm not found in ${wasmCandidates.join(", ")}`)
           console.log(`[zyraxon] Copied bun: protocol shims to ${chunksDir}`)
 
           const webUiSource = path.join(ZYRAXON_SERVER_DIST, "zyraxon-web-ui.gen.ts")
@@ -357,9 +423,11 @@ export const FFIType = { void:0, i8:1, u8:2, i16:3, u16:4, i32:5, u32:6, i64:7, 
           }
         },
       },
+      obfuscateBundle(),
     ],
   },
   preload: {
+    plugins: [obfuscateBundle()],
     build: {
       rollupOptions: {
         input: { index: "src/preload/index.ts", "browser-review": "src/preload/browser-review.ts" },
@@ -375,7 +443,19 @@ export const FFIType = { void:0, i8:1, u8:2, i16:3, u16:4, i32:5, u32:6, i64:7, 
     publicDir: "../../../app/public",
     root: "src/renderer",
     build: {
+      // Only emit maps when Sentry will upload and then delete them; otherwise a
+      // map would sit beside the bundle and give the original source back.
       sourcemap: Boolean(process.env.SENTRY_AUTH_TOKEN),
+      minify: "terser",
+      terserOptions: {
+        compress: {
+          drop_console: true,
+          drop_debugger: true,
+          passes: 2,
+        },
+        mangle: { toplevel: true },
+        format: { comments: false },
+      },
       rollupOptions: {
         input: {
           main: "src/renderer/index.html",

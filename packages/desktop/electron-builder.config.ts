@@ -89,7 +89,29 @@ const afterPack = (context: { appOutDir: string }) => {
 const getBase = (appId: string): Configuration =>
   ({
   afterPack,
-  compression: "normal",
+  compression: "maximum",
+  // Electron fuses close the standard ways of reading the shipped code. The
+  // renderer is served over a custom protocol (not file://) and the app is always
+  // packed into app.asar, so every fuse below is safe for this app.
+  //
+  // runAsNode stays ENABLED on purpose: the packaged app spawns its bundled MCP
+  // servers with the Electron binary itself and ELECTRON_RUN_AS_NODE=1 (there is
+  // no `node` on PATH in a packaged install). Disabling the fuse makes that
+  // binary start a second copy of the app instead of running the script, so all
+  // four built-in MCP servers stop working.
+  electronFuses: {
+    enableCookieEncryption: true,
+    // NODE_OPTIONS / NODE_EXTRA_CA_CERTS and --inspect would otherwise allow a
+    // debugger to be attached to the running main process.
+    enableNodeOptionsEnvironmentVariable: false,
+    enableNodeCliInspectArguments: false,
+    // Load code only from app.asar, and verify its hash on load (macOS/Windows),
+    // so a swapped or edited asar refuses to start.
+    onlyLoadAppFromAsar: true,
+    enableEmbeddedAsarIntegrityValidation: true,
+    // The renderer is not served over file://, so its extra privileges are unused.
+    grantFileProtocolExtraPrivileges: false,
+  },
   artifactName: "zyraxon-desktop-${os}-${arch}.${ext}",
   directories: {
     output: "dist",

@@ -47,7 +47,9 @@ const result = await Bun.build({
   plugins: [plugin],
   external: ["node-gyp"],
   format: "esm",
-  minify: false,
+  // The desktop app ships this bundle as zyraxon-server.js. Minified, the
+  // shipped server keeps its behaviour but no longer reads as plain source.
+  minify: true,
   sourcemap: "none",
   splitting: false,
   entrypoints: ["./src/node.ts"],

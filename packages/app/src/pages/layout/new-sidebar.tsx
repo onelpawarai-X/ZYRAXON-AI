@@ -35,7 +35,7 @@ export function NewSidebarRail(): JSX.Element {
     layout.sidebar.open()
   }
 
-  // The sidebar is hidden until the pointer reaches the left edge. A global
+  // The sidebar is hidden until the pointer reaches the left 80px. A global
   // listener rather than a hover strip keeps the reveal working even when the
   // pointer crosses the boundary quickly. A locked sidebar ignores the edge so
   // right-click / double-click on the titlebar toggle can shut it off for good.
@@ -47,7 +47,7 @@ export function NewSidebarRail(): JSX.Element {
 
   onMount(() => {
     const onMove = (event: MouseEvent) => {
-      if (event.clientX <= 6) open()
+      if (event.clientX <= 80) open()
     }
     window.addEventListener("mousemove", onMove)
     onCleanup(() => window.removeEventListener("mousemove", onMove))
