@@ -30,6 +30,19 @@ export default defineConfig({
   },
   build: {
     target: "esnext",
-    sourcemap: true,
+    // Source maps are emitted only when Sentry is configured, because that plugin
+    // uploads them and then deletes the files. Without it a map would ship beside
+    // the bundle and hand back the original TypeScript to anyone who opens the app.
+    sourcemap: Boolean(process.env.SENTRY_AUTH_TOKEN),
+    minify: "terser",
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        passes: 2,
+      },
+      mangle: { toplevel: true },
+      format: { comments: false },
+    },
   },
 })
