@@ -5,16 +5,7 @@ import { Context, Effect, Layer } from "effect"
 
 import { InstanceState } from "@/effect/instance-state"
 
-import PROMPT_ANTHROPIC from "./prompt/anthropic.txt"
-import PROMPT_DEFAULT from "./prompt/default.txt"
-import PROMPT_BEAST from "./prompt/beast.txt"
-import PROMPT_GEMINI from "./prompt/gemini.txt"
-import PROMPT_GPT from "./prompt/gpt.txt"
-import PROMPT_KIMI from "./prompt/kimi.txt"
-import PROMPT_META from "./prompt/meta.txt"
-
-import PROMPT_CODEX from "./prompt/codex.txt"
-import PROMPT_TRINITY from "./prompt/trinity.txt"
+import { PromptVault } from "@/subscription/prompt-vault"
 import type { Provider } from "@/provider/provider"
 import type { Agent } from "@/agent/agent"
 import { Permission } from "@/permission"
@@ -28,21 +19,23 @@ import { MCP } from "@/mcp"
 import { PermissionV1 } from "@zyraxon-ai/core/v1/permission"
 import { subscriptionContext } from "@/subscription/canonical"
 
+/** The prompt a model gets when its agent carries none of its own. The text is
+ *  not in this binary: this returns a vault reference that `LLMRequestPrep`
+ *  resolves over the network before the turn is sent. */
 export function provider(model: Provider.Model) {
-  if (model.api.id.includes("muse-spark")) return [PROMPT_META]
+  const ref = (key: string) => [PromptVault.ref("provider", key)]
+  if (model.api.id.includes("muse-spark")) return ref("meta")
   if (model.api.id.includes("gpt-4") || model.api.id.includes("o1") || model.api.id.includes("o3"))
-    return [PROMPT_BEAST]
+    return ref("beast")
   if (model.api.id.includes("gpt")) {
-    if (model.api.id.includes("codex")) {
-      return [PROMPT_CODEX]
-    }
-    return [PROMPT_GPT]
+    if (model.api.id.includes("codex")) return ref("codex")
+    return ref("gpt")
   }
-  if (model.api.id.includes("gemini-")) return [PROMPT_GEMINI]
-  if (model.api.id.includes("claude")) return [PROMPT_ANTHROPIC]
-  if (model.api.id?.toLowerCase().includes("trinity")) return [PROMPT_TRINITY]
-  if (model.api.id?.toLowerCase().includes("kimi")) return [PROMPT_KIMI]
-  return [PROMPT_DEFAULT]
+  if (model.api.id.includes("gemini-")) return ref("gemini")
+  if (model.api.id.includes("claude")) return ref("anthropic")
+  if (model.api.id?.toLowerCase().includes("trinity")) return ref("trinity")
+  if (model.api.id?.toLowerCase().includes("kimi")) return ref("kimi")
+  return ref("default")
 }
 
 export interface Interface {

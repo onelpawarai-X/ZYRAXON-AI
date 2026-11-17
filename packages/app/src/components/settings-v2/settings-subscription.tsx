@@ -6,8 +6,6 @@ import { useSubscription } from "@/context/subscription"
 import {
   openStripeCheckout,
   isStripeReady,
-  isAdminUnlocked,
-  setAdminUnlocked,
   TIER_ORDER,
   SUBSCRIPTION_PLANS,
   type SubscriptionTier,
@@ -40,43 +38,9 @@ export function SettingsSubscription() {
   const [showSuccess, setShowSuccess] = createSignal(false)
   const [isVerifying, setIsVerifying] = createSignal(false)
 
-  const [zyOpen, setZyOpen] = createSignal(false)
-  const [zyInput, setZyInput] = createSignal("")
-  const [adminOpen, setAdminOpen] = createSignal(isAdminUnlocked())
-  const [adminTier, setAdminTier] = createSignal("")
-  const [adminMsg, setAdminMsg] = createSignal("")
-
   const currentTier = (): SubscriptionTier => subscription.tier()
   const currentPlan = () => SUBSCRIPTION_PLANS[currentTier()]
   const daysRemaining = () => subscription.daysRemaining()
-
-  function handleZySubmit() {
-    if (zyInput().trim().toUpperCase() === "ZYRAXON") {
-      setAdminUnlocked(true)
-      setAdminOpen(true)
-      setZyOpen(false)
-      setZyInput("")
-    }
-  }
-
-  function handleAdminUnlock() {
-    const tier = adminTier().trim().toLowerCase()
-    if (tier === "unlock") {
-      setAdminUnlocked(true)
-      setAdminOpen(true)
-      setAdminMsg(t("subscription.admin.msg.unlocked"))
-    } else if (tier === "lock") {
-      subscription.resetToFree()
-      setAdminMsg(t("subscription.admin.msg.locked"))
-    } else if (["pro", "max", "ultra"].includes(tier)) {
-      subscription.activateTier(tier as SubscriptionTier, null)
-      setAdminMsg(t("subscription.admin.msg.activated", { plan: SUBSCRIPTION_PLANS[tier as SubscriptionTier].name }))
-    } else {
-      setAdminMsg(t("subscription.admin.msg.invalid"))
-    }
-    setAdminTier("")
-    setTimeout(() => setAdminMsg(""), 3000)
-  }
 
   async function handleActivateCode() {
     const val = code().trim()
@@ -117,7 +81,6 @@ export function SettingsSubscription() {
 
   function handleReset() {
     subscription.resetToFree()
-    setAdminUnlocked(false)
   }
 
   return (
@@ -128,84 +91,7 @@ export function SettingsSubscription() {
           <h2 class="text-lg font-bold text-[var(--text-strong)]">{t("subscription.plans")}</h2>
           <p class="text-xs text-[var(--text-weak)] mt-1">{t("subscription.plans.description")}</p>
         </div>
-        <div class="relative">
-          <button
-            onClick={() => { if (!zyOpen()) setZyInput(""); setZyOpen(!zyOpen()) }}
-            class="px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-wider transition-all duration-200"
-            classList={{
-              "bg-orange-500 text-black": zyOpen(),
-              "bg-white/5 text-white/40 border border-white/10 hover:bg-white/10 hover:text-white/60": !zyOpen(),
-            }}
-          >
-            ADMIN
-          </button>
-          <Show when={zyOpen()}>
-            <div class="absolute top-full right-0 mt-2 w-64 rounded-xl p-3 z-50"
-              style={{
-                "background": "rgba(15,15,30,0.97)",
-                "backdrop-filter": "blur(24px)",
-                "border": "1px solid rgba(255,255,255,0.1)",
-                "box-shadow": "0 12px 40px rgba(0,0,0,0.6)",
-              }}>
-              <div class="text-[11px] text-white/50 mb-2 font-medium">{t("subscription.admin.code")}</div>
-              <div class="flex gap-2">
-                <input
-                  type="password"
-                  value={zyInput()}
-                  onInput={(e) => setZyInput(e.currentTarget.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") handleZySubmit() }}
-                  placeholder={t("subscription.admin.placeholder")}
-                  autofocus
-                  class="flex-1 px-3 py-2 rounded-lg text-xs font-mono bg-black/40 text-white border border-white/10 focus:outline-none focus:border-white/30 placeholder:text-white/20"
-                />
-                <button
-                  onClick={handleZySubmit}
-                  class="px-4 py-2 rounded-lg text-[11px] font-bold bg-white/10 text-white hover:bg-white/20 transition-colors"
-                >
-                  {t("subscription.admin.unlock")}
-                </button>
-              </div>
-            </div>
-          </Show>
-        </div>
       </div>
-
-      {/* Admin Panel */}
-      <Show when={zyOpen() && adminOpen()}>
-        <div class="rounded-xl p-4 border border-white/10"
-          style={{
-            "background": "rgba(255,255,255,0.03)",
-            "backdrop-filter": "blur(16px)",
-          }}>
-          <div class="text-xs font-bold text-white/70 mb-2">{t("subscription.admin.panel")}</div>
-          <p class="text-[11px] text-white/40 mb-2">{t("subscription.admin.hint")}</p>
-          <div class="flex gap-2 mb-2">
-            <input
-              type="text"
-              value={adminTier()}
-              onInput={(e) => setAdminTier(e.currentTarget.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleAdminUnlock() }}
-              placeholder="UNLOCK / PRO / MAX / ULTRA / LOCK"
-              class="flex-1 px-3 py-2 rounded-lg text-xs font-mono bg-black/40 text-white border border-white/10 focus:outline-none focus:border-white/30 placeholder:text-white/20"
-            />
-            <button
-              onClick={handleAdminUnlock}
-              class="px-4 py-2 rounded-lg text-[11px] font-bold bg-white/10 text-white hover:bg-white/20 transition-colors"
-            >
-              {t("subscription.admin.set")}
-            </button>
-          </div>
-          <Show when={adminMsg()}>
-            <div class="px-3 py-1.5 rounded-lg text-xs"
-              classList={{
-                "bg-red-500/15 text-red-400": adminMsg().includes("locked") || adminMsg().includes("Lock"),
-                "bg-white/10 text-white/70": !adminMsg().includes("locked") && !adminMsg().includes("Lock"),
-              }}>
-              {adminMsg()}
-            </div>
-          </Show>
-        </div>
-      </Show>
 
       <Show when={subscription.restoreProblem()}>
         {(problem) => (

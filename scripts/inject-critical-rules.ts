@@ -30,10 +30,14 @@ function targets(): string[] {
   const tracked = (result.stdout ?? "").split(/\r?\n/).filter(Boolean)
   const all = [...tracked, ...walk(ROOT)]
   const unique = [...new Set(all)]
+  // The system prompts moved to the server vault, so only AGENTS.md files are
+  // still generated from the canonical text in this repository. Vendored files
+  // are skipped even when tracked: a node_modules copy that carries the block
+  // would otherwise be shipped verbatim by the desktop packager.
   return unique.filter(
     (file) =>
-      path.basename(file) === "AGENTS.md" ||
-      /^packages[\\/]zyraxon[\\/]src[\\/]agent[\\/]prompt[\\/].+\.txt$/.test(file),
+      path.basename(file) === "AGENTS.md" &&
+      !file.split(/[\\/]/).includes("node_modules"),
   )
 }
 

@@ -204,7 +204,10 @@ const getBase = (appId: string): Configuration =>
     {
       from: "resources/desktop-commander",
       to: "desktop-commander",
-      filter: ["*.cjs", "*.js", "*.json", "*.md", "LICENSE", "dist/**/*", "node_modules/**/*"],
+      // `*.md` is needed for the wrapper's own README/LICENSE, but the vendored
+      // node_modules tree also carries AGENTS.md files that must not ship: they
+      // are agent instructions, not runtime data.
+      filter: ["*.cjs", "*.js", "*.json", "*.md", "LICENSE", "dist/**/*", "node_modules/**/*", "!**/AGENTS.md"],
     },
     ...(existsSync(path.join(packageDir, "resources", "zyraxon-task-daemon"))
       ? [
