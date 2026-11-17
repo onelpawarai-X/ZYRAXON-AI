@@ -516,6 +516,10 @@ async function persist(media: Media, action: "image" | "video" | "music") {
   await Bun.write(`${folder}/.keep`, "")
   const path = `${folder}/${Date.now()}.${extensionFor(media.mime)}`
   await Bun.write(path, media.bytes)
+  // Show it on the Preview panel as well, so the result is on the agent's own
+  // screen the moment it exists rather than only under the tool call.
+  const preview = await import("./preview-control")
+  await preview.announcePreviewFile(path)
   return { path, url: `data:${media.mime};base64,${Buffer.from(media.bytes).toString("base64")}` }
 }
 
