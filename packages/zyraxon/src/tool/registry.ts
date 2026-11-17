@@ -67,6 +67,7 @@ import {
   PreviewKeyTool,
   PreviewLaunchTool,
   PreviewListWindowsTool,
+  PreviewOpenFileTool,
   PreviewOpenUrlTool,
   PreviewReadTool,
   PreviewScreenshotTool,
@@ -229,6 +230,7 @@ const layer = Layer.effect(
     const previewDetachToolDef = yield* PreviewDetachTool
     const previewLaunchToolDef = yield* PreviewLaunchTool
     const previewOpenUrlToolDef = yield* PreviewOpenUrlTool
+    const previewOpenFileToolDef = yield* PreviewOpenFileTool
     const previewScreenshotToolDef = yield* PreviewScreenshotTool
     const previewClickToolDef = yield* PreviewClickTool
     const previewTypeToolDef = yield* PreviewTypeTool
@@ -505,6 +507,7 @@ const layer = Layer.effect(
           x_preview_detach_window: Tool.init(previewDetachToolDef),
           x_preview_launch_app: Tool.init(previewLaunchToolDef),
           x_preview_open_url: Tool.init(previewOpenUrlToolDef),
+          x_preview_open_file: Tool.init(previewOpenFileToolDef),
           x_preview_screenshot: Tool.init(previewScreenshotToolDef),
           x_preview_click: Tool.init(previewClickToolDef),
           x_preview_type: Tool.init(previewTypeToolDef),

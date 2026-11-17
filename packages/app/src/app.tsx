@@ -253,11 +253,12 @@ declare global {
       deepLinks?: string[]
     }
     api?: {
-      getPreviewState?: () => Promise<{ url: string | null; siteName: string | null; siteId: string | null; attachedWindow?: { id: string; name: string } | null; timestamp: string }>
+      getPreviewState?: () => Promise<{ url: string | null; siteName: string | null; siteId: string | null; attachedWindow?: { id: string; name: string } | null; file?: { path: string; name: string; mime: string; kind: "image" | "video" | "audio" | "pdf" | "html" | "text" } | null; timestamp: string }>
       listPreviewSources?: () => Promise<
         Array<{ id: string; name: string; appIcon: string | null; thumbnail: string | null }>
       >
       openPreviewTarget?: (target: string) => Promise<boolean>
+      openPath?: (path: string, app?: string) => Promise<void>
       /** Forward a click, key or scroll into the mirrored window (absolute screen coords). */
       previewInput?: (action: {
         kind: "click" | "scroll" | "key" | "type" | "move"
@@ -271,8 +272,8 @@ declare global {
         text?: string
       }) => Promise<{ ok: boolean; error?: string }>
       previewWindowGeometry?: (title: string) => Promise<{ x: number; y: number; width: number; height: number } | null>
-      onSitePreviewUpdate?: (cb: (state: { url: string | null; siteName: string | null; siteId: string | null; attachedWindow?: { id: string; name: string } | null; timestamp: string }) => void) => () => void
-      setPreviewState?: (state: { url: string | null; siteName: string | null; siteId: string | null; attachedWindow?: { id: string; name: string } | null; timestamp: string }) => Promise<void>
+      onSitePreviewUpdate?: (cb: (state: { url: string | null; siteName: string | null; siteId: string | null; attachedWindow?: { id: string; name: string } | null; file?: { path: string; name: string; mime: string; kind: "image" | "video" | "audio" | "pdf" | "html" | "text" } | null; timestamp: string }) => void) => () => void
+      setPreviewState?: (state: { url: string | null; siteName: string | null; siteId: string | null; attachedWindow?: { id: string; name: string } | null; file?: { path: string; name: string; mime: string; kind: "image" | "video" | "audio" | "pdf" | "html" | "text" } | null; timestamp: string }) => Promise<void>
       openLink?: (url: string) => void
       setTitlebar?: (theme: { mode: "light" | "dark"; scheme?: "system" | "light" | "dark" }) => Promise<void>
       exportDebugLogs?: () => Promise<string>
