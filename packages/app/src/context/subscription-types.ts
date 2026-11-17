@@ -156,7 +156,7 @@ export const TOOL_TIER_MAP: Record<string, SubscriptionTier> = {
   x_preview_attach_window: "free", x_preview_detach_window: "free", x_preview_launch_app: "free",
   x_preview_open_url: "free", x_preview_open_file: "free", x_preview_screenshot: "free",
   x_preview_click: "free", x_preview_type: "free", x_preview_fill_form: "free",
-  x_preview_scroll: "free", x_preview_read_text: "free", x_preview_elements: "free",
+  x_preview_key: "free", x_preview_scroll: "free", x_preview_read_text: "free", x_preview_elements: "free",
   x_preview_find: "free", x_preview_wait: "free", x_desktop_share: "pro",
   x_desktop_link: "pro", x_desktop_stop_share: "pro", site_preview: "free",
   site_create: "free", site_publish: "free", site_unpublish: "free",
