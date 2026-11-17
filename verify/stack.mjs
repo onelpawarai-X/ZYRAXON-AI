@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // Pause the frozen main thread via CDP and dump the JS call stack so the
 // infinite loop shows itself by function name.
 import { chromium } from "playwright-core"

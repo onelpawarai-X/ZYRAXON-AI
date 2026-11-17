@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ZYRAXON probe: does the page ever settle? Collects console/network only,
 // avoids evaluate() until the very end so a busy main thread cannot hang us.
 import { chromium } from "playwright-core"

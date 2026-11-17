@@ -1,3 +1,5 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
 // ZYRAXON verification harness — step-logging probe of the built app.
 import { chromium } from "playwright-core"
 
