@@ -139,7 +139,7 @@ const layer = Layer.effect(
         const builtinAgents: Record<string, Info> = {
           auto: {
             name: "auto",
-            description: "AUTO ORCHESTRATOR — Analyzes tasks, delegates to the right agents (build, plan, beast, pro, apex, dark-emperor, pro-builder, vision), coordinates their work, and delivers unified results. Launches agents in parallel for maximum speed. Has full task delegation and subagent spawning capabilities.",
+            description: "AUTO ORCHESTRATOR — Plans a task, delegates it to the right modes in parallel, and merges their results into one answer.",
             options: {},
             color: "#00D4FF",
             prompt: PromptVault.ref("mode", "auto"),
@@ -164,7 +164,7 @@ const layer = Layer.effect(
           },
           build: {
             name: "build",
-            description: "BUILD MODE — Full-stack engineering mode with complete file system access (read/write/edit), shell execution, git operations, testing, and deployment. Can spawn subagents for parallel work. Has memory for session persistence and self-evolution for installing new tools at runtime. Primary mode for coding, debugging, and refactoring.",
+            description: "BUILD MODE — Full-stack engineering: files, shell, git, tests and deployment, with subagents, memory and self-evolution.",
             options: {},
             prompt: PromptVault.ref("mode", "build"),
             permission: Permission.merge(
@@ -188,7 +188,7 @@ const layer = Layer.effect(
           },
           plan: {
             name: "plan",
-            description: "PLAN MODE — Read-only architecture and planning mode. Can read files, grep, glob, browse the web, and run non-destructive PowerShell tests for research/verification. CANNOT write, edit, or modify any file. All file writes/edits are hard-denied except plan documents in .zyraxon/plans/. CAN switch to another mode (build/beast/pro/etc.) at any time to continue working with the right permissions. Designed for analysis, architecture decisions, and change planning before implementation.",
+            description: "PLAN MODE — Read-only architecture and planning. Reads, searches and runs non-destructive checks; every file write is denied except plan documents in .zyraxon/plans/.",
             options: {},
             prompt: PromptVault.ref("mode", "plan"),
             permission: Permission.merge(
@@ -219,7 +219,7 @@ const layer = Layer.effect(
           },
           beast: {
             name: "beast",
-            description: "BEAST MODE — Aggressive autonomous coding mode. Full file system access, shell execution, subagent spawning (up to 3 levels deep), self-evolution for tool installation, and permanent memory. Auto-tests after every change, auto-fixes failures, and never stops until the task is complete. Has the widest permission set of any mode.",
+            description: "BEAST MODE — Aggressive autonomous coding: full file and shell access, nested subagents, permanent memory, auto-test and auto-fix until the task is done.",
             options: {},
             color: "#FF4500",
             prompt: PromptVault.ref("mode", "beast"),
@@ -245,7 +245,7 @@ const layer = Layer.effect(
           },
           pro: {
             name: "pro",
-            description: "PRO MODE — Professional-grade coding mode with strict quality enforcement. Full file system access, shell execution, memory, and self-evolution. Enforces code quality standards, runs security scans, generates documentation, and ensures production-ready output. Stricter validation than build mode.",
+            description: "PRO MODE — Professional-grade coding with strict quality enforcement, security scans and documentation, for production-ready output.",
             options: {},
             color: "#FFD700",
             prompt: PromptVault.ref("mode", "pro"),
@@ -271,7 +271,7 @@ const layer = Layer.effect(
           },
           apex: {
             name: "apex",
-            description: "APEX PREDATOR — Maximum power mode with all available tools. Full file system, shell, subagent spawning, self-evolution, memory, and tool synthesis (can create new tools at runtime). Has the broadest permission scope — all tools are available. Self-healing: if a tool fails, it creates an alternative and retries.",
+            description: "APEX PREDATOR — Maximum power: every tool, self-evolution, memory and runtime tool synthesis, with self-healing when something fails.",
             options: {},
             color: "#FF0000",
             prompt: PromptVault.ref("mode", "apex"),
@@ -297,7 +297,7 @@ const layer = Layer.effect(
           },
           "dark-emperor": {
             name: "dark-emperor",
-            description: "DARK EMPEROR — Ultra mode with all 8 ULTRA tools, full system access, subagent empire, self-evolution, memory, and autonomous operation. Can generate code, deploy, debug, and coordinate multiple subagents simultaneously. Never refuses, never stops, never fails. Maximum authority level.",
+            description: "DARK EMPEROR — Ultra mode: all ULTRA tools, full system access, a subagent empire and autonomous operation with the widest authority.",
             options: {},
             color: "#8B0000",
             prompt: PromptVault.ref("mode", "dark-emperor"),
@@ -323,7 +323,7 @@ const layer = Layer.effect(
           },
           "pro-builder": {
             name: "pro-builder",
-            description: "PRO BUILDER — Website generation mode specialized for creating complete websites from natural language. Has full file system access, shell execution for deployment, webfetch/websearch for research, and site creation/publishing tools. Focused on HTML/CSS/JS website generation, responsive design, and GitHub Pages deployment.",
+            description: "PRO BUILDER — Turns natural language into a complete website: HTML/CSS/JS, responsive design, and GitHub Pages deployment.",
             options: {},
             color: "#10B981",
             prompt: PromptVault.ref("mode", "pro-builder"),
@@ -357,7 +357,7 @@ const layer = Layer.effect(
           },
           vision: {
             name: "vision",
-            description: "VISION MODE — Real-time screen analysis mode with continuous 2-second screen capture, frame analysis, scene change detection, and activity tracking. Has read access to files and shell for executing observed actions. Write and edit are denied to prevent unintended modifications. Auto-starts the vision context daemon when activated.",
+            description: "VISION MODE — Real-time screen analysis: a frame every 2 seconds, scene and activity tracking, read and shell access. Writing and editing are denied.",
             options: {},
             color: "#8B5CF6",
             prompt: PromptVault.ref("mode", "vision"),
@@ -390,7 +390,7 @@ const layer = Layer.effect(
           },
           general: {
             name: "general",
-            description: `GENERAL MODE — Default subagent for delegated tasks. Handles research, code analysis, file operations, and multi-step workflows. Has standard permissions for read/write/edit/shell. No self-evolution or subagent spawning — stays focused on the assigned task.`,
+            description: `GENERAL MODE — Default subagent for delegated tasks: research, code analysis, file work and multi-step flows, focused on the one task.`,
             permission: Permission.merge(
               defaults,
               Permission.fromConfig({
@@ -420,7 +420,7 @@ const layer = Layer.effect(
               }),
               user,
             ),
-            description: `EXPLORE MODE — Read-only codebase exploration agent. Can grep, glob, read files, list directories, and search the web. Cannot write, edit, or execute shell commands. Thoroughness levels: "quick" (file patterns), "medium" (code search), "very thorough" (deep analysis across multiple locations).`,
+            description: `EXPLORE MODE — Read-only codebase exploration: grep, glob, read and web search, at quick, medium or very thorough depth.`,
             prompt: PromptVault.ref("mode", "explore"),
             options: {},
             mode: "subagent",
