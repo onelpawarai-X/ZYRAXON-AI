@@ -21,6 +21,12 @@ const root = dirname(fileURLToPath(import.meta.url))
 const rendererRoot = join(root, "../renderer")
 const rendererProtocol = "oc"
 const rendererHost = "renderer"
+// Serves the file the agent asked the Preview panel to show. A second scheme
+// rather than a route on `oc` because it must stream from disk with range
+// support: a video the user scrubs cannot be a base64 data URL, and reading a
+// large file into the renderer to build one would stall the panel.
+const previewFileProtocol = "zfile"
+const previewFileHost = "local"
 const clipboardWritePermission = "clipboard-sanitized-write"
 const notificationPermission = "notifications"
 const mediaPermission = "media"
@@ -41,6 +47,20 @@ protocol.registerSchemesAsPrivileged([
       standard: true,
       supportFetchAPI: true,
       stream: true,
+    },
+  },
+  {
+    // `stream: true` is what lets a <video> range-request a local file. The
+    // scheme is privileged only so Chromium treats it as a normal origin
+    // instead of an opaque one; the handler below still refuses any path the
+    // agent did not announce.
+    scheme: previewFileProtocol,
+    privileges: {
+      secure: true,
+      standard: true,
+      supportFetchAPI: true,
+      stream: true,
+      corsEnabled: true,
     },
   },
 ])
@@ -332,6 +352,57 @@ export function registerRendererProtocol() {
       return addDocumentPolicy(response, file)
     } catch (error) {
       writeLog("protocol", "fetch error", { url: request.url, file, error }, "error")
+      return new Response("Not found", { status: 404 })
+    }
+  })
+}
+
+/** The one file the Preview panel may stream, as last announced by the agent.
+ *  Read from the same preview-state file the rest of the panel uses, so the
+ *  allow-list is whatever the agent wrote and nothing else. A path is only ever
+ *  served while it is the current announcement, so a stale URL from a previous
+ *  file stops working the moment a new one is shown. */
+async function announcedPreviewFile(): Promise<string | null> {
+  try {
+    const { readFile } = await import("node:fs/promises")
+    const { homedir } = await import("node:os")
+    const raw = await readFile(join(homedir(), ".zyraxon", "websites", "preview-state.json"), "utf-8")
+    const state = JSON.parse(raw) as { file?: { path?: unknown } | null }
+    const path = state.file?.path
+    return typeof path === "string" && path ? path : null
+  } catch {
+    return null
+  }
+}
+
+export function registerPreviewFileProtocol() {
+  if (protocol.isProtocolHandled(previewFileProtocol)) return
+
+  protocol.handle(previewFileProtocol, async (request) => {
+    const url = new URL(request.url)
+    if (url.host !== previewFileHost) return new Response("Not found", { status: 404 })
+
+    const requested = decodeURIComponent(url.pathname.replace(/^\//, ""))
+    const allowed = await announcedPreviewFile()
+    // Compare on the resolved path so `..` segments cannot escape the
+    // announcement, and a different file is never served by guessing its URL.
+    if (!allowed || resolve(requested) !== resolve(allowed)) {
+      writeLog("protocol", "rejected preview file", { requested, allowed }, "warn")
+      return new Response("Not found", { status: 404 })
+    }
+
+    try {
+      const range = request.headers.get("range")
+      const response = await net.fetch(pathToFileURL(resolve(allowed)).toString(), {
+        headers: range ? { range } : undefined,
+      })
+      // The renderer lives on `oc://`, a different origin, so a text file fetched
+      // with `fetch()` needs CORS. Media elements do not, but one header covers both.
+      const headers = new Headers(response.headers)
+      headers.set("Access-Control-Allow-Origin", "*")
+      return new Response(response.body, { status: response.status, headers })
+    } catch (error) {
+      writeLog("protocol", "preview file fetch error", { file: allowed, error }, "error")
       return new Response("Not found", { status: 404 })
     }
   })

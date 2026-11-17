@@ -77,8 +77,16 @@ export type PreviewState = {
    * click on the panel does, and `x_preview_detach_window` clears it again.
    */
   attachedWindow?: { id: string; name: string } | null
+  /**
+   * The file the agent asked the panel to show, if any. Same watch-and-forward
+   * path as `attachedWindow`: `x_preview_open_file` writes it, the panel streams
+   * it over `zfile://`, and opening a URL or attaching a window clears it.
+   */
+  file?: { path: string; name: string; mime: string; kind: PreviewFileKind } | null
   timestamp: string
 }
+
+export type PreviewFileKind = "image" | "video" | "audio" | "pdf" | "html" | "text"
 
 export type TaskDaemonState = {
   /** Autostart registration is implemented for this platform and build. */

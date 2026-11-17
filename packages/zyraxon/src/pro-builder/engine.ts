@@ -133,14 +133,25 @@ export interface PreviewState {
    * `x_preview_attach_window` call shows the window without a manual click.
    */
   attachedWindow?: { id: string; name: string } | null
+  /**
+   * Set when the agent asks the panel to show a file from disk — an image, a
+   * video, a clip of audio, a PDF, an HTML page or a text file. The renderer
+   * streams it over the `zfile://` scheme rather than a data URL, so a video the
+   * user scrubs is range-requested from disk and a large file never has to be
+   * base64-encoded into the renderer first.
+   */
+  file?: { path: string; name: string; mime: string; kind: PreviewFileKind } | null
   timestamp: string
 }
+
+export type PreviewFileKind = "image" | "video" | "audio" | "pdf" | "html" | "text"
 
 const EMPTY_PREVIEW: PreviewState = {
   url: null,
   siteName: null,
   siteId: null,
   attachedWindow: null,
+  file: null,
   timestamp: new Date().toISOString(),
 }
 

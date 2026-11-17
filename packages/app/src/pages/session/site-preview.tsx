@@ -15,7 +15,7 @@
  * window only mirrors it, and detaching stops immediately.
  */
 
-import { createEffect, createSignal, onCleanup, onMount, Show, For } from "solid-js"
+import { createEffect, createSignal, onCleanup, onMount, Show, For, Match, Switch } from "solid-js"
 import { IconButtonV2 } from "@zyraxon-ai/ui/v2/icon-button-v2"
 import { Icon as IconV2 } from "@zyraxon-ai/ui/v2/icon"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
@@ -23,12 +23,23 @@ import { setPreviewActiveState, getAttachedWindow, setAttachedWindowState } from
 
 type DeviceMode = "desktop" | "tablet" | "mobile"
 
+type PreviewFileKind = "image" | "video" | "audio" | "pdf" | "html" | "text"
+
 type PreviewState = {
   url: string | null
   siteName: string | null
   siteId: string | null
   attachedWindow?: { id: string; name: string } | null
+  /** The file the agent asked the panel to show. Streamed over `zfile://` rather
+   *  than a data URL, so a video scrubs and a large file never stalls the panel. */
+  file?: { path: string; name: string; mime: string; kind: PreviewFileKind } | null
   timestamp: string
+}
+
+/** The `zfile://` URL for a file the agent announced. The main process only
+ *  serves the announced path, so this is a reference, not a way in. */
+function previewFileUrl(filePath: string): string {
+  return `zfile://local/${encodeURIComponent(filePath)}`
 }
 
 type CaptureSource = {
@@ -68,6 +79,7 @@ export function SitePreview() {
     url: null,
     siteName: null,
     siteId: null,
+    file: null,
     timestamp: new Date().toISOString(),
   })
   const [device, setDevice] = createSignal<DeviceMode>("desktop")
@@ -82,6 +94,9 @@ export function SitePreview() {
   const [control, setControl] = createSignal(false)
   const [geometry, setGeometry] = createSignal<{ x: number; y: number; width: number; height: number } | null>(null)
   const [lastError, setLastError] = createSignal<string | null>(null)
+  // Text files are read over `zfile://` and shown verbatim; a binary kind never
+  // sets this, so a big media file is never pulled into the renderer as a string.
+  const [textContent, setTextContent] = createSignal<string | null>(null)
 
   let videoRef: HTMLVideoElement | undefined
   let frameRef: HTMLDivElement | undefined
@@ -209,6 +224,49 @@ export function SitePreview() {
       )
     })()
   })
+
+  // x_preview_open_file writes the file it wants shown to the shared state and the main
+  // process forwards it here. Reacting to it is what puts the file on screen — the tool
+  // returning is not what makes it visible. Text is read over `zfile://`; the binary
+  // kinds are handed to the browser's own element, which range-requests the file.
+  createEffect(() => {
+    const want = file()
+    if (!want) {
+      setTextContent(null)
+      return
+    }
+    setPreviewActiveState(true)
+    setMode("url")
+    setStreamError(null)
+    setAttachedWindowState(null)
+    if (want.kind !== "text") {
+      setTextContent(null)
+      return
+    }
+    void (async () => {
+      try {
+        const res = await fetch(previewFileUrl(want.path))
+        setTextContent(res.ok ? await res.text() : null)
+      } catch {
+        setTextContent(null)
+      }
+    })()
+  })
+
+  const closeFile = () => {
+    setTextContent(null)
+    setPreview((current) => ({ ...current, file: null }))
+    void window.api?.setPreviewState?.({
+      ...preview(),
+      file: null,
+      timestamp: new Date().toISOString(),
+    })
+  }
+
+  const openFileExternally = () => {
+    const current = file()
+    if (current && window.api?.openPath) void window.api.openPath(current.path)
+  }
 
   onMount(() => {
     // Subscribe before reading the current state so an update published while the read is
@@ -346,6 +404,11 @@ export function SitePreview() {
 
   const hasUrl = () => !!preview().url
   const isWindow = () => mode() === "window" && !!attached()
+  const file = () => preview().file ?? null
+  // A file the agent asked to show wins over the page view: x_preview_open_file is
+  // a deliberate "put this on screen", so it takes the panel until the agent
+  // replaces it or the user closes it.
+  const hasFile = () => !isWindow() && !!file()
 
   const cycleDevice = () => {
     const modes: DeviceMode[] = ["desktop", "tablet", "mobile"]
@@ -370,18 +433,35 @@ export function SitePreview() {
               <div class="w-2 h-2 rounded-full bg-green-500 shrink-0" />
               <span class="text-12-regular text-text truncate max-w-[220px]">{attached()!.name}</span>
             </Show>
-            <Show when={!isWindow() && hasUrl()}>
+            <Show when={hasFile()}>
+              <div class="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+              <span class="text-12-regular text-text truncate max-w-[220px]">{file()!.name}</span>
+            </Show>
+            <Show when={!isWindow() && !hasFile() && hasUrl()}>
               <div class="w-2 h-2 rounded-full bg-green-500 shrink-0" />
               <span class="text-12-regular text-text truncate max-w-[180px]">
                 {preview().siteName || "Live Preview"}
               </span>
             </Show>
-            <Show when={!isWindow() && !hasUrl()}>
+            <Show when={!isWindow() && !hasFile() && !hasUrl()}>
               <span class="text-12-regular text-text-weak">No preview</span>
             </Show>
           </div>
           <div class="flex items-center gap-1 shrink-0">
-            <Show when={!isWindow() && hasUrl()}>
+            <Show when={hasFile()}>
+              <TooltipV2 value="Open in the system app" placement="bottom">
+                <IconButtonV2
+                  icon={<IconV2 name="outline-square-arrow" />}
+                  variant="ghost-muted"
+                  size="normal"
+                  onClick={openFileExternally}
+                />
+              </TooltipV2>
+              <TooltipV2 value="Close this file" placement="bottom">
+                <IconButtonV2 icon={<IconV2 name="close" />} variant="ghost-muted" size="normal" onClick={closeFile} />
+              </TooltipV2>
+            </Show>
+            <Show when={!isWindow() && !hasFile() && hasUrl()}>
               <TooltipV2 value={`Device: ${DEVICE_LABELS[device()]}`} placement="bottom">
                 <IconButtonV2 icon={<IconV2 name="monitor" />} variant="ghost-muted" size="normal" onClick={cycleDevice} />
               </TooltipV2>
@@ -400,7 +480,7 @@ export function SitePreview() {
                 />
               </TooltipV2>
             </Show>
-            <Show when={!isWindow() && hasUrl()}>
+            <Show when={!isWindow() && !hasFile() && hasUrl()}>
               <TooltipV2 value="Open in browser" placement="bottom">
                 <IconButtonV2
                   icon={<IconV2 name="outline-square-arrow" />}
@@ -495,7 +575,66 @@ export function SitePreview() {
             </div>
           </Show>
 
-          <Show when={!streamError() && !isWindow() && hasUrl()}>
+          <Show when={hasFile()}>
+            <div class="w-full h-full flex items-center justify-center overflow-auto bg-black">
+              <Switch>
+                <Match when={file()!.kind === "image"}>
+                  <img
+                    src={previewFileUrl(file()!.path)}
+                    alt={file()!.name}
+                    class="max-w-full max-h-full object-contain"
+                  />
+                </Match>
+                <Match when={file()!.kind === "video"}>
+                  <video
+                    src={previewFileUrl(file()!.path)}
+                    class="max-w-full max-h-full"
+                    controls
+                    autoplay
+                    playsinline
+                  />
+                </Match>
+                <Match when={file()!.kind === "audio"}>
+                  <div class="w-full max-w-[420px] px-6 flex flex-col items-center gap-4">
+                    <IconV2 name="speaker" size="large" class="text-text-weak" />
+                    <div class="text-13-regular text-text text-center break-all">{file()!.name}</div>
+                    <audio src={previewFileUrl(file()!.path)} controls autoplay class="w-full" />
+                  </div>
+                </Match>
+                <Match when={file()!.kind === "pdf"}>
+                  <iframe
+                    src={previewFileUrl(file()!.path)}
+                    class="w-full h-full border-0 bg-white"
+                    title={`Preview: ${file()!.name}`}
+                  />
+                </Match>
+                <Match when={file()!.kind === "html"}>
+                  <iframe
+                    src={previewFileUrl(file()!.path)}
+                    class="w-full h-full border-0 bg-white"
+                    sandbox="allow-scripts"
+                    title={`Preview: ${file()!.name}`}
+                  />
+                </Match>
+                <Match when={file()!.kind === "text"}>
+                  <Show
+                    when={textContent() !== null}
+                    fallback={
+                      <div class="h-full w-full flex items-center justify-center text-12-regular text-text-weak">
+                        Loading…
+                      </div>
+                    }
+                  >
+                    <pre class="w-full h-full overflow-auto m-0 p-4 text-12-regular text-text whitespace-pre-wrap break-words bg-surface-base text-left">
+                      {textContent()}
+                    </pre>
+                  </Show>
+                </Match>
+              </Switch>
+            </div>
+          </Show>
+
+          <Show when={!streamError() && !isWindow() && !hasFile() && hasUrl()}>
             <div
               class="h-full overflow-hidden transition-all duration-300"
               style={{
@@ -513,7 +652,7 @@ export function SitePreview() {
             </div>
           </Show>
 
-          <Show when={!streamError() && !isWindow() && !hasUrl()}>
+          <Show when={!streamError() && !isWindow() && !hasFile() && !hasUrl()}>
             <div class="h-full w-full flex flex-col items-center justify-center gap-4 px-6 text-center">
               <div class="w-16 h-16 rounded-2xl bg-background-base flex items-center justify-center">
                 <IconV2 name="globe" size="large" class="text-text-weak" />

@@ -45,7 +45,8 @@ export const TOOL_TIER_MAP: Record<string, Tier> = {
 
   // PREVIEW BOX CONTROL (free trial) — the agent's own screen, cross-platform
   x_preview_list_windows: "free", x_preview_attach_window: "free", x_preview_detach_window: "free",
-  x_preview_launch_app: "free", x_preview_open_url: "free", x_preview_screenshot: "free",
+  x_preview_launch_app: "free", x_preview_open_url: "free", x_preview_open_file: "free",
+  x_preview_screenshot: "free",
   x_preview_click: "free", x_preview_type: "free", x_preview_fill_form: "free",
   x_preview_key: "free", x_preview_scroll: "free", x_preview_read_text: "free",
   x_preview_elements: "free", x_preview_find: "free", x_preview_wait: "free",

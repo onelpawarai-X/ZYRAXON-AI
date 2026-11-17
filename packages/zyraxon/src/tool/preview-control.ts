@@ -16,8 +16,11 @@
  * happens, and the user's own windows stay under their own control.
  */
 
+import path from "path"
 import { Effect, Schema } from "effect"
 import { Tool } from "../tool/tool"
+import { InstanceState } from "@/effect/instance-state"
+import { FSUtil } from "@zyraxon-ai/core/fs-util"
 
 type Metadata = { [key: string]: unknown }
 
@@ -140,6 +143,7 @@ on it. Call preview_detach_window when you are done.`,
             const current = await engine.readPreviewState()
             await engine.writePreviewState({
               ...current,
+              file: null,
               attachedWindow: { id: target.handle as string, name: target.title ?? params.title },
             })
           })
@@ -245,18 +249,161 @@ browser, so nothing steals focus from what they are doing.`,
       execute: (params: { url: string }) =>
         Effect.gen(function* () {
           const engine = yield* Effect.promise(() => import("../pro-builder/engine"))
-          yield* Effect.promise(() =>
-            engine.writePreviewState({
+          yield* Effect.promise(async () => {
+            await engine.writePreviewState({
               url: params.url,
               siteName: params.url,
               siteId: null,
+              attachedWindow: null,
+              file: null,
               timestamp: new Date().toISOString(),
-            }),
-          )
+            })
+          })
           return {
             title: `Preview opened ${params.url}`,
             metadata: { url: params.url },
             output: JSON.stringify({ message: "URL is now showing in the Preview panel.", url: params.url }, null, 2),
+          }
+        }),
+    }
+  }),
+)
+
+// ─── Opening a file from disk ─────────────────────────────────────────────────
+
+const OpenFileParameters = Schema.Struct({
+  path: Schema.String.annotate({
+    description:
+      "Absolute path to the file to show, or a path relative to the project directory. Images, video, audio, PDF, HTML and text are all accepted.",
+  }),
+  name: Schema.optional(Schema.String).annotate({
+    description: "Label to show in the panel header. Defaults to the file's own name.",
+  }),
+})
+
+type OpenFileKind = "image" | "video" | "audio" | "pdf" | "html" | "text"
+
+const IMAGE_EXTENSIONS = new Set([
+  "png", "jpg", "jpeg", "gif", "webp", "avif", "bmp", "ico", "tif", "tiff", "heic", "svg",
+])
+const VIDEO_EXTENSIONS = new Set(["mp4", "webm", "mkv", "avi", "mov", "wmv", "flv", "m4v", "3gp", "mpeg", "mpg"])
+const AUDIO_EXTENSIONS = new Set(["mp3", "wav", "ogg", "m4a", "aac", "flac", "opus", "wma", "oga"])
+const HTML_EXTENSIONS = new Set(["html", "htm", "xhtml"])
+
+/** What the panel should use to render the file. The extension decides between
+ *  page and text, because `text/html` and `text/plain` are the same MIME family
+ *  and only the extension tells them apart; the sniffed MIME decides the rest,
+ *  so a `.ts` source file is not mistaken for a video stream. */
+function classifyPreviewFile(ext: string, mime: string): OpenFileKind {
+  if (ext === "pdf" || mime === "application/pdf") return "pdf"
+  if (HTML_EXTENSIONS.has(ext)) return "html"
+  if (IMAGE_EXTENSIONS.has(ext) || mime.startsWith("image/")) return "image"
+  if (VIDEO_EXTENSIONS.has(ext) || mime.startsWith("video/")) return "video"
+  if (AUDIO_EXTENSIONS.has(ext) || mime.startsWith("audio/")) return "audio"
+  return "text"
+}
+
+/** Largest file handed to the chat as an inline data URL. The panel streams the
+ *  real file over `zfile://` regardless, so a bigger one is still watchable —
+ *  it is only the in-chat copy that is skipped, because base64 inflates it by a
+ *  third and the whole thing would ride in the session store. */
+const MAX_INLINE_ATTACHMENT_BYTES = 25 * 1024 * 1024
+
+export const PreviewOpenFileTool = Tool.define<typeof OpenFileParameters, Metadata, FSUtil.Service>(
+  "x_preview_open_file",
+  Effect.gen(function* () {
+    const fs = yield* FSUtil.Service
+    const instance = yield* InstanceState.context
+    return {
+      description: `Show a file from disk in the Preview panel — the agent's own screen.
+
+Give it a path and the panel opens that file in place, streaming it from disk:
+an image, a video, an audio clip, a PDF, an HTML page or a text file. This is how
+you put something you generated or found in front of the user without leaving the
+app, and how you verify it yourself afterwards with x_preview_screenshot.
+
+Use it whenever you produce or read media and want it visible: after
+media_generate, after reading an image, video or audio file, or when the user asks
+to see a file. It is the panel's file view, not the user's browser.`,
+      parameters: OpenFileParameters,
+      execute: (params: { path: string; name?: string }) =>
+        Effect.gen(function* () {
+          const requested = params.path
+          const filepath = path.isAbsolute(requested) ? requested : path.resolve(instance.directory, requested)
+
+          const exists = yield* fs.existsSafe(filepath)
+          if (!exists) {
+            return {
+              title: "File not found",
+              metadata: { found: false, path: filepath },
+              output: JSON.stringify(
+                { found: false, path: filepath, hint: "No file at that path. Check it with glob or read first." },
+                null,
+                2,
+              ),
+            }
+          }
+          const stat = yield* fs.stat(filepath).pipe(Effect.catch(() => Effect.succeed(undefined)))
+          if (stat?.type === "Directory") {
+            return {
+              title: "That is a directory",
+              metadata: { found: true, directory: true, path: filepath },
+              output: JSON.stringify(
+                { directory: true, path: filepath, hint: "Give the path to a file inside the directory." },
+                null,
+                2,
+              ),
+            }
+          }
+
+          const name = params.name ?? path.basename(filepath)
+          const ext = path.extname(filepath).slice(1).toLowerCase()
+          const mime = FSUtil.mimeType(filepath)
+          const kind = classifyPreviewFile(ext, mime)
+
+          // Announce it to the panel first. The desktop main process watches this
+          // file and forwards it, which is what actually renders the file — the
+          // tool returning successfully is not what makes it visible.
+          yield* Effect.promise(async () => {
+            const engine = await import("../pro-builder/engine")
+            const current = await engine.readPreviewState()
+            await engine.writePreviewState({
+              ...current,
+              attachedWindow: null,
+              file: { path: filepath, name, mime, kind },
+            })
+          })
+
+          // Give the chat its own copy too, so the media is visible in the reply
+          // and not only in the panel. Skipped for a file too large to inline.
+          const size = stat?.size ?? 0
+          const inline = kind !== "text" && kind !== "html" && size > 0 && size <= MAX_INLINE_ATTACHMENT_BYTES
+          const attachments = inline
+            ? [
+                {
+                  type: "file" as const,
+                  mime,
+                  url: `data:${mime};base64,${Buffer.from(yield* fs.readFile(filepath).pipe(Effect.orDie)).toString("base64")}`,
+                  filename: name,
+                },
+              ]
+            : undefined
+
+          return {
+            title: `Previewing ${name}`,
+            metadata: { path: filepath, name, mime, kind },
+            output: JSON.stringify(
+              {
+                message: `${name} is now showing in the Preview panel.`,
+                path: filepath,
+                kind,
+                mime,
+                inlinedInChat: inline,
+              },
+              null,
+              2,
+            ),
+            attachments,
           }
         }),
     }

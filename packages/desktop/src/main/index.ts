@@ -38,6 +38,7 @@ import { setupAutoUpdater, showUpdaterDialog } from "./updater"
 import { safeWebContentsURL } from "./window-state"
 import {
   getLastFocusedWindow,
+  registerPreviewFileProtocol,
   registerRendererProtocol,
   setRelaunchHandler,
   setAppQuitting,
@@ -324,6 +325,7 @@ const main = Effect.gen(function* () {
   )
   app.setAsDefaultProtocolClient("zyraxon")
   registerRendererProtocol()
+  registerPreviewFileProtocol()
   setDockIcon()
   const updater = setupAutoUpdater(stopSidecars)
   registerIpcHandlers({
