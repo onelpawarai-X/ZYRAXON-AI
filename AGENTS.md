@@ -331,6 +331,15 @@ wrong. Fix the copy.
 - Do not edit `src/generated` or `src/generated-effect` by hand.
 
 #
+# Server Prompt Vault
+
+- The 11 agent-mode prompts, the provider prompts, the reminders and the utility prompts live on the ZYRAXON server, never in this repo or in a shipped binary. `packages/zyraxon/src/subscription/prompt-vault.ts` is the client: it holds only the vault URL and the `@vault:<group>:<key>` reference format.
+- Prompt references are created at runtime by `PromptVault.ref(...)` and resolved per turn in `session/llm/request.ts` and `session/reminders.ts`. Grepping a built bundle for the literal `@vault:` finds nothing because the prefix is composed in code, not stored as text.
+- The server is `https://zyraxonai.lovable.app/api/public/agent/prompts` (override with `ZYRAXON_PROMPT_VAULT_URL`). It reads: no query returns the catalogue (groups, keys, tiers, hashes — no text); `?group=&key=` returns one prompt; `?mode=` is shorthand for `group=mode`. A tier sent by the caller is ignored: the server resolves the tier from the licence code (`x-zyraxon-code` header or `code` query/body).
+- Prompt text must never be added back to a prompt file, a generated bundle, or an `AGENTS.md` under `node_modules`. `scripts/inject-critical-rules.ts` guards against the last one, and `electron-builder.config.ts` excludes `**/AGENTS.md` from packaging.
+- When a prompt group changes on the server, only the server redeploys. No client release is needed unless the vault contract itself changes.
+
+#
 # Branch Names
 
 Use a short branch name of at most three words, separated by hyphens. Do not use slashes or type prefixes such as `feat/` or `fix/`.
