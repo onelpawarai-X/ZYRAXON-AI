@@ -5,6 +5,7 @@
 // that would break the build if annotated is reported and skipped, never edited.
 
 import { spawnSync } from "node:child_process"
+import { existsSync } from "node:fs"
 import * as path from "node:path"
 
 const OWNER = "onelpawarai"
@@ -74,7 +75,7 @@ const SKIP_PATH_EXACT = new Set([
 ])
 
 // Generated trees whose contents must stay byte-for-byte reproducible.
-const SKIP_PATH_SUFFIXES = ["src/generated", "src/generated-effect", "src/client/generated"]
+const SKIP_PATH_SUFFIXES = ["src/generated", "src/generated-effect", "src/client/generated", "src/v2/gen"]
 
 // Only code the Licensor actually authors may carry our copyright notice.
 // Stamping vendored or third-party copies would assert a claim we do not hold,
@@ -82,6 +83,19 @@ const SKIP_PATH_SUFFIXES = ["src/generated", "src/generated-effect", "src/client
 const FIRST_PARTY_ROOTS = ["packages/", "scripts/", "apps/", "tools/", "plugin/"]
 
 type Decision = { file: string; action: "add" | "present" | "skip"; reason: string }
+
+/** A `.d.ts` that sits beside a `.ts`/`.tsx` of the same name is emitted by the
+ *  compiler from that sibling, not written by hand: the next `tsc` run rewrites
+ *  it and drops any header we add, so the check would flap. A `.d.ts` with no
+ *  sibling is hand-authored and is stamped like any other source file. */
+function isEmittedDeclaration(normalised: string): boolean {
+  if (!normalised.endsWith(".d.ts") && !normalised.endsWith(".d.mts")) return false
+  const stem = normalised.replace(/\.d\.m?ts$/, "")
+  for (const source of [".ts", ".tsx", ".mts", ".cts"]) {
+    if (existsSync(path.join(process.cwd(), `${stem}${source}`))) return true
+  }
+  return false
+}
 
 function extensionOf(file: string): string {
   const base = path.basename(file)
@@ -103,6 +117,7 @@ function skipReason(file: string, scope: string): string | null {
   const segments = normalised.split("/").slice(0, -1)
   for (const segment of segments) if (SKIP_PATH_SEGMENTS.has(segment)) return `path segment "${segment}"`
   for (const suffix of SKIP_PATH_SUFFIXES) if (normalised.includes(suffix)) return `generated tree "${suffix}"`
+  if (isEmittedDeclaration(normalised)) return "emitted declaration for a sibling source"
   if (SKIP_PATH_EXACT.has(path.basename(normalised))) return "licence or metadata document"
   const ext = extensionOf(normalised)
   if (NO_COMMENT.has(ext)) return `${ext} cannot carry a comment`

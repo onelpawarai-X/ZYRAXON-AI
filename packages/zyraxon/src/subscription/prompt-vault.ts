@@ -11,14 +11,25 @@ import { readSubState } from "./canonical"
  *  Only the fetch result is held, and only in memory. Nothing is written to
  *  disk, so a cache scrape after a run finds no prompt either. */
 
-const VAULT_URL =
-  (process.env.ZYRAXON_PROMPT_VAULT_URL || "").trim() ||
-  "https://zyraxonai.lovable.app/api/public/agent/prompts"
+/** Read per call rather than at import time. Bun's test runner shares one module
+ *  cache across every file in a run, so a URL captured at import time is frozen
+ *  to whatever the first importer saw — which made the vault test hit the real
+ *  server whenever another test loaded this module first. Reading the environment
+ *  at the call site keeps the client pointed at whatever the current process
+ *  actually configured, and is also what lets a licence change repoint it. */
+function vaultUrl(): string {
+  return (
+    (process.env.ZYRAXON_PROMPT_VAULT_URL || "").trim() ||
+    "https://zyraxonai.lovable.app/api/public/agent/prompts"
+  )
+}
 
 /** Optional shared key. A shipped key is not a secret — it is a speed bump that
  *  stops a random internet caller from reading the catalogue without running the
  *  app. The real gate is the licence code, resolved on the server. */
-const SHARED_KEY = (process.env.ZYRAXON_PROMPT_KEY || "").trim()
+function sharedKey(): string {
+  return (process.env.ZYRAXON_PROMPT_KEY || "").trim()
+}
 
 const TIMEOUT_MS = 8_000
 
@@ -52,7 +63,8 @@ const inflight = new Map<string, Promise<string | undefined>>()
 
 function headers(): Record<string, string> {
   const head: Record<string, string> = { accept: "application/json" }
-  if (SHARED_KEY) head["x-zyraxon-key"] = SHARED_KEY
+  const key = sharedKey()
+  if (key) head["x-zyraxon-key"] = key
   const code = readSubState().secretCode
   if (code) head["x-zyraxon-code"] = code
   return head
@@ -60,7 +72,7 @@ function headers(): Record<string, string> {
 
 async function request(group: string, key: string): Promise<string | undefined> {
   try {
-    const url = `${VAULT_URL}?group=${encodeURIComponent(group)}&key=${encodeURIComponent(key)}`
+    const url = `${vaultUrl()}?group=${encodeURIComponent(group)}&key=${encodeURIComponent(key)}`
     const response = await fetch(url, { headers: headers(), signal: AbortSignal.timeout(TIMEOUT_MS) })
     if (!response.ok) return undefined
     const data = (await response.json()) as { prompt?: unknown }

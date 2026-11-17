@@ -33,7 +33,7 @@ const plugin = createSolidTransformPlugin()
 // produce the JavaScript, then obfuscated in place, then once more to compile
 // the obfuscated entry. `ZYRAXON_OBFUSCATE=0` skips the middle step, which is
 // what a sourcemap build wants.
-const HEAVY_PROFILE = {
+const HEAVY_PROFILE: JavaScriptObfuscator.ObfuscatorOptions = {
   compact: true,
   controlFlowFlattening: true,
   controlFlowFlatteningThreshold: 0.5,
@@ -44,13 +44,13 @@ const HEAVY_PROFILE = {
   stringArrayThreshold: 0.75,
   identifierNamesGenerator: "hexadecimal",
   selfDefending: false,
-} as const
+}
 
 // Control-flow flattening on a multi-megabyte chunk is quadratic in memory; the
 // desktop build hit the same wall on its ~28 MB server bundle and dropped to a
 // lighter profile there. String-array plus hex identifiers still leaves the file
 // unreadable without the run having to hold two flattened copies in the heap.
-const LIGHT_PROFILE = {
+const LIGHT_PROFILE: JavaScriptObfuscator.ObfuscatorOptions = {
   compact: true,
   identifierNamesGenerator: "hexadecimal",
   stringArray: true,
@@ -59,7 +59,7 @@ const LIGHT_PROFILE = {
   rotateStringArray: true,
   simplify: true,
   selfDefending: false,
-} as const
+}
 
 const HEAVY_PROFILE_LIMIT = 4 * 1024 * 1024
 
