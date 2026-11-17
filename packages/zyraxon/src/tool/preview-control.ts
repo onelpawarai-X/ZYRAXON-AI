@@ -309,6 +309,22 @@ function classifyPreviewFile(ext: string, mime: string): OpenFileKind {
  *  third and the whole thing would ride in the session store. */
 const MAX_INLINE_ATTACHMENT_BYTES = 25 * 1024 * 1024
 
+/** Put a file on the Preview panel from anywhere. `x_preview_open_file` calls it,
+ *  and so do `read` and `media_generate`, so a picture or a video the agent reads
+ *  or makes appears in the panel by itself rather than only as a path in the
+ *  reply. The panel streams the file from disk, so nothing is inlined here. */
+export async function announcePreviewFile(filepath: string, name?: string): Promise<void> {
+  const ext = path.extname(filepath).slice(1).toLowerCase()
+  const mime = FSUtil.mimeType(filepath)
+  const engine = await import("../pro-builder/engine")
+  const current = await engine.readPreviewState()
+  await engine.writePreviewState({
+    ...current,
+    attachedWindow: null,
+    file: { path: filepath, name: name ?? path.basename(filepath), mime, kind: classifyPreviewFile(ext, mime) },
+  })
+}
+
 export const PreviewOpenFileTool = Tool.define<typeof OpenFileParameters, Metadata, FSUtil.Service>(
   "x_preview_open_file",
   Effect.gen(function* () {
@@ -364,15 +380,7 @@ to see a file. It is the panel's file view, not the user's browser.`,
           // Announce it to the panel first. The desktop main process watches this
           // file and forwards it, which is what actually renders the file — the
           // tool returning successfully is not what makes it visible.
-          yield* Effect.promise(async () => {
-            const engine = await import("../pro-builder/engine")
-            const current = await engine.readPreviewState()
-            await engine.writePreviewState({
-              ...current,
-              attachedWindow: null,
-              file: { path: filepath, name, mime, kind },
-            })
-          })
+          yield* Effect.promise(() => announcePreviewFile(filepath, name))
 
           // Give the chat its own copy too, so the media is visible in the reply
           // and not only in the panel. Skipped for a file too large to inline.

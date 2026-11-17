@@ -318,6 +318,12 @@ export const ReadTool = Tool.define<
           : isMedia(mime)
             ? `${mime.startsWith("audio/") ? "Audio" : "Video"} read successfully`
             : "Image read successfully"
+        // Also put it on the Preview panel, so a picture or a video the agent reads
+        // is visible where the user is looking and not only under the tool call.
+        yield* Effect.promise(async () => {
+          const preview = await import("./preview-control")
+          await preview.announcePreviewFile(filepath)
+        })
         return {
           title,
           output: msg,
