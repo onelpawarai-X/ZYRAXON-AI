@@ -11,6 +11,7 @@ import type { MessageV2 } from "../message-v2"
 import type { Provider } from "@/provider/provider"
 import { ProviderTransform } from "@/provider/transform"
 import { SystemPrompt } from "../system"
+import { PromptVault } from "@/subscription/prompt-vault"
 import { freeTierUserAgent } from "@zyraxon-ai/core/installation/version"
 import { Effect, Record } from "effect"
 import { jsonSchema, tool as aiTool, type ModelMessage, type Tool } from "ai"
@@ -62,9 +63,16 @@ export const prepare = Effect.fn("LLMRequestPrep.prepare")(function* (input: Pre
   // actually reads it, and only when the user picked a real language (not auto).
   const replyLanguage = input.user.replyLanguage?.trim()
   const languageDirective = replyLanguage ? `Always respond in ${replyLanguage}.` : undefined
+  // The agent's prompt (and the provider fallback) is a vault reference, not
+  // text: this binary ships no prompt at all. Resolve it over the network here,
+  // where the turn is being assembled, so an unreachable vault degrades to no
+  // prompt instead of failing the turn.
+  const primary = yield* Effect.promise(() =>
+    PromptVault.resolve(input.agent.prompt ?? SystemPrompt.provider(input.model)[0]),
+  )
   const system = [
     [
-      ...(input.agent.prompt ? [input.agent.prompt] : SystemPrompt.provider(input.model)),
+      ...(primary ? [primary] : []),
       ...input.system,
       ...(input.user.system ? [input.user.system] : []),
       ...(languageDirective ? [languageDirective] : []),

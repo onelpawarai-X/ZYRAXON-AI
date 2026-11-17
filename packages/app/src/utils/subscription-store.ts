@@ -8,8 +8,6 @@ import {
   hasAccess,
 } from "@/context/subscription-types"
 
-const ADMIN_AUTH_KEY = "zyraxon-admin-auth"
-
 // Subscription state lives in @/context/subscription — the single store every consumer
 // reads. This module only holds helpers that touch their own browser storage.
 export function openStripeCheckout(tier: SubscriptionTier): void {
@@ -49,22 +47,6 @@ export function isStripeReady(): boolean {
     (maxLink && !maxLink.includes("your-")) ||
     (ultraLink && !ultraLink.includes("your-"))
   )
-}
-
-export function isAdminUnlocked(): boolean {
-  try {
-    return localStorage.getItem(ADMIN_AUTH_KEY) === "true"
-  } catch {
-    return false
-  }
-}
-
-export function setAdminUnlocked(val: boolean): void {
-  if (val) {
-    localStorage.setItem(ADMIN_AUTH_KEY, "true")
-    return
-  }
-  localStorage.removeItem(ADMIN_AUTH_KEY)
 }
 
 export { TIER_ORDER, SUBSCRIPTION_PLANS, hasAccess }

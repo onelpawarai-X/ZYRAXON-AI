@@ -64,11 +64,6 @@ function readStoredState(): { state: SubscriptionState; problem: string | null }
   return { state: parsed.state, problem: null }
 }
 
-function computeExpiresAt(durationDays: number | null): number | null {
-  if (!durationDays) return null
-  return Date.now() + durationDays * 24 * 60 * 60 * 1000
-}
-
 export const { use: useSubscription, provider: SubscriptionProvider } = createSimpleContext({
   name: "Subscription",
   gate: false,
@@ -142,22 +137,6 @@ export const { use: useSubscription, provider: SubscriptionProvider } = createSi
       }
     }
 
-    function activateTier(tier: SubscriptionTier, durationDays?: number | null): void {
-      const now = Date.now()
-      const days = durationDays ?? SUBSCRIPTION_PLANS[tier].durationDays
-      const expiresAt = days ? computeExpiresAt(days) : null
-
-      setState({
-        tier,
-        activatedAt: now,
-        expiresAt,
-        secretCode: null,
-        stripeSessionId: null,
-      })
-      setRestoreProblem(null)
-      saveState(state)
-    }
-
     function resetToFree(): void {
       setState({
         tier: "free",
@@ -189,6 +168,16 @@ export const { use: useSubscription, provider: SubscriptionProvider } = createSi
 
     // 40-second Heartbeat: Verifies with server and auto-locks on expiry
     async function heartbeatCheck() {
+      // A paid tier with no secret code was never verified: it can only have come
+      // from a hand-edited store, since every real activation writes the code that
+      // unlocked it. Treat it as free rather than as access. The prompt vault does
+      // not rely on this — it resolves the tier server-side from the code — but a
+      // local store that says "ultra" must not make the local gate say "unlocked".
+      if (state.tier !== "free" && !state.secretCode) {
+        console.warn("[Subscription] Paid tier without a licence code. Reverting to Free tier.")
+        resetToFree()
+        return
+      }
       if (!state.secretCode || state.tier === "free") {
         if (state.expiresAt && Date.now() > state.expiresAt && state.tier !== "free") {
           resetToFree()
@@ -238,7 +227,6 @@ export const { use: useSubscription, provider: SubscriptionProvider } = createSi
       pendingTool,
       setPendingTool,
       activateWithCode,
-      activateTier,
       resetToFree,
       canUseTool,
       getToolStatus,
