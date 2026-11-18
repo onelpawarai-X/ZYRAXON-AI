@@ -249,7 +249,11 @@ jobs:
     name: Desktop · macOS (arm64 + x64)
     needs: reset-assets
     runs-on: macos-latest
-    timeout-minutes: 60
+    # The build step alone has taken 47-55 minutes on a cold cache, and the
+    # installer packaging adds ~6 more, so 60 minutes cut the job off mid
+    # packaging and left the release without its macOS assets. Match the other
+    # desktop jobs.
+    timeout-minutes: 90
     env:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
