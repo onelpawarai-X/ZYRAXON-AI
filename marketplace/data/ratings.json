@@ -1,0 +1,42 @@
+{
+  "shadow-ninja": [
+    {
+      "userId": "user-278779105",
+      "rating": 5,
+      "createdAt": "2026-08-05T03:05:01.968Z"
+    }
+  ],
+  "novamart": [
+    {
+      "userId": "user-278779105",
+      "rating": 5,
+      "createdAt": "2026-08-05T03:21:51.342Z"
+    },
+    {
+      "userId": "user-297132653",
+      "rating": 5,
+      "createdAt": "2026-08-05T07:46:30.392Z"
+    }
+  ],
+  "github-release-364852858": [
+    {
+      "userId": "user-278779105",
+      "rating": 5,
+      "createdAt": "2026-08-05T07:42:16.636Z"
+    }
+  ],
+  "vscode-ext-ms-python.python": [
+    {
+      "userId": "user-278779105",
+      "rating": 5,
+      "createdAt": "2026-08-05T07:52:04.000Z"
+    }
+  ],
+  "vscode-ext-wienans.zyraxon-zen-chat-provider": [
+    {
+      "userId": "user-297132653",
+      "rating": 1,
+      "createdAt": "2026-08-05T10:41:12.838Z"
+    }
+  ]
+}

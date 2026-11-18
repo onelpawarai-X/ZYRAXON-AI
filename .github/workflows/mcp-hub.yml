@@ -1,0 +1,104 @@
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
+name: mcp-hub
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ case(github.ref == 'refs/heads/dev', format('{0}-{1}', github.workflow, github.run_id), format('{0}-{1}', github.workflow, github.event.pull_request.number || github.ref)) }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  # The catalog is data, so a broken entry is a broken product. This checks the shape
+  # of every entry — unique ids, a tier for each kind, complete prose — without
+  # touching the network, and it runs on every platform because the Hub ships to all
+  # of them.
+  catalog:
+    name: catalog (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
+        with:
+          # The shape check reads tracked files only — no imports outside the repo —
+          # so it does not need node_modules. Skipping the install keeps this job off
+          # the Windows patch step, which is where it used to fail (see setup-bun).
+          install-deps: "false"
+
+      - name: Check catalog shape
+        run: bun run "MCP Hub/scripts/verify-catalog.mjs"
+
+      # The curated apps above are 108 hand-written entries. The verified catalog is the
+      # layer that grows — 8,094 rows produced by three scripts from a registry snapshot
+      # and two live passes — and until this step existed nothing checked it. Two real
+      # generator bugs shipped through that gap: every `url_input` row was filtered out as
+      # dead, and every browser app was reported as needing a client ID. This reads the
+      # generated modules with no network and fails on the first inconsistency.
+      - name: Check the verified catalog
+        run: bun run "MCP Hub/scripts/verify-verified.mjs"
+
+  # A local card promises that a command exists and answers an MCP initialize. That
+  # promise is platform-specific — `npx` is a shim on Windows, `uvx` resolves from a
+  # different place on macOS — so it is only proven by starting the real server on
+  # the real platform. Each entry is started with placeholder credentials; reaching
+  # the handshake is the whole assertion.
+  local-servers:
+    name: local servers (${{ matrix.os }})
+    needs: catalog
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
+        # Bun comes from the version pinned in package.json, so this job installs
+        # with the same Bun the release workflows do. The retry in setup-bun stays
+        # as a second line of defence against the Windows patch race.
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          enable-cache: true
+
+      - name: Start every local server
+        run: bun run "MCP Hub/scripts/verify-local.mjs"
+        timeout-minutes: 20

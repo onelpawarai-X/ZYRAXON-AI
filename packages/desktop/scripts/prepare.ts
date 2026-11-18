@@ -1,0 +1,11 @@
+#!/usr/bin/env bun
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
+import { Script } from "@zyraxon-ai/script"
+
+await import("./prebuild")
+
+const pkg = await Bun.file("./package.json").json()
+pkg.version = Script.version
+await Bun.write("./package.json", JSON.stringify(pkg, null, 2) + "\n")
+console.log(`Updated package.json version to ${Script.version}`)

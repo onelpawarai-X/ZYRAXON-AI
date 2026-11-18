@@ -1,0 +1,26 @@
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
+name: check-no-blacksmith
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for blacksmith runners
+        run: |
+          # Match runner labels, not every mention of the word. This workflow is
+          # itself named after the thing it looks for, so a plain search of the
+          # whole directory matches this file and can never pass.
+          if grep -rE --include='*.yml' '^[[:space:]]*(runs-on|host):[[:space:]].*blacksmith' .github/workflows/; then
+            echo "::error::Blacksmith runners detected! Use a GitHub-hosted runner instead."
+            exit 1
+          fi
+          echo "No blacksmith runners. OK!"

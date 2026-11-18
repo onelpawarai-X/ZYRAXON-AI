@@ -1,0 +1,6 @@
+hi/app/common.moreCountSuffix: marker dropped, kept English
+hi/app/session.todo.progress: marker dropped, kept English
+hi/ui/ui.message.duration.seconds: marker dropped, kept English
+hi/ui/ui.sessionTurn.diffs.more: marker dropped, kept English
+hi/ui/ui.sessionTurn.retry.attempt: marker dropped, kept English
+hi/ui/ui.sessionTurn.retry.attemptLine: marker dropped, kept English

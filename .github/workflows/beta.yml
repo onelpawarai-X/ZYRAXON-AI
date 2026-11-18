@@ -1,0 +1,43 @@
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
+name: beta
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 * * * *"
+
+jobs:
+  sync:
+    # The beta sync needs a GitHub App, a ZYRAXON_API_KEY, and a dev branch to
+    # branch from, none of which exist in this repository. Without this it fails
+    # every hour on the schedule for a reason that is not fixable in the file.
+    if: github.repository == 'onelpawarai-X/ZYRAXON-AI'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
+
+      - name: Setup Git Committer
+        id: setup-git-committer
+        uses: ./.github/actions/setup-git-committer
+        with:
+          zyraxon-app-id: ${{ vars.ZYRAXON_APP_ID }}
+          zyraxon-app-secret: ${{ secrets.ZYRAXON_APP_SECRET }}
+
+      - name: Install Zyraxon
+        run: bun i -g zyraxon-ai
+
+      - name: Sync beta branch
+        env:
+          GH_TOKEN: ${{ steps.setup-git-committer.outputs.token }}
+          ZYRAXON_API_KEY: ${{ secrets.ZYRAXON_API_KEY }}
+        run: bun script/beta.ts

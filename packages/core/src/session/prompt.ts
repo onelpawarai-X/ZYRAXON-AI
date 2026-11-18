@@ -1,0 +1,3 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
+export { AgentAttachment, FileAttachment, Prompt, Source } from "@zyraxon-ai/schema/prompt"

@@ -1,0 +1,19 @@
+#!/usr/bin/env bun
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
+import { $ } from "bun"
+
+import { resolveChannel } from "./utils"
+
+if (!process.env.NODE_OPTIONS?.includes("max-old-space-size")) {
+  const current = process.env.NODE_OPTIONS ?? ""
+  process.env.NODE_OPTIONS = `${current} --max-old-space-size=8192`.trim()
+}
+
+const channel = resolveChannel()
+await $`bun ./scripts/copy-icons.ts ${channel}`
+await $`bun ./scripts/copy-metainfo.ts ${channel}`
+await $`bun ./scripts/provision-tools.ts`
+// The bundled browser server needs a Chromium that travels with the app; the
+// system Chrome it used to look for is absent on most machines.
+await $`bun ./scripts/provision-browsers.ts`

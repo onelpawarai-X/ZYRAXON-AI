@@ -1,0 +1,16 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
+import type { IntegrationDraft, IntegrationMethodRegistration } from "../effect/integration.js"
+import type { CredentialValue } from "@zyraxon-ai/sdk/v2/types"
+import type { Hooks } from "./registration.js"
+
+export type { IntegrationDraft, IntegrationMethodRegistration }
+
+export interface IntegrationHooks extends Hooks<{ transform: IntegrationDraft }> {
+  readonly connection: {
+    readonly active: (integrationID: string) => Promise<import("@zyraxon-ai/sdk/v2/types").ConnectionInfo | undefined>
+    readonly resolve: (
+      connection: import("@zyraxon-ai/sdk/v2/types").ConnectionInfo,
+    ) => Promise<CredentialValue | undefined>
+  }
+}

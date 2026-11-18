@@ -1,0 +1,28 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
+import type { Hooks, PluginInput } from "@zyraxon-ai/plugin"
+
+export async function AzureAuthPlugin(_input: PluginInput): Promise<Hooks> {
+  const prompts = []
+  if (!process.env.AZURE_RESOURCE_NAME) {
+    prompts.push({
+      type: "text" as const,
+      key: "resourceName",
+      message: "Enter Azure Resource Name",
+      placeholder: "e.g. my-models",
+    })
+  }
+
+  return {
+    auth: {
+      provider: "azure",
+      methods: [
+        {
+          type: "api",
+          label: "API key",
+          prompts,
+        },
+      ],
+    },
+  }
+}
