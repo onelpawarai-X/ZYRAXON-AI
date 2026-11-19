@@ -12,7 +12,6 @@ if (!process.env.NODE_OPTIONS?.includes("max-old-space-size")) {
 
 const channel = resolveChannel()
 await $`bun ./scripts/copy-icons.ts ${channel}`
-await $`bun ./scripts/copy-metainfo.ts ${channel}`
 await $`bun ./scripts/provision-tools.ts`
 // The bundled browser server needs a Chromium that travels with the app; the
 // system Chrome it used to look for is absent on most machines.

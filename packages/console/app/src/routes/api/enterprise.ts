@@ -100,7 +100,7 @@ ${body.phone ? `${body.phone}<br>` : ""}`.trim()
         return false
       }),
       AWS.sendEmail({
-        to: "hello@zyraxonai.lovable.app",
+        to: "sayidilxs@gmail.com",
         subject: `Enterprise Inquiry from ${body.name}`,
         body: emailContent,
         replyTo: body.email,

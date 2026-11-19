@@ -238,7 +238,7 @@ export function Footer(props: {
     { href: "https://zyraxonai.lovable.app/legal/privacy-policy", label: i18n.t("footer.privacy") },
   ]
   const connect = [
-    { href: "mailto:hello@zyraxonai.lovable.app", label: i18n.t("footer.contact") },
+    { href: "mailto:sayidilxs@gmail.com", label: i18n.t("footer.contact") },
     { href: "https://zyraxonai.lovable.app/discord", label: i18n.t("footer.community") },
     { href: "https://x.com/SayidiLxs", label: "X" },
     { href: githubLink.href, label: i18n.t("header.github") },

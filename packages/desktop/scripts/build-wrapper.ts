@@ -5,7 +5,7 @@
  * build-wrapper.ts — Final desktop build step
  *
  * package.json script chain:
- *   "prebuild": "bun ./scripts/prebuild.ts"   → copy-icons + copy-metainfo
+ *   "prebuild": "bun ./scripts/prebuild.ts"   → copy-icons
  *   "build":    "bun ./scripts/build-wrapper.ts" → THIS FILE → electron-vite build
  *
  * This script:

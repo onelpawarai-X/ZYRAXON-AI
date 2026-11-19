@@ -23,7 +23,6 @@ import { MessageNav } from "@zyraxon-ai/session-ui/message-nav"
 import { FileSSR } from "@zyraxon-ai/session-ui/file-ssr"
 import { clientOnly } from "@solidjs/start"
 import { Meta, Title } from "@solidjs/meta"
-import { Base64 } from "js-base64"
 import { getRequestEvent } from "solid-js/web"
 
 const ClientOnlyWorkerPoolProvider = clientOnly(() =>
@@ -160,29 +159,7 @@ export default function () {
           const match = createMemo(() => Binary.search(data().session, data().sessionID, (s) => s.id))
           if (!match().found) throw new Error(`Session ${data().sessionID} not found`)
           const info = createMemo(() => data().session[match().index])
-          const ogImage = createMemo(() => {
-            const models = new Set<string>()
-            const messages = data().message[data().sessionID] ?? []
-            for (const msg of messages) {
-              if (msg.role === "assistant" && msg.modelID) {
-                models.add(msg.modelID)
-              }
-            }
-            const modelIDs = Array.from(models)
-            const encodedTitle = encodeURIComponent(Base64.encode(encodeURIComponent(info().title.substring(0, 700))))
-            let modelParam: string
-            if (modelIDs.length === 1) {
-              modelParam = modelIDs[0]
-            } else if (modelIDs.length === 2) {
-              modelParam = encodeURIComponent(`${modelIDs[0]} & ${modelIDs[1]}`)
-            } else if (modelIDs.length > 2) {
-              modelParam = encodeURIComponent(`${modelIDs[0]} & ${modelIDs.length - 1} others`)
-            } else {
-              modelParam = "unknown"
-            }
-            const version = `v${info().version}`
-            return `https://social-cards.zyraxonai.lovable.app/zyraxon-share/${encodedTitle}.png?model=${modelParam}&version=${version}&id=${data().shareID}`
-          })
+          const ogImage = "https://zyraxonai.lovable.app/social-share.png"
 
           return (
             <>
@@ -190,8 +167,8 @@ export default function () {
                 <Title>{info().title} | ZYRAXON</Title>
               </Show>
               <Meta name="description" content="zyraxon - The AI coding agent built for the terminal." />
-              <Meta property="og:image" content={ogImage()} />
-              <Meta name="twitter:image" content={ogImage()} />
+              <Meta property="og:image" content={ogImage} />
+              <Meta name="twitter:image" content={ogImage} />
               <ClientOnlyWorkerPoolProvider>
                 <FileComponentProvider component={FileSSR}>
                   <DataProvider data={data()} directory={info().directory}>

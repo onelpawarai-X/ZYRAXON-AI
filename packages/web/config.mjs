@@ -5,8 +5,7 @@ const stage = process.env.SST_STAGE || "dev"
 export default {
   url: stage === "production" ? "https://zyraxonai.lovable.app" : `https://${stage}.zyraxonai.lovable.app`,
   console: stage === "production" ? "https://zyraxonai.lovable.app/auth" : `https://${stage}.zyraxonai.lovable.app/auth`,
-  email: "hello@zyraxonai.lovable.app",
-  socialCard: "https://social-cards.zyraxonai.lovable.app",
+  email: "sayidilxs@gmail.com",
   github: "https://github.com/onelpawarai-X/ZYRAXON-AI",
   discord: "https://discord.gg/GP8yX33NA",
   headerLinks: [
