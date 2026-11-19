@@ -140,7 +140,7 @@ export default {
         if (!email) throw new Error("No email found")
         if (!subject) throw new Error("No subject found")
 
-        if (Resource.App.stage !== "production" && !email.endsWith("@anoma.ly")) {
+        if (Resource.App.stage !== "production" && !email.endsWith("@zyraxonai.lovable.app")) {
           throw new Error("Invalid email")
         }
 

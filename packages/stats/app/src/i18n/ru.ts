@@ -45,7 +45,7 @@ export const dict = {
   "footer.youtube": "YouTube",
   "footer.homeAria": "Главная ZYRAXON",
   "footer.status": "Все системы работают",
-  "footer.copyright": "© 2026 Anomaly Innovations Inc.",
+  "footer.copyright": "© 2026 onelpawarai",
   "bridge.learnMore": "УЗНАТЬ БОЛЬШЕ",
   "modal.closeNewsletter": "Закрыть форму подписки",
   "modal.title": "Рассылка ZYRAXON",

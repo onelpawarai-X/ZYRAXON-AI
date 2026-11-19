@@ -173,7 +173,7 @@ export default function Home() {
 
       <div data-component="legal">
         <span>
-          ©2025 <a href="https://anoma.ly">Anomaly</a>
+          ©2025 <a href="https://zyraxonai.lovable.app">ZYRAXON</a>
         </span>
       </div>
     </main>

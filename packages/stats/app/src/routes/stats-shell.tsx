@@ -242,7 +242,7 @@ export function Footer(props: {
     { href: "https://zyraxonai.lovable.app/discord", label: i18n.t("footer.community") },
     { href: "https://x.com/SayidiLxs", label: "X" },
     { href: githubLink.href, label: i18n.t("header.github") },
-    { href: "https://www.youtube.com/@anomaly-co", label: i18n.t("footer.youtube") },
+    { href: "https://www.youtube.com/@zyraxonai", label: i18n.t("footer.youtube") },
   ]
   const bridge = () =>
     props.bridge === undefined

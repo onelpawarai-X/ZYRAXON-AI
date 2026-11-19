@@ -216,8 +216,8 @@ export default function BlackWorkspace() {
       </main>
       <footer data-component="footer">
         <div data-slot="footer-content">
-          <span data-slot="anomaly">
-            ©{new Date().getFullYear()} <a href="https://anoma.ly">Anomaly</a>
+          <span data-slot="zyraxon">
+            ©{new Date().getFullYear()} <a href="https://zyraxonai.lovable.app">ZYRAXON</a>
           </span>
           <a href={config.github.repoUrl} target="_blank">
             {i18n.t("nav.github")} <span data-slot="github-stars">[{starCount()}]</span>
@@ -231,8 +231,8 @@ export default function BlackWorkspace() {
             <A href={language.route("/legal/terms-of-service")}>{i18n.t("legal.terms")}</A>
           </span>
         </div>
-        <span data-slot="anomaly-alt">
-          ©{new Date().getFullYear()} <a href="https://anoma.ly">Anomaly</a>
+        <span data-slot="zyraxon-alt">
+          ©{new Date().getFullYear()} <a href="https://zyraxonai.lovable.app">ZYRAXON</a>
         </span>
       </footer>
     </div>

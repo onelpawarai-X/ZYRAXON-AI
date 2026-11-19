@@ -34,7 +34,7 @@ export namespace AWS {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          FromEmailAddress: `ZYRAXON Zen <contact@anoma.ly>`,
+          FromEmailAddress: `ZYRAXON Zen <hello@zyraxonai.lovable.app>`,
           Destination: {
             ToAddresses: [input.to],
           },

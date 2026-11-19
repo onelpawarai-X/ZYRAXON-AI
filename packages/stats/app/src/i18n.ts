@@ -64,7 +64,7 @@ const en = {
   "footer.youtube": "YouTube",
   "footer.homeAria": "ZYRAXON home",
   "footer.status": "All systems Operational",
-  "footer.copyright": "© 2026 Anomaly Innovations Inc.",
+  "footer.copyright": "© 2026 onelpawarai",
   "bridge.learnMore": "LEARN MORE",
   "modal.closeNewsletter": "Close newsletter signup",
   "modal.title": "ZYRAXON Newsletter",

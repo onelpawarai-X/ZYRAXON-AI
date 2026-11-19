@@ -145,7 +145,7 @@ export function BillingSection() {
         <h2>{i18n.t("workspace.billing.title")}</h2>
         <p>
           {i18n.t("workspace.billing.subtitle.beforeLink")}{" "}
-          <a href="mailto:help@anoma.ly">{i18n.t("workspace.billing.contactUs")}</a>{" "}
+          <a href="mailto:hello@zyraxonai.lovable.app">{i18n.t("workspace.billing.contactUs")}</a>{" "}
           {i18n.t("workspace.billing.subtitle.afterLink")}
         </p>
       </div>
