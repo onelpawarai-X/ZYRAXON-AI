@@ -1,0 +1,103 @@
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
+# Run the verification gates and fail the job unless the verdict is ok.
+#
+# The gates run the real checks — typecheck, the unit suites, the real build —
+# and the verdict is written to `verify-verdict.json` and uploaded, so a caller
+# can act on it without reading the log. A non-zero exit here is the point: it is
+# what stops an unverified branch from being treated as finished.
+name: "Verify Gate"
+description: "Run the repository verification gates and report one verdict"
+
+inputs:
+  profile:
+    description: "Which gates to run: quick, full, containers, all or auto."
+    required: false
+    default: "quick"
+  root:
+    description: "Directory to verify. Empty verifies the checked-out workspace."
+    required: false
+    default: ""
+  upload-verdict:
+    description: "Upload verify-verdict.json as a workflow artifact."
+    required: false
+    default: "true"
+  node-version:
+    description: "Node version used to run the gate CLI."
+    required: false
+    default: "24"
+
+outputs:
+  ok:
+    description: "\"true\" when every gate passed."
+    value: ${{ steps.gate.outputs.ok }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    # The gate commands are `bun run ...` for this repository, so the toolchain
+    # has to be present even though the CLI itself runs under Node.
+    - name: Setup Bun and install dependencies
+      uses: ./.github/actions/setup-bun
+
+    # When the verified directory is another checkout (profile `auto`), that
+    # project's own dependencies have to be installed there. A missing manifest is
+    # not an error here: the CLI reports "no gates" for that root, which is a
+    # failure the verdict records rather than something this step guesses at.
+    - name: Install the verified project's dependencies
+      if: inputs.root != '' && inputs.root != github.workspace
+      shell: bash
+      run: |
+        set -euo pipefail
+        root="${{ inputs.root }}"
+        [ -f "${root}/package.json" ] || { echo "no package.json in ${root}; skipping install"; exit 0; }
+        cd "${root}"
+        if [ -f bun.lock ] || [ -f bun.lockb ]; then
+          bun install --frozen-lockfile
+        elif [ -f pnpm-lock.yaml ]; then
+          corepack enable && pnpm install --frozen-lockfile
+        elif [ -f yarn.lock ]; then
+          yarn install --frozen-lockfile
+        elif [ -f package-lock.json ]; then
+          npm ci
+        else
+          npm install
+        fi
+
+    - name: Run the verification gates
+      id: gate
+      shell: bash
+      # The step must not fail the job before the verdict is written, so the exit
+      # code is captured and re-raised after the artifact and outputs are handled.
+      # The verdict is written to an absolute path in the workspace, because the
+      # verified directory may be a checkout other than the workspace itself.
+      run: |
+        set +e
+        node --import ./scripts/node-test/loader.mjs --experimental-transform-types \
+          packages/agent-reliability-kernel/src/verify-cli.ts \
+          --profile "${{ inputs.profile }}" \
+          --root "${{ inputs.root || github.workspace }}" \
+          --out "${GITHUB_WORKSPACE}/verify-verdict.json"
+        code=$?
+        set -e
+
+        ok=$(node -e "const v=require('${GITHUB_WORKSPACE}/verify-verdict.json');console.log(v.ok?'true':'false')")
+        echo "ok=${ok}" >> "$GITHUB_OUTPUT"
+        echo "- profile: \`${{ inputs.profile }}\`" >> "$GITHUB_STEP_SUMMARY"
+        echo "- ok: **${ok}**" >> "$GITHUB_STEP_SUMMARY"
+
+        exit "$code"
+
+    - name: Upload the verdict
+      if: always() && inputs.upload-verdict == 'true'
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: verify-verdict
+        path: ${{ github.workspace }}/verify-verdict.json
+        if-no-files-found: warn
+        retention-days: 14

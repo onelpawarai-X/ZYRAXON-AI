@@ -1,0 +1,44 @@
+diff --git a/dist/index.js b/dist/index.js
+index dca128d3a790378c51a24a16d92585178343b278..b21570dbc97929c1621f1247cbf4e13ac4de4a45 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -160,7 +160,16 @@ function convertToOpenAICompatibleChatMessages(prompt) {
+                     ...partMetadata
+                   };
+                 }
+-                if (part.mediaType.startsWith("audio/")) {
++                if (part.mediaType.startsWith("video/")) {
++                  return {
++                    type: "video_url",
++                    video_url: {
++                      url: part.data instanceof URL ? part.data.toString() : `data:${part.mediaType};base64,${(0, import_provider_utils.convertToBase64)(part.data)}`
++                    },
++                    ...partMetadata
++                  };
++                }
++                if (part.mediaType.startsWith("audio/")) {
+                   if (part.data instanceof URL) {
+                     throw new import_provider.UnsupportedFunctionalityError({
+                       functionality: "audio file parts with URLs"
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 3b1e1b6bdec5032e3b4fa5ffbcc8cdf3dfe1cc40..020acced9bf49ccfb9b72498903081b37ea10bc9 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -145,7 +145,16 @@ function convertToOpenAICompatibleChatMessages(prompt) {
+                     ...partMetadata
+                   };
+                 }
+-                if (part.mediaType.startsWith("audio/")) {
++                if (part.mediaType.startsWith("video/")) {
++                  return {
++                    type: "video_url",
++                    video_url: {
++                      url: part.data instanceof URL ? part.data.toString() : `data:${part.mediaType};base64,${convertToBase64(part.data)}`
++                    },
++                    ...partMetadata
++                  };
++                }
++                if (part.mediaType.startsWith("audio/")) {
+                   if (part.data instanceof URL) {
+                     throw new UnsupportedFunctionalityError({
+                       functionality: "audio file parts with URLs"
