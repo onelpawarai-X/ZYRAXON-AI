@@ -1,0 +1,16 @@
+<!-- SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+     Copyright (c) 2026 onelpawarai. All rights reserved. -->
+
+<head>
+  <script src="./react/react@17.0.2.production.min.js"></script>
+  <script src="./react/react-dom@17.0.2.production.min.js"></script>
+  <script src="./react/material-ui@5.2.2.production.min.js"></script>
+</head>
+<body>
+  <div class='react-root'></div>
+  <script>
+    window.e = React.createElement;
+    window.reactRoot = document.querySelector('.react-root');
+    window.renderComponent = c => ReactDOM.render(c, window.reactRoot);
+  </script>
+</body>

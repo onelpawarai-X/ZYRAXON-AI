@@ -1,0 +1,23 @@
+# Copyright (c) 2026 onelpawarai. All rights reserved.
+
+from __future__ import annotations
+
+import asyncio
+from collections.abc import Callable
+
+AutoWebSocketsProtocol: Callable[..., asyncio.Protocol] | None
+try:
+    import websockets  # noqa
+except ImportError:  # pragma: no cover
+    try:
+        import wsproto  # noqa
+    except ImportError:
+        AutoWebSocketsProtocol = None
+    else:
+        from uvicorn.protocols.websockets.wsproto_impl import WSProtocol
+
+        AutoWebSocketsProtocol = WSProtocol
+else:
+    from uvicorn.protocols.websockets.websockets_sansio_impl import WebSocketsSansIOProtocol
+
+    AutoWebSocketsProtocol = WebSocketsSansIOProtocol

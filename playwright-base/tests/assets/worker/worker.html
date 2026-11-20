@@ -1,0 +1,17 @@
+<!-- SPDX-License-Identifier: LicenseRef-ZYRAXON-ZSL-X
+     Copyright (c) 2026 onelpawarai. All rights reserved. -->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Worker test</title>
+  </head>
+  <body>
+    <script>
+      var worker = new Worker('worker.js');
+      worker.onmessage = function(message) {
+        console.log(message.data);
+      };
+    </script>
+  </body>
+</html>
