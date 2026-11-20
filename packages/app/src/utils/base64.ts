@@ -1,0 +1,12 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
+import { base64Decode } from "@zyraxon-ai/core/util/encode"
+
+export function decode64(value: string | undefined) {
+  if (value === undefined) return
+  try {
+    return base64Decode(value)
+  } catch {
+    return
+  }
+}

@@ -1,0 +1,259 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
+.drag-drop-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  overflow: hidden;
+  border-radius: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(34, 211, 238, 0.16), transparent 60%),
+    radial-gradient(120% 90% at 50% 100%, rgba(192, 38, 211, 0.16), transparent 60%),
+    rgba(6, 12, 22, 0.78);
+  backdrop-filter: blur(6px);
+  isolation: isolate;
+}
+
+/* Diagonal light streak sweeping the whole surface */
+.drag-drop-overlay::before {
+  content: "";
+  position: absolute;
+  top: -30%;
+  bottom: -30%;
+  left: 0;
+  width: 42%;
+  background: linear-gradient(100deg, transparent, rgba(125, 249, 255, 0.14) 35%, rgba(232, 121, 249, 0.1) 65%, transparent);
+  filter: blur(10px);
+  animation: drag-drop-streak 1.7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  z-index: -1;
+}
+
+/* Marching-ants dashed frame */
+.drag-drop-frame {
+  position: absolute;
+  inset: 6px;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.drag-drop-frame svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.drag-drop-frame rect {
+  fill: none;
+  stroke: url(#drag-drop-gradient);
+  stroke-width: 2.2;
+  stroke-dasharray: 12 14;
+  animation: drag-drop-march 0.9s linear infinite;
+}
+
+/* Corner reticles */
+.drag-drop-corner {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border: 2.5px solid transparent;
+  filter: drop-shadow(0 0 12px rgba(34, 211, 238, 0.7));
+  animation: drag-drop-corner-breathe 1.6s ease-in-out infinite;
+}
+
+.drag-drop-corner-tl {
+  top: 2px;
+  left: 2px;
+  border-top-color: #22d3ee;
+  border-left-color: #22d3ee;
+  border-top-left-radius: 12px;
+}
+
+.drag-drop-corner-tr {
+  top: 2px;
+  right: 2px;
+  border-top-color: #e879f9;
+  border-right-color: #e879f9;
+  border-top-right-radius: 12px;
+  animation-delay: 0.18s;
+}
+
+.drag-drop-corner-bl {
+  bottom: 2px;
+  left: 2px;
+  border-bottom-color: #34d399;
+  border-left-color: #34d399;
+  border-bottom-left-radius: 12px;
+  animation-delay: 0.36s;
+}
+
+.drag-drop-corner-br {
+  bottom: 2px;
+  right: 2px;
+  border-bottom-color: #a78bfa;
+  border-right-color: #a78bfa;
+  border-bottom-right-radius: 12px;
+  animation-delay: 0.54s;
+}
+
+/* Icon in a glowing orbit ring */
+.drag-drop-icon-ring {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #040d14;
+  z-index: 2;
+}
+
+.drag-drop-icon-ring::before,
+.drag-drop-icon-ring::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  border: 2px solid rgba(34, 211, 238, 0.65);
+  box-shadow: 0 0 26px rgba(34, 211, 238, 0.45), inset 0 0 20px rgba(34, 211, 238, 0.3);
+  animation: drag-drop-ring-pulse 1.9s ease-out infinite;
+}
+
+.drag-drop-icon-ring::after {
+  border-color: rgba(232, 121, 249, 0.55);
+  box-shadow: 0 0 22px rgba(232, 121, 249, 0.35), inset 0 0 18px rgba(232, 121, 249, 0.25);
+  animation-delay: 0.55s;
+}
+
+.drag-drop-icon-core {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(140deg, #22d3ee, #67e8f9 45%, #e879f9);
+  box-shadow: 0 0 40px rgba(34, 211, 238, 0.55);
+  animation: drag-drop-float 2.1s ease-in-out infinite;
+  position: relative;
+  z-index: 1;
+}
+
+.drag-drop-icon-core svg {
+  width: 34px;
+  height: 34px;
+  stroke-width: 1.7;
+}
+
+.drag-drop-label {
+  z-index: 2;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #a5f3fc 0%, #f0abfc 30%, #67e8f9 55%, #c4b5fd 80%, #a5f3fc 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: drag-drop-shimmer 1.8s linear infinite;
+  filter: drop-shadow(0 0 14px rgba(34, 211, 238, 0.4));
+  white-space: nowrap;
+}
+
+.drag-drop-sub {
+  z-index: 2;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: rgba(165, 243, 252, 0.55);
+  text-transform: uppercase;
+  animation: drag-drop-blink 1.15s steps(1) infinite;
+}
+
+@keyframes drag-drop-streak {
+  0% {
+    transform: translateX(-120%) skewX(-14deg);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  62%,
+  100% {
+    transform: translateX(320%) skewX(-14deg);
+    opacity: 0;
+  }
+}
+
+@keyframes drag-drop-march {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -26;
+  }
+}
+
+@keyframes drag-drop-corner-breathe {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes drag-drop-ring-pulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+}
+
+@keyframes drag-drop-float {
+  0%,
+  100% {
+    transform: translateY(-4px);
+  }
+  50% {
+    transform: translateY(5px);
+  }
+}
+
+@keyframes drag-drop-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes drag-drop-blink {
+  0%,
+  60% {
+    opacity: 0.85;
+  }
+  61%,
+  100% {
+    opacity: 0.35;
+  }
+}
