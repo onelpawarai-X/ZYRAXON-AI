@@ -1,0 +1,276 @@
+// Copyright (c) 2026 onelpawarai. All rights reserved.
+
+import path from "path"
+import { Context, Duration, Effect, Layer, Option, Schedule, Schema } from "effect"
+import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/unstable/http"
+import { ProviderCatalog } from "@zyraxon-ai/schema/provider-catalog"
+import { Global } from "./global"
+import { Flag } from "./flag/flag"
+import { Flock } from "./util/flock"
+import { Hash } from "./util/hash"
+import { FSUtil } from "./fs-util"
+import { InstallationChannel, InstallationVersion } from "./installation/version"
+import { EventV2 } from "./event"
+import { makeGlobalNode } from "./effect/app-node"
+import { httpClient } from "./effect/app-node-platform"
+
+export const CatalogModelStatus = Schema.Literals(["alpha", "beta", "deprecated"])
+export type CatalogModelStatus = typeof CatalogModelStatus.Type
+
+const InterleavedField = Schema.Union([
+  Schema.Literals(["reasoning", "reasoning_content", "reasoning_text"]),
+  Schema.String,
+])
+
+const USER_AGENT = `zyraxon/${InstallationChannel}/${InstallationVersion}/${Flag.ZYRAXON_CLIENT}`
+
+const CostTier = Schema.Struct({
+  input: Schema.Finite,
+  output: Schema.Finite,
+  cache_read: Schema.optional(Schema.Finite),
+  cache_write: Schema.optional(Schema.Finite),
+  tier: Schema.Struct({
+    type: Schema.Literal("context"),
+    size: Schema.Finite,
+  }),
+})
+
+const Cost = Schema.Struct({
+  input: Schema.Finite,
+  output: Schema.Finite,
+  cache_read: Schema.optional(Schema.Finite),
+  cache_write: Schema.optional(Schema.Finite),
+  tiers: Schema.optional(Schema.Array(CostTier)),
+  context_over_200k: Schema.optional(
+    Schema.Struct({
+      input: Schema.Finite,
+      output: Schema.Finite,
+      cache_read: Schema.optional(Schema.Finite),
+      cache_write: Schema.optional(Schema.Finite),
+    }),
+  ),
+})
+
+const ReasoningOption = Schema.Union([
+  Schema.Struct({
+    type: Schema.Literal("effort"),
+    values: Schema.Array(Schema.NullOr(Schema.String)),
+  }),
+  Schema.Struct({
+    type: Schema.Literal("toggle"),
+  }),
+  Schema.Struct({
+    type: Schema.Literal("budget_tokens"),
+    min: Schema.optional(Schema.Finite),
+    max: Schema.optional(Schema.Finite),
+  }),
+])
+
+export const Model = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String,
+  family: Schema.optional(Schema.String),
+  release_date: Schema.String,
+  attachment: Schema.Boolean,
+  reasoning: Schema.Boolean,
+  temperature: Schema.Boolean,
+  tool_call: Schema.Boolean,
+  reasoning_options: Schema.optional(Schema.Array(ReasoningOption)),
+  interleaved: Schema.optional(
+    Schema.Union([
+      Schema.Boolean,
+      InterleavedField,
+      Schema.Struct({
+        field: InterleavedField,
+      }),
+    ]),
+  ),
+  cost: Schema.optional(Cost),
+  limit: Schema.Struct({
+    context: Schema.Finite,
+    input: Schema.optional(Schema.Finite),
+    output: Schema.Finite,
+  }),
+  modalities: Schema.optional(
+    Schema.Struct({
+      input: Schema.Array(Schema.Literals(["text", "audio", "image", "video", "pdf"])),
+      output: Schema.Array(Schema.Literals(["text", "audio", "image", "video", "pdf"])),
+    }),
+  ),
+  experimental: Schema.optional(
+    Schema.Struct({
+      modes: Schema.optional(
+        Schema.Record(
+          Schema.String,
+          Schema.Struct({
+            cost: Schema.optional(Cost),
+            provider: Schema.optional(
+              Schema.Struct({
+                body: Schema.optional(Schema.Record(Schema.String, Schema.MutableJson)),
+                headers: Schema.optional(Schema.Record(Schema.String, Schema.String)),
+              }),
+            ),
+          }),
+        ),
+      ),
+    }),
+  ),
+  status: Schema.optional(CatalogModelStatus),
+  provider: Schema.optional(
+    Schema.Struct({ npm: Schema.optional(Schema.String), api: Schema.optional(Schema.String) }),
+  ),
+})
+export type Model = Schema.Schema.Type<typeof Model>
+
+export const Provider = Schema.Struct({
+  api: Schema.optional(Schema.String),
+  name: Schema.String,
+  env: Schema.Array(Schema.String),
+  id: Schema.String,
+  npm: Schema.optional(Schema.String),
+  models: Schema.Record(Schema.String, Model),
+})
+
+export type Provider = Schema.Schema.Type<typeof Provider>
+
+export const Event = ProviderCatalog.Event
+
+declare const ZYRAXON_MODELS_DEV: Record<string, Provider> | undefined
+
+export interface Interface {
+  readonly get: () => Effect.Effect<Record<string, Provider>>
+  readonly refresh: (force?: boolean) => Effect.Effect<void>
+}
+
+export class Service extends Context.Service<Service, Interface>()("@zyraxon/ProviderCatalog") {}
+
+const layer = Layer.effect(
+  Service,
+  Effect.gen(function* () {
+    const fs = yield* FSUtil.Service
+    const events = yield* EventV2.Service
+    const http = HttpClient.filterStatusOk(
+      (yield* HttpClient.HttpClient).pipe(
+        HttpClient.retryTransient({
+          retryOn: "errors-and-responses",
+          times: 2,
+          schedule: Schedule.exponential(200).pipe(Schedule.jittered),
+        }),
+      ),
+    )
+
+    /**
+ * The catalog source. ZYRAXON reads model definitions from its own provider
+ * service rather than any third-party list. Point `ZYRAXON_MODELS_URL` at a
+ * different source and that one is cached under its own hash, so switching back
+ * and forth never serves the wrong catalogue.
+ */
+const CATALOG_URL = "https://zyraxonal-provider.lovable.app"
+
+    const source = Flag.ZYRAXON_MODELS_URL || CATALOG_URL
+    const filepath = path.join(
+      Global.Path.cache,
+      source === CATALOG_URL ? "models.json" : `models-${Hash.fast(source)}.json`,
+    )
+    const ttl = Duration.minutes(5)
+    const lockKey = `provider-catalog:${filepath}`
+
+    const fresh = Effect.fnUntraced(function* () {
+      const stat = yield* fs.stat(filepath).pipe(Effect.catch(() => Effect.succeed(undefined)))
+      if (!stat) return false
+      const mtime = Option.getOrElse(stat.mtime, () => new Date(0)).getTime()
+      return Date.now() - mtime < Duration.toMillis(ttl)
+    })
+
+    const fetchApi = Effect.fn("ProviderCatalog.fetchApi")(function* () {
+      return yield* HttpClientRequest.get(`${source}/api.json`).pipe(
+        HttpClientRequest.setHeader("User-Agent", USER_AGENT),
+        http.execute,
+        Effect.flatMap((res) => res.text),
+        Effect.timeout("10 seconds"),
+      )
+    })
+
+    const loadFromDisk = fs.readJson(Flag.ZYRAXON_MODELS_PATH ?? filepath).pipe(
+      Effect.catch((error) => {
+        if (
+          Flag.ZYRAXON_MODELS_PATH === undefined &&
+          error._tag === "FileSystemError" &&
+          error.method === "readJson"
+        ) {
+          return fs.remove(filepath, { force: true }).pipe(Effect.ignore, Effect.as(undefined))
+        }
+        return Effect.succeed(undefined)
+      }),
+      Effect.map((v) => v as Record<string, Provider> | undefined),
+    )
+
+    const loadSnapshot = Effect.sync(() =>
+      typeof ZYRAXON_MODELS_DEV === "undefined" ? undefined : ZYRAXON_MODELS_DEV,
+    )
+
+    const fetchAndWrite = Effect.fn("ProviderCatalog.fetchAndWrite")(function* () {
+      const text = yield* fetchApi()
+      const tempfile = `${filepath}.${process.pid}.${Date.now()}.tmp`
+      yield* fs.writeWithDirs(tempfile, text).pipe(
+        Effect.andThen(fs.rename(tempfile, filepath)),
+        Effect.catch((error) =>
+          Effect.gen(function* () {
+            yield* fs.remove(tempfile, { force: true }).pipe(Effect.ignore)
+            return yield* Effect.fail(error)
+          }),
+        ),
+      )
+      return text
+    })
+
+    const populate = Effect.gen(function* () {
+      const fromDisk = yield* loadFromDisk
+      if (fromDisk) return fromDisk
+      const snapshot = yield* loadSnapshot
+      if (snapshot) return snapshot
+      if (Flag.ZYRAXON_DISABLE_MODELS_FETCH) return {}
+      // Cold cache (no models.json, no bundled snapshot): never let the first
+      // caller block a server request on the external models fetch (which can
+      // take seconds over a slow/blocked network and would stall bootstrap of
+      // a fresh directory). Return an empty catalog immediately; the layer-start
+      // forked refresh() (see below, 60min cadence) already performs the fetch
+      // in the background, writes the cache file, and invalidates the memoized
+      // placeholder so a later get() re-populates from disk without the network.
+      return {}
+    }).pipe(Effect.withSpan("ProviderCatalog.populate"), Effect.orDie)
+
+    const [cachedGet, invalidate] = yield* Effect.cachedInvalidateWithTTL(populate, Duration.infinity)
+
+    const get = (): Effect.Effect<Record<string, Provider>> => cachedGet
+
+    const refresh = Effect.fn("ProviderCatalog.refresh")(function* (force = false) {
+      if (!force && (yield* fresh())) return
+      yield* Effect.scoped(
+        Effect.gen(function* () {
+          yield* Flock.effect(lockKey)
+          // Re-check under the lock: another process may have refreshed between
+          // our outer check and lock acquisition.
+          if (!force && (yield* fresh())) return
+          yield* fetchAndWrite()
+          yield* invalidate
+          yield* events.publish(Event.Refreshed, {})
+        }),
+      ).pipe(
+        Effect.tapCause((cause) => Effect.logError("Failed to refresh the provider catalogue", { cause: cause })),
+        Effect.ignore,
+      )
+    })
+
+    if (!Flag.ZYRAXON_DISABLE_MODELS_FETCH && !process.argv.includes("--get-yargs-completions")) {
+      // Schedule.spaced runs the effect once, then waits between completions.
+      yield* Effect.forkScoped(refresh().pipe(Effect.repeat(Schedule.spaced("60 minutes")), Effect.ignore))
+    }
+
+    return Service.of({ get, refresh })
+  }),
+)
+
+export const node = makeGlobalNode({ service: Service, layer: layer, deps: [FSUtil.node, EventV2.node, httpClient] })
+
+export * as ProviderCatalog from "./provider-catalog"
