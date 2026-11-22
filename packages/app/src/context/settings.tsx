@@ -93,11 +93,11 @@ export interface Settings {
 export const monoDefault = "System Mono"
 export const sansDefault = "System Sans"
 export const terminalDefault = "JetBrainsMono Nerd Font Mono"
-const legacyNewLayoutDesignsDefault = false
-export const newLayoutDesignsDefault = false
-// The previous interface stays available; the layout toggle remains user-controlled.
-export const oldInterfaceSunset = null
-const newLayoutDesignsUpgradeCutoff = "999.0.0"
+const legacyNewLayoutDesignsDefault = import.meta.env.VITE_ZYRAXON_CHANNEL !== "prod"
+export const newLayoutDesignsDefault = true
+// Existing users can switch layouts until local midnight on this date. Set new Date(YYYY, M-1, D) to show.
+export const oldInterfaceSunset = new Date(2026, 8, 14)
+const newLayoutDesignsUpgradeCutoff = "1.17.19"
 
 function compareVersions(a: string, b: string) {
   const parse = (version: string) => {
@@ -308,7 +308,22 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
     const layoutTransition = createMemo(() =>
       layoutTransitionState(!!sunset, layoutTransitionEligible(), oldInterfaceRetired(), newInterfaceNoticeDismissed()),
     )
-    const newLayoutDesigns = createMemo(() => false)
+    const newLayoutDesigns = createMemo(() => {
+      if (layoutUpgrade()) return true
+      if (!ready() && !oldInterfaceRetired()) return legacyNewLayoutDesignsDefault
+      if (!layoutTransitionClassified()) {
+        return resolveNewLayoutDesigns(
+          oldInterfaceRetired(),
+          store.general?.newLayoutDesigns,
+          legacyNewLayoutDesignsDefault,
+        )
+      }
+      return resolveNewLayoutDesigns(
+        oldInterfaceRetired(),
+        store.general?.newLayoutDesigns,
+        layoutTransitionEligible() ? legacyNewLayoutDesignsDefault : newLayoutDesignsDefault,
+      )
+    })
     const visible = (preference: () => boolean) => createMemo(() => !newLayoutDesigns() || preference())
 
     if (sunset && !oldInterfaceRetired()) {
