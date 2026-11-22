@@ -7,6 +7,7 @@ import { Icon as IconV2 } from "@zyraxon-ai/ui/v2/icon"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
 import { usePrompt } from "@/context/prompt"
 
+
 type BrowserState = {
   url: string
   title: string
@@ -52,6 +53,10 @@ function readablePermission(permission: string) {
 }
 
 export function BrowserPanel() {
+  return <DesktopBrowserPanel />
+}
+
+function DesktopBrowserPanel() {
   const prompt = usePrompt()
   const [state, setState] = createSignal<BrowserState>(blankState)
   const [address, setAddress] = createSignal("https://www.google.com/")
@@ -60,6 +65,7 @@ export function BrowserPanel() {
   const [reviewEnabled, setReviewEnabled] = createSignal(false)
   const [selection, setSelection] = createSignal<BrowserReviewSelection | null>(null)
   const [dismissedError, setDismissedError] = createSignal(false)
+  const [zoom, setZoom] = createSignal(1)
   let viewportRef: HTMLDivElement | undefined
 
   const updateBounds = () => {
@@ -77,6 +83,10 @@ export function BrowserPanel() {
       height: Math.max(1, Math.round(rect.height)),
       visible: true,
     })
+    void (window.api.browser as typeof window.api.browser & { resize?: (width: number, height: number) => void }).resize?.(
+      rect.width / zoom(),
+      rect.height / zoom(),
+    )
   }
 
   const navigate = () => {
@@ -215,6 +225,41 @@ export function BrowserPanel() {
               <div class="size-3 shrink-0 rounded-full border border-v2-icon-icon-faint border-t-v2-accent-accent-base animate-spin" />
             </Show>
           </form>
+
+          <div class="flex h-9 shrink-0 items-center gap-0.5 rounded-full border border-v2-border-border-weak-base bg-v2-surface-surface-base px-1">
+            <button
+              type="button"
+              class="size-7 rounded-full text-[13px] text-v2-text-text-muted hover:bg-v2-surface-surface-raised hover:text-v2-text-text-base"
+              onClick={() => {
+                setZoom(Math.max(0.5, Math.round((zoom() - 0.1) * 10) / 10))
+                queueMicrotask(updateBounds)
+              }}
+              aria-label="Zoom out"
+            >
+              −
+            </button>
+            <button
+              type="button"
+              class="min-w-11 text-[11px] font-medium text-v2-text-text-muted hover:text-v2-text-text-base"
+              onClick={() => {
+                setZoom(1)
+                queueMicrotask(updateBounds)
+              }}
+            >
+              {Math.round(zoom() * 100)}%
+            </button>
+            <button
+              type="button"
+              class="size-7 rounded-full text-[13px] text-v2-text-text-muted hover:bg-v2-surface-surface-raised hover:text-v2-text-text-base"
+              onClick={() => {
+                setZoom(Math.min(2, Math.round((zoom() + 0.1) * 10) / 10))
+                queueMicrotask(updateBounds)
+              }}
+              aria-label="Zoom in"
+            >
+              +
+            </button>
+          </div>
 
           <TooltipV2 value={reviewEnabled() ? "Exit element review (Ctrl+Shift+C)" : "Toggle element review (Ctrl+Shift+C)"} placement="bottom">
             <button
