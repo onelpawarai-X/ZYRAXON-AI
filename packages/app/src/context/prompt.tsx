@@ -76,7 +76,7 @@ export const createTabPromptState = (
   ...args: Parameters<typeof createPromptSession>
 ) => tabs.state(tab, "prompt", () => createPromptSession(...args))
 
-export const { use: usePrompt, provider: PromptProvider } = createSimpleContext({
+export const { use: usePrompt, tryUse: tryUsePrompt, provider: PromptProvider } = createSimpleContext({
   name: "Prompt",
   gate: false,
   init: () => {

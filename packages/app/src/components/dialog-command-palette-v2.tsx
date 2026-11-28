@@ -121,7 +121,7 @@ export function DialogCommandPaletteV2(props: { onOpenFile?: (path: string) => v
     if (!item) return
     if (item.type === "web") {
       palette.close()
-      openInAppBrowser(`https://www.google.com/search?q=${encodeURIComponent(item.webQuery ?? item.title)}`)
+      openInAppBrowser(`https://www.bing.com/search?q=${encodeURIComponent(item.webQuery ?? item.title)}`)
       return
     }
     if (item.type === "ask") {
@@ -190,7 +190,7 @@ export function DialogHomeCommandPaletteV2(props: {
     state.cleanup = undefined
     if (item.type === "web") {
       dialog.close()
-      openInAppBrowser(`https://www.google.com/search?q=${encodeURIComponent(item.webQuery ?? item.title)}`)
+      openInAppBrowser(`https://www.bing.com/search?q=${encodeURIComponent(item.webQuery ?? item.title)}`)
       return
     }
     if (item.type === "ask") {

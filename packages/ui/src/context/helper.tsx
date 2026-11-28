@@ -36,5 +36,8 @@ export function createSimpleContext<T, Props extends Record<string, any>>(
       if (!value) throw new Error(`${input.name} context must be used within a context provider`)
       return value
     },
+    tryUse() {
+      return useContext(ctx)
+    },
   }
 }

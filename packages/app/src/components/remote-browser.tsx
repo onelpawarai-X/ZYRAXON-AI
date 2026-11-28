@@ -14,7 +14,7 @@ import { IconButtonV2 } from "@zyraxon-ai/ui/v2/icon-button-v2"
 import { ButtonV2 } from "@zyraxon-ai/ui/v2/button-v2"
 import { Icon as IconV2 } from "@zyraxon-ai/ui/v2/icon"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
-import { usePrompt } from "@/context/prompt"
+import { tryUsePrompt } from "@/context/prompt"
 
 type RemoteState = {
   url: string
@@ -46,7 +46,7 @@ const initial: RemoteState = {
 const KEYS = new Set(["Enter", "Backspace", "Tab", "Escape", "Delete", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " "])
 
 export function RemoteBrowser(props: { initialUrl?: string; onClose?: () => void; path?: string }) {
-  const prompt = usePrompt()
+  const prompt = tryUsePrompt()
   const [state, setState] = createSignal<RemoteState>(initial)
   const [address, setAddress] = createSignal(props.initialUrl || "https://www.google.com/")
   const [addressFocused, setAddressFocused] = createSignal(false)
@@ -212,10 +212,18 @@ export function RemoteBrowser(props: { initialUrl?: string; onClose?: () => void
   const addSelection = () => {
     const value = selection()
     if (!value) return
+    const comment = `Selected element in ${value.title}\nSelector: ${value.selector}\n${value.text}`
+    // The overlay mounts above the prompt providers, so a selection picked here
+    // has no composer to land in; copy it instead of dropping it.
+    if (!prompt) {
+      void navigator.clipboard?.writeText(comment)
+      setSelection(null)
+      return
+    }
     prompt.context.add({
       type: "file",
       path: value.url,
-      comment: `Selected element in ${value.title}\nSelector: ${value.selector}\n${value.text}`,
+      comment,
       commentOrigin: "review",
       preview: value.html,
     })
