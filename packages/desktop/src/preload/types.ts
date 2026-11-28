@@ -151,12 +151,15 @@ export type BrowserAPI = {
   reload: () => Promise<boolean>
   stop: () => Promise<boolean>
   setBounds: (bounds: BrowserBounds) => Promise<boolean>
+  setZoom: (factor: number) => Promise<boolean>
+  setOverlayMode: (enabled: boolean) => Promise<boolean>
   getState: () => Promise<BrowserState>
   openExternal: () => Promise<boolean>
   respondPermission: (response: { id: string; allowed: boolean }) => Promise<boolean>
   setReviewMode: (enabled: boolean) => Promise<boolean>
   getReviewMode: () => Promise<boolean>
   onState: (cb: (state: BrowserState) => void) => () => void
+  onEscape: (cb: () => void) => () => void
   onPermissionRequest: (cb: (request: BrowserPermissionRequest) => void) => () => void
   onReviewSelection: (cb: (selection: BrowserReviewSelection) => void) => () => void
   onReviewModeChanged: (cb: (enabled: boolean) => void) => () => void

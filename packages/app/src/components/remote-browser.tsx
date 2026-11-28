@@ -51,6 +51,7 @@ export function RemoteBrowser(props: { initialUrl?: string; onClose?: () => void
   const [address, setAddress] = createSignal(props.initialUrl || "https://www.google.com/")
   const [addressFocused, setAddressFocused] = createSignal(false)
   const [frame, setFrame] = createSignal("")
+  const [stalled, setStalled] = createSignal(false)
   const [review, setReview] = createSignal(false)
   const [selection, setSelection] = createSignal<RemoteSelection | null>(null)
   const [error, setError] = createSignal("")
@@ -112,7 +113,10 @@ export function RemoteBrowser(props: { initialUrl?: string; onClose?: () => void
         })
         if (!addressFocused()) setAddress(message.url || address())
       }
-      if (message.type === "frame") setFrame(message.data || "")
+      if (message.type === "frame") {
+        setFrame(message.data || "")
+        setStalled(false)
+      }
       if (message.type === "selection") setSelection(message as RemoteSelection)
       if (message.type === "error") setError(String(message.message || "Browser error"))
     }
@@ -122,6 +126,10 @@ export function RemoteBrowser(props: { initialUrl?: string; onClose?: () => void
     connect()
     resizeObserver = new ResizeObserver(applyViewport)
     if (viewport) resizeObserver.observe(viewport)
+    // A streamed browser that never sends a frame is dead, not slow. Say so and
+    // hand the user the real browser instead of spinning forever.
+    const stallTimer = window.setTimeout(() => setStalled(true), 8000)
+    onCleanup(() => window.clearTimeout(stallTimer))
   })
   onCleanup(() => {
     resizeObserver?.disconnect()
@@ -408,9 +416,29 @@ export function RemoteBrowser(props: { initialUrl?: string; onClose?: () => void
         <Show
           when={frame()}
           fallback={
-            <div class="flex h-full w-full flex-col items-center justify-center gap-3 text-v2-text-text-faint">
-              <div class="size-6 rounded-full border-2 border-v2-icon-icon-faint border-t-v2-accent-accent-base animate-spin" />
-              <div class="text-[12px]">Starting the real browser…</div>
+            <div class="flex h-full w-full flex-col items-center justify-center gap-3 px-6 text-center text-v2-text-text-faint">
+              <Show
+                when={stalled()}
+                fallback={
+                  <>
+                    <div class="size-6 rounded-full border-2 border-v2-icon-icon-faint border-t-v2-accent-accent-base animate-spin" />
+                    <div class="text-[12px]">Starting the real browser…</div>
+                  </>
+                }
+              >
+                <div class="text-[13px] text-v2-text-text-muted">The streamed browser is not reachable here.</div>
+                <div class="max-w-sm text-[12px]">
+                  The full embedded Chromium runs in the ZYRAXON desktop app. In the browser you can open this page in
+                  your own browser, where your logins already live.
+                </div>
+                <ButtonV2
+                  variant="contrast"
+                  size="small"
+                  onClick={() => window.open(state().url || address(), "_blank", "noopener")}
+                >
+                  Open in my browser
+                </ButtonV2>
+              </Show>
             </div>
           }
         >

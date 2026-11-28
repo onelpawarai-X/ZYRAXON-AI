@@ -291,11 +291,14 @@ declare global {
         reload: () => Promise<boolean>
         stop: () => Promise<boolean>
         setBounds: (bounds: { x: number; y: number; width: number; height: number; visible: boolean }) => Promise<boolean>
+        setZoom: (factor: number) => Promise<boolean>
+        setOverlayMode: (enabled: boolean) => Promise<boolean>
         getState: () => Promise<{ url: string; title: string; loading: boolean; canGoBack: boolean; canGoForward: boolean; secure: boolean; error?: string }>
         openExternal: () => Promise<boolean>
         respondPermission: (response: { id: string; allowed: boolean }) => Promise<boolean>
         setReviewMode: (enabled: boolean) => Promise<boolean>
         getReviewMode: () => Promise<boolean>
+        onEscape: (cb: () => void) => () => void
         onState: (cb: (state: { url: string; title: string; loading: boolean; canGoBack: boolean; canGoForward: boolean; secure: boolean; error?: string }) => void) => () => void
         onPermissionRequest: (cb: (request: { id: string; permission: string; requestingUrl?: string; origin?: string; isMainFrame?: boolean }) => void) => () => void
         onReviewSelection: (cb: (selection: { url: string; title: string; selector: string; text: string; rect: { x: number; y: number; width: number; height: number }; html: string }) => void) => () => void

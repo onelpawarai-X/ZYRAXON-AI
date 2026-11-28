@@ -1,11 +1,11 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
-import { createSignal, onCleanup, onMount, Show, For } from "solid-js"
+import { createEffect, createSignal, onCleanup, onMount, Show, For } from "solid-js"
 import { IconButtonV2 } from "@zyraxon-ai/ui/v2/icon-button-v2"
-import { ButtonV2 } from "@zyraxon-ai/ui/v2/button-v2"
 import { Icon as IconV2 } from "@zyraxon-ai/ui/v2/icon"
 import { TooltipV2 } from "@zyraxon-ai/ui/v2/tooltip-v2"
-import { usePrompt } from "@/context/prompt"
+import { tryUsePrompt } from "@/context/prompt"
+import { RemoteBrowser } from "@/components/remote-browser"
 
 
 type BrowserState = {
@@ -52,12 +52,31 @@ function readablePermission(permission: string) {
     .toLowerCase()
 }
 
-export function BrowserPanel() {
-  return <DesktopBrowserPanel />
+export type BrowserSurfaceProps = {
+  /** `overlay` fills the window; `panel` docks inside the session side panel. */
+  variant?: "panel" | "overlay"
+  initialUrl?: string
+  onClose?: () => void
 }
 
-function DesktopBrowserPanel() {
-  const prompt = usePrompt()
+export function BrowserPanel() {
+  // A web page cannot host a real Chromium: outside the desktop app the panel
+  // streams the server-side browser and offers the user's own browser as the
+  // escape hatch, instead of an iframe most sites refuse to load.
+  return (
+    <Show when={window.api?.browser} fallback={<RemoteBrowser />}>
+      <BrowserSurface />
+    </Show>
+  )
+}
+
+export function BrowserSurface(props: BrowserSurfaceProps) {
+  return <DesktopBrowserPanel {...props} />
+}
+
+function DesktopBrowserPanel(props: BrowserSurfaceProps) {
+  const overlay = () => props.variant === "overlay"
+  const prompt = tryUsePrompt()
   const [state, setState] = createSignal<BrowserState>(blankState)
   const [address, setAddress] = createSignal("https://www.google.com/")
   const [addressFocused, setAddressFocused] = createSignal(false)
@@ -83,10 +102,6 @@ function DesktopBrowserPanel() {
       height: Math.max(1, Math.round(rect.height)),
       visible: true,
     })
-    void (window.api.browser as typeof window.api.browser & { resize?: (width: number, height: number) => void }).resize?.(
-      rect.width / zoom(),
-      rect.height / zoom(),
-    )
   }
 
   const navigate = () => {
@@ -112,10 +127,18 @@ function DesktopBrowserPanel() {
   const addSelectionToPrompt = () => {
     const value = selection()
     if (!value) return
+    const comment = `Selected element in ${value.title}\nSelector: ${value.selector}\n${value.text}`
+    // The overlay mounts above the prompt providers, so a selection picked there
+    // has no composer to land in; copy it instead of dropping it.
+    if (!prompt) {
+      void navigator.clipboard?.writeText(comment)
+      setSelection(null)
+      return
+    }
     prompt.context.add({
       type: "file",
       path: value.url,
-      comment: `Selected element in ${value.title}\nSelector: ${value.selector}\n${value.text}`,
+      comment,
       commentOrigin: "review",
       preview: value.html,
     })
@@ -124,7 +147,10 @@ function DesktopBrowserPanel() {
 
   onMount(() => {
     if (!window.api?.browser) return
-    void window.api.browser.create("https://www.google.com/")
+    const start = props.initialUrl?.trim() || "https://www.google.com/"
+    setAddress(start)
+    void window.api.browser.setOverlayMode?.(overlay())
+    void window.api.browser.create(start)
 
     const unsubscribeState = window.api.browser.onState((next) => {
       setDismissedError(false)
@@ -143,6 +169,7 @@ function DesktopBrowserPanel() {
       setReviewEnabled(enabled)
       queueMicrotask(updateBounds)
     })
+    const unsubscribeEscape = window.api.browser.onEscape?.(() => props.onClose?.())
 
     const observer = new ResizeObserver(() => updateBounds())
     if (viewportRef) observer.observe(viewportRef)
@@ -156,17 +183,37 @@ function DesktopBrowserPanel() {
       unsubscribePermissions()
       unsubscribeSelection()
       unsubscribeReviewMode()
+      unsubscribeEscape?.()
       observer.disconnect()
       window.removeEventListener("resize", onResize)
       window.clearTimeout(lateBoundsFrame)
       cancelAnimationFrame(boundsFrame)
-      if (window.api?.browser) void window.api.browser.setBounds({ x: 0, y: 0, width: 0, height: 0, visible: false })
+      if (window.api?.browser) {
+        void window.api.browser.setOverlayMode?.(false)
+        void window.api.browser.setBounds({ x: 0, y: 0, width: 0, height: 0, visible: false })
+      }
+      // The surface that mounts next needs the bounds back.
+      window.dispatchEvent(new Event("resize"))
     })
+  })
+
+  createEffect(() => {
+    void window.api?.browser?.setZoom?.(zoom())
+  })
+
+  createEffect(() => {
+    const next = props.initialUrl?.trim()
+    if (!next || next === address()) return
+    setAddress(next)
+    void window.api?.browser?.navigate(next)
   })
 
   return (
     <div class="h-full min-h-0 flex flex-col overflow-hidden bg-v2-background-bg-base text-v2-text-text-base">
-      <div class="shrink-0 border-b border-v2-border-border-weaker-base bg-v2-surface-surface-base/95 px-3 py-2 backdrop-blur">
+      <div
+        class="shrink-0 border-b border-v2-border-border-weaker-base bg-v2-surface-surface-base/95 backdrop-blur"
+        classList={{ "px-3 py-2": !overlay(), "px-2 py-1.5": overlay() }}
+      >
         <div class="flex items-center gap-1.5">
           <TooltipV2 value="Back" placement="bottom">
             <IconButtonV2
@@ -288,6 +335,17 @@ function DesktopBrowserPanel() {
               aria-label="Open in system browser"
             />
           </TooltipV2>
+          <Show when={props.onClose}>
+            <TooltipV2 value="Close browser (Esc)" placement="bottom">
+              <IconButtonV2
+                icon={<IconV2 name="xmark-small" />}
+                variant="ghost-muted"
+                size="normal"
+                onClick={() => props.onClose?.()}
+                aria-label="Close browser"
+              />
+            </TooltipV2>
+          </Show>
         </div>
 
         <Show when={reviewEnabled()}>
@@ -337,32 +395,7 @@ function DesktopBrowserPanel() {
       </Show>
 
       <div class="min-h-0 flex-1 bg-black">
-        <Show
-          when={!!window.api?.browser}
-          fallback={
-            <div class="flex h-full w-full flex-col bg-v2-background-bg-base">
-              <iframe
-                title="ZYRAXON web preview"
-                src={address()}
-                class="min-h-0 flex-1 w-full border-0 bg-white"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
-                referrerpolicy="no-referrer"
-              />
-              <div class="shrink-0 flex items-center justify-center gap-3 border-t border-v2-border-border-weaker-base px-3 py-2 text-center">
-                <div class="text-[11px] text-v2-text-text-faint">
-                  Some sites refuse to be embedded. The full browser runs inside the ZYRAXON desktop app.
-                </div>
-                <ButtonV2
-                  variant="contrast"
-                  size="small"
-                  onClick={() => window.open(address() || "https://www.google.com/", "_blank", "noopener")}
-                >
-                  Open in real browser
-                </ButtonV2>
-              </div>
-            </div>
-          }
-        >
+        <Show when={!!window.api?.browser} fallback={<RemoteBrowser initialUrl={address()} />}>
           <div ref={viewportRef} class="h-full w-full outline-none" tabIndex={0} aria-label="ZYRAXON browser viewport" />
         </Show>
       </div>
@@ -408,17 +441,19 @@ function DesktopBrowserPanel() {
         </div>
       </Show>
 
-      <div class="shrink-0 flex items-center justify-between border-t border-v2-border-border-weaker-base bg-v2-surface-surface-base/70 px-3 py-1.5 text-[11px] text-v2-text-text-faint">
-        <div class="flex min-w-0 items-center gap-2">
-          <IconV2 name={state().secure ? "lock" : "unlock"} class={state().secure ? "text-v2-icon-icon-success-base" : "text-v2-icon-icon-warning-base"} />
-          <span class="truncate">{state().url || "No page loaded"}</span>
+      <Show when={!overlay()}>
+        <div class="shrink-0 flex items-center justify-between border-t border-v2-border-border-weaker-base bg-v2-surface-surface-base/70 px-3 py-1.5 text-[11px] text-v2-text-text-faint">
+          <div class="flex min-w-0 items-center gap-2">
+            <IconV2 name={state().secure ? "lock" : "unlock"} class={state().secure ? "text-v2-icon-icon-success-base" : "text-v2-icon-icon-warning-base"} />
+            <span class="truncate">{state().url || "No page loaded"}</span>
+          </div>
+          <div class="flex shrink-0 items-center gap-2">
+            <span class="hidden sm:inline">{state().secure ? "Secure connection" : "Not secure"}</span>
+            <span class="text-v2-text-text-faint">·</span>
+            <span>{reviewEnabled() ? "Review on" : "Review off"}</span>
+          </div>
         </div>
-        <div class="flex shrink-0 items-center gap-2">
-          <span class="hidden sm:inline">{state().secure ? "Secure connection" : "Not secure"}</span>
-          <span class="text-v2-text-text-faint">·</span>
-          <span>{reviewEnabled() ? "Review on" : "Review off"}</span>
-        </div>
-      </div>
+      </Show>
     </div>
   )
 }

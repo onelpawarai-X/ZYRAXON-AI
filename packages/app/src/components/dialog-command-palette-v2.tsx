@@ -18,7 +18,7 @@ import { ServerConnection } from "@/context/server"
 import { useServerSDK } from "@/context/server-sdk"
 import { useTabs } from "@/context/tabs"
 import { fetchOmniSymbols, fetchOmniTextMatches } from "@/components/omni-search"
-import { openInAppBrowser } from "@/components/in-app-browser"
+import { openInAppBrowser, webSearchUrl } from "@/components/in-app-browser"
 import { SessionTabAvatar } from "@/pages/layout/session-tab-avatar"
 import { getRelativeTime } from "@/utils/time"
 import {
@@ -121,7 +121,7 @@ export function DialogCommandPaletteV2(props: { onOpenFile?: (path: string) => v
     if (!item) return
     if (item.type === "web") {
       palette.close()
-      openInAppBrowser(`https://www.bing.com/search?q=${encodeURIComponent(item.webQuery ?? item.title)}`)
+      openInAppBrowser(webSearchUrl(item.webQuery ?? item.title))
       return
     }
     if (item.type === "ask") {
@@ -190,7 +190,7 @@ export function DialogHomeCommandPaletteV2(props: {
     state.cleanup = undefined
     if (item.type === "web") {
       dialog.close()
-      openInAppBrowser(`https://www.bing.com/search?q=${encodeURIComponent(item.webQuery ?? item.title)}`)
+      openInAppBrowser(webSearchUrl(item.webQuery ?? item.title))
       return
     }
     if (item.type === "ask") {

@@ -43,6 +43,9 @@ type BrowserSlot = {
   view: WebContentsView
   visible: boolean
   reviewMode: boolean
+  /** True while the surface fills the window; Escape then closes it. */
+  overlay: boolean
+  popups: Set<BrowserWindow>
   cleanup: () => void
 }
 
@@ -152,6 +155,10 @@ function destroy(key: number) {
   if (!slot) return
   hide(slot)
   slot.cleanup()
+  for (const popup of slot.popups) {
+    if (!popup.isDestroyed()) popup.close()
+  }
+  slot.popups.clear()
   try {
     if (!slot.view.webContents.isDestroyed()) slot.view.webContents.close()
   } catch {}
@@ -235,15 +242,72 @@ function ensureSlot(owner: BrowserWindow) {
     view.webContents.off("ipc-message", onIpcMessage)
   })
 
+  // Sign-in providers and sites that open a second window (target=_blank, OAuth
+  // popups) must stay in the same persistent session, otherwise the login is
+  // written into a partition nothing else reads. Give them a real child window
+  // on the shared partition instead of throwing the user into an outside app.
+  function openChildWindow(slot: BrowserSlot, url: string) {
+    const child = new BrowserWindow({
+      parent: slot.owner,
+      width: 1120,
+      height: 840,
+      autoHideMenuBar: true,
+      backgroundColor: "#101010",
+      webPreferences: {
+        partition: browserPartition,
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true,
+        spellcheck: true,
+      },
+    })
+    child.setMenuBarVisibility(false)
+    child.webContents.setUserAgent(browserUserAgent)
+    child.webContents.setWindowOpenHandler(({ url: next }) => {
+      if (/^https?:/i.test(next)) {
+        openChildWindow(slot, next)
+        return { action: "deny" }
+      }
+      if (next && next !== "about:blank") void shell.openExternal(next)
+      return { action: "deny" }
+    })
+    child.webContents.on("will-navigate", (event, next) => {
+      if (/^https?:/i.test(next) || next === "about:blank") return
+      event.preventDefault()
+      void shell.openExternal(next)
+    })
+    slot.popups.add(child)
+    child.once("closed", () => slot.popups.delete(child))
+    if (url && url !== "about:blank") void child.loadURL(url)
+    return child
+  }
+
   view.webContents.setWindowOpenHandler(({ url }) => {
-    void shell.openExternal(url)
+    openChildWindow(slots.get(key) as BrowserSlot, url)
     return { action: "deny" }
   })
 
+  const onWillNavigate = (event: Electron.Event, url: string) => {
+    if (/^(https?|about):/i.test(url)) return
+    event.preventDefault()
+    void shell.openExternal(url)
+  }
+  const onBeforeInput = (event: Electron.Event, input: Electron.Input) => {
+    const slot = slots.get(key)
+    if (!slot || input.type !== "keyDown" || input.key !== "Escape" || !slot.overlay) return
+    event.preventDefault()
+    slot.owner.webContents.send("browser-escape")
+  }
+
+  view.webContents.on("will-navigate", onWillNavigate)
+  view.webContents.on("before-input-event", onBeforeInput)
+
   const cleanup = () => {
     for (const dispose of cleanupHandlers) dispose()
+    view.webContents.off("will-navigate", onWillNavigate)
+    view.webContents.off("before-input-event", onBeforeInput)
   }
-  const slot: BrowserSlot = { owner, view, visible: false, reviewMode: false, cleanup }
+  const slot: BrowserSlot = { owner, view, visible: false, reviewMode: false, overlay: false, popups: new Set(), cleanup }
   slots.set(key, slot)
   owner.once("closed", () => destroy(key))
   return slot
@@ -344,6 +408,20 @@ export function registerBrowserIpcHandlers() {
     const allowed = input.allowed === true
     pending.resolve(allowed)
     pendingPermissions.delete(input.id)
+    return true
+  })
+
+  ipcMain.handle("browser-set-zoom", (event, value: unknown) => {
+    const slot = ensureSlot(ownerFromEvent(event))
+    const factor = Number(value)
+    if (!Number.isFinite(factor) || factor <= 0) return false
+    slot.view.webContents.setZoomFactor(Math.min(3, Math.max(0.25, factor)))
+    return true
+  })
+
+  ipcMain.handle("browser-set-overlay", (event, value: unknown) => {
+    const slot = ensureSlot(ownerFromEvent(event))
+    slot.overlay = value === true
     return true
   })
 

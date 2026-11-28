@@ -1,23 +1,22 @@
 // Copyright (c) 2026 onelpawarai. All rights reserved.
 
 /**
- * In-app web browser overlay.
+ * Full-window browser surface.
  *
- * Web search results used to open in the system browser, which threw the user out
- * of the app and into a separate tab. This overlay keeps the page inside the app:
- * the palette's web entry, the embedded Browser tab and the Omniscient Search all
- * route here, so a search stays in one window and one box.
- *
- * The page is rendered by the real Chromium process on the ZYRAXON server and
- * streamed over `/browser-ws`. That keeps logins, cookies and JavaScript-heavy
- * sites working, which a sandboxed <iframe> cannot do.
+ * Web search used to land in a small centred modal, so the page sat in a box the
+ * user could not scroll and never filled the window. It now takes over the whole
+ * window: the desktop app embeds its real Chromium view, the web build uses the
+ * streamed browser (or hands the URL to the real browser).
  */
 
 import { createSignal, onCleanup, onMount, Show, type Accessor } from "solid-js"
 import { RemoteBrowser } from "@/components/remote-browser"
+import { BrowserSurface } from "@/pages/session/browser-panel"
 
 const [open, setOpen] = createSignal(false)
 const [url, setUrl] = createSignal("")
+
+const hasEmbeddedBrowser = () => Boolean(window.api?.browser)
 
 export function getInAppBrowserOpen(): Accessor<boolean> {
   return open
@@ -32,6 +31,19 @@ export function openInAppBrowser(target: string): void {
 export function closeInAppBrowser(): void {
   setOpen(false)
   setUrl("")
+  // The desktop browser view is shared with the session panel, which needs its
+  // bounds recalculated once this surface is gone.
+  window.dispatchEvent(new Event("resize"))
+}
+
+/**
+ * Google blocks datacenter IPs with a CAPTCHA, so the streamed server-side
+ * browser falls back to Bing; the embedded Chromium runs from the user's own
+ * machine and can use Google.
+ */
+export function webSearchUrl(query: string): string {
+  const engine = hasEmbeddedBrowser() ? "https://www.google.com/search?q=" : "https://www.bing.com/search?q="
+  return `${engine}${encodeURIComponent(query)}`
 }
 
 export function InAppBrowserOverlay() {
@@ -54,14 +66,17 @@ export function InAppBrowserOverlay() {
   return (
     <Show when={open()}>
       <div
-        class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-8"
-        onClick={(event) => {
-          if (event.target === event.currentTarget) closeInAppBrowser()
-        }}
+        class="fixed inset-0 z-[9999] flex min-h-0 flex-col bg-v2-background-bg-base"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Browser"
       >
-        <div class="flex h-full max-h-[80vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-v2-border-border-weak-base bg-v2-background-bg-base shadow-2xl">
-          <RemoteBrowser initialUrl={url()} onClose={closeInAppBrowser} path="/search-browser-ws" />
-        </div>
+        <Show
+          when={hasEmbeddedBrowser()}
+          fallback={<RemoteBrowser initialUrl={url()} onClose={closeInAppBrowser} path="/search-browser-ws" />}
+        >
+          <BrowserSurface variant="overlay" initialUrl={url()} onClose={closeInAppBrowser} />
+        </Show>
       </div>
     </Show>
   )

@@ -181,11 +181,18 @@ const api: ElectronAPI = {
     reload: () => ipcRenderer.invoke("browser-reload"),
     stop: () => ipcRenderer.invoke("browser-stop"),
     setBounds: (bounds) => ipcRenderer.invoke("browser-set-bounds", bounds),
+    setZoom: (factor) => ipcRenderer.invoke("browser-set-zoom", factor),
+    setOverlayMode: (enabled) => ipcRenderer.invoke("browser-set-overlay", enabled),
     getState: () => ipcRenderer.invoke("browser-get-state"),
     openExternal: () => ipcRenderer.invoke("browser-open-external"),
     respondPermission: (response) => ipcRenderer.invoke("browser-permission-response", response),
     setReviewMode: (enabled) => ipcRenderer.invoke("browser-set-review-mode", enabled),
     getReviewMode: () => ipcRenderer.invoke("browser-get-review-mode"),
+    onEscape: (cb) => {
+      const handler = () => cb()
+      ipcRenderer.on("browser-escape", handler)
+      return () => ipcRenderer.removeListener("browser-escape", handler)
+    },
     onState: (cb) => {
       const handler = (_: unknown, state: BrowserState) => cb(state)
       ipcRenderer.on("browser-state", handler)
